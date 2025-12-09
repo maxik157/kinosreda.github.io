@@ -477,7 +477,7 @@
 
                         <!-- RSVP Section -->
                         <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-green-500/20">
-                            <h4 class="text-base font-bold text-green-400 mb-3 flex items-center gap-2">
+                            <h4 id="rsvpTitle" class="text-base font-bold text-green-400 mb-3 flex items-center gap-2">
                                 <span>✋</span> Подтвердить участие
                             </h4>
                             <div class="space-y-3">
@@ -1157,8 +1157,18 @@
             const event = getEvent(selectedDate);
             const userName = getUserName();
             
-            const attendeesContainer = document.getElementById('attendeesList');
+            // Update RSVP title based on user attendance
+            const rsvpTitle = document.getElementById('rsvpTitle');
             const attendees = event.attendees || {};
+            const isUserAttending = attendees[userName] !== undefined;
+            
+            if (isUserAttending) {
+                rsvpTitle.innerHTML = '<span>✅</span> Участие заявлено';
+            } else {
+                rsvpTitle.innerHTML = '<span>✋</span> Подтвердить участие';
+            }
+            
+            const attendeesContainer = document.getElementById('attendeesList');
             
             if (Object.keys(attendees).length === 0) {
                 attendeesContainer.innerHTML = '<span class="text-gray-600 text-xs italic">Пока никто не подтвердил...</span>';
