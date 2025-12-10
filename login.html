@@ -195,38 +195,49 @@
             measurementId: "G-MGW6GF67H3"
         };
 
-        const users = {
-            'andrey': { password: 'andrey', name: 'Андрей' },
-            'tatiana': { password: 'tatiana', name: 'Татьяна' },
-            'alexey': { password: 'alexey', name: 'Алексей' },
-            'vlad': { password: 'vlad', name: 'Влад' },
-            'max': { password: 'max', name: 'Макс' },
-            'mstislav': { password: 'mstislav', name: 'Мстислав' },
-            'ksenia': { password: 'ksenia', name: 'Ксения' },
-            'alina': { password: 'alina', name: 'Алина' }
-        };
-
         let db = null;
+        
         try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.database();
-            db.ref('users').set(users);
         } catch (e) {
             console.error('Firebase error:', e);
         }
 
-        function login(e) {
+        async function login(e) {
             e.preventDefault();
             const username = document.getElementById('loginInput').value.trim().toLowerCase();
             const password = document.getElementById('passwordInput').value;
-            if (users[username] && users[username].password === password) {
-                localStorage.setItem('currentUser', JSON.stringify({ username, name: users[username].name }));
-                window.location.href = 'index.html';
-            } else {
-                const err = document.getElementById('errorMessage');
-                err.classList.remove('hidden');
-                setTimeout(()=>err.classList.add('hidden'), 2500);
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Показываем индикатор загрузки
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Проверка...';
+            
+            try {
+                // Получаем данные пользователей из Firebase
+                const snapshot = await db.ref('users/' + username).once('value');
+                const user = snapshot.val();
+                
+                if (user && user.password === password) {
+                    localStorage.setItem('currentUser', JSON.stringify({ username, name: user.name }));
+                    window.location.href = 'index.html';
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                showError();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Войти 🍺';
             }
+        }
+        
+        function showError() {
+            const err = document.getElementById('errorMessage');
+            err.classList.remove('hidden');
+            setTimeout(() => err.classList.add('hidden'), 2500);
         }
 
         const currentUser = localStorage.getItem('currentUser');
