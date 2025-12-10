@@ -565,6 +565,9 @@
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('type')">
                                     Вид <span id="sort-type">↕</span>
                                 </th>
+                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('style')">
+                                    Сорт <span id="sort-style">↕</span>
+                                </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('filtered')">
                                     Фильтрация <span id="sort-filtered">↕</span>
                                 </th>
@@ -580,7 +583,7 @@
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating')">
                                     Рейтинг <span id="sort-rating">↕</span>
                                 </th>
-                                <th class="py-3 px-4 text-center text-amber-400">Действия</th>
+                                <th class="py-3 px-4 text-center text-amber-400" style="min-width: 120px;">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="beerTableBody"></tbody>
@@ -684,6 +687,20 @@
                 <option value="Светлое">Светлое</option>
                 <option value="Тёмное">Тёмное</option>
             </select>
+            <select id="beerStyleInput"
+                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+                <option value="">Сорт</option>
+                <option value="Lager">Lager</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Pilsner">Pilsner</option>
+                <option value="Cider">Cider</option>
+                <option value="Bock">Bock</option>
+                <option value="Marzen">Marzen</option>
+                <option value="Ale">Ale</option>
+                <option value="Porter">Porter</option>
+                <option value="Stout">Stout</option>
+                <option value="Dunkel">Dunkel</option>
+            </select>
             <select id="beerFilteredInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
                 <option value="Фильтрованное">Фильтрованное</option>
@@ -754,6 +771,20 @@
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
                 <option value="Светлое">Светлое</option>
                 <option value="Тёмное">Тёмное</option>
+            </select>
+            <select id="editBeerStyleInput"
+                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+                <option value="">Сорт</option>
+                <option value="Lager">Lager</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Pilsner">Pilsner</option>
+                <option value="Cider">Cider</option>
+                <option value="Bock">Bock</option>
+                <option value="Marzen">Marzen</option>
+                <option value="Ale">Ale</option>
+                <option value="Porter">Porter</option>
+                <option value="Stout">Stout</option>
+                <option value="Dunkel">Dunkel</option>
             </select>
             <select id="editBeerFilteredInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
@@ -1254,6 +1285,16 @@
             
             if (!title) return;
             
+            // Check if movie already suggested for this event (case-insensitive)
+            const event = getEvent(selectedDate);
+            if (!event.movies) event.movies = {};
+            const existingMovieEntry = Object.entries(event.movies).find(([, m]) => (m.title || '').toLowerCase() === title.toLowerCase());
+            if (existingMovieEntry) {
+                // Фильм уже есть в списке - не добавляем дубликат
+                movieInput.value = '';
+                return;
+            }
+            
             // Check if movie exists in backlog
             const existingCard = data.backlog.cards.find(card => 
                 card.title.toLowerCase() === title.toLowerCase()
@@ -1267,14 +1308,26 @@
                     // Move from Watched to New
                     existingCard.columnId = newColumn.id;
                     saveData();
-                    movieInput.value = '';
-                    return;
+                }
+            } else {
+                // Add movie to backlog in "New" column
+                const newColumn = data.backlog.columns.find(col => col.name === NEW_COLUMN_NAME);
+                if (newColumn) {
+                    const card = {
+                        id: Date.now().toString(),
+                        columnId: newColumn.id,
+                        title: title,
+                        description: '',
+                        rating: 0,
+                        author: userName,
+                        watchCount: 0,
+                        timestamp: Date.now()
+                    };
+                    data.backlog.cards.push(card);
                 }
             }
             
-            const event = getEvent(selectedDate);
-            if (!event.movies) event.movies = {};
-            
+            // Add to event movies for voting
             const movieId = Date.now().toString();
             event.movies[movieId] = {
                 title: title,
@@ -1403,8 +1456,16 @@
                             ${columnCards.map(card => {
                                 const ratingClass = card.rating >= 7 ? 'rating-high' : card.rating >= 5 ? 'rating-medium' : 'rating-low';
                                 return `
-                                    <div class="backlog-card" data-card-id="${card.id}" draggable="true" onclick="openEditCardModal('${card.id}')">
-                                        <div class="text-white font-medium text-sm mb-1">${card.title}</div>
+                                    <div class="backlog-card relative" data-card-id="${card.id}" draggable="true" onclick="openEditCardModal('${card.id}')">
+                                        <button onclick="event.stopPropagation(); addMovieFromBacklog('${card.id}')" 
+                                            class="absolute top-1 right-1 w-6 h-6 bg-purple-600 hover:bg-purple-500 rounded text-white text-xs flex items-center justify-center transition-all hover:scale-110" 
+                                            title="Добавить в Предложить фильм">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/>
+                                                <path d="M3 10h18M8 2v4M16 2v4" stroke-width="2" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
+                                        <div class="text-white font-medium text-sm mb-1 pr-7">${card.title}</div>
                                         ${card.description ? `<div class="text-gray-400 text-xs mb-2">${card.description}</div>` : ''}
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <div class="text-gray-500 text-xs">${card.author}</div>
@@ -1708,6 +1769,45 @@
             }
         }
 
+        // Add movie from backlog to selected date's movie suggestions
+        function addMovieFromBacklog(cardId) {
+            const card = data.backlog.cards.find(c => c.id === cardId);
+            if (!card) return;
+            
+            // Check if date is selected
+            if (!selectedDate) {
+                alert('Сначала выберите дату в календаре!');
+                return;
+            }
+            
+            const userName = getUserName();
+            const title = card.title;
+            
+            // Check if movie already exists in the event's movie list
+            const event = getEvent(selectedDate);
+            if (!event.movies) event.movies = {};
+            
+            const existingMovieEntry = Object.entries(event.movies).find(([, m]) => (m.title || '').toLowerCase() === title.toLowerCase());
+            if (existingMovieEntry) {
+                alert('Этот фильм уже добавлен в список предложений!');
+                return;
+            }
+            
+            // Add movie to event
+            const movieId = Date.now().toString();
+            event.movies[movieId] = {
+                title: title,
+                author: userName,
+                votes: { [userName]: true },
+                timestamp: Date.now()
+            };
+            
+            setEvent(selectedDate, event);
+            
+            // Show confirmation
+            alert(`Фильм "${title}" добавлен в предложения для ${formatDateDisplay(selectedDate)}`);
+        }
+
         // Beer Rating Methods
         function sortBeerBy(sortType) {
             if (beerSortBy === sortType) {
@@ -1727,7 +1827,7 @@
             beers.forEach(b => { b.country = formatCountry(b.country); });
             
             // Update headers
-            ['name', 'type', 'filtered', 'country', 'volume', 'alcohol', 'rating'].forEach(field => {
+            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating'].forEach(field => {
                 const span = document.getElementById(`sort-${field}`);
                 const th = span.parentElement;
                 if (beerSortBy === field) {
@@ -1757,6 +1857,10 @@
                     case 'type':
                         aVal = a.type || '';
                         bVal = b.type || '';
+                        break;
+                    case 'style':
+                        aVal = a.style || '';
+                        bVal = b.style || '';
                         break;
                     case 'filtered':
                         aVal = a.filtered || '';
@@ -1792,7 +1896,7 @@
             });
             
             if (sortedBeers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-gray-600 py-8">Пока нет пива в рейтинге</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-600 py-8">Пока нет пива в рейтинге</td></tr>';
                 return;
             }
             
@@ -1817,6 +1921,7 @@
                                 ${beer.type}
                             </span>
                         </td>
+                        <td class="py-3 px-4 text-gray-400">${beer.style || '—'}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.filtered}</td>
                         <td class="py-3 px-4 text-gray-400">${formatCountry(beer.country)}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.volume}</td>
@@ -1854,6 +1959,7 @@
         function addBeer() {
             const name = document.getElementById('beerNameInput').value.trim();
             const type = document.getElementById('beerTypeInput').value;
+            const style = document.getElementById('beerStyleInput').value;
             const filtered = document.getElementById('beerFilteredInput').value;
             const country = document.getElementById('beerCountryInput').value;
             const volume = document.getElementById('beerVolumeInput').value;
@@ -1867,7 +1973,7 @@
             
             const beer = {
                 id: Date.now().toString(),
-                name, type, filtered, country, volume, alcohol,
+                name, type, style, filtered, country, volume, alcohol,
                 author: userName,
                 ratings: {},
                 timestamp: Date.now()
@@ -1932,6 +2038,7 @@
             }
             document.getElementById('editBeerNameInput').value = beer.name || '';
             document.getElementById('editBeerTypeInput').value = beer.type || 'Светлое';
+            document.getElementById('editBeerStyleInput').value = beer.style || '';
             document.getElementById('editBeerFilteredInput').value = beer.filtered || 'Фильтрованное';
             document.getElementById('editBeerCountryInput').value = getCountryNameForSelect(beer.country);
             document.getElementById('editBeerVolumeInput').value = beer.volume || '0.5';
@@ -1949,6 +2056,7 @@
         function saveBeerEdit() {
             const name = document.getElementById('editBeerNameInput').value.trim();
             const type = document.getElementById('editBeerTypeInput').value;
+            const style = document.getElementById('editBeerStyleInput').value;
             const filtered = document.getElementById('editBeerFilteredInput').value;
             const country = document.getElementById('editBeerCountryInput').value;
             const volume = document.getElementById('editBeerVolumeInput').value;
@@ -1960,6 +2068,7 @@
             if (beer) {
                 beer.name = name;
                 beer.type = type;
+                beer.style = style;
                 beer.filtered = filtered;
                 beer.country = country;
                 beer.volume = volume;
@@ -1999,6 +2108,11 @@
 
         document.getElementById('movieInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addMovie();
+        });
+        document.getElementById('movieInput').addEventListener('blur', () => {
+            // auto-trim on blur
+            const inp = document.getElementById('movieInput');
+            inp.value = inp.value.trim();
         });
 
         // Scroll functions

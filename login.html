@@ -196,52 +196,63 @@
         };
 
         let db = null;
-        
-        try {
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            db = firebase.database();
-        } catch (e) {
-            console.error('Firebase error:', e);
+
+        // Инициализация Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
+        db = firebase.database();
 
         async function login(e) {
             e.preventDefault();
-            const username = document.getElementById('loginInput').value.trim().toLowerCase();
+
+            const login = document.getElementById('loginInput').value.trim().toLowerCase();
             const password = document.getElementById('passwordInput').value;
             const submitBtn = e.target.querySelector('button[type="submit"]');
-            
-            // Показываем индикатор загрузки
+
+            if (!login || !password) {
+                showError();
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = 'Проверка...';
-            
+
             try {
-                // Получаем данные пользователей из Firebase
-                const snapshot = await db.ref('users/' + username).once('value');
-                const user = snapshot.val();
-                
-                if (user && user.password === password) {
-                    localStorage.setItem('currentUser', JSON.stringify({ username, name: user.name }));
+                // Получаем данные пользователя из Firebase
+                const snapshot = await db.ref('users/' + login).once('value');
+                const userData = snapshot.val();
+
+                if (userData && userData.password === password) {
+                    // Успешный вход
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        username: login,
+                        name: userData.name
+                    }));
                     window.location.href = 'index.html';
                 } else {
                     showError();
                 }
             } catch (error) {
-                console.error('Auth error:', error);
+                console.error('Login error:', error);
                 showError();
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Войти 🍺';
             }
         }
-        
+
         function showError() {
             const err = document.getElementById('errorMessage');
             err.classList.remove('hidden');
             setTimeout(() => err.classList.add('hidden'), 2500);
         }
 
+        // Проверяем, уже ли авторизован
         const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) window.location.href = 'index.html';
+        if (currentUser) {
+            window.location.href = 'index.html';
+        }
     </script>
 </body>
 </html>
