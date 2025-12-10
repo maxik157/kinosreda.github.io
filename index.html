@@ -294,6 +294,15 @@
             font-weight: bold;
         }
         
+        .review-count {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
         .beer-row {
             transition: all 0.2s;
         }
@@ -547,14 +556,113 @@
         <!-- Beer Rating Section -->
         <div id="beerSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
             <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
-                        <span class="text-3xl">🍺</span> Рейтинг пива
-                    </h2>
-                    <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
-                        ➕ Добавить пиво
-                    </button>
+                <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
+                            <span class="text-3xl">🍺</span> Рейтинг пива
+                        </h2>
+                        <button onclick="toggleBeerFilters()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition">
+                            Фильтры
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 12h12M10 20h4" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetBeerFilters()" class="hidden text-sm px-3 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition" id="beerFiltersReset">Сбросить</button>
+                        <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
+                            ➕ Добавить пиво
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Панель фильтров -->
+                <div id="beerFiltersPanel" class="hidden mb-4 bg-black/50 border border-amber-500/20 rounded-2xl p-4 text-sm">
+                    <div class="grid md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Вид</label>
+                            <select id="beerFilterType" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                <option value="">Все</option>
+                                <option value="Светлое">Светлое</option>
+                                <option value="Тёмное">Тёмное</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Сорт</label>
+                            <select id="beerFilterStyle" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                <option value="">Все</option>
+                                <option value="Lager">Lager</option>
+                                <option value="Wheat">Wheat</option>
+                                <option value="Pilsner">Pilsner</option>
+                                <option value="Cider">Cider</option>
+                                <option value="Bock">Bock</option>
+                                <option value="Marzen">Marzen</option>
+                                <option value="Ale">Ale</option>
+                                <option value="Porter">Porter</option>
+                                <option value="Stout">Stout</option>
+                                <option value="Dunkel">Dunkel</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Фильтрация</label>
+                            <select id="beerFilterFiltered" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                <option value="">Все</option>
+                                <option value="Фильтрованное">Фильтрованное</option>
+                                <option value="Нефильтрованное">Нефильтрованное</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Страна</label>
+                            <select id="beerFilterCountry" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                <option value="">Все</option>
+                                <option value="Бельгия">Бельгия</option>
+                                <option value="Великобритания">Великобритания</option>
+                                <option value="Германия">Германия</option>
+                                <option value="Китай">Китай</option>
+                                <option value="Нидерланды">Нидерланды</option>
+                                <option value="Россия">Россия</option>
+                                <option value="Чехия">Чехия</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-xs mb-1 block">Объём, л</label>
+                            <select id="beerFilterVolume" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                <option value="">Все</option>
+                                <option value="0.33">0.33</option>
+                                <option value="0.45">0.45</option>
+                                <option value="0.5">0.5</option>
+                                <option value="0.75">0.75</option>
+                                <option value="1">1</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Крепость от, %</label>
+                                <input type="number" step="0.1" id="beerFilterAlcoholMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Крепость до, %</label>
+                                <input type="number" step="0.1" id="beerFilterAlcoholMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="100">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг от</label>
+                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг до</label>
+                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2 justify-end">
+                        <button onclick="resetBeerFilters()" class="px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Сбросить</button>
+                        <button onclick="applyBeerFiltersFromUI()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold hover:from-amber-500 hover:to-amber-400 transition">Применить</button>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm" id="beerTable">
                         <thead>
@@ -654,7 +762,7 @@
 
     <!-- Edit Card Modal -->
     <div id="editCardModal" class="modal fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
-        <div class="bg-gray-950 rounded-2xl max-w-md w-full p-6 border border-amber-500/30 mx-4">
+        <div class="bg-gray-950 rounded-2xl max-w-lg w-full p-6 border border-amber-500/30 mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold text-amber-400 mb-4">Редактировать фильм</h3>
             <input type="text" id="editCardTitleInput" placeholder="Название фильма..."
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3">
@@ -662,6 +770,38 @@
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 h-24"></textarea>
             <input type="number" id="editCardRatingInput" placeholder="Рейтинг (0-10)" min="0" max="10" step="0.1"
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4">
+            
+            <!-- Watch History Section -->
+            <div id="watchHistorySection" class="hidden bg-gray-900/50 rounded-xl p-4 mb-4 border border-green-500/20">
+                <h4 class="text-base font-bold text-green-400 mb-3 flex items-center gap-2">
+                    <span>👁</span> История просмотров
+                </h4>
+                <div id="watchHistoryList" class="space-y-1 max-h-24 overflow-y-auto"></div>
+            </div>
+            
+            <!-- Reviews Section -->
+            <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-blue-500/20">
+                <h4 class="text-base font-bold text-blue-400 mb-3 flex items-center gap-2">
+                    <span>💬</span> Отзывы
+                </h4>
+                <div id="cardReviewsList" class="space-y-2 mb-3 max-h-32 overflow-y-auto"></div>
+                <div id="reviewInputSection">
+                    <textarea id="cardReviewInput" placeholder="Напишите ваш отзыв..."
+                        class="w-full px-3 py-2 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-blue-500/30 focus:outline-none focus:border-blue-400 text-sm h-16 mb-2"></textarea>
+                    <div class="flex gap-2">
+                        <button onclick="saveCardReview()" class="flex-1 btn-glow bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold py-2 px-3 rounded-lg text-sm">
+                            Сохранить отзыв
+                        </button>
+                        <button id="deleteReviewBtn" onclick="deleteCardReview()" class="hidden btn-glow bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-2 px-3 rounded-lg text-sm">
+                            Удалить
+                        </button>
+                    </div>
+                </div>
+                <button id="deleteReviewBtnOutside" onclick="deleteCardReview()" class="hidden w-full btn-glow bg-gradient-to-r from-red-600 to-red-500 text-white font-bold py-2 px-3 rounded-lg text-sm mt-2">
+                    Удалить мой отзыв
+                </button>
+            </div>
+            
             <div class="flex gap-2 mb-3">
                 <button onclick="saveCardEdit()" class="flex-1 btn-glow bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-2 px-4 rounded-xl">
                     Сохранить
@@ -863,6 +1003,18 @@
         let editingBeerId = null;
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
+        let beerFilters = {
+            type: '',
+            style: '',
+            filtered: '',
+            country: '',
+            volume: '',
+            alcoholMin: '',
+            alcoholMax: '',
+            ratingMin: '',
+            ratingMax: ''
+        };
+        let columnSortState = {}; // { columnId: 'asc' | 'desc' | null }
 
         const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
                            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
@@ -1101,7 +1253,8 @@
                     if (isToday) classes += 'ring-2 ring-white ring-offset-1 ring-offset-black ';
                     if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black scale-110 ';
                 } else if (isWednesday && isPast) {
-                    classes += 'bg-gray-900/50 text-amber-700/50 border border-amber-900/20 ';
+                    classes += 'wednesday bg-gray-900/50 text-amber-700/50 border border-amber-900/20 cursor-pointer hover:bg-gray-800/50 hover:border-amber-700/30 ';
+                    if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black ';
                 } else {
                     classes += 'text-gray-700 ';
                 }
@@ -1109,7 +1262,7 @@
                 const attendeeCount = Object.keys(event.attendees || {}).length;
                 
                 container.innerHTML += `
-                    <div class="${classes}" ${isWednesday && !isPast ? `onclick="openPanel('${dateKey}')"` : ''}>
+                    <div class="${classes}" ${isWednesday ? `onclick="openPanel('${dateKey}')"` : ''}>
                         <span class="text-sm font-bold">${day}</span>
                         ${hasAttendees ? `<span class="text-xs">${attendeeCount}👥</span>` : ''}
                     </div>
@@ -1437,7 +1590,40 @@
             }
             
             board.innerHTML = columns.map(column => {
-                const columnCards = cards.filter(card => card.columnId === column.id);
+                let columnCards = cards.filter(card => card.columnId === column.id);
+                
+                // Get column sort state
+                const sortState = columnSortState[column.id];
+                
+                // Sort all cards
+                columnCards.sort((a, b) => {
+                    // If manual rating sort is active, use only that
+                    if (sortState === 'asc' || sortState === 'desc') {
+                        const aRating = parseFloat(a.rating) || 0;
+                        const bRating = parseFloat(b.rating) || 0;
+                        return sortState === 'asc' ? aRating - bRating : bRating - aRating;
+                    }
+                    
+                    // Default sorting: first by watch history (no history first, then by earliest date), then by rating (descending)
+                    const aLastWatch = a.watchHistory && a.watchHistory.length > 0 ? a.watchHistory[a.watchHistory.length - 1] : 0;
+                    const bLastWatch = b.watchHistory && b.watchHistory.length > 0 ? b.watchHistory[b.watchHistory.length - 1] : 0;
+                    
+                    // Cards without watch history go first
+                    if (aLastWatch === 0 && bLastWatch !== 0) return -1;
+                    if (aLastWatch !== 0 && bLastWatch === 0) return 1;
+                    
+                    // If both have watch history, sort by earliest watch date first (ascending)
+                    if (aLastWatch !== 0 && bLastWatch !== 0) {
+                        if (aLastWatch !== bLastWatch) {
+                            return aLastWatch - bLastWatch; // Earlier date first
+                        }
+                    }
+                    
+                    // Within same watch status/date group, sort by rating (descending - higher rating first)
+                    const aRating = parseFloat(a.rating) || 0;
+                    const bRating = parseFloat(b.rating) || 0;
+                    return bRating - aRating;
+                });
                 
                 return `
                     <div class="backlog-column" data-column-id="${column.id}" draggable="true">
@@ -1447,7 +1633,11 @@
                                 <span class="text-white font-semibold text-sm">${column.name}</span>
                                 <span class="text-gray-500 text-xs">${columnCards.length}</span>
                             </div>
-                            <div class="flex gap-3">
+                            <div class="flex gap-2 items-center">
+                                <button onclick="event.stopPropagation(); toggleColumnSort('${column.id}')" class="text-gray-400 hover:text-amber-400 text-sm px-1 flex items-center gap-1" title="Сортировка по рейтингу">
+                                    ⭐${columnSortState[column.id] === 'asc' ? '↑' : columnSortState[column.id] === 'desc' ? '↓' : '↕'}
+                                </button>
+                                ${columnSortState[column.id] ? `<button onclick="event.stopPropagation(); resetColumnSort('${column.id}')" class="text-gray-500 hover:text-red-400 text-xs px-1" title="Сбросить сортировку">✕</button>` : ''}
                                 <button onclick="event.stopPropagation(); openAddCardModal('${column.id}')" class="text-amber-400 hover:text-amber-300 text-lg px-1">➕</button>
                                 <button onclick="event.stopPropagation(); openEditColumnModal('${column.id}')" class="text-gray-400 hover:text-white text-lg px-1">⋮</button>
                             </div>
@@ -1471,6 +1661,7 @@
                                             <div class="text-gray-500 text-xs">${card.author}</div>
                                             ${card.rating ? `<span class="rating-badge ${ratingClass}">⭐ ${card.rating}</span>` : ''}
                                             ${card.watchCount > 0 ? `<span class="watch-count">👁 ${card.watchCount}</span>` : ''}
+                                            ${Object.keys(card.reviews || {}).length > 0 ? `<span class="review-count">💬 ${Object.keys(card.reviews || {}).length}</span>` : ''}
                                         </div>
                                     </div>
                                 `;
@@ -1583,12 +1774,33 @@
                         const watchedColumn = data.backlog.columns.find(col => col.name === WATCHED_COLUMN_NAME);
                         if (watchedColumn && newColumnId === watchedColumn.id && oldColumnId !== watchedColumn.id) {
                             card.watchCount = (card.watchCount || 0) + 1;
+                            // Add watch date to history
+                            if (!card.watchHistory) card.watchHistory = [];
+                            card.watchHistory.push(Date.now());
                         }
                         
                         saveData();
                     }
                 });
             });
+        }
+
+        // Column Sort Functions
+        function toggleColumnSort(columnId) {
+            const currentState = columnSortState[columnId];
+            if (!currentState) {
+                columnSortState[columnId] = 'desc'; // По умолчанию от высокого к низкому
+            } else if (currentState === 'desc') {
+                columnSortState[columnId] = 'asc';
+            } else {
+                columnSortState[columnId] = 'desc';
+            }
+            renderBacklog();
+        }
+        
+        function resetColumnSort(columnId) {
+            delete columnSortState[columnId];
+            renderBacklog();
         }
 
         // Column Modals
@@ -1731,8 +1943,143 @@
                 document.getElementById('editCardTitleInput').value = card.title;
                 document.getElementById('editCardDescInput').value = card.description || '';
                 document.getElementById('editCardRatingInput').value = card.rating || '';
+                
+                // Load watch history
+                renderWatchHistory(card);
+                
+                // Load reviews
+                renderCardReviews(card);
+                
                 document.getElementById('editCardModal').classList.remove('hidden');
                 document.getElementById('editCardModal').classList.add('flex');
+            }
+        }
+        
+        function renderWatchHistory(card) {
+            const watchHistory = card.watchHistory || [];
+            const watchHistorySection = document.getElementById('watchHistorySection');
+            const watchHistoryList = document.getElementById('watchHistoryList');
+            
+            if (watchHistory.length === 0) {
+                watchHistorySection.classList.add('hidden');
+                return;
+            }
+            
+            watchHistorySection.classList.remove('hidden');
+            watchHistoryList.innerHTML = watchHistory.map((timestamp, index) => {
+                const date = new Date(timestamp);
+                return `
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-green-400 font-bold">${index + 1}.</span>
+                        <span class="text-gray-300">${date.toLocaleDateString('ru-RU', { 
+                            day: 'numeric', 
+                            month: 'long', 
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderCardReviews(card) {
+            const userName = getUserName();
+            const reviews = card.reviews || {};
+            const reviewsList = document.getElementById('cardReviewsList');
+            const reviewInputSection = document.getElementById('reviewInputSection');
+            const reviewInput = document.getElementById('cardReviewInput');
+            const deleteReviewBtn = document.getElementById('deleteReviewBtn');
+            const userHasReview = reviews[userName] !== undefined;
+            
+            // Show existing reviews
+            if (Object.keys(reviews).length === 0) {
+                reviewsList.innerHTML = '<p class="text-gray-500 text-xs italic">Пока нет отзывов...</p>';
+            } else {
+                reviewsList.innerHTML = Object.entries(reviews).map(([author, review]) => `
+                    <div class="bg-gray-800/50 rounded-lg p-2 border border-gray-700/50 relative">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-blue-400 text-xs font-semibold">${author}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-600 text-xs">${new Date(review.timestamp).toLocaleDateString('ru-RU')}</span>
+                                ${author === userName ? `<button onclick="editReview()" class="text-gray-400 hover:text-blue-400 transition" title="Редактировать">✏️</button>` : ''}
+                            </div>
+                        </div>
+                        <p class="text-gray-300 text-xs">${review.text}</p>
+                    </div>
+                `).join('');
+            }
+            
+            // Get outside delete button
+            const deleteReviewBtnOutside = document.getElementById('deleteReviewBtnOutside');
+            
+            // Hide input section if user already has a review
+            if (userHasReview) {
+                reviewInputSection.classList.add('hidden');
+                deleteReviewBtn.classList.add('hidden');
+                deleteReviewBtnOutside.classList.remove('hidden');
+            } else {
+                reviewInputSection.classList.remove('hidden');
+                deleteReviewBtn.classList.add('hidden');
+                deleteReviewBtnOutside.classList.add('hidden');
+            }
+            // Always clear input after render
+            reviewInput.value = '';
+        }
+        
+        function editReview() {
+            const userName = getUserName();
+            const card = data.backlog.cards.find(c => c.id === editingCardId);
+            if (!card || !card.reviews || !card.reviews[userName]) return;
+            
+            const reviewInputSection = document.getElementById('reviewInputSection');
+            const reviewInput = document.getElementById('cardReviewInput');
+            const deleteReviewBtn = document.getElementById('deleteReviewBtn');
+            const deleteReviewBtnOutside = document.getElementById('deleteReviewBtnOutside');
+            
+            // Show input section and fill with current review text
+            reviewInputSection.classList.remove('hidden');
+            reviewInput.value = card.reviews[userName].text;
+            deleteReviewBtn.classList.remove('hidden');
+            deleteReviewBtnOutside.classList.add('hidden');
+            reviewInput.focus();
+        }
+        
+        function saveCardReview() {
+            if (!editingCardId) return;
+            const userName = getUserName();
+            const reviewInput = document.getElementById('cardReviewInput');
+            const reviewText = reviewInput.value.trim();
+            
+            if (!reviewText) {
+                alert('Введите текст отзыва!');
+                return;
+            }
+            
+            const card = data.backlog.cards.find(c => c.id === editingCardId);
+            if (card) {
+                if (!card.reviews) card.reviews = {};
+                card.reviews[userName] = {
+                    text: reviewText,
+                    timestamp: Date.now()
+                };
+                saveData();
+                renderCardReviews(card);
+                reviewInput.value = '';
+            }
+        }
+        
+        function deleteCardReview() {
+            if (!editingCardId) return;
+            const userName = getUserName();
+            
+            if (!confirm('Удалить ваш отзыв?')) return;
+            
+            const card = data.backlog.cards.find(c => c.id === editingCardId);
+            if (card && card.reviews && card.reviews[userName]) {
+                delete card.reviews[userName];
+                saveData();
+                renderCardReviews(card);
             }
         }
 
@@ -1809,6 +2156,52 @@
         }
 
         // Beer Rating Methods
+        function toggleBeerFilters() {
+            const panel = document.getElementById('beerFiltersPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        function resetBeerFilters() {
+            beerFilters = {
+                type: '',
+                style: '',
+                filtered: '',
+                country: '',
+                volume: '',
+                alcoholMin: '',
+                alcoholMax: '',
+                ratingMin: '',
+                ratingMax: ''
+            };
+            document.getElementById('beerFilterType').value = '';
+            document.getElementById('beerFilterStyle').value = '';
+            document.getElementById('beerFilterFiltered').value = '';
+            document.getElementById('beerFilterCountry').value = '';
+            document.getElementById('beerFilterVolume').value = '';
+            document.getElementById('beerFilterAlcoholMin').value = '';
+            document.getElementById('beerFilterAlcoholMax').value = '';
+            document.getElementById('beerFilterRatingMin').value = '';
+            document.getElementById('beerFilterRatingMax').value = '';
+            document.getElementById('beerFiltersReset').classList.add('hidden');
+            renderBeerRating();
+        }
+
+        function applyBeerFiltersFromUI() {
+            beerFilters.type = document.getElementById('beerFilterType').value;
+            beerFilters.style = document.getElementById('beerFilterStyle').value;
+            beerFilters.filtered = document.getElementById('beerFilterFiltered').value;
+            beerFilters.country = document.getElementById('beerFilterCountry').value;
+            beerFilters.volume = document.getElementById('beerFilterVolume').value;
+            beerFilters.alcoholMin = document.getElementById('beerFilterAlcoholMin').value;
+            beerFilters.alcoholMax = document.getElementById('beerFilterAlcoholMax').value;
+            beerFilters.ratingMin = document.getElementById('beerFilterRatingMin').value;
+            beerFilters.ratingMax = document.getElementById('beerFilterRatingMax').value;
+            // показать кнопку сброса, если есть фильтры
+            const hasFilters = Object.values(beerFilters).some(v => v !== '');
+            document.getElementById('beerFiltersReset').classList.toggle('hidden', !hasFilters);
+            renderBeerRating();
+        }
+
         function sortBeerBy(sortType) {
             if (beerSortBy === sortType) {
                 beerSortDirection = beerSortDirection === 'asc' ? 'desc' : 'asc';
@@ -1821,10 +2214,34 @@
 
         function renderBeerRating() {
             const tbody = document.getElementById('beerTableBody');
-            const beers = data.beerRating || [];
+            let beers = data.beerRating || [];
             
             // Normalize countries to a uniform flag+name representation
             beers.forEach(b => { b.country = formatCountry(b.country); });
+            
+            // Apply filters
+            beers = beers.filter(beer => {
+                // type
+                if (beerFilters.type && beer.type !== beerFilters.type) return false;
+                // style
+                if (beerFilters.style && beer.style !== beerFilters.style) return false;
+                // filtered
+                if (beerFilters.filtered && beer.filtered !== beerFilters.filtered) return false;
+                // country (normalize for comparison)
+                if (beerFilters.country && getCountryNameForSelect(beer.country) !== beerFilters.country) return false;
+                // volume
+                if (beerFilters.volume && String(beer.volume) !== String(beerFilters.volume)) return false;
+                // alcohol
+                const alcoholVal = parseFloat(beer.alcohol) || 0;
+                if (beerFilters.alcoholMin && alcoholVal < parseFloat(beerFilters.alcoholMin)) return false;
+                if (beerFilters.alcoholMax && alcoholVal > parseFloat(beerFilters.alcoholMax)) return false;
+                // rating
+                const ratings = Object.values(beer.ratings || {});
+                const avgRating = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
+                if (beerFilters.ratingMin && avgRating < parseFloat(beerFilters.ratingMin)) return false;
+                if (beerFilters.ratingMax && avgRating > parseFloat(beerFilters.ratingMax)) return false;
+                return true;
+            });
             
             // Update headers
             ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating'].forEach(field => {
@@ -1847,10 +2264,9 @@
                     case 'name': {
                         const aName = (a.name || '').trim();
                         const bName = (b.name || '').trim();
-                        // сначала латиница, затем кириллица
                         const aLatin = isLatin(aName);
                         const bLatin = isLatin(bName);
-                        if (aLatin !== bLatin) return aLatin ? -1 : 1;
+                        if (aLatin !== bLatin) return beerSortDirection === 'asc' ? (aLatin ? -1 : 1) : (aLatin ? 1 : -1);
                         const cmp = collator.compare(aName, bName);
                         return beerSortDirection === 'asc' ? cmp : -cmp;
                     }
