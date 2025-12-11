@@ -8,14 +8,19 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/leporid" rel="stylesheet">
     <style>
+        html, body {
+            background: #000000;
+        }
         body { 
             font-family: 'Comfortaa', cursive; 
             background: #000000;
             overflow-x: hidden;
+            overscroll-behavior: none;
         }
-        .logo-text { font-family: 'Pacifico', cursive; }
+        .logo-text { font-family: 'Leporid', 'Comfortaa', cursive; }
         
         .bg-dark {
             background: #000000;
@@ -330,6 +335,66 @@
         .star-btn.inactive {
             color: #4b5563;
         }
+
+        /* Half-star picker for beer rating (0.5 step) */
+        .star-picker {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: 10px;
+            user-select: none;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 6px 6px;
+            min-height: 34px;
+            touch-action: pan-x;
+        }
+        #beerStarPicker { min-height: 34px; }
+        .star-unit {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            flex: 0 0 24px;
+            transition: transform 0.12s ease;
+        }
+        .star-unit svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+        .star-base {
+            position: absolute;
+            inset: 0;
+            color: #4b5563; /* gray */
+        }
+        .star-fill {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            width: 0%;
+            color: #fbbf24; /* amber */
+            filter: drop-shadow(0 0 8px rgba(251,191,36,0.25));
+        }
+        .star-dim {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            width: 0%;
+            left: 0%;
+            color: rgba(0,0,0,0.85);
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        .star-hit {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            cursor: pointer;
+        }
+        .star-hit.left { left: 0; }
+        .star-hit.right { right: 0; }
+        .star-picker:hover .star-unit { transform: translateY(-1px); }
         .sortable-header {
             cursor: pointer;
             user-select: none;
@@ -345,14 +410,91 @@
         /* Dropdown arrows in beer filters */
         #beerFiltersPanel select {
             appearance: none;
-            background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-                              linear-gradient(135deg, currentColor 50%, transparent 50%);
-            background-position: calc(100% - 1.1rem) 50%, calc(100% - 0.85rem) 50%;
-            background-size: 6px 6px, 6px 6px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7l5 6 5-6' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
-            padding-right: 2.5rem;
+            background-size: 16px 16px;
+            background-position: calc(100% - 1.15rem) 50%;
+            padding-right: 2.75rem;
         }
-        
+
+        /* Dropdown arrows in beer add/edit modals */
+        #addBeerModal select,
+        #editBeerModal select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7l5 6 5-6' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: 16px 16px;
+            background-position: calc(100% - 1.35rem) 50%;
+            padding-right: 3.1rem;
+        }
+
+        /* Custom select UI for beer filters & beer add/edit modals
+           - opens dropdown BELOW the field (doesn't cover it)
+           - dynamic chevron rotation */
+        .cs { position: relative; }
+        .cs select,
+        .cs .cs-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cs-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-radius: 0.75rem;
+            background: rgb(17 24 39 / 1); /* gray-900 */
+            color: #fff;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .cs-btn:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.85);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+        }
+        .cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-chevron { flex: 0 0 auto; width: 18px; height: 18px; color: #9ca3af; transition: transform 0.18s ease; }
+        .cs.open .cs-chevron { transform: rotate(180deg); }
+        .cs-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            z-index: 100;
+            background: rgba(3, 7, 18, 0.98);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            max-height: 240px;
+            overflow: auto;
+            display: none;
+        }
+        .cs.open .cs-menu { display: block; }
+        .cs-opt {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: rgba(229,231,235,0.95);
+        }
+        .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
+
+        /* Restore vertical spacing between fields in Beer add/edit modals (custom selects) */
+        #addBeerModal .cs,
+        #editBeerModal .cs { margin-bottom: 0.75rem; }
+
         .scroll-mt-24 {
             scroll-margin-top: 8rem;
         }
@@ -363,16 +505,124 @@
         .nav-btn:hover {
             transform: translateY(-2px);
         }
+
+        /* Snow mode */
+        .snow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            /* IMPORTANT: don't cover the page scrollbar on desktop (it can look "frozen") */
+            right: var(--sbw, 0px);
+            pointer-events: none;
+            /* Above all content, but below the sticky header (header has z-50) */
+            z-index: 40;
+            overflow: hidden;
+            /* iOS Safari can flash white on transparent fixed layers; keep a near-transparent black */
+            background: rgba(0, 0, 0, 0.01);
+            transform: translateZ(0);
+        }
+        .snowflake {
+            position: absolute;
+            top: -32px;
+            font-size: 16px;
+            line-height: 1;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 0 10px rgba(255,255,255,0.15);
+            filter: drop-shadow(0 0 6px rgba(59,130,246,0.12));
+            opacity: 0.8;
+            animation-name: snowFall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            will-change: transform;
+        }
+        @keyframes snowFall {
+            from { transform: translate3d(0, -10px, 0) rotate(0deg); }
+            to { transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(360deg); }
+        }
+
+        /* Mobile performance: smaller flakes, less expensive effects */
+        @media (pointer: coarse) {
+            .snowflake {
+                text-shadow: 0 0 6px rgba(255,255,255,0.12);
+                filter: none;
+                opacity: 0.7;
+            }
+        }
+
+        /* Keep header/SVG stable above animated layers (prevents occasional text flicker on mobile) */
+        header { isolation: isolate; }
+        header svg { transform: translateZ(0); }
+
+        .snow-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .snow-switch {
+            position: relative;
+            width: 52px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(31, 41, 55, 0.85);
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.35);
+            transition: background 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .snow-switch input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .snow-thumb {
+            position: absolute;
+            left: 3px;
+            top: 50%;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+            box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            color: rgba(37, 99, 235, 0.9);
+            transform: translate3d(0, -50%, 0);
+            transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.2, 1), color 0.2s ease;
+        }
+        .snow-switch.on {
+            /* Amber/orange like the site theme */
+            background: linear-gradient(135deg, rgba(245,158,11,0.98), rgba(217,119,6,0.95));
+            border-color: rgba(245, 158, 11, 0.55);
+        }
+        .snow-switch.on .snow-thumb {
+            transform: translate3d(22px, -50%, 0);
+            color: rgba(120, 53, 15, 0.95);
+        }
+        .snow-icon {
+            font-size: 18px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(0);
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+        }
     </style>
 </head>
 <body class="bg-dark min-h-screen text-white">
     <div class="particles" id="particles"></div>
+    <div class="snow hidden" id="snow"></div>
 
     <!-- Header with Logo and Navigation -->
     <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
         <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <!-- Logo -->
-            <svg class="w-[200px] md:w-[320px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 540 120">
+            <div class="flex items-center gap-3">
+                <svg class="w-[200px] md:w-[320px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 540 120">
                 <defs>
                     <linearGradient id="beerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" style="stop-color:#fcd34d"/>
@@ -395,9 +645,9 @@
                     </filter>
                 </defs>
                 
-                <text x="220" y="75" text-anchor="middle" class="logo-text" fill="#f59e0b" font-size="52" filter="url(#glow)">КИНОСРЕДА</text>
+                <text x="195" y="78" text-anchor="middle" class="logo-text" fill="#f59e0b" font-size="68" filter="url(#glow)">КИНОСРЕДА</text>
                 
-                <g transform="translate(448, 8)">
+                <g transform="translate(380, 2)">
                     <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
                     <g clip-path="url(#mugClip)" transform="translate(0, 30)">
                         <rect x="0" y="55" height="0" width="50" fill="url(#beerGrad)">
@@ -422,6 +672,15 @@
                     </g>
                 </g>
             </svg>
+                
+                <!-- Snow toggle -->
+                <div class="snow-toggle ml-1">
+                    <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
+                        <input type="checkbox" id="snowToggle" aria-label="Снежинки">
+                        <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+                    </div>
+                </div>
+            </div>
             
             <!-- Navigation Menu -->
             <nav class="flex items-center gap-1 md:gap-4 flex-wrap justify-center">
@@ -856,7 +1115,6 @@
             </select>
             <select id="beerStyleInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
-                <option value="">Сорт</option>
                 <option value="Lager">Lager</option>
                 <option value="Wheat">Wheat</option>
                 <option value="Pilsner">Pilsner</option>
@@ -923,21 +1181,14 @@
 
     <!-- Rate Beer Modal -->
     <div id="rateBeerModal" class="modal fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
-        <div class="bg-gray-950 rounded-2xl max-w-3xl w-full p-6 border border-amber-500/30 mx-4">
-            <h3 class="text-xl font-bold text-amber-400 mb-4">Оценить пиво</h3>
-            <p class="text-white mb-4 text-center font-semibold" id="rateBeerName"></p>
-            <div class="flex flex-nowrap justify-center gap-3 mb-6 overflow-x-auto py-1">
-                <button onclick="rateBeer(1)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(2)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(3)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(4)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(5)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(6)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(7)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(8)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(9)" class="star-btn text-2xl inactive">⭐</button>
-                <button onclick="rateBeer(10)" class="star-btn text-2xl inactive">⭐</button>
-            </div>
+        <div class="bg-gray-950 rounded-2xl max-w-lg w-full p-6 border border-amber-500/30 mx-4">
+            <h3 class="text-xl font-bold text-amber-400 mb-2">Оценить пиво</h3>
+            <p class="text-white mb-3 text-center font-semibold" id="rateBeerName"></p>
+
+            <div class="text-center text-gray-400 text-xs mb-3">Оценка: <span id="rateBeerValue" class="text-amber-300 font-bold">—</span></div>
+
+            <div class="star-picker mb-6 overflow-x-auto py-2" id="beerStarPicker" aria-label="Выбор рейтинга"></div>
+
             <button onclick="closeRateBeerModal()" class="w-full btn-glow bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">
                 Отмена
             </button>
@@ -957,7 +1208,6 @@
             </select>
             <select id="editBeerStyleInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
-                <option value="">Сорт</option>
                 <option value="Lager">Lager</option>
                 <option value="Wheat">Wheat</option>
                 <option value="Pilsner">Pilsner</option>
@@ -1048,6 +1298,123 @@
             }
         }
         createParticles();
+
+        // -----------------
+        // Snow mode
+        // -----------------
+        // Prevent the snow overlay from covering the OS scrollbar area on desktop.
+        (function setScrollbarWidthVar(){
+            try {
+                const sbw = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+                document.documentElement.style.setProperty('--sbw', sbw + 'px');
+                window.addEventListener('resize', () => {
+                    const sbw2 = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+                    document.documentElement.style.setProperty('--sbw', sbw2 + 'px');
+                });
+            } catch(_) {}
+        })();
+
+        const SNOW_LS_KEY = 'snowModeEnabled';
+        let snowTimer = null;
+
+        function setSnowUI(enabled) {
+            const snow = document.getElementById('snow');
+            const sw = document.getElementById('snowSwitch');
+            const cb = document.getElementById('snowToggle');
+            if (!snow || !sw || !cb) return;
+
+            cb.checked = !!enabled;
+            sw.classList.toggle('on', !!enabled);
+            sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+
+            if (enabled) {
+                snow.classList.remove('hidden');
+                startSnow();
+            } else {
+                stopSnow();
+                snow.classList.add('hidden');
+            }
+        }
+
+        // If the tab becomes hidden (mobile: app switch), stop snow to avoid heavy CPU/GPU + freezes.
+        document.addEventListener('visibilitychange', () => {
+            const enabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            if (document.hidden) {
+                stopSnow();
+            } else if (enabled) {
+                startSnow();
+            }
+        });
+
+        function toggleSnow(force = null) {
+            const current = localStorage.getItem(SNOW_LS_KEY) === '1';
+            const next = (force === null) ? !current : !!force;
+            localStorage.setItem(SNOW_LS_KEY, next ? '1' : '0');
+            setSnowUI(next);
+        }
+
+        function startSnow() {
+            const snow = document.getElementById('snow');
+            if (!snow) return;
+            // already running
+            if (snowTimer) return;
+
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+            // Performance: fewer flakes on mobile AND a bit fewer on desktop (prevents scroll jank)
+            const initialCount = isCoarse ? 8 : 14;
+            for (let i = 0; i < initialCount; i++) spawnSnowflake(true);
+
+            const interval = isCoarse ? 780 : 420;
+            snowTimer = setInterval(() => spawnSnowflake(false), interval);
+        }
+
+        function stopSnow() {
+            const snow = document.getElementById('snow');
+            if (snowTimer) {
+                clearInterval(snowTimer);
+                snowTimer = null;
+            }
+            if (snow) {
+                // Remove flakes immediately to free memory/CPU
+                snow.replaceChildren();
+            }
+        }
+
+        function spawnSnowflake(isInitial) {
+            const snow = document.getElementById('snow');
+            if (!snow) return;
+
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+            // Cap amount of flakes in DOM (performance)
+            const maxFlakes = isCoarse ? 22 : 45;
+            if (snow.childElementCount >= maxFlakes) return;
+
+            const flake = document.createElement('div');
+            flake.className = 'snowflake';
+            flake.textContent = '❄';
+
+            const left = Math.random() * 100;
+            const size = isCoarse ? (8 + Math.random() * 6) : (10 + Math.random() * 12);
+            const duration = isCoarse ? (12 + Math.random() * 12) : (9 + Math.random() * 11);
+            const drift = isCoarse ? (Math.random() * 50 - 25).toFixed(0) + 'px' : (Math.random() * 100 - 50).toFixed(0) + 'px';
+            const opacity = isCoarse ? (0.28 + Math.random() * 0.35) : (0.35 + Math.random() * 0.5);
+            const delay = isInitial ? (Math.random() * (isCoarse ? 6 : 4)) : 0;
+
+            flake.style.left = left + 'vw';
+            flake.style.fontSize = size + 'px';
+            flake.style.opacity = String(opacity);
+            flake.style.animationDuration = duration + 's';
+            flake.style.animationDelay = delay + 's';
+            flake.style.setProperty('--drift', drift);
+
+            // remove after animation
+            const removeAfter = (duration + delay + 0.3) * 1000;
+            setTimeout(() => flake.remove(), removeAfter);
+
+            snow.appendChild(flake);
+        }
 
         // State
         let currentDate = new Date();
@@ -1184,7 +1551,24 @@
             // Update user profile in header
             updateUserProfile();
 
+            // Snow switch init
+            const snowEnabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            setSnowUI(snowEnabled);
+            const sw = document.getElementById('snowSwitch');
+            if (sw) {
+                sw.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSnow();
+                    }
+                });
+            }
+
             initFirebase(firebaseConfig);
+
+            // Enhance beer selects UI (filters + add/edit modals)
+            enhanceBeerSelects();
+            syncBeerSelects();
         });
         
         function updateUserProfile() {
@@ -2232,10 +2616,133 @@
             alert(`Фильм "${title}" добавлен в предложения для ${formatDateDisplay(selectedDate)}`);
         }
 
+        // -----------------------------
+        // Custom selects (Beer section)
+        // -----------------------------
+        let _beerSelectsEnhanced = false;
+
+        function getChevronSVG() {
+            return `
+                <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `.trim();
+        }
+
+        function closeAllCustomSelects(exceptEl = null) {
+            document.querySelectorAll('.cs.open').forEach(cs => {
+                if (exceptEl && cs === exceptEl) return;
+                cs.classList.remove('open');
+            });
+        }
+
+        function syncCustomSelect(selectEl) {
+            const cs = selectEl?.closest('.cs');
+            if (!cs) return;
+            const label = cs.querySelector('.cs-label');
+            const menu = cs.querySelector('.cs-menu');
+            const selected = selectEl.options[selectEl.selectedIndex];
+            if (label) label.textContent = (selected ? selected.textContent : '').trim();
+            if (menu) {
+                const val = String(selectEl.value);
+                menu.querySelectorAll('.cs-opt').forEach(btn => {
+                    btn.setAttribute('aria-selected', String(btn.dataset.value) === val ? 'true' : 'false');
+                });
+            }
+        }
+
+        function makeCustomSelect(selectEl) {
+            if (!selectEl) return;
+            if (selectEl.closest('.cs')) {
+                syncCustomSelect(selectEl);
+                return;
+            }
+
+            const cs = document.createElement('div');
+            cs.className = 'cs';
+
+            // Move select into wrapper
+            selectEl.parentNode.insertBefore(cs, selectEl);
+            cs.appendChild(selectEl);
+
+            // Button
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cs-btn';
+            btn.setAttribute('aria-haspopup', 'listbox');
+            btn.innerHTML = `
+                <span class="cs-label"></span>
+                ${getChevronSVG()}
+            `;
+            cs.appendChild(btn);
+
+            // Menu
+            const menu = document.createElement('div');
+            menu.className = 'cs-menu';
+            menu.setAttribute('role', 'listbox');
+
+            // Options
+            Array.from(selectEl.options).forEach(opt => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'cs-opt';
+                item.dataset.value = opt.value;
+                item.setAttribute('role', 'option');
+                item.textContent = opt.textContent;
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncCustomSelect(selectEl);
+                    cs.classList.remove('open');
+                });
+                menu.appendChild(item);
+            });
+            cs.appendChild(menu);
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const willOpen = !cs.classList.contains('open');
+                closeAllCustomSelects(cs);
+                cs.classList.toggle('open', willOpen);
+                syncCustomSelect(selectEl);
+            });
+
+            // Keep in sync on value changes
+            selectEl.addEventListener('change', () => syncCustomSelect(selectEl));
+            syncCustomSelect(selectEl);
+        }
+
+        function enhanceBeerSelects() {
+            const targets = document.querySelectorAll('#beerFiltersPanel select, #addBeerModal select, #editBeerModal select');
+            targets.forEach(makeCustomSelect);
+
+            if (_beerSelectsEnhanced) return;
+            _beerSelectsEnhanced = true;
+
+            // Close on outside click
+            document.addEventListener('click', (e) => {
+                const cs = e.target.closest('.cs');
+                if (!cs) closeAllCustomSelects();
+            });
+
+            // Close on ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeAllCustomSelects();
+            });
+        }
+
+        function syncBeerSelects() {
+            document.querySelectorAll('#beerFiltersPanel select, #addBeerModal select, #editBeerModal select').forEach(syncCustomSelect);
+        }
+
         // Beer Rating Methods
         function toggleBeerFilters() {
             const panel = document.getElementById('beerFiltersPanel');
             panel.classList.toggle('hidden');
+            // ensure custom selects are applied and in sync
+            enhanceBeerSelects();
+            syncBeerSelects();
         }
 
         function resetBeerFilters() {
@@ -2442,6 +2949,13 @@
             document.getElementById('addBeerModal').classList.add('flex');
             document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
+            // default style
+            const styleSel = document.getElementById('beerStyleInput');
+            if (styleSel) styleSel.value = 'Lager';
+
+            // ensure custom selects are applied and in sync
+            enhanceBeerSelects();
+            syncBeerSelects();
         }
 
         function closeAddBeerModal() {
@@ -2480,24 +2994,17 @@
         function openRateBeerModal(beerId) {
             currentBeerIdForRating = beerId;
             const beer = data.beerRating.find(b => String(b.id) === String(beerId));
-            if (beer) {
-                document.getElementById('rateBeerName').textContent = beer.name;
-                document.getElementById('rateBeerModal').classList.remove('hidden');
-                document.getElementById('rateBeerModal').classList.add('flex');
-                
-                const userName = getUserName();
-                const userRating = beer.ratings && beer.ratings[userName];
-                
-                document.querySelectorAll('#rateBeerModal .star-btn').forEach((btn, index) => {
-                    if (userRating && index < userRating) {
-                        btn.classList.add('active');
-                        btn.classList.remove('inactive');
-                    } else {
-                        btn.classList.remove('active');
-                        btn.classList.add('inactive');
-                    }
-                });
-            }
+            if (!beer) return;
+
+            document.getElementById('rateBeerName').textContent = beer.name;
+            document.getElementById('rateBeerModal').classList.remove('hidden');
+            document.getElementById('rateBeerModal').classList.add('flex');
+
+            const userName = getUserName();
+            const userRating = beer.ratings && beer.ratings[userName];
+
+            // Ensure picker renders every time modal opens
+            requestAnimationFrame(() => initBeerStarPicker(userRating));
         }
 
         function closeRateBeerModal() {
@@ -2507,8 +3014,11 @@
         }
 
         function rateBeer(rating) {
+            // Guard against duplicate calls (e.g. swipe "end" firing after a click already saved and closed the modal)
+            if (!currentBeerIdForRating) return;
+
             const userName = getUserName();
-            if (!userName || !currentBeerIdForRating) {
+            if (!userName) {
                 alert('Вы не авторизованы');
                 return;
             }
@@ -2531,13 +3041,17 @@
             }
             document.getElementById('editBeerNameInput').value = beer.name || '';
             document.getElementById('editBeerTypeInput').value = beer.type || 'Светлое';
-            document.getElementById('editBeerStyleInput').value = beer.style || '';
+            document.getElementById('editBeerStyleInput').value = beer.style || 'Lager';
             document.getElementById('editBeerFilteredInput').value = beer.filtered || 'Фильтрованное';
             document.getElementById('editBeerCountryInput').value = getCountryNameForSelect(beer.country);
             document.getElementById('editBeerVolumeInput').value = beer.volume || '0.5';
             document.getElementById('editBeerAlcoholInput').value = beer.alcohol || '';
             document.getElementById('editBeerModal').classList.remove('hidden');
             document.getElementById('editBeerModal').classList.add('flex');
+
+            // ensure custom selects are applied and in sync
+            enhanceBeerSelects();
+            syncBeerSelects();
         }
 
         function closeEditBeerModal() {
@@ -2576,6 +3090,209 @@
                 data.beerRating = data.beerRating.filter(b => b.id !== beerId);
                 saveData();
             }
+        }
+
+        // Half-star picker (0.5 step) for beer rating
+        const STAR_MAX = 10;
+        let beerStarHoverValue = null;
+
+        function getStarSVG() {
+            return `
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                </svg>
+            `.trim();
+        }
+
+        function initBeerStarPicker(currentValue) {
+            const picker = document.getElementById('beerStarPicker');
+            const valueEl = document.getElementById('rateBeerValue');
+            if (!picker || !valueEl) return;
+
+            const val = (typeof currentValue === 'number') ? currentValue : (parseFloat(currentValue) || 0);
+            valueEl.textContent = val ? val.toFixed(1).replace(/\.0$/, '') : '—';
+
+            picker.innerHTML = '';
+            beerStarHoverValue = null;
+
+            for (let i = 1; i <= STAR_MAX; i++) {
+                const unit = document.createElement('div');
+                unit.className = 'star-unit';
+                unit.dataset.star = String(i);
+
+                unit.innerHTML = `
+                    <div class="star-base">${getStarSVG()}</div>
+                    <div class="star-fill">${getStarSVG()}</div>
+                    <div class="star-dim">${getStarSVG()}</div>
+                    <div class="star-hit left" data-val="${(i - 0.5).toFixed(1)}"></div>
+                    <div class="star-hit right" data-val="${i.toFixed(1)}"></div>
+                `;
+
+                // Hover preview
+                unit.querySelectorAll('.star-hit').forEach(hit => {
+                    hit.addEventListener('mouseenter', () => {
+                        const v = parseFloat(hit.dataset.val);
+                        beerStarHoverValue = v;
+                        applyBeerStarVisual(v, true);
+                        valueEl.textContent = v.toFixed(1).replace(/\.0$/, '');
+                    });
+                    hit.addEventListener('click', () => {
+                        const v = parseFloat(hit.dataset.val);
+                        rateBeer(v);
+                    });
+                });
+
+                picker.appendChild(unit);
+            }
+
+            // Use property handler to avoid stacking listeners across modal openings
+            picker.onmouseleave = () => {
+                beerStarHoverValue = null;
+                const fixed = val;
+                applyBeerStarVisual(fixed, false);
+                valueEl.textContent = fixed ? fixed.toFixed(1).replace(/\.0$/, '') : '—';
+            };
+
+            applyBeerStarVisual(val, false);
+            bindBeerStarPickerSwipe(val);
+        }
+
+        function applyBeerStarVisual(value, isHover) {
+            const v = parseFloat(value) || 0;
+            document.querySelectorAll('#beerStarPicker .star-unit').forEach(unit => {
+                const i = parseInt(unit.dataset.star, 10);
+                const fillEl = unit.querySelector('.star-fill');
+                const dimEl = unit.querySelector('.star-dim');
+
+                // Determine fill for each star: 0, 50, 100
+                let fill = 0;
+                if (v >= i) fill = 100;
+                else if (v >= i - 0.5) fill = 50;
+
+                fillEl.style.width = fill + '%';
+
+                // Extra dimming only for hover-preview:
+                // - if rating ends with .5 => dim the remaining half of that star
+                // - dim fully the remaining stars after the hovered value
+                if (isHover) {
+                    if (fill === 50) {
+                        dimEl.style.width = '50%';
+                        dimEl.style.left = '50%';
+                    } else if (fill === 0) {
+                        dimEl.style.width = '100%';
+                        dimEl.style.left = '0%';
+                    } else {
+                        dimEl.style.width = '0%';
+                        dimEl.style.left = '0%';
+                    }
+                } else {
+                    dimEl.style.width = '0%';
+                    dimEl.style.left = '0%';
+                }
+            });
+        }
+
+        // Swipe/drag rating (mobile friendly)
+        function getBeerRatingFromPointerEvent(evt) {
+            const picker = document.getElementById('beerStarPicker');
+            if (!picker) return 0;
+            const rect = picker.getBoundingClientRect();
+
+            const clientX = (evt.touches && evt.touches[0]) ? evt.touches[0].clientX : evt.clientX;
+            const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+
+            const units = Array.from(picker.querySelectorAll('.star-unit'));
+            if (!units.length) return 0;
+
+            // find closest unit by x center
+            let closest = units[0];
+            let closestDist = Infinity;
+            for (const u of units) {
+                const r = u.getBoundingClientRect();
+                const center = (r.left + r.right) / 2;
+                const dist = Math.abs(clientX - center);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closest = u;
+                }
+            }
+
+            const cr = closest.getBoundingClientRect();
+            const isRightHalf = clientX >= (cr.left + cr.width / 2);
+            const star = parseInt(closest.dataset.star, 10);
+            const v = isRightHalf ? star : (star - 0.5);
+            return Math.max(0.5, Math.min(STAR_MAX, v));
+        }
+
+        function bindBeerStarPickerSwipe(baseValue) {
+            const picker = document.getElementById('beerStarPicker');
+            const valueEl = document.getElementById('rateBeerValue');
+            if (!picker || !valueEl) return;
+
+            // Enable swipe/drag only on touch/coarse-pointer devices to avoid double-trigger on desktop.
+            const isCoarse = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window);
+
+            let isDragging = false;
+            let lastV = null;
+
+            const preview = (evt) => {
+                const v = getBeerRatingFromPointerEvent(evt);
+                if (!v) return;
+                lastV = v;
+                applyBeerStarVisual(v, true);
+                valueEl.textContent = v.toFixed(1).replace(/\.0$/, '');
+            };
+
+            const start = (evt) => {
+                isDragging = true;
+                picker.classList.add('select-none');
+                preview(evt);
+                evt.preventDefault?.();
+            };
+
+            const move = (evt) => {
+                if (!isDragging) return;
+                preview(evt);
+                evt.preventDefault?.();
+            };
+
+            const end = () => {
+                if (!isDragging) return;
+                isDragging = false;
+                picker.classList.remove('select-none');
+                if (lastV != null) rateBeer(lastV);
+            };
+
+            // remove previous handlers to avoid stacking
+            picker.onpointerdown = null;
+            picker.onpointermove = null;
+            picker.onpointerup = null;
+            picker.onpointercancel = null;
+            picker.ontouchstart = null;
+            picker.ontouchmove = null;
+            picker.ontouchend = null;
+            picker.ontouchcancel = null;
+
+            if (isCoarse) {
+                picker.onpointerdown = start;
+                picker.onpointermove = move;
+                picker.onpointerup = end;
+                picker.onpointercancel = end;
+
+                // iOS Safari sometimes prefers touch events
+                picker.ontouchstart = (e) => start(e);
+                picker.ontouchmove = (e) => move(e);
+                picker.ontouchend = () => end();
+                picker.ontouchcancel = () => end();
+            }
+
+            // keep existing mouseleave behavior (restore fixed value)
+            picker.onmouseleave = () => {
+                if (isDragging) return;
+                const fixed = baseValue;
+                applyBeerStarVisual(fixed, false);
+                valueEl.textContent = fixed ? fixed.toFixed(1).replace(/\.0$/, '') : '—';
+            };
         }
 
         // Keyboard handlers
