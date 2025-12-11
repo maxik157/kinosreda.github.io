@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Киносреда — Вход</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/leporid" rel="stylesheet">
+    <style>
+        :root {
+            --amber: #f59e0b;
+            --bg: #030307;
+        }
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: var(--bg);
+            color: #fff;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        .logo-text { font-family: 'Leporid', 'Comfortaa', cursive; }
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(245,158,11,.12), transparent 45%),
+                        radial-gradient(circle at 80% 30%, rgba(147,51,234,.1), transparent 40%),
+                        radial-gradient(circle at 30% 80%, rgba(34,197,94,.08), transparent 40%),
+                        #030307;
+            filter: saturate(110%);
+            z-index: 0;
+        }
+        .orb {
+            position: absolute;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: .22;
+        }
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(245,158,11,0.35);
+            border-radius: 50%;
+            animation: floatParticle 20s infinite;
+        }
+        @keyframes floatParticle {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            5% { opacity: .6; }
+            95% { opacity: .6; }
+            100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+        .float { animation: float 4s ease-in-out infinite; }
+        @keyframes pulse-glow {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(245,158,11,.6)); }
+            50% { filter: drop-shadow(0 0 14px rgba(245,158,11,.9)) drop-shadow(0 0 28px rgba(245,158,11,.4)); }
+        }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        .glass {
+            background: rgba(15,15,25,0.75);
+            border: 1px solid rgba(245,158,11,0.25);
+            backdrop-filter: blur(10px);
+        }
+        .input {
+            background: rgba(20,20,30,0.9);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+        .input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); outline: none; }
+        .btn-main {
+            background: linear-gradient(90deg, #f59e0b, #f97316);
+            color: #0b0b0f;
+        }
+        .btn-main:hover { filter: brightness(1.05); }
+    </style>
+</head>
+<body class="relative">
+    <div class="backdrop"></div>
+    <div class="orb" style="top:-40px; left:-60px; background:#f59e0b;"></div>
+    <div class="orb" style="bottom:-80px; right:-120px; background:#8b5cf6;"></div>
+    <div class="particles" id="particles"></div>
+
+    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+        <div class="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
+            <!-- Left: Hero -->
+            <div class="space-y-6 text-center lg:text-left">
+                <svg class="w-full max-w-xl h-32 mx-auto lg:mx-0 float pulse-glow" viewBox="0 0 540 120">
+                    <defs>
+                        <linearGradient id="beerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fcd34d"/>
+                            <stop offset="50%" style="stop-color:#fbbf24"/>
+                            <stop offset="100%" style="stop-color:#d97706"/>
+                        </linearGradient>
+                        <linearGradient id="foamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff"/>
+                            <stop offset="100%" style="stop-color:#fef3c7"/>
+                        </linearGradient>
+                        <clipPath id="mugClip">
+                            <rect x="0" y="0" width="50" height="55" rx="3"/>
+                        </clipPath>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                        </filter>
+                    </defs>
+                    <text x="195" y="78" text-anchor="middle" class="logo-text" fill="#f59e0b" font-size="68" filter="url(#glow)">КИНОСРЕДА</text>
+                    <g transform="translate(380, 2)">
+                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
+                        <g clip-path="url(#mugClip)" transform="translate(0, 30)">
+                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGrad)">
+                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                            </rect>
+                        </g>
+                        <rect x="6" y="30" width="6" height="50" rx="3" fill="rgba(255,255,255,0.3)" opacity="0.5"/>
+                        <g class="foam-animate" transform-origin="25 25" opacity="0">
+                            <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
+                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGrad)"/>
+                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
+                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
+                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
+                        </g>
+                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
+                        <g opacity="0">
+                            <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="1s" fill="freeze"/>
+                            <circle cx="15" cy="55" r="2.5" fill="#fef3c7" opacity="0.6" class="bubble bubble-1"/>
+                            <circle cx="28" cy="65" r="2" fill="#fef3c7" opacity="0.5" class="bubble bubble-2"/>
+                            <circle cx="38" cy="58" r="1.5" fill="#fef3c7" opacity="0.6" class="bubble bubble-3"/>
+                        </g>
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Right: Form -->
+            <div class="glass rounded-2xl p-8 shadow-2xl border border-amber-500/20">
+                <h2 class="text-2xl font-bold text-amber-300 mb-6 text-center">Вход в систему</h2>
+                <div id="errorMessage" class="hidden bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-4 text-sm">
+                    Неверный логин или пароль
+                </div>
+                <form onsubmit="login(event)" class="space-y-4">
+                    <div>
+                        <label class="text-gray-400 text-sm mb-2 block">Логин</label>
+                        <input type="text" id="loginInput" placeholder="Введите логин" required
+                            class="input w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="text-gray-400 text-sm mb-2 block">Пароль</label>
+                        <input type="password" id="passwordInput" placeholder="Введите пароль" required
+                            class="input w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 focus:outline-none transition">
+                    </div>
+                    <button type="submit" 
+                        class="w-full btn-main font-bold py-3 px-4 rounded-xl transition transform hover:scale-[1.01] shadow-lg shadow-amber-500/30">
+                        Войти 🍺
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Particles
+        (function createParticles(){
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 18; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.bottom = '-10px';
+                p.style.animationDelay = Math.random() * 15 + 's';
+                p.style.animationDuration = (18 + Math.random() * 14) + 's';
+                container.appendChild(p);
+            }
+        })();
+
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        let db = null;
+
+        // Инициализация Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.database();
+
+        async function login(e) {
+            e.preventDefault();
+
+            const login = document.getElementById('loginInput').value.trim().toLowerCase();
+            const password = document.getElementById('passwordInput').value;
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+
+            if (!login || !password) {
+                showError();
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Проверка...';
+
+            try {
+                // Получаем данные пользователя из Firebase
+                const snapshot = await db.ref('users/' + login).once('value');
+                const userData = snapshot.val();
+
+                if (userData && userData.password === password) {
+                    // Успешный вход
+                    localStorage.setItem('currentUser', JSON.stringify({
+                        username: login,
+                        name: userData.name
+                    }));
+                    window.location.href = 'index.html';
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError();
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Войти 🍺';
+            }
+        }
+
+        function showError() {
+            const err = document.getElementById('errorMessage');
+            err.classList.remove('hidden');
+            setTimeout(() => err.classList.add('hidden'), 2500);
+        }
+
+        // Проверяем, уже ли авторизован
+        const currentUser = localStorage.getItem('currentUser');
+        if (currentUser) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
