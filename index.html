@@ -1033,7 +1033,7 @@
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3">
             <textarea id="cardDescInput" placeholder="Описание (опционально)..."
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 h-24"></textarea>
-            <input type="number" id="cardRatingInput" placeholder="Рейтинг (0-10)" min="0" max="10" step="0.1"
+            <input type="number" id="cardRatingInput" placeholder="Моя оценка (0-10)" min="0" max="10" step="0.1"
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4">
             <div class="flex gap-2">
                 <button onclick="createCard()" class="flex-1 btn-glow bg-gradient-to-r from-purple-600 to-purple-500 text-white font-bold py-2 px-4 rounded-xl">
@@ -1054,8 +1054,18 @@
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3">
             <textarea id="editCardDescInput" placeholder="Описание..."
                 class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 h-24"></textarea>
-            <input type="number" id="editCardRatingInput" placeholder="Рейтинг (0-10)" min="0" max="10" step="0.1"
-                class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4">
+            <input type="number" id="editCardRatingInput" placeholder="Моя оценка (0-10)" min="0" max="10" step="0.1"
+                class="w-full px-4 py-3 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3">
+
+            <!-- Ratings summary (all users) -->
+            <div id="cardRatingsSection" class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-amber-500/20">
+                <h4 class="text-base font-bold text-amber-300 mb-2 flex items-center gap-2">
+                    <span>⭐</span> Оценки
+                </h4>
+                <div class="text-xs text-gray-400 mb-2">Средняя: <span id="cardAvgRating" class="text-amber-300 font-bold">—</span> • Оценок: <span id="cardRatingsCount" class="text-gray-200 font-semibold">0</span></div>
+                <div id="cardRatingsList" class="text-xs text-gray-300 space-y-1 max-h-24 overflow-y-auto"></div>
+                <div class="text-[11px] text-gray-500 mt-2">Укажите <span class="text-gray-200">свою</span> оценку выше — она добавится/обновится в списке.</div>
+            </div>
             
             <!-- Watch History Section -->
             <div id="watchHistorySection" class="hidden bg-gray-900/50 rounded-xl p-4 mb-4 border border-green-500/20">
@@ -1272,6 +1282,26 @@
         </div>
     </div>
 
+    <!-- Delete Beer Modal -->
+    <div id="deleteBeerModal" class="modal fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+        <div class="bg-gray-950 rounded-2xl max-w-md w-full p-6 border border-amber-500/30 mx-4">
+            <h3 class="text-xl font-bold text-amber-400 mb-2">Удалить пиво?</h3>
+            <p class="text-gray-400 text-sm mb-5">Запись будет удалена из общего рейтинга для всех участников.</p>
+            <div class="bg-black/40 border border-red-500/20 rounded-xl p-3 mb-5">
+                <div class="text-xs text-gray-500 mb-1">Пиво:</div>
+                <div id="deleteBeerName" class="text-white font-semibold"></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeDeleteBeerModal()" class="flex-1 btn-glow bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">
+                    Отмена
+                </button>
+                <button onclick="confirmDeleteBeer()" class="flex-1 btn-glow bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-2 px-4 rounded-xl">
+                    Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scroll to Top Button -->
     <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold p-4 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s;">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1427,6 +1457,7 @@
         let editingCardId = null;
         let currentBeerIdForRating = null;
         let editingBeerId = null;
+        let pendingDeleteBeerId = null;
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
         let beerFilters = {
@@ -1522,6 +1553,42 @@
             return /^[A-Za-z]/.test((text || '').trim());
         }
 
+        // -----------------
+        // Backlog: per-user ratings for movies
+        // -----------------
+        function getCardRatingsObject(card) {
+            if (card && card.ratings && typeof card.ratings === 'object') return card.ratings;
+            // legacy fallback: single numeric rating stored as card.rating
+            const legacy = card ? (parseFloat(card.rating) || 0) : 0;
+            if (legacy > 0) {
+                const k = (card && card.author) ? card.author : 'Автор';
+                return { [k]: legacy };
+            }
+            return {};
+        }
+
+        function getCardAvgRating(card) {
+            const entries = Object.entries(getCardRatingsObject(card));
+            if (!entries.length) return 0;
+            const sum = entries.reduce((s, [, r]) => s + (parseFloat(r) || 0), 0);
+            return sum / entries.length;
+        }
+
+        function getCardRatingsCount(card) {
+            return Object.keys(getCardRatingsObject(card)).length;
+        }
+
+        function buildCardRatingsLine(card, maxItems = 3) {
+            const entries = Object.entries(getCardRatingsObject(card));
+            if (!entries.length) return { short: '', full: '' };
+            // stable order
+            entries.sort((a, b) => collator.compare(a[0], b[0]));
+            const full = entries.map(([n, r]) => `${n}: ${String(r)}`).join(', ');
+            const shown = entries.slice(0, maxItems).map(([n, r]) => `${n}: ${String(r)}`);
+            const more = entries.length > maxItems ? ` +${entries.length - maxItems}` : '';
+            return { short: shown.join(' • ') + more, full };
+        }
+
         // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
@@ -1575,7 +1642,9 @@
             const nav = document.querySelector('header nav');
             const profileHTML = `
                 <div class="flex items-center gap-1 md:gap-3 ml-1 md:ml-4 pl-1 md:pl-4 border-l border-amber-500/30">
-                    <span class="text-amber-400 font-medium text-xs md:text-sm">👤 <span class="hidden sm:inline">${currentUser.name}</span></span>
+                    <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Профиль">
+                        👤 <span class="hidden sm:inline">${currentUser.name}</span>
+                    </a>
                     <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
                         <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
                     </button>
@@ -2058,10 +2127,10 @@
                 
                 // Sort all cards
                 columnCards.sort((a, b) => {
-                    // If manual rating sort is active, use only that
+                    // If manual rating sort is active, use only that (by avg rating)
                     if (sortState === 'asc' || sortState === 'desc') {
-                        const aRating = parseFloat(a.rating) || 0;
-                        const bRating = parseFloat(b.rating) || 0;
+                        const aRating = getCardAvgRating(a);
+                        const bRating = getCardAvgRating(b);
                         return sortState === 'asc' ? aRating - bRating : bRating - aRating;
                     }
                     
@@ -2080,9 +2149,9 @@
                         }
                     }
                     
-                    // Within same watch status/date group, sort by rating (descending - higher rating first)
-                    const aRating = parseFloat(a.rating) || 0;
-                    const bRating = parseFloat(b.rating) || 0;
+                    // Within same watch status/date group, sort by avg rating (descending - higher first)
+                    const aRating = getCardAvgRating(a);
+                    const bRating = getCardAvgRating(b);
                     return bRating - aRating;
                 });
                 
@@ -2105,7 +2174,11 @@
                         </div>
                         <div class="column-cards" data-column-id="${column.id}">
                             ${columnCards.map(card => {
-                                const ratingClass = card.rating >= 7 ? 'rating-high' : card.rating >= 5 ? 'rating-medium' : 'rating-low';
+                                const avg = getCardAvgRating(card);
+                                const ratingsCount = getCardRatingsCount(card);
+                                const ratingClass = avg >= 7 ? 'rating-high' : avg >= 5 ? 'rating-medium' : 'rating-low';
+                                const ratingsLine = buildCardRatingsLine(card, 2);
+                                const avgText = avg ? String(Math.round(avg * 10) / 10).replace(/\.0$/, '') : '';
                                 return `
                                     <div class="backlog-card relative" data-card-id="${card.id}" draggable="true" onclick="openEditCardModal('${card.id}')">
                                         <button onclick="event.stopPropagation(); addMovieFromBacklog('${card.id}')" 
@@ -2118,9 +2191,16 @@
                                         </button>
                                         <div class="text-white font-medium text-sm mb-1 pr-7">${card.title}</div>
                                         ${card.description ? `<div class="text-gray-400 text-xs mb-2">${card.description}</div>` : ''}
+
+                                        ${ratingsCount > 0 ? `
+                                            <div class="text-xs text-gray-400 mb-2 truncate" title="${ratingsLine.full}">
+                                                ${ratingsLine.short}
+                                            </div>
+                                        ` : ''}
+
                                         <div class="flex items-center gap-2 flex-wrap">
                                             <div class="text-gray-500 text-xs">${card.author}</div>
-                                            ${card.rating ? `<span class="rating-badge ${ratingClass}">⭐ ${card.rating}</span>` : ''}
+                                            ${ratingsCount > 0 ? `<span class="rating-badge ${ratingClass}">⭐ ${avgText}${ratingsCount > 1 ? ` (${ratingsCount})` : ''}</span>` : ''}
                                             ${card.watchCount > 0 ? `<span class="watch-count">👁 ${card.watchCount}</span>` : ''}
                                             ${Object.keys(card.reviews || {}).length > 0 ? `<span class="review-count">💬 ${Object.keys(card.reviews || {}).length}</span>` : ''}
                                         </div>
@@ -2386,7 +2466,9 @@
                 columnId: currentColumnId,
                 title: title,
                 description: description,
-                rating: rating,
+                // Per-user ratings (each user can rate). Keep legacy `rating` as avg for sorting/badges.
+                ratings: rating > 0 ? { [userName]: rating } : {},
+                rating: rating > 0 ? rating : 0,
                 author: userName,
                 watchCount: 0,
                 timestamp: Date.now()
@@ -2401,12 +2483,21 @@
             editingCardId = cardId;
             const card = data.backlog.cards.find(c => c.id === cardId);
             if (card) {
+                const userName = getUserName();
+                const myRating = (card.ratings && card.ratings[userName] != null)
+                    ? card.ratings[userName]
+                    : ((card.author === userName) ? (parseFloat(card.rating) || '') : '');
+
                 document.getElementById('editCardTitleInput').value = card.title;
                 document.getElementById('editCardDescInput').value = card.description || '';
-                document.getElementById('editCardRatingInput').value = card.rating || '';
+                // This field now represents *my* rating for this movie.
+                document.getElementById('editCardRatingInput').value = (myRating === 0 ? '' : (myRating ?? ''));
                 
                 // Load watch history
                 renderWatchHistory(card);
+
+                // Load ratings summary
+                renderCardRatings(card);
                 
                 // Load reviews
                 renderCardReviews(card);
@@ -2441,6 +2532,39 @@
                         })}</span>
                     </div>
                 `;
+            }).join('');
+        }
+
+        function renderCardRatings(card) {
+            const avgEl = document.getElementById('cardAvgRating');
+            const cntEl = document.getElementById('cardRatingsCount');
+            const listEl = document.getElementById('cardRatingsList');
+            if (!avgEl || !cntEl || !listEl) return;
+
+            // Ensure ratings object exists and seed legacy rating if needed
+            if (!card.ratings || typeof card.ratings !== 'object') card.ratings = {};
+            const legacy = parseFloat(card.rating) || 0;
+            if (legacy > 0 && card.author && card.ratings[card.author] == null) {
+                card.ratings[card.author] = legacy;
+            }
+
+            const entries = Object.entries(card.ratings || {})
+                .map(([n, r]) => [n, parseFloat(r) || 0])
+                .filter(([, r]) => r > 0);
+            entries.sort((a, b) => collator.compare(a[0], b[0]));
+
+            const avg = entries.length ? (entries.reduce((s, [, r]) => s + r, 0) / entries.length) : 0;
+            avgEl.textContent = avg ? String(Math.round(avg * 10) / 10).replace(/\.0$/, '') : '—';
+            cntEl.textContent = String(entries.length);
+
+            if (!entries.length) {
+                listEl.innerHTML = '<div class="text-gray-500 italic">Пока нет оценок…</div>';
+                return;
+            }
+
+            listEl.innerHTML = entries.map(([name, rating]) => {
+                const rr = String(Math.round(rating * 10) / 10).replace(/\.0$/, '');
+                return `<div class="flex items-center justify-between gap-2"><span class="text-gray-300 truncate">${name}</span><span class="text-amber-300 font-bold">${rr}</span></div>`;
             }).join('');
         }
         
@@ -2553,7 +2677,8 @@
         function saveCardEdit() {
             const title = document.getElementById('editCardTitleInput').value.trim();
             const description = document.getElementById('editCardDescInput').value.trim();
-            const rating = parseFloat(document.getElementById('editCardRatingInput').value) || 0;
+            const myRating = parseFloat(document.getElementById('editCardRatingInput').value) || 0;
+            const userName = getUserName();
             
             if (!title || !editingCardId) return;
             
@@ -2561,7 +2686,28 @@
             if (card) {
                 card.title = title;
                 card.description = description;
-                card.rating = rating;
+
+                // Ensure per-user ratings object exists
+                if (!card.ratings || typeof card.ratings !== 'object') card.ratings = {};
+
+                // Seed legacy rating into per-user ratings once (keeps old data)
+                const legacy = parseFloat(card.rating) || 0;
+                if (legacy > 0 && card.author && card.ratings[card.author] == null) {
+                    card.ratings[card.author] = legacy;
+                }
+
+                // Set/remove my rating
+                if (myRating > 0) {
+                    card.ratings[userName] = myRating;
+                } else {
+                    delete card.ratings[userName];
+                }
+
+                // Recalculate avg rating (kept in legacy `card.rating` for sorting/badges)
+                const vals = Object.values(card.ratings || {}).map(v => parseFloat(v) || 0).filter(v => v > 0);
+                const avg = vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
+                card.rating = avg ? Math.round(avg * 10) / 10 : 0;
+
                 saveData();
                 closeEditCardModal();
             }
@@ -2936,7 +3082,7 @@
                                     ${userRating ? '⭐' : '☆'}
                                 </button>
                                 ${isAuthor ? `<button onclick="event.stopPropagation(); openEditBeerModal('${beer.id}')" class="text-blue-400 hover:text-blue-300" title="Редактировать">✏️</button>` : ''}
-                                ${isAuthor ? `<button onclick="event.stopPropagation(); deleteBeer('${beer.id}')" class="text-red-400 hover:text-red-300" title="Удалить">🗑️</button>` : ''}
+                                ${isAuthor ? `<button onclick="event.stopPropagation(); openDeleteBeerModal('${beer.id}')" class="text-red-400 hover:text-red-300" title="Удалить">🗑️</button>` : ''}
                             </div>
                         </td>
                     </tr>
@@ -3085,11 +3231,34 @@
             }
         }
 
-        function deleteBeer(beerId) {
-            if (confirm('Удалить это пиво из рейтинга?')) {
-                data.beerRating = data.beerRating.filter(b => b.id !== beerId);
-                saveData();
+        function openDeleteBeerModal(beerId) {
+            pendingDeleteBeerId = String(beerId);
+            const beer = data.beerRating.find(b => String(b.id) === String(beerId));
+            const nameEl = document.getElementById('deleteBeerName');
+            if (nameEl) nameEl.textContent = beer ? beer.name : '';
+
+            const modal = document.getElementById('deleteBeerModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
             }
+        }
+
+        function closeDeleteBeerModal() {
+            const modal = document.getElementById('deleteBeerModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+            pendingDeleteBeerId = null;
+        }
+
+        function confirmDeleteBeer() {
+            if (!pendingDeleteBeerId) return;
+            const id = pendingDeleteBeerId;
+            data.beerRating = (data.beerRating || []).filter(b => String(b.id) !== String(id));
+            saveData();
+            closeDeleteBeerModal();
         }
 
         // Half-star picker (0.5 step) for beer rating
@@ -3305,6 +3474,7 @@
                 closeAddBeerModal();
                 closeRateBeerModal();
                 closeEditBeerModal();
+                closeDeleteBeerModal();
             }
             if (e.key === 'Enter') {
                 if (document.getElementById('addColumnModal').classList.contains('flex')) createColumn();
