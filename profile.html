@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Профиль — Киносреда</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.cdnfonts.com/css/leporid" rel="stylesheet">
+
+    <style>
+        html, body {
+            background: #000;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+        body {
+            font-family: 'Comfortaa', cursive;
+            color: #fff;
+        }
+        .logo-text { font-family: 'Leporid', 'Comfortaa', cursive; }
+
+        .bg-dark { background: #000; position: relative; }
+        .bg-dark::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-amber {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.18), 0 0 40px rgba(245, 158, 11, 0.08);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.75), 0 0 22px rgba(245, 158, 11, 0.35);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d97706; }
+
+        .card {
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(245,158,11,0.20);
+            backdrop-filter: blur(8px);
+        }
+
+        .stat-chip {
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable:hover { color: #fbbf24; }
+        .sortable.active { color: #f59e0b; }
+
+        /* Ensure no layout can force horizontal scrolling */
+        .safe-wrap { min-width: 0; }
+    </style>
+</head>
+<body class="bg-dark min-h-screen">
+    <header class="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
+        <div class="container mx-auto max-w-7xl px-3 md:px-4 py-3 flex items-center justify-between gap-3 safe-wrap">
+            <a href="index.html" class="flex items-center gap-3 min-w-0">
+                <div class="text-amber-400 text-glow logo-text text-2xl md:text-3xl whitespace-nowrap">КИНОСРЕДА</div>
+            </a>
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/20 bg-black/40 min-w-0">
+                    <span class="text-amber-400">👤</span>
+                    <span id="profileName" class="text-sm text-white font-semibold truncate"></span>
+                </div>
+                <button onclick="logout()" class="px-3 py-2 rounded-xl text-sm font-semibold border border-red-500/30 text-red-300 hover:text-red-200 hover:border-red-400 hover:bg-red-500/10 transition">
+                    Выйти
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6 md:py-8 safe-wrap">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 safe-wrap">
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
+                <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
+            </div>
+            <a href="index.html" class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 hover:bg-amber-500/10 transition">
+                ← На главную
+            </a>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 safe-wrap">
+            <!-- Summary -->
+            <section class="card rounded-2xl p-5 glow-amber safe-wrap">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-white font-bold">Сводка</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Пива принесено</div>
+                        <div class="text-2xl font-bold text-white" id="statBeerBrought">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Пива в рейтинг добавлено</div>
+                        <div class="text-2xl font-bold text-white" id="statBeerAdded">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Фильмов в бэклог добавлено</div>
+                        <div class="text-2xl font-bold text-white" id="statBacklogAdded">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Фильмов предложено</div>
+                        <div class="text-2xl font-bold text-white" id="statMoviesSuggested">—</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Movie ratings table -->
+            <section class="card rounded-2xl p-5 lg:col-span-2 safe-wrap">
+                <div class="flex items-start justify-between gap-4 mb-3 safe-wrap">
+                    <div class="min-w-0">
+                        <div class="text-white font-bold">Оценки фильмов</div>
+                        <div class="text-xs text-gray-500">Фильмы из бэклога, где вы автор карточки и указали рейтинг</div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-xs text-gray-500">Средний рейтинг</div>
+                        <div class="text-amber-300 font-bold" id="statAvgMovieRating">—</div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-800 bg-black/40 overflow-hidden">
+                    <div class="max-h-[360px] overflow-auto">
+                        <table class="w-full text-sm min-w-[760px]">
+                            <thead class="bg-black/70 sticky top-0">
+                                <tr class="border-b border-gray-800">
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('title')">Фильм <span id="ms-title" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('column')">Колонка <span id="ms-column" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('rating')">Рейтинг <span id="ms-rating" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('views')">Просмотры <span id="ms-views" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('myReview')">Мой отзыв <span id="ms-myReview" class="text-gray-500">↕</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="movieRatingsTable">
+                                <tr><td colspan="5" class="py-6 text-center text-gray-600">Загрузка…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Activity -->
+        <section class="card rounded-2xl p-5 mt-4 safe-wrap">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <div class="text-white font-bold">Активность</div>
+                    <div class="text-xs text-gray-500">Ваши добавления и участие</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-3">
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Подтверждений участия</div>
+                    <div class="text-xl font-bold text-white" id="statAttendances">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Проголосовал(а) за фильмов</div>
+                    <div class="text-xl font-bold text-white" id="statMovieVotes">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Оценено пива</div>
+                    <div class="text-xl font-bold text-white" id="statBeerVotes">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Моих отзывов о фильмах</div>
+                    <div class="text-xl font-bold text-white" id="statMyReviews">—</div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center py-8 text-gray-700 text-xs">
+            <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
+        </footer>
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        let currentUser = null;
+        let db = null;
+
+        // Movie table sort state
+        let movieSortBy = 'rating';
+        let movieSortDir = 'desc';
+        const collator = new Intl.Collator(['ru', 'en'], { sensitivity: 'base', numeric: true, ignorePunctuation: true });
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        function getUserName() {
+            return currentUser ? currentUser.name : '';
+        }
+
+        function safeValues(obj) {
+            if (!obj) return [];
+            return Array.isArray(obj) ? obj : Object.values(obj);
+        }
+
+        function formatColName(columns, columnId) {
+            const col = (columns || []).find(c => String(c.id) === String(columnId));
+            return col ? col.name : '—';
+        }
+
+        function setText(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(val);
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function sortMovieTable(by) {
+            if (movieSortBy === by) {
+                movieSortDir = (movieSortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+                movieSortBy = by;
+                movieSortDir = 'asc';
+            }
+            // Re-render using cached data in window state
+            if (window.__profileCache) {
+                renderMovieRatingsTable(window.__profileCache.cards, window.__profileCache.columns);
+            }
+        }
+
+        function updateMovieSortIndicators() {
+            const fields = ['title','column','rating','views','myReview'];
+            fields.forEach(f => {
+                const span = document.getElementById('ms-' + f);
+                const th = span?.parentElement;
+                if (!span || !th) return;
+                if (movieSortBy === f) {
+                    span.textContent = movieSortDir === 'asc' ? '↑' : '↓';
+                    th.classList.add('active');
+                } else {
+                    span.textContent = '↕';
+                    th.classList.remove('active');
+                }
+            });
+        }
+
+        function renderMovieRatingsTable(cards, columns) {
+            const tbody = document.getElementById('movieRatingsTable');
+            const userName = getUserName();
+
+            const myRated = (cards || [])
+                .filter(c => (c.author === userName) && (parseFloat(c.rating) || 0) > 0)
+                .map(c => {
+                    const colName = formatColName(columns, c.columnId);
+                    const myReview = (c.reviews && c.reviews[userName]) ? 1 : 0;
+                    return {
+                        raw: c,
+                        title: (c.title || '').trim(),
+                        column: colName,
+                        rating: parseFloat(c.rating) || 0,
+                        views: parseInt(c.watchCount || 0, 10) || 0,
+                        myReview,
+                    };
+                });
+
+            if (!myRated.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-600">Пока нет фильмов, где вы указали рейтинг.</td></tr>';
+                setText('statAvgMovieRating', '—');
+                updateMovieSortIndicators();
+                return;
+            }
+
+            const avg = myRated.reduce((s,c) => s + c.rating, 0) / myRated.length;
+            setText('statAvgMovieRating', avg.toFixed(1));
+
+            const dir = movieSortDir === 'asc' ? 1 : -1;
+            myRated.sort((a,b) => {
+                switch (movieSortBy) {
+                    case 'title':
+                        return dir * collator.compare(a.title, b.title);
+                    case 'column':
+                        return dir * collator.compare(a.column, b.column);
+                    case 'rating':
+                        return dir * (a.rating - b.rating);
+                    case 'views':
+                        return dir * (a.views - b.views);
+                    case 'myReview':
+                        return dir * (a.myReview - b.myReview);
+                    default:
+                        return 0;
+                }
+            });
+
+            updateMovieSortIndicators();
+
+            tbody.innerHTML = myRated.map(row => {
+                const c = row.raw;
+                const myReviewMark = row.myReview ? '✅' : '—';
+                return `
+                    <tr class="border-b border-gray-900/70">
+                        <td class="py-3 px-3 text-white font-medium">${escapeHtml(row.title)}</td>
+                        <td class="py-3 px-3 text-gray-400">${escapeHtml(row.column)}</td>
+                        <td class="py-3 px-3 text-amber-300 font-bold">⭐ ${row.rating.toFixed(1).replace(/\.0$/, '')}</td>
+                        <td class="py-3 px-3 text-gray-400">👁 ${row.views}</td>
+                        <td class="py-3 px-3 text-gray-400">${myReviewMark}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadAndRender() {
+            const userName = getUserName();
+
+            const [eventsSnap, backlogSnap, beerSnap] = await Promise.all([
+                db.ref('events').once('value'),
+                db.ref('backlog').once('value'),
+                db.ref('beerRating').once('value')
+            ]);
+
+            const events = eventsSnap.val() || {};
+            const backlog = backlogSnap.val() || { columns: [], cards: [] };
+            const beerRating = beerSnap.val() || [];
+
+            const columns = safeValues(backlog.columns);
+            const cards = safeValues(backlog.cards);
+            const beers = safeValues(beerRating);
+
+            // Cache for re-sorting
+            window.__profileCache = { columns, cards };
+
+            // Beer brought
+            let beerBrought = 0;
+            let attendances = 0;
+            Object.values(events).forEach(ev => {
+                const a = ev?.attendees?.[userName];
+                if (a) {
+                    attendances += 1;
+                    beerBrought += parseInt(a.beer || 0, 10) || 0;
+                }
+            });
+
+            // Movies suggested (in events)
+            let moviesSuggested = 0;
+            let movieVotes = 0;
+            Object.values(events).forEach(ev => {
+                const movies = ev?.movies || {};
+                Object.values(movies).forEach(m => {
+                    if (m?.author === userName) moviesSuggested += 1;
+                    if (m?.votes && m.votes[userName]) movieVotes += 1;
+                });
+            });
+
+            // Backlog cards added
+            const backlogAdded = cards.filter(c => c?.author === userName).length;
+
+            // Beer entries added
+            const beerAdded = beers.filter(b => b?.author === userName).length;
+
+            // Beer votes
+            let beerVotes = 0;
+            beers.forEach(b => {
+                if (b?.ratings && b.ratings[userName] != null) beerVotes += 1;
+            });
+
+            // My reviews
+            let myReviews = 0;
+            cards.forEach(c => {
+                if (c?.reviews && c.reviews[userName]) myReviews += 1;
+            });
+
+            setText('statBeerBrought', beerBrought);
+            setText('statMoviesSuggested', moviesSuggested);
+            setText('statBacklogAdded', backlogAdded);
+            setText('statBeerAdded', beerAdded);
+            setText('statAttendances', attendances);
+            setText('statMovieVotes', movieVotes);
+            setText('statBeerVotes', beerVotes);
+            setText('statMyReviews', myReviews);
+
+            renderMovieRatingsTable(cards, columns);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userDataStr = localStorage.getItem('currentUser');
+            if (!userDataStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = JSON.parse(userDataStr);
+
+            const nameEl = document.getElementById('profileName');
+            if (nameEl) nameEl.textContent = currentUser.name;
+
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+
+            try {
+                await loadAndRender();
+            } catch (e) {
+                console.error('Profile load error', e);
+                document.getElementById('movieRatingsTable').innerHTML = '<tr><td colspan="5" class="py-6 text-center text-red-300">Ошибка загрузки данных профиля.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>
