@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Киносреда</title>
+    <script>
+        // Auth gate: prevent UI flash before redirecting to login
+        (function () {
+            try {
+                const cu = localStorage.getItem('currentUser');
+                if (!cu) {
+                    // Replace to avoid back button returning to protected page
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+            } catch (e) {
+                // If localStorage is blocked, fallback to login
+                location.replace('login.html');
+            }
+        })();
+    </script>
+    <style>
+        /* Hide body until we know the user is authenticated (prevents flicker) */
+        html:not(.authed) body { visibility: hidden; }
+    </style>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -16,10 +37,16 @@
         html, body {
             background: #000000;
         }
+        /* Keep layout width stable when content height changes (prevents slight shrink/jump when scrollbar appears) */
+        html {
+            scrollbar-gutter: stable;
+        }
         body { 
             font-family: 'Comfortaa', cursive; 
             background: #000000;
             overflow-x: hidden;
+            /* Always reserve vertical scrollbar space on desktop to avoid width jumps */
+            overflow-y: scroll;
             overscroll-behavior: none;
         }
         @font-face {
@@ -709,10 +736,10 @@
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-6 relative z-10">
-        <div id="calendarSection" class="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto scroll-mt-24">
+        <div id="calendarSection" class="flex flex-col lg:flex-row lg:flex-nowrap lg:items-start gap-6 max-w-7xl mx-auto scroll-mt-24">
             
             <!-- Left Column - Calendar -->
-            <div class="lg:w-3/5">
+            <div class="lg:w-3/5 lg:flex-[0_0_60%] lg:max-w-[60%] min-w-0">
                 <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 glow-amber slide-in slide-in-delay-1">
                     <div class="flex justify-between items-center mb-5">
                         <button onclick="prevMonth()" class="text-amber-400 hover:text-amber-300 transition p-2 hover:bg-amber-500/10 rounded-full group">
@@ -751,7 +778,7 @@
             </div>
 
             <!-- Right Column - User Info & Event Form -->
-            <div class="lg:w-2/5">
+            <div class="lg:w-2/5 lg:flex-[0_0_40%] lg:max-w-[40%] min-w-0">
                 <!-- Event Details Panel -->
                 <div id="eventPanel" class="hidden slide-in">
                     <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/30 glow-amber">
