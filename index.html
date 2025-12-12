@@ -10,14 +10,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
-    <link rel="dns-prefetch" href="https://fonts.cdnfonts.com">
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
-
-    <!-- Non-blocking Leporid load (improves first paint) -->
-    <link rel="preload" as="style" href="https://fonts.cdnfonts.com/css/leporid" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.cdnfonts.com/css/leporid"></noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&display=swap" rel="stylesheet">
     <style>
         html, body {
             background: #000000;
@@ -28,7 +22,15 @@
             overflow-x: hidden;
             overscroll-behavior: none;
         }
-        .logo-text { font-family: 'Leporid', 'Comfortaa', cursive; }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root { --logo-font: 'Oi'; }
+        .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
         
         .bg-dark {
             background: #000000;
@@ -629,8 +631,8 @@
     <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
         <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
             <!-- Logo -->
-            <div class="flex items-center gap-3">
-                <svg class="w-[200px] md:w-[320px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 540 120">
+            <div class="flex items-center gap-3 pl-2">
+                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
                 <defs>
                     <linearGradient id="beerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                         <stop offset="0%" style="stop-color:#fcd34d"/>
@@ -653,9 +655,9 @@
                     </filter>
                 </defs>
                 
-                <text x="195" y="78" text-anchor="middle" class="logo-text" fill="#f59e0b" font-size="68" filter="url(#glow)">КИНОСРЕДА</text>
+                <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glow)">КИНОСРЕДА</text>
                 
-                <g transform="translate(380, 2)">
+                <g id="logoMug" transform="translate(438, 2)">
                     <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
                     <g clip-path="url(#mugClip)" transform="translate(0, 30)">
                         <rect x="0" y="55" height="0" width="50" fill="url(#beerGrad)">
@@ -1612,6 +1614,64 @@
         // Current user
         let currentUser = null;
 
+        // -----------------
+        // Logo font picker (profile-controlled)
+        // -----------------
+        const LOGO_FONT_LS_KEY = 'logoFontFamily';
+        const LOGO_FONTS = [
+            'Train One',
+            'Rubik Wet Paint',
+            'Rubik Moonrocks',
+            'Rubik Microbe',
+            'Rubik Puddles',
+            'Stick',
+            'Press Start 2P',
+            'Reggae One',
+            'Dela Gothic One',
+            'Amatic SC',
+            'Underdog',
+            'Stalinist One',
+            'Lobster',
+            'Kablammo'
+        ];
+        // Carefully tuned per-font sizes so text fits and mug doesn't overlap.
+        const LOGO_PRESETS = {
+            'Train One': { family: 'Train One', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Wet Paint': { family: 'Rubik Wet Paint', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Moonrocks': { family: 'Rubik Moonrocks', size: 58, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Microbe': { family: 'Rubik Microbe', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Puddles': { family: 'Rubik Puddles', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Stick': { family: 'Stick', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Press Start 2P': { family: 'Press Start 2P', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Reggae One': { family: 'Reggae One', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Dela Gothic One': { family: 'Dela Gothic One', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Amatic SC': { family: 'Amatic SC', size: 78, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+        };
+
+        function getLogoFontChoice() {
+            const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Train One';
+        }
+
+        function applyLogoSettings() {
+            const choice = getLogoFontChoice();
+            const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Train One'];
+            document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
+
+            const t = document.getElementById('logoText');
+            if (t) {
+                t.setAttribute('font-size', String(preset.size));
+                t.setAttribute('textLength', String(preset.textLength));
+                t.setAttribute('y', String(preset.y));
+            }
+            const mug = document.getElementById('logoMug');
+            if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             // Check authorization
@@ -1622,6 +1682,12 @@
             }
             
             currentUser = JSON.parse(userDataStr);
+
+            // Apply logo font selection
+            applyLogoSettings();
+            window.addEventListener('storage', (e) => {
+                if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
+            });
             
             // Update user profile in header
             updateUserProfile();

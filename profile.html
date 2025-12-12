@@ -12,14 +12,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
-    <link rel="dns-prefetch" href="https://fonts.cdnfonts.com">
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet" />
-
-    <!-- Non-blocking Leporid load (improves first paint) -->
-    <link rel="preload" as="style" href="https://fonts.cdnfonts.com/css/leporid" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.cdnfonts.com/css/leporid"></noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&display=swap" rel="stylesheet" />
 
     <style>
         html, body {
@@ -31,7 +25,15 @@
             font-family: 'Comfortaa', cursive;
             color: #fff;
         }
-        .logo-text { font-family: 'Leporid', 'Comfortaa', cursive; }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root { --logo-font: 'Train One'; }
+        .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
 
         .bg-dark { background: #000; position: relative; }
         .bg-dark::before {
@@ -78,19 +80,153 @@
 
         /* Ensure no layout can force horizontal scrolling */
         .safe-wrap { min-width: 0; }
+
+        /* Custom select (same UX as beer filters): opens below, dynamic chevron */
+        .cs { position: relative; }
+        .cs select,
+        .cs .cs-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cs-btn {
+            width: min(220px, 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-radius: 0.75rem;
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .cs-btn:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.85);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+        }
+        .cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-chevron { flex: 0 0 auto; width: 18px; height: 18px; color: #9ca3af; transition: transform 0.18s ease; }
+        .cs.open .cs-chevron { transform: rotate(180deg); }
+        .cs-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            z-index: 100;
+            background: rgba(3, 7, 18, 0.98);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            max-height: 240px;
+            overflow: auto;
+            display: none;
+        }
+        .cs.open .cs-menu { display: block; }
+        .cs-opt {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: rgba(229,231,235,0.95);
+        }
+        .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
     </style>
 </head>
 <body class="bg-dark min-h-screen">
     <header class="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
         <div class="container mx-auto max-w-7xl px-3 md:px-4 py-3 flex items-center justify-between gap-3 safe-wrap">
             <a href="index.html" class="flex items-center gap-3 min-w-0">
-                <div class="text-amber-400 text-glow logo-text text-2xl md:text-3xl whitespace-nowrap">КИНОСРЕДА</div>
+                <svg class="w-[220px] md:w-[320px] h-12 md:h-16" viewBox="0 0 580 120" style="overflow: visible;">
+                    <defs>
+                        <linearGradient id="beerGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fcd34d"/>
+                            <stop offset="50%" style="stop-color:#fbbf24"/>
+                            <stop offset="100%" style="stop-color:#d97706"/>
+                        </linearGradient>
+                        <linearGradient id="foamGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff"/>
+                            <stop offset="100%" style="stop-color:#fef3c7"/>
+                        </linearGradient>
+                        <clipPath id="mugClipProfile">
+                            <rect x="0" y="0" width="50" height="55" rx="3"/>
+                        </clipPath>
+                        <filter id="glowProfile">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowProfile)">КИНОСРЕДА</text>
+
+                    <g id="logoMug" transform="translate(438, 2)">
+                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
+                        <g clip-path="url(#mugClipProfile)" transform="translate(0, 30)">
+                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradProfile)">
+                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                            </rect>
+                        </g>
+                        <rect x="6" y="30" width="6" height="50" rx="3" fill="rgba(255,255,255,0.3)" opacity="0.5"/>
+                        <g opacity="0">
+                            <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
+                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradProfile)"/>
+                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
+                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
+                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
+                        </g>
+                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
+                    </g>
+                </svg>
             </a>
             <div class="flex items-center gap-2 min-w-0">
                 <div class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/20 bg-black/40 min-w-0">
                     <span class="text-amber-400">👤</span>
                     <span id="profileName" class="text-sm text-white font-semibold truncate"></span>
                 </div>
+
+                <!-- Logo font selector (desktop only in header) -->
+                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 220px;">
+                    <div class="cs" id="logoFontCS" style="width: 100%;">
+                        <select id="logoFontSelect" class="cs-native logo-font-select">
+                            <option value="Train One">Train One</option>
+                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                            <option value="Rubik Microbe">Rubik Microbe</option>
+                            <option value="Rubik Puddles">Rubik Puddles</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Reggae One">Reggae One</option>
+                            <option value="Dela Gothic One">Dela Gothic One</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Underdog">Underdog</option>
+                            <option value="Stalinist One">Stalinist One</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Kablammo">Kablammo</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
+
                 <button onclick="logout()" class="px-3 py-2 rounded-xl text-sm font-semibold border border-red-500/30 text-red-300 hover:text-red-200 hover:border-red-400 hover:bg-red-500/10 transition">
                     Выйти
                 </button>
@@ -100,10 +236,42 @@
 
     <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6 md:py-8 safe-wrap">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 safe-wrap">
-            <div class="min-w-0">
-                <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
-                <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
+            <div class="min-w-0 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
+                    <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
+                </div>
+
+                <!-- Mobile logo font selector (shown here on small screens) -->
+                <div class="md:hidden flex-shrink-0" style="width: min(190px, 44vw);">
+                    <div class="cs" id="logoFontCSMobile" style="width: 100%;">
+                        <select id="logoFontSelectMobile" class="cs-native logo-font-select">
+                            <option value="Train One">Train One</option>
+                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                            <option value="Rubik Microbe">Rubik Microbe</option>
+                            <option value="Rubik Puddles">Rubik Puddles</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Reggae One">Reggae One</option>
+                            <option value="Dela Gothic One">Dela Gothic One</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Underdog">Underdog</option>
+                            <option value="Stalinist One">Stalinist One</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Kablammo">Kablammo</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
             </div>
+
             <a href="index.html" class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 hover:bg-amber-500/10 transition">
                 ← На главную
             </a>
@@ -134,6 +302,7 @@
                         <div class="text-2xl font-bold text-white" id="statMoviesSuggested">—</div>
                     </div>
                 </div>
+
             </section>
 
             <!-- Movie ratings table -->
@@ -218,6 +387,160 @@
 
         let currentUser = null;
         let db = null;
+
+        // -----------------
+        // Logo font picker (shared with index.html)
+        // -----------------
+        const LOGO_FONT_LS_KEY = 'logoFontFamily';
+        const LOGO_PRESETS = {
+            'Train One': { family: 'Train One', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Wet Paint': { family: 'Rubik Wet Paint', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Moonrocks': { family: 'Rubik Moonrocks', size: 58, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Microbe': { family: 'Rubik Microbe', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Puddles': { family: 'Rubik Puddles', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Stick': { family: 'Stick', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Press Start 2P': { family: 'Press Start 2P', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Reggae One': { family: 'Reggae One', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Dela Gothic One': { family: 'Dela Gothic One', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Amatic SC': { family: 'Amatic SC', size: 78, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+        };
+
+        function getLogoFontChoice() {
+            const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Train One';
+        }
+
+        function applyLogoSettings() {
+            const choice = getLogoFontChoice();
+            const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Train One'];
+            document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
+
+            const t = document.getElementById('logoText');
+            if (t) {
+                t.setAttribute('font-size', String(preset.size));
+                t.setAttribute('textLength', String(preset.textLength));
+                t.setAttribute('y', String(preset.y));
+            }
+            const mug = document.getElementById('logoMug');
+            if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
+
+            // Restart beer fill animation in profile logo (some browsers don't replay SVG <animate> reliably)
+            restartLogoBeerAnimation();
+        }
+
+        function restartLogoBeerAnimation() {
+            try {
+                const svg = document.querySelector('header svg');
+                // Force reflow/restart of SVG SMIL animations
+                svg?.setCurrentTime?.(0);
+                svg?.unpauseAnimations?.();
+                svg?.pauseAnimations?.();
+                svg?.unpauseAnimations?.();
+            } catch (_) {}
+        }
+
+        // -----------------
+        // Custom select (for logo font)
+        // -----------------
+        function getChevronSVG() {
+            return `
+                <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `.trim();
+        }
+
+        function closeAllCustomSelects(exceptEl = null) {
+            document.querySelectorAll('.cs.open').forEach(cs => {
+                if (exceptEl && cs === exceptEl) return;
+                cs.classList.remove('open');
+                const btn = cs.querySelector('.cs-btn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function syncCustomSelect(selectEl) {
+            const cs = selectEl?.closest('.cs');
+            if (!cs) return;
+            const label = cs.querySelector('.cs-label');
+            const menu = cs.querySelector('.cs-menu');
+            const selected = selectEl.options[selectEl.selectedIndex];
+            if (label) label.textContent = (selected ? selected.textContent : '').trim();
+            if (menu) {
+                const val = String(selectEl.value);
+                menu.querySelectorAll('.cs-opt').forEach(btn => {
+                    btn.setAttribute('aria-selected', String(btn.dataset.value) === val ? 'true' : 'false');
+                });
+            }
+        }
+
+        function makeCustomSelect(selectEl) {
+            if (!selectEl) return;
+            const cs = selectEl.closest('.cs');
+            if (!cs) return;
+
+            const btn = cs.querySelector('.cs-btn');
+            const menu = cs.querySelector('.cs-menu');
+            if (!btn || !menu) return;
+
+            // Build menu options once
+            if (!menu.dataset.built) {
+                menu.innerHTML = '';
+                Array.from(selectEl.options).forEach(opt => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'cs-opt';
+                    item.dataset.value = opt.value;
+                    item.setAttribute('role', 'option');
+                    item.textContent = opt.textContent;
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        selectEl.value = opt.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncCustomSelect(selectEl);
+                        cs.classList.remove('open');
+                        btn.setAttribute('aria-expanded', 'false');
+                    });
+                    menu.appendChild(item);
+                });
+                menu.dataset.built = '1';
+            }
+
+            // Toggle open/close
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const willOpen = !cs.classList.contains('open');
+                closeAllCustomSelects(cs);
+                cs.classList.toggle('open', willOpen);
+                btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                syncCustomSelect(selectEl);
+            });
+
+            selectEl.addEventListener('change', () => syncCustomSelect(selectEl));
+            syncCustomSelect(selectEl);
+        }
+
+        function initLogoFontCustomSelect() {
+            // Build custom selects for both desktop + mobile selectors (if present)
+            const selects = Array.from(document.querySelectorAll('.logo-font-select'));
+            if (!selects.length) return;
+            selects.forEach(sel => makeCustomSelect(sel));
+
+            // Outside click closes
+            document.addEventListener('click', (e) => {
+                const cs = e.target.closest('.cs');
+                if (!cs) closeAllCustomSelects();
+            });
+
+            // ESC closes
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeAllCustomSelects();
+            });
+        }
 
         // Movie table sort state
         let movieSortBy = 'rating';
@@ -429,6 +752,29 @@
                 return;
             }
             currentUser = JSON.parse(userDataStr);
+
+            // Apply logo font selection + bind selector
+            applyLogoSettings();
+            document.querySelectorAll('.logo-font-select').forEach(sel => {
+                sel.value = getLogoFontChoice();
+                sel.addEventListener('change', () => {
+                    localStorage.setItem(LOGO_FONT_LS_KEY, sel.value);
+                    applyLogoSettings();
+                });
+            });
+
+            // Init custom select UI for logo font
+            initLogoFontCustomSelect();
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === LOGO_FONT_LS_KEY) {
+                    applyLogoSettings();
+                    document.querySelectorAll('.logo-font-select').forEach(s => {
+                        s.value = getLogoFontChoice();
+                        syncCustomSelect(s);
+                    });
+                }
+            });
 
             const nameEl = document.getElementById('profileName');
             if (nameEl) nameEl.textContent = currentUser.name;
