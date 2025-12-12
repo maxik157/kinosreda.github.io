@@ -8,8 +8,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.cdnfonts.com">
+
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.cdnfonts.com/css/leporid" rel="stylesheet">
+
+    <!-- Non-blocking Leporid load (improves first paint) -->
+    <link rel="preload" as="style" href="https://fonts.cdnfonts.com/css/leporid" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.cdnfonts.com/css/leporid"></noscript>
     <style>
         html, body {
             background: #000000;
