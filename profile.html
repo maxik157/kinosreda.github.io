@@ -6,6 +6,15 @@
     <title>Профиль — Киносреда</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
+    <script>
+        // Theme gate: apply theme before first paint
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -13,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet" />
 
     <style>
         html, body {
@@ -32,7 +41,52 @@
             font-style: normal;
             font-display: swap;
         }
-        :root { --logo-font: 'Train One'; }
+        :root {
+            --logo-font: 'Train One';
+            /* Theme variables (Beer by default) */
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.10);
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #ffffff;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+
+        /* White theme: make scrollbars and accents white */
+        html[data-theme="white"] ::-webkit-scrollbar-thumb { background: #ffffff; }
+        html[data-theme="white"] ::-webkit-scrollbar-thumb:hover { background: #e5e7eb; }
+
+        /* Minimal overrides so "Белый" theme changes the site accent without breaking layout */
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        .ring-amber-300 { --tw-ring-color: var(--accent-300) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+
         .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
 
         .bg-dark { background: #000; position: relative; }
@@ -50,6 +104,21 @@
         .glow-amber {
             box-shadow: 0 0 20px rgba(245, 158, 11, 0.18), 0 0 40px rgba(245, 158, 11, 0.08);
         }
+        @keyframes pulse-glow {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(245,158,11,.6)); }
+            50% { filter: drop-shadow(0 0 14px rgba(245,158,11,.9)) drop-shadow(0 0 28px rgba(245,158,11,.4)); }
+        }
+        @keyframes pulse-glow-white {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(255,255,255,.55)); }
+            50% { filter: drop-shadow(0 0 14px rgba(255,255,255,.85)) drop-shadow(0 0 28px rgba(255,255,255,.35)); }
+        }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        html[data-theme="white"] .pulse-glow { animation-name: pulse-glow-white; }
+
+        /* Logo mug hover highlight (like main page) */
+        a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(245,158,11,0.55)); }
+        html[data-theme="white"] a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(255,255,255,0.45)); }
+
         .text-glow {
             text-shadow: 0 0 10px rgba(245, 158, 11, 0.75), 0 0 22px rgba(245, 158, 11, 0.35);
         }
@@ -141,13 +210,68 @@
         }
         .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
         .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
+
+        /* -----------------
+           White theme: make ALL amber highlights truly white in Profile
+           ----------------- */
+        html[data-theme="white"] .bg-dark::before {
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 255, 255, 0.04) 0%, transparent 50%) !important;
+        }
+        html[data-theme="white"] .text-glow {
+            text-shadow: 0 0 10px rgba(255,255,255,0.75), 0 0 22px rgba(255,255,255,0.35) !important;
+        }
+        html[data-theme="white"] .glow-amber {
+            box-shadow: 0 0 20px rgba(255,255,255,0.14), 0 0 40px rgba(255,255,255,0.06) !important;
+        }
+        html[data-theme="white"] .card {
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .stat-chip {
+            background: rgba(255,255,255,0.10) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .border-gray-800 {
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .sortable:hover,
+        html[data-theme="white"] .sortable.active {
+            color: #ffffff !important;
+        }
+
+        /* White theme: custom selects (theme + logo font)
+           Use same dark surface as inputs, but white borders and white hover */
+        html[data-theme="white"] .cs-btn {
+            background: rgb(17 24 39 / 1) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-btn:focus {
+            border-color: rgba(255,255,255,0.90) !important;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.16) !important;
+        }
+        html[data-theme="white"] .cs-menu {
+            background: rgba(17, 24, 39, 0.98) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-opt {
+            color: rgba(229,231,235,0.95) !important;
+        }
+        html[data-theme="white"] .cs-opt:hover {
+            background: rgba(255,255,255,0.08) !important;
+            color: #fff !important;
+        }
+        html[data-theme="white"] .cs-opt[aria-selected="true"] {
+            background: rgba(255,255,255,0.12) !important;
+            color: #fff !important;
+        }
     </style>
 </head>
 <body class="bg-dark min-h-screen">
     <header class="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
         <div class="container mx-auto max-w-7xl px-3 md:px-4 py-3 flex items-center justify-between gap-3 safe-wrap">
-            <a href="index.html" class="flex items-center gap-3 min-w-0">
-                <svg class="w-[220px] md:w-[320px] h-12 md:h-16" viewBox="0 0 580 120" style="overflow: visible;">
+            <div class="flex items-center gap-3 min-w-0">
+                <svg class="w-[220px] md:w-[320px] h-12 md:h-16 float pulse-glow" viewBox="0 0 580 120" style="overflow: visible;">
                     <defs>
                         <linearGradient id="beerGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" style="stop-color:#fcd34d"/>
@@ -170,9 +294,12 @@
                         </filter>
                     </defs>
 
-                    <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowProfile)">КИНОСРЕДА</text>
+                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
+                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowProfile)">КИНОСРЕДА</text>
+                    </a>
 
-                    <g id="logoMug" transform="translate(438, 2)">
+                    <a href="roulette.html" aria-label="Пивная рулетка" style="cursor:pointer;">
+                    <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); location.assign('roulette.html');">
                         <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
                         <g clip-path="url(#mugClipProfile)" transform="translate(0, 30)">
                             <rect x="0" y="55" height="0" width="50" fill="url(#beerGradProfile)">
@@ -190,20 +317,38 @@
                         </g>
                         <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
                     </g>
+                    </a>
                 </svg>
-            </a>
+            </div>
             <div class="flex items-center gap-2 min-w-0">
                 <div class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/20 bg-black/40 min-w-0">
                     <span class="text-amber-400">👤</span>
                     <span id="profileName" class="text-sm text-white font-semibold truncate"></span>
                 </div>
 
+                <!-- Theme selector (desktop only in header) -->
+                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 160px;">
+                    <div class="cs" id="themeCS" style="width: 100%;">
+                        <select id="themeSelect" class="cs-native theme-select">
+                            <option value="beer">Пивной</option>
+                            <option value="white">Белый</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
+
                 <!-- Logo font selector (desktop only in header) -->
                 <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 220px;">
                     <div class="cs" id="logoFontCS" style="width: 100%;">
                         <select id="logoFontSelect" class="cs-native logo-font-select">
-                            <option value="Train One">Train One</option>
                             <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Train One">Train One</option>
                             <option value="Rubik Moonrocks">Rubik Moonrocks</option>
                             <option value="Rubik Microbe">Rubik Microbe</option>
                             <option value="Rubik Puddles">Rubik Puddles</option>
@@ -216,6 +361,12 @@
                             <option value="Stalinist One">Stalinist One</option>
                             <option value="Lobster">Lobster</option>
                             <option value="Kablammo">Kablammo</option>
+                            <option value="Comforter">Comforter</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Rampart One">Rampart One</option>
+                            <option value="Rubik Scribble">Rubik Scribble</option>
                         </select>
                         <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
                             <span class="cs-label"></span>
@@ -242,12 +393,28 @@
                     <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
                 </div>
 
-                <!-- Mobile logo font selector (shown here on small screens) -->
-                <div class="md:hidden flex-shrink-0" style="width: min(190px, 44vw);">
+                <!-- Mobile selectors (shown here on small screens) -->
+                <div class="md:hidden flex-shrink-0 flex flex-col items-end gap-2" style="width: min(190px, 44vw);">
+                    <!-- Theme (mobile) -->
+                    <div class="cs" id="themeCSMobile" style="width: 100%;">
+                        <select id="themeSelectMobile" class="cs-native theme-select">
+                            <option value="beer">Пивной</option>
+                            <option value="white">Белый</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+
+                    <!-- Logo font (mobile) -->
                     <div class="cs" id="logoFontCSMobile" style="width: 100%;">
                         <select id="logoFontSelectMobile" class="cs-native logo-font-select">
-                            <option value="Train One">Train One</option>
                             <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Train One">Train One</option>
                             <option value="Rubik Moonrocks">Rubik Moonrocks</option>
                             <option value="Rubik Microbe">Rubik Microbe</option>
                             <option value="Rubik Puddles">Rubik Puddles</option>
@@ -260,6 +427,12 @@
                             <option value="Stalinist One">Stalinist One</option>
                             <option value="Lobster">Lobster</option>
                             <option value="Kablammo">Kablammo</option>
+                            <option value="Comforter">Comforter</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Rampart One">Rampart One</option>
+                            <option value="Rubik Scribble">Rubik Scribble</option>
                         </select>
                         <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
                             <span class="cs-label"></span>
@@ -389,6 +562,18 @@
         let db = null;
 
         // -----------------
+        // Theme picker
+        // -----------------
+        const THEME_LS_KEY = 'siteTheme';
+        function getThemeChoice() {
+            const t = localStorage.getItem(THEME_LS_KEY);
+            return (t === 'white' || t === 'beer') ? t : 'beer';
+        }
+        function applyTheme() {
+            document.documentElement.dataset.theme = getThemeChoice();
+        }
+
+        // -----------------
         // Logo font picker (shared with index.html)
         // -----------------
         const LOGO_FONT_LS_KEY = 'logoFontFamily';
@@ -406,12 +591,18 @@
             'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
             'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
             'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
-            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Comforter': { family: 'Comforter', size: 76, textLength: 395, y: 84, mugX: 438, mugY: 2 },
+            'Pacifico': { family: 'Pacifico', size: 66, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Ruslan Display': { family: 'Ruslan Display', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Caveat': { family: 'Caveat', size: 82, textLength: 395, y: 86, mugX: 438, mugY: 2 },
+            'Rampart One': { family: 'Rampart One', size: 62, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Rubik Scribble': { family: 'Rubik Scribble', size: 52, textLength: 395, y: 80, mugX: 438, mugY: 2 }
         };
 
         function getLogoFontChoice() {
             const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
-            return (saved && LOGO_PRESETS[saved]) ? saved : 'Train One';
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Rubik Wet Paint';
         }
 
         function applyLogoSettings() {
@@ -483,6 +674,13 @@
             const cs = selectEl.closest('.cs');
             if (!cs) return;
 
+            // Do not bind twice
+            if (cs.dataset.bound === '1') {
+                syncCustomSelect(selectEl);
+                return;
+            }
+            cs.dataset.bound = '1';
+
             const btn = cs.querySelector('.cs-btn');
             const menu = cs.querySelector('.cs-menu');
             if (!btn || !menu) return;
@@ -526,7 +724,7 @@
 
         function initLogoFontCustomSelect() {
             // Build custom selects for both desktop + mobile selectors (if present)
-            const selects = Array.from(document.querySelectorAll('.logo-font-select'));
+            const selects = Array.from(document.querySelectorAll('.logo-font-select, .theme-select'));
             if (!selects.length) return;
             selects.forEach(sel => makeCustomSelect(sel));
 
@@ -753,6 +951,17 @@
             }
             currentUser = JSON.parse(userDataStr);
 
+            // Apply theme selection + bind selectors
+            applyTheme();
+            document.querySelectorAll('.theme-select').forEach(sel => {
+                sel.value = getThemeChoice();
+                sel.addEventListener('change', () => {
+                    localStorage.setItem(THEME_LS_KEY, sel.value);
+                    applyTheme();
+                    syncCustomSelect(sel);
+                });
+            });
+
             // Apply logo font selection + bind selector
             applyLogoSettings();
             document.querySelectorAll('.logo-font-select').forEach(sel => {
@@ -760,6 +969,7 @@
                 sel.addEventListener('change', () => {
                     localStorage.setItem(LOGO_FONT_LS_KEY, sel.value);
                     applyLogoSettings();
+                    syncCustomSelect(sel);
                 });
             });
 
@@ -771,6 +981,13 @@
                     applyLogoSettings();
                     document.querySelectorAll('.logo-font-select').forEach(s => {
                         s.value = getLogoFontChoice();
+                        syncCustomSelect(s);
+                    });
+                }
+                if (e.key === THEME_LS_KEY) {
+                    applyTheme();
+                    document.querySelectorAll('.theme-select').forEach(s => {
+                        s.value = getThemeChoice();
                         syncCustomSelect(s);
                     });
                 }

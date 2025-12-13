@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Киносреда — Вход</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+
+    <script>
+        // Theme gate: apply theme before first paint
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
@@ -12,11 +22,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet">
     <style>
         :root {
             --amber: #f59e0b;
             --bg: #030307;
+        }
+        /* Theme-dependent login accents */
+        html[data-theme="white"] {
+            --amber: #ffffff;
         }
         body {
             font-family: 'Comfortaa', cursive;
@@ -32,7 +46,56 @@
             font-style: normal;
             font-display: swap;
         }
-        :root { --logo-font: 'Train One'; }
+        :root {
+            --logo-font: 'Train One';
+            /* Theme variables (Beer by default) */
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.10);
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #ffffff;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+
+        /* Minimal overrides so "Белый" theme changes the site accent without breaking layout */
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+        /* Ensure login logo uses theme accent */
+        text.logo-text { fill: var(--accent-500) !important; }
+
+        /* White theme: inputs and button */
+        html[data-theme="white"] .glass { border-color: rgba(255,255,255,0.30) !important; }
+        html[data-theme="white"] .input { border-color: rgba(255,255,255,0.34) !important; }
+        html[data-theme="white"] .input:focus { border-color: rgba(255,255,255,0.90) !important; box-shadow: 0 0 0 3px rgba(255,255,255,0.18) !important; }
+        html[data-theme="white"] svg rect[stroke],
+        html[data-theme="white"] svg path[stroke] { stroke: rgba(255,255,255,0.85) !important; }
+
         .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
         .backdrop {
             position: fixed;
@@ -79,7 +142,12 @@
             0%,100% { filter: drop-shadow(0 0 6px rgba(245,158,11,.6)); }
             50% { filter: drop-shadow(0 0 14px rgba(245,158,11,.9)) drop-shadow(0 0 28px rgba(245,158,11,.4)); }
         }
+        @keyframes pulse-glow-white {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(255,255,255,.55)); }
+            50% { filter: drop-shadow(0 0 14px rgba(255,255,255,.85)) drop-shadow(0 0 28px rgba(255,255,255,.35)); }
+        }
         .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        html[data-theme="white"] .pulse-glow { animation-name: pulse-glow-white; }
         .glass {
             background: rgba(15,15,25,0.75);
             border: 1px solid rgba(245,158,11,0.25);
@@ -90,9 +158,16 @@
             border: 1px solid rgba(245,158,11,0.25);
         }
         .input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.15); outline: none; }
+        html[data-theme="white"] .input:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.16); }
+
         .btn-main {
             background: linear-gradient(90deg, #f59e0b, #f97316);
             color: #0b0b0f;
+        }
+        html[data-theme="white"] .btn-main {
+            background: linear-gradient(90deg, #ffffff, #e5e7eb);
+            color: #0b0b0f;
+            box-shadow: 0 10px 26px rgba(255,255,255,0.10);
         }
         .btn-main:hover { filter: brightness(1.05); }
     </style>
@@ -213,12 +288,18 @@
             'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
             'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
             'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
-            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Comforter': { family: 'Comforter', size: 76, textLength: 395, y: 84, mugX: 438, mugY: 2 },
+            'Pacifico': { family: 'Pacifico', size: 66, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Ruslan Display': { family: 'Ruslan Display', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Caveat': { family: 'Caveat', size: 82, textLength: 395, y: 86, mugX: 438, mugY: 2 },
+            'Rampart One': { family: 'Rampart One', size: 62, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Rubik Scribble': { family: 'Rubik Scribble', size: 52, textLength: 395, y: 80, mugX: 438, mugY: 2 }
         };
 
         function getLogoFontChoice() {
             const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
-            return (saved && LOGO_PRESETS[saved]) ? saved : 'Train One';
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Rubik Wet Paint';
         }
 
         function applyLogoSettings() {
@@ -241,6 +322,13 @@
 
         // Apply immediately
         applyLogoSettings();
+
+        // Apply theme immediately
+        (function applyTheme(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
         window.addEventListener('storage', (e) => {
             if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
         });

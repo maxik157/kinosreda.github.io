@@ -20,6 +20,12 @@
                 location.replace('login.html');
             }
         })();
+        // Theme gate: apply theme before first paint
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
     </script>
     <style>
         /* Hide body until we know the user is authenticated (prevents flicker) */
@@ -32,7 +38,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet">
     <style>
         html, body {
             background: #000000;
@@ -56,7 +62,157 @@
             font-style: normal;
             font-display: swap;
         }
-        :root { --logo-font: 'Oi'; }
+        :root {
+            --logo-font: 'Oi';
+            /* Theme variables (Beer by default) */
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.10);
+
+            /* Theme-dependent visuals */
+            --glow-box-1: rgba(245,158,11,0.20);
+            --glow-box-2: rgba(245,158,11,0.10);
+            --glow-text-1: rgba(245,158,11,0.80);
+            --glow-text-2: rgba(245,158,11,0.50);
+            --glow-text-3: rgba(245,158,11,0.30);
+            --logo-glow-1: rgba(245,158,11,0.50);
+            --logo-glow-2: rgba(245,158,11,0.80);
+            --logo-glow-3: rgba(245,158,11,0.40);
+            --particle-color: rgba(245,158,11,0.40);
+            --scrollbar-thumb: #f59e0b;
+            --scrollbar-thumb-hover: #d97706;
+        }
+        html[data-theme="white"] {
+            /* White scheme */
+            --accent-200: #ffffff;
+            --accent-300: #e5e7eb;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+
+            --glow-box-1: rgba(255,255,255,0.18);
+            --glow-box-2: rgba(255,255,255,0.08);
+            --glow-text-1: rgba(255,255,255,0.78);
+            --glow-text-2: rgba(255,255,255,0.42);
+            --glow-text-3: rgba(255,255,255,0.22);
+            --logo-glow-1: rgba(255,255,255,0.45);
+            --logo-glow-2: rgba(255,255,255,0.75);
+            --logo-glow-3: rgba(255,255,255,0.35);
+            --particle-color: rgba(255,255,255,0.18);
+            --scrollbar-thumb: #ffffff;
+            --scrollbar-thumb-hover: #e5e7eb;
+        }
+
+        /* Minimal overrides so "Белый" theme changes the site accent without breaking layout */
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        .ring-amber-300 { --tw-ring-color: var(--accent-300) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+
+        /* White theme: override amber gradient elements (Tailwind gradients don't follow CSS vars) */
+        html[data-theme="white"] .wednesday.bg-gradient-to-br {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(229,231,235,0.95)) !important;
+            color: #0b0b0f !important;
+            box-shadow: 0 10px 22px rgba(255,255,255,0.08) !important;
+        }
+        html[data-theme="white"] .wednesday.bg-gradient-to-br:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1), rgba(243,244,246,1)) !important;
+        }
+        /* Movie vote buttons (when voted) */
+        html[data-theme="white"] #moviesList button.bg-gradient-to-br {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            box-shadow: 0 10px 18px rgba(37,99,235,0.20) !important;
+        }
+        /* Beer section primary amber-gradient buttons (Add beer + Apply) */
+        html[data-theme="white"] #beerSection .bg-gradient-to-r.from-amber-600.to-amber-500,
+        html[data-theme="white"] #beerSection .bg-gradient-to-r.from-amber-600.to-amber-500:hover,
+        html[data-theme="white"] #beerSection .bg-gradient-to-r.from-amber-600.to-amber-500:active {
+            background: linear-gradient(90deg, #ffffff, #e5e7eb) !important;
+            color: #0b0b0f !important;
+            box-shadow: 0 10px 26px rgba(255,255,255,0.10) !important;
+        }
+        html[data-theme="white"] #scrollTopBtn {
+            background: linear-gradient(90deg, #ffffff, #e5e7eb) !important;
+            color: #0b0b0f !important;
+            box-shadow: 0 10px 24px rgba(255,255,255,0.10), 0 0 0 1px var(--accent-border-20) !important;
+        }
+
+        /* White theme: past Wednesdays should not be amber */
+        html[data-theme="white"] .wednesday.text-amber-700\/50 { color: rgba(255,255,255,0.65) !important; }
+        html[data-theme="white"] .wednesday.border-amber-900\/20 { border-color: var(--accent-border-30) !important; }
+        html[data-theme="white"] .wednesday.border-amber-900\/20:hover { border-color: var(--accent-border-50) !important; }
+
+        /* White theme: movie vote buttons (both states) */
+        html[data-theme="white"] .movie-vote-btn {
+            background: rgba(37, 99, 235, 0.22) !important;
+            box-shadow: 0 10px 18px rgba(37,99,235,0.10) !important;
+        }
+        html[data-theme="white"] .movie-vote-btn:hover {
+            background: rgba(37, 99, 235, 0.30) !important;
+        }
+        html[data-theme="white"] .movie-vote-btn.voted {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            box-shadow: 0 10px 18px rgba(37,99,235,0.22) !important;
+        }
+
+        /* White theme: Add Beer modal primary button */
+        html[data-theme="white"] #addBeerModal .bg-gradient-to-r.from-amber-600.to-amber-500,
+        html[data-theme="white"] #addBeerModal .bg-gradient-to-r.from-amber-600.to-amber-500:hover,
+        html[data-theme="white"] #addBeerModal .bg-gradient-to-r.from-amber-600.to-amber-500:active {
+            background: linear-gradient(90deg, #ffffff, #e5e7eb) !important;
+            color: #0b0b0f !important;
+            box-shadow: 0 10px 26px rgba(255,255,255,0.10) !important;
+        }
+
+        /* White theme: beer filter inputs focus borders should be white */
+        html[data-theme="white"] #beerFiltersPanel input:focus {
+            border-color: rgba(255,255,255,0.85) !important;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.14) !important;
+        }
+
+        /* White theme: logo mug stroke should match white accent */
+        html[data-theme="white"] #logoMug rect,
+        html[data-theme="white"] #logoMug path {
+            stroke: rgba(255,255,255,0.85) !important;
+        }
+
+        /* White theme: backlog borders */
+        html[data-theme="white"] .backlog-column { border-color: var(--accent-border-30) !important; }
+        html[data-theme="white"] .column-header { border-bottom-color: var(--accent-border-10) !important; }
+
+        /* White theme: custom selects (beer) - keep dark surfaces like inputs, but white accents */
+        html[data-theme="white"] .cs-btn {
+            background: rgb(17 24 39 / 1) !important; /* like bg-gray-900 */
+            color: #ffffff !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-btn:focus {
+            border-color: rgba(255,255,255,0.85) !important;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.16) !important;
+        }
+        html[data-theme="white"] .cs-chevron { color: rgba(229,231,235,0.95) !important; }
+
         .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
         
         .bg-dark {
@@ -91,7 +247,7 @@
             position: absolute;
             width: 3px;
             height: 3px;
-            background: rgba(245, 158, 11, 0.4);
+            background: var(--particle-color);
             border-radius: 50%;
             animation: floatParticle 20s infinite;
         }
@@ -103,10 +259,10 @@
         }
         
         .glow-amber {
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.2), 0 0 40px rgba(245, 158, 11, 0.1);
+            box-shadow: 0 0 20px var(--glow-box-1), 0 0 40px var(--glow-box-2);
         }
         .text-glow {
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.8), 0 0 20px rgba(245, 158, 11, 0.5), 0 0 40px rgba(245, 158, 11, 0.3);
+            text-shadow: 0 0 10px var(--glow-text-1), 0 0 20px var(--glow-text-2), 0 0 40px var(--glow-text-3);
         }
         
         .wednesday { 
@@ -145,10 +301,14 @@
         .float { animation: float 4s ease-in-out infinite; }
         
         @keyframes pulse-glow {
-            0%, 100% { filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5)); }
-            50% { filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.8)) drop-shadow(0 0 30px rgba(245, 158, 11, 0.4)); }
+            0%, 100% { filter: drop-shadow(0 0 5px var(--logo-glow-1)); }
+            50% { filter: drop-shadow(0 0 15px var(--logo-glow-2)) drop-shadow(0 0 30px var(--logo-glow-3)); }
         }
         .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        /* Logo mug as a link to Beer Roulette */
+        a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(245,158,11,0.55)); }
+        html[data-theme="white"] a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(255,255,255,0.45)); }
         
         @keyframes bubble { 
             0% { transform: translateY(0) scale(0); opacity: 0; }
@@ -210,8 +370,8 @@
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #111; }
-        ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #d97706; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
         
         .backlog-board {
             display: flex;
@@ -226,7 +386,7 @@
             max-width: 280px;
             background: rgba(30, 30, 40, 0.8);
             border-radius: 12px;
-            border: 1px solid rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--accent-border-20);
             display: flex;
             flex-direction: column;
             max-height: 500px;
@@ -234,8 +394,8 @@
         }
         
         .backlog-column.drag-over {
-            border-color: #f59e0b;
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+            border-color: var(--accent-500);
+            box-shadow: 0 0 20px var(--glow-box-1);
         }
         
         .backlog-column.column-dragging {
@@ -286,7 +446,7 @@
         
         .backlog-card {
             background: rgba(50, 50, 60, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
             padding: 10px 12px;
             margin-bottom: 8px;
@@ -295,10 +455,14 @@
         }
         
         .backlog-card:hover {
-            border-color: rgba(245, 158, 11, 0.5);
+            border-color: var(--accent-border-50);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
+
+        /* White scheme: make backlog card borders white */
+        html[data-theme="white"] .backlog-card { border-color: var(--accent-border-25); }
+        html[data-theme="white"] .backlog-card:hover { border-color: var(--accent-border-50); }
         
         .backlog-card.dragging {
             opacity: 0.5;
@@ -349,7 +513,7 @@
             transition: all 0.2s;
         }
         .beer-row:hover {
-            background: rgba(245, 158, 11, 0.1);
+            background: var(--accent-soft);
         }
         .beer-type-light {
             background: linear-gradient(135deg, #fcd34d, #fbbf24);
@@ -443,6 +607,9 @@
         .sortable-header.active {
             color: #f59e0b !important;
         }
+        /* White theme: keep sort headers white on hover/active (no amber accent) */
+        html[data-theme="white"] .sortable-header:hover { color: #ffffff !important; }
+        html[data-theme="white"] .sortable-header.active { color: #ffffff !important; }
         
         /* Dropdown arrows in beer filters */
         #beerFiltersPanel select {
@@ -489,11 +656,12 @@
             border-radius: 0.75rem;
             background: rgb(17 24 39 / 1); /* gray-900 */
             color: #fff;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            border: 1px solid var(--accent-border-30);
             padding: 0.5rem 0.75rem;
             font-size: 0.875rem;
             line-height: 1.25rem;
         }
+        html[data-theme="white"] .cs-btn { border-color: var(--accent-border-30); }
         .cs-btn:focus {
             outline: none;
             border-color: rgba(245, 158, 11, 0.85);
@@ -510,13 +678,21 @@
             margin-top: 8px;
             z-index: 100;
             background: rgba(3, 7, 18, 0.98);
-            border: 1px solid rgba(245, 158, 11, 0.25);
+            border: 1px solid var(--accent-border-25);
             border-radius: 0.75rem;
             box-shadow: 0 20px 50px rgba(0,0,0,0.55);
             max-height: 240px;
             overflow: auto;
             display: none;
         }
+        html[data-theme="white"] .cs-menu {
+            background: rgba(17, 24, 39, 0.98); /* keep same dark surface as inputs */
+            color: #fff;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-opt { color: rgba(229,231,235,0.95); }
+        html[data-theme="white"] .cs-opt:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        html[data-theme="white"] .cs-opt[aria-selected="true"] { background: rgba(255,255,255,0.12); color: #fff; }
         .cs.open .cs-menu { display: block; }
         .cs-opt {
             width: 100%;
@@ -635,9 +811,16 @@
             background: linear-gradient(135deg, rgba(245,158,11,0.98), rgba(217,119,6,0.95));
             border-color: rgba(245, 158, 11, 0.55);
         }
+        html[data-theme="white"] .snow-switch.on {
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+            border-color: rgba(255,255,255,0.55);
+        }
         .snow-switch.on .snow-thumb {
             transform: translate3d(22px, -50%, 0);
             color: rgba(120, 53, 15, 0.95);
+        }
+        html[data-theme="white"] .snow-switch.on .snow-thumb {
+            color: rgba(37, 99, 235, 0.9);
         }
         .snow-icon {
             font-size: 18px;
@@ -684,7 +867,8 @@
                 
                 <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glow)">КИНОСРЕДА</text>
                 
-                <g id="logoMug" transform="translate(438, 2)">
+                <a href="roulette.html" target="_self" aria-label="Пивная рулетка">
+                <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); location.assign('roulette.html');">
                     <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
                     <g clip-path="url(#mugClip)" transform="translate(0, 30)">
                         <rect x="0" y="55" height="0" width="50" fill="url(#beerGrad)">
@@ -708,6 +892,7 @@
                         <circle cx="38" cy="58" r="1.5" fill="#fef3c7" opacity="0.6" class="bubble bubble-3"/>
                     </g>
                 </g>
+                </a>
             </svg>
                 
                 <!-- Snow toggle -->
@@ -717,6 +902,7 @@
                         <div class="snow-thumb"><span class="snow-icon">❄</span></div>
                     </div>
                 </div>
+
             </div>
             
             <!-- Navigation Menu -->
@@ -864,10 +1050,16 @@
         <div id="beerSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
             <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in">
                 <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-3 flex-wrap">
                         <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
                             <span class="text-3xl">🍺</span> Рейтинг пива
                         </h2>
+
+                        <!-- Search (by beer name) -->
+                        <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
+                            oninput="setBeerSearch(this.value)"
+                            class="w-full sm:w-64 md:w-72 px-3 py-2 rounded-xl bg-gray-900/70 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm" />
+
                         <button onclick="toggleBeerFilters()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition">
                             Фильтры
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -876,7 +1068,6 @@
                         </button>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="resetBeerFilters()" class="hidden text-sm px-3 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition" id="beerFiltersReset">Сбросить</button>
                         <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
                             ➕ Добавить пиво
                         </button>
@@ -1340,7 +1531,7 @@
     </div>
 
     <!-- Scroll to Top Button -->
-    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold p-4 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s;">
+    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold p-4 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s; box-shadow: 0 10px 24px var(--glow-box-2), 0 0 0 1px var(--accent-border-20);">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
         </svg>
@@ -1497,6 +1688,7 @@
         let pendingDeleteBeerId = null;
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
+        let beerSearchQuery = '';
         let beerFilters = {
             type: '',
             style: '',
@@ -1645,6 +1837,14 @@
         // Logo font picker (profile-controlled)
         // -----------------
         const LOGO_FONT_LS_KEY = 'logoFontFamily';
+
+        // -----------------
+        // Theme picker (profile-controlled)
+        // -----------------
+        const THEME_LS_KEY = 'siteTheme';
+        function applyTheme() {
+            document.documentElement.dataset.theme = localStorage.getItem(THEME_LS_KEY) || 'beer';
+        }
         const LOGO_FONTS = [
             'Train One',
             'Rubik Wet Paint',
@@ -1659,7 +1859,13 @@
             'Underdog',
             'Stalinist One',
             'Lobster',
-            'Kablammo'
+            'Kablammo',
+            'Comforter',
+            'Pacifico',
+            'Ruslan Display',
+            'Caveat',
+            'Rampart One',
+            'Rubik Scribble'
         ];
         // Carefully tuned per-font sizes so text fits and mug doesn't overlap.
         const LOGO_PRESETS = {
@@ -1676,12 +1882,18 @@
             'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
             'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
             'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
-            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Comforter': { family: 'Comforter', size: 76, textLength: 395, y: 84, mugX: 438, mugY: 2 },
+            'Pacifico': { family: 'Pacifico', size: 66, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Ruslan Display': { family: 'Ruslan Display', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Caveat': { family: 'Caveat', size: 82, textLength: 395, y: 86, mugX: 438, mugY: 2 },
+            'Rampart One': { family: 'Rampart One', size: 62, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Rubik Scribble': { family: 'Rubik Scribble', size: 52, textLength: 395, y: 80, mugX: 438, mugY: 2 }
         };
 
         function getLogoFontChoice() {
             const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
-            return (saved && LOGO_PRESETS[saved]) ? saved : 'Train One';
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Rubik Wet Paint';
         }
 
         function applyLogoSettings() {
@@ -1710,10 +1922,14 @@
             
             currentUser = JSON.parse(userDataStr);
 
+            // Apply theme selection
+            applyTheme();
+
             // Apply logo font selection
             applyLogoSettings();
             window.addEventListener('storage', (e) => {
                 if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
+                if (e.key === THEME_LS_KEY) applyTheme();
             });
             
             // Update user profile in header
@@ -2023,7 +2239,7 @@
                     return `
                         <div class="bg-gray-800/30 rounded-lg p-2.5 flex items-center gap-2 border ${isLeader ? 'border-amber-500/50 glow-amber' : 'border-gray-700/30'} transition-all hover:bg-gray-800/50">
                             <button onclick="voteMovie('${id}')" 
-                                class="w-10 h-10 rounded-lg ${hasVoted ? 'bg-gradient-to-br from-amber-500 to-amber-600 shadow shadow-amber-500/30' : 'bg-gray-700/50 hover:bg-gray-600/50'} flex flex-col items-center justify-center transition-all transform hover:scale-105">
+                                class="movie-vote-btn w-10 h-10 rounded-lg ${hasVoted ? 'voted bg-gradient-to-br from-amber-500 to-amber-600 shadow shadow-amber-500/30' : 'bg-gray-700/50 hover:bg-gray-600/50'} flex flex-col items-center justify-center transition-all transform hover:scale-105">
                                 <span class="text-sm">${hasVoted ? '👍' : '👆'}</span>
                                 <span class="text-xs text-white font-bold">${votes.length}</span>
                             </button>
@@ -3004,6 +3220,10 @@
                 ratingMin: '',
                 ratingMax: ''
             };
+            beerSearchQuery = '';
+            const searchEl = document.getElementById('beerSearchInput');
+            if (searchEl) searchEl.value = '';
+
             document.getElementById('beerFilterType').value = '';
             document.getElementById('beerFilterStyle').value = '';
             document.getElementById('beerFilterFiltered').value = '';
@@ -3013,7 +3233,11 @@
             document.getElementById('beerFilterAlcoholMax').value = '';
             document.getElementById('beerFilterRatingMin').value = '';
             document.getElementById('beerFilterRatingMax').value = '';
-            document.getElementById('beerFiltersReset').classList.add('hidden');
+            renderBeerRating();
+        }
+
+        function setBeerSearch(q) {
+            beerSearchQuery = (q || '').toString().trim().toLowerCase();
             renderBeerRating();
         }
 
@@ -3027,9 +3251,7 @@
             beerFilters.alcoholMax = document.getElementById('beerFilterAlcoholMax').value;
             beerFilters.ratingMin = document.getElementById('beerFilterRatingMin').value;
             beerFilters.ratingMax = document.getElementById('beerFilterRatingMax').value;
-            // показать кнопку сброса, если есть фильтры
-            const hasFilters = Object.values(beerFilters).some(v => v !== '');
-            document.getElementById('beerFiltersReset').classList.toggle('hidden', !hasFilters);
+            // если есть фильтры/поиск — показываем сброс только внутри панели фильтров
             renderBeerRating();
         }
 
@@ -3052,6 +3274,11 @@
             
             // Apply filters
             beers = beers.filter(beer => {
+                // search by name
+                if (beerSearchQuery) {
+                    const nm = (beer.name || '').toString().toLowerCase();
+                    if (!nm.includes(beerSearchQuery)) return false;
+                }
                 // type
                 if (beerFilters.type && beer.type !== beerFilters.type) return false;
                 // style
@@ -3143,7 +3370,8 @@
             });
             
             if (sortedBeers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-600 py-8">Пока нет пива в рейтинге</td></tr>';
+                const msg = beerSearchQuery ? 'Такое пиво не найдено' : 'Пока нет пива в рейтинге';
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-gray-600 py-8">${msg}</td></tr>`;
                 return;
             }
             
@@ -3318,7 +3546,7 @@
             
             if (!name || !alcohol || !editingBeerId) return;
             
-            const beer = data.beerRating.find(b => b.id === editingBeerId);
+            const beer = data.beerRating.find(b => String(b.id) === String(editingBeerId));
             if (beer) {
                 beer.name = name;
                 beer.type = type;
