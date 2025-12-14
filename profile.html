@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Профиль — Киносреда</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+    <script>
+        // Theme gate: apply theme before first paint
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <!-- Logo font: load selected font from Google Fonts (per-user) -->
+    <script>
+        // Logo font gate: avoid logo flash + load selected Google Font
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
+
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        // No flash: show logo text ONLY after the chosen font is actually loaded
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                window.__loadLogoFont = waitForFont;
+                waitForFont(fam);
+            } catch(_) {
+                window.__loadLogoFont = waitForFont;
+                markReady();
+            }
+        })();
+    </script>
+
+    <style>
+        /* Hide only the logo text until the chosen logo font is loaded */
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
+        html, body {
+            background: #000;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+        body {
+            font-family: 'Comfortaa', cursive;
+            color: #fff;
+        }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root {
+            --logo-font: 'Rubik Wet Paint';
+            /* Theme variables (Beer by default) */
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.10);
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #ffffff;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+
+        /* White theme: make scrollbars and accents white */
+        html[data-theme="white"] ::-webkit-scrollbar-thumb { background: #ffffff; }
+        html[data-theme="white"] ::-webkit-scrollbar-thumb:hover { background: #e5e7eb; }
+
+        /* Minimal overrides so "Белый" theme changes the site accent without breaking layout */
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        .ring-amber-300 { --tw-ring-color: var(--accent-300) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+
+        .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+
+        .bg-dark { background: #000; position: relative; }
+        .bg-dark::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(245, 158, 11, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-amber {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.18), 0 0 40px rgba(245, 158, 11, 0.08);
+        }
+        @keyframes pulse-glow {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(245,158,11,.6)); }
+            50% { filter: drop-shadow(0 0 14px rgba(245,158,11,.9)) drop-shadow(0 0 28px rgba(245,158,11,.4)); }
+        }
+        @keyframes pulse-glow-white {
+            0%,100% { filter: drop-shadow(0 0 6px rgba(255,255,255,.55)); }
+            50% { filter: drop-shadow(0 0 14px rgba(255,255,255,.85)) drop-shadow(0 0 28px rgba(255,255,255,.35)); }
+        }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+        html[data-theme="white"] .pulse-glow { animation-name: pulse-glow-white; }
+
+        /* Logo mug hover highlight (like main page) */
+        a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(245,158,11,0.55)); }
+        html[data-theme="white"] a:hover #logoMug { filter: drop-shadow(0 0 10px rgba(255,255,255,0.45)); }
+
+        /* Snow overlay + switch (same as main) */
+        .snow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: var(--sbw, 0px);
+            bottom: 0;
+            pointer-events: none;
+            z-index: 40;
+            overflow: hidden;
+            background: rgba(0,0,0,0.01);
+            transform: translateZ(0);
+        }
+        .snowflake {
+            position: absolute;
+            top: -32px;
+            font-size: 16px;
+            line-height: 1;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 0 10px rgba(255,255,255,0.15);
+            filter: drop-shadow(0 0 6px rgba(59,130,246,0.12));
+            opacity: 0.8;
+            animation-name: snowFall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            will-change: transform;
+        }
+        @keyframes snowFall {
+            from { transform: translate3d(0, -10px, 0) rotate(0deg); }
+            to { transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(360deg); }
+        }
+        @media (pointer: coarse) {
+            .snowflake { text-shadow: 0 0 6px rgba(255,255,255,0.12); filter: none; opacity: 0.7; }
+        }
+
+        .snow-toggle { display: inline-flex; align-items: center; gap: 10px; }
+        .snow-switch {
+            position: relative;
+            width: 52px;
+            height: 30px;
+            border-radius: 999px;
+            background: rgba(31, 41, 55, 0.85);
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.35);
+            transition: background 0.2s ease, border-color 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        .snow-switch input { position: absolute; opacity: 0; pointer-events: none; }
+        .snow-thumb {
+            position: absolute;
+            left: 3px;
+            top: 50%;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+            box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            color: rgba(37, 99, 235, 0.9);
+            transform: translate3d(0, -50%, 0);
+            transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.2, 1), color 0.2s ease;
+        }
+        .snow-switch.on {
+            background: linear-gradient(135deg, rgba(245,158,11,0.98), rgba(217,119,6,0.95));
+            border-color: rgba(245, 158, 11, 0.55);
+        }
+        html[data-theme="white"] .snow-switch.on {
+            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+            border-color: rgba(255,255,255,0.55);
+        }
+        .snow-switch.on .snow-thumb { transform: translate3d(22px, -50%, 0); color: rgba(120, 53, 15, 0.95); }
+        html[data-theme="white"] .snow-switch.on .snow-thumb { color: rgba(37, 99, 235, 0.9); }
+        .snow-icon {
+            font-size: 18px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.75), 0 0 22px rgba(245, 158, 11, 0.35);
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d97706; }
+
+        .card {
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(245,158,11,0.20);
+            backdrop-filter: blur(8px);
+        }
+
+        .stat-chip {
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.25);
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        .sortable:hover { color: #fbbf24; }
+        .sortable.active { color: #f59e0b; }
+
+        /* Ensure no layout can force horizontal scrolling */
+        .safe-wrap { min-width: 0; }
+
+        /* Custom select (same UX as beer filters): opens below, dynamic chevron */
+        .cs { position: relative; }
+        .cs select,
+        .cs .cs-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cs-btn {
+            width: min(220px, 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-radius: 0.75rem;
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            border: 1px solid var(--accent-border-30);
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .cs-btn:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.85);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.15);
+        }
+        .cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-chevron { flex: 0 0 auto; width: 18px; height: 18px; color: #9ca3af; transition: transform 0.18s ease; }
+        .cs.open .cs-chevron { transform: rotate(180deg); }
+        .cs-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            z-index: 100;
+            background: rgba(3, 7, 18, 0.98);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            max-height: 240px;
+            overflow: auto;
+            display: none;
+        }
+        .cs.open .cs-menu { display: block; }
+        .cs-opt {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: rgba(229,231,235,0.95);
+        }
+        .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
+
+        /* Beer theme: make select button text match dropdown option text (neutral like the list) */
+        html[data-theme="beer"] .cs-btn {
+            border-color: var(--accent-border-30);
+            color: rgba(229,231,235,0.95);
+        }
+        html[data-theme="beer"] .cs-label { color: rgba(229,231,235,0.95); }
+        html[data-theme="beer"] .cs-chevron { color: rgba(229,231,235,0.85); }
+        html[data-theme="beer"] .cs-menu { border-color: var(--accent-border-30); }
+        html[data-theme="beer"] .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        html[data-theme="beer"] .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
+
+        /* -----------------
+           White theme: make ALL amber highlights truly white in Profile
+           ----------------- */
+        html[data-theme="white"] .bg-dark::before {
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 255, 255, 0.04) 0%, transparent 50%) !important;
+        }
+        html[data-theme="white"] .text-glow {
+            text-shadow: 0 0 10px rgba(255,255,255,0.75), 0 0 22px rgba(255,255,255,0.35) !important;
+        }
+        html[data-theme="white"] .glow-amber {
+            box-shadow: 0 0 20px rgba(255,255,255,0.14), 0 0 40px rgba(255,255,255,0.06) !important;
+        }
+        html[data-theme="white"] .card {
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .stat-chip {
+            background: rgba(255,255,255,0.10) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .border-gray-800 {
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .sortable:hover,
+        html[data-theme="white"] .sortable.active {
+            color: #ffffff !important;
+        }
+
+        /* White theme: custom selects (theme + logo font)
+           Use same dark surface as inputs, but white borders and white hover */
+        html[data-theme="white"] .cs-btn {
+            background: rgb(17 24 39 / 1) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-btn:focus {
+            border-color: rgba(255,255,255,0.90) !important;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.16) !important;
+        }
+        html[data-theme="white"] .cs-menu {
+            background: rgba(17, 24, 39, 0.98) !important;
+            border-color: var(--accent-border-30) !important;
+        }
+        html[data-theme="white"] .cs-opt {
+            color: rgba(229,231,235,0.95) !important;
+        }
+        html[data-theme="white"] .cs-opt:hover {
+            background: rgba(255,255,255,0.08) !important;
+            color: #fff !important;
+        }
+        html[data-theme="white"] .cs-opt[aria-selected="true"] {
+            background: rgba(255,255,255,0.12) !important;
+            color: #fff !important;
+        }
+    </style>
+</head>
+<body class="bg-dark min-h-screen">
+    <div class="snow hidden" id="snow"></div>
+    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
+        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4 safe-wrap">
+            <div class="flex items-center gap-3 pl-2 min-w-0">
+                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
+                    <defs>
+                        <linearGradient id="beerGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fcd34d"/>
+                            <stop offset="50%" style="stop-color:#fbbf24"/>
+                            <stop offset="100%" style="stop-color:#d97706"/>
+                        </linearGradient>
+                        <linearGradient id="foamGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff"/>
+                            <stop offset="100%" style="stop-color:#fef3c7"/>
+                        </linearGradient>
+                        <clipPath id="mugClipProfile">
+                            <rect x="0" y="0" width="50" height="55" rx="3"/>
+                        </clipPath>
+                        <filter id="glowProfile">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
+                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowProfile)">КИНОСРЕДА</text>
+                    </a>
+
+                    <a href="roulette.html" aria-label="Пивная рулетка" style="cursor:pointer;">
+                    <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); location.assign('roulette.html');">
+                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
+                        <g clip-path="url(#mugClipProfile)" transform="translate(0, 30)">
+                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradProfile)">
+                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                            </rect>
+                        </g>
+                        <rect x="6" y="30" width="6" height="50" rx="3" fill="rgba(255,255,255,0.3)" opacity="0.5"/>
+                        <g opacity="0">
+                            <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
+                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradProfile)"/>
+                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
+                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
+                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
+                        </g>
+                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
+                    </g>
+                    </a>
+                </svg>
+
+                <!-- Snow toggle (same as main) -->
+                <div class="snow-toggle ml-1">
+                    <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
+                        <input type="checkbox" id="snowToggle" aria-label="Снежинки">
+                        <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 min-w-0 flex-wrap justify-center">
+
+                <!-- Theme selector (desktop only in header) -->
+                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 160px;">
+                    <div class="cs" id="themeCS" style="width: 100%;">
+                        <select id="themeSelect" class="cs-native theme-select">
+                            <option value="beer">Пивной</option>
+                            <option value="white">Белый</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
+
+                <!-- Logo font selector (desktop only in header) -->
+                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 220px;">
+                    <div class="cs" id="logoFontCS" style="width: 100%;">
+                        <select id="logoFontSelect" class="cs-native logo-font-select">
+                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Train One">Train One</option>
+                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                            <option value="Rubik Microbe">Rubik Microbe</option>
+                            <option value="Rubik Puddles">Rubik Puddles</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Reggae One">Reggae One</option>
+                            <option value="Dela Gothic One">Dela Gothic One</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Underdog">Underdog</option>
+                            <option value="Stalinist One">Stalinist One</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Kablammo">Kablammo</option>
+                            <option value="Comforter">Comforter</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Rampart One">Rampart One</option>
+                            <option value="Rubik Scribble">Rubik Scribble</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
+
+                <!-- Name now right before logout -->
+                <div class="hidden sm:flex items-center gap-2 min-w-0">
+                    <span class="text-amber-400">👤</span>
+                    <span id="profileName" class="text-sm text-amber-400 font-medium truncate"></span>
+                </div>
+
+                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
+                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6 md:py-8 safe-wrap">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 safe-wrap">
+            <div class="min-w-0 flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
+                    <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
+                </div>
+
+                <!-- Mobile selectors (shown here on small screens) -->
+                <div class="md:hidden flex-shrink-0 flex flex-col items-end gap-2" style="width: min(190px, 44vw);">
+                    <!-- Theme (mobile) -->
+                    <div class="cs" id="themeCSMobile" style="width: 100%;">
+                        <select id="themeSelectMobile" class="cs-native theme-select">
+                            <option value="beer">Пивной</option>
+                            <option value="white">Белый</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+
+                    <!-- Logo font (mobile) -->
+                    <div class="cs" id="logoFontCSMobile" style="width: 100%;">
+                        <select id="logoFontSelectMobile" class="cs-native logo-font-select">
+                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Train One">Train One</option>
+                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                            <option value="Rubik Microbe">Rubik Microbe</option>
+                            <option value="Rubik Puddles">Rubik Puddles</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Reggae One">Reggae One</option>
+                            <option value="Dela Gothic One">Dela Gothic One</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Underdog">Underdog</option>
+                            <option value="Stalinist One">Stalinist One</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Kablammo">Kablammo</option>
+                            <option value="Comforter">Comforter</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Rampart One">Rampart One</option>
+                            <option value="Rubik Scribble">Rubik Scribble</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+                </div>
+            </div>
+
+            <a href="index.html" class="inline-flex items-center gap-1 md:gap-2 text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10">
+                <span>←</span> <span class="hidden sm:inline">На главную</span>
+            </a>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4 safe-wrap">
+            <!-- Summary -->
+            <section class="card rounded-2xl p-5 glow-amber safe-wrap">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-white font-bold">Сводка</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Пива принесено</div>
+                        <div class="text-2xl font-bold text-white" id="statBeerBrought">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Пива в рейтинг добавлено</div>
+                        <div class="text-2xl font-bold text-white" id="statBeerAdded">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Фильмов в бэклог добавлено</div>
+                        <div class="text-2xl font-bold text-white" id="statBacklogAdded">—</div>
+                    </div>
+                    <div class="stat-chip rounded-xl p-3">
+                        <div class="text-xs text-gray-400">Фильмов предложено</div>
+                        <div class="text-2xl font-bold text-white" id="statMoviesSuggested">—</div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Movie ratings table -->
+            <section class="card rounded-2xl p-5 lg:col-span-2 safe-wrap">
+                <div class="flex items-start justify-between gap-4 mb-3 safe-wrap">
+                    <div class="min-w-0">
+                        <div class="text-white font-bold">Оценки фильмов</div>
+                        <div class="text-xs text-gray-500">Фильмы из бэклога, где вы автор карточки и указали рейтинг</div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-xs text-gray-500">Средний рейтинг</div>
+                        <div class="text-amber-300 font-bold" id="statAvgMovieRating">—</div>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-gray-800 bg-black/40 overflow-hidden">
+                    <div class="max-h-[360px] overflow-auto">
+                        <table class="w-full text-sm min-w-[760px]">
+                            <thead class="bg-black/70 sticky top-0">
+                                <tr class="border-b border-gray-800">
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('title')">Фильм <span id="ms-title" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('column')">Колонка <span id="ms-column" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('rating')">Рейтинг <span id="ms-rating" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('views')">Просмотры <span id="ms-views" class="text-gray-500">↕</span></th>
+                                    <th class="text-left py-2 px-3 text-amber-400 sortable" onclick="sortMovieTable('myReview')">Мой отзыв <span id="ms-myReview" class="text-gray-500">↕</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="movieRatingsTable">
+                                <tr><td colspan="5" class="py-6 text-center text-gray-600">Загрузка…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Activity -->
+        <section class="card rounded-2xl p-5 mt-4 safe-wrap">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <div class="text-white font-bold">Активность</div>
+                    <div class="text-xs text-gray-500">Ваши добавления и участие</div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-4 gap-3">
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Подтверждений участия</div>
+                    <div class="text-xl font-bold text-white" id="statAttendances">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Проголосовал(а) за фильмов</div>
+                    <div class="text-xl font-bold text-white" id="statMovieVotes">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Оценено пива</div>
+                    <div class="text-xl font-bold text-white" id="statBeerVotes">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Моих отзывов о фильмах</div>
+                    <div class="text-xl font-bold text-white" id="statMyReviews">—</div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center py-8 text-gray-700 text-xs">
+            <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
+        </footer>
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        let currentUser = null;
+        let db = null;
+
+        // -----------------
+        // Snow mode (shared)
+        // -----------------
+        (function setScrollbarWidthVar(){
+            try {
+                const sbw = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+                document.documentElement.style.setProperty('--sbw', sbw + 'px');
+                window.addEventListener('resize', () => {
+                    const sbw2 = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+                    document.documentElement.style.setProperty('--sbw', sbw2 + 'px');
+                });
+            } catch(_) {}
+        })();
+
+        const SNOW_LS_KEY = 'snowModeEnabled';
+        let snowTimer = null;
+
+        function setSnowUI(enabled) {
+            const snow = document.getElementById('snow');
+            const sw = document.getElementById('snowSwitch');
+            const cb = document.getElementById('snowToggle');
+            if (!snow || !sw || !cb) return;
+
+            cb.checked = !!enabled;
+            sw.classList.toggle('on', !!enabled);
+            sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+
+            if (enabled) {
+                snow.classList.remove('hidden');
+                startSnow();
+            } else {
+                stopSnow();
+                snow.classList.add('hidden');
+            }
+        }
+
+        function toggleSnow(force = null) {
+            const current = localStorage.getItem(SNOW_LS_KEY) === '1';
+            const next = (force === null) ? !current : !!force;
+            localStorage.setItem(SNOW_LS_KEY, next ? '1' : '0');
+            setSnowUI(next);
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            const enabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            if (document.hidden) stopSnow();
+            else if (enabled) startSnow();
+        });
+
+        function startSnow() {
+            const snow = document.getElementById('snow');
+            if (!snow) return;
+            if (snowTimer) return;
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            const initialCount = isCoarse ? 8 : 12;
+            for (let i = 0; i < initialCount; i++) spawnSnowflake(true);
+            const interval = isCoarse ? 780 : 520;
+            snowTimer = setInterval(() => spawnSnowflake(false), interval);
+        }
+
+        function stopSnow() {
+            const snow = document.getElementById('snow');
+            if (snowTimer) { clearInterval(snowTimer); snowTimer = null; }
+            snow?.replaceChildren();
+        }
+
+        function spawnSnowflake(isInitial) {
+            const snow = document.getElementById('snow');
+            if (!snow) return;
+            const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            const maxFlakes = isCoarse ? 22 : 40;
+            if (snow.childElementCount >= maxFlakes) return;
+
+            const flake = document.createElement('div');
+            flake.className = 'snowflake';
+            flake.textContent = '❄';
+
+            const left = Math.random() * 100;
+            const size = isCoarse ? (8 + Math.random() * 6) : (10 + Math.random() * 10);
+            const duration = isCoarse ? (12 + Math.random() * 12) : (10 + Math.random() * 10);
+            const drift = isCoarse ? (Math.random() * 50 - 25).toFixed(0) + 'px' : (Math.random() * 90 - 45).toFixed(0) + 'px';
+            const opacity = isCoarse ? (0.28 + Math.random() * 0.35) : (0.35 + Math.random() * 0.5);
+            const delay = isInitial ? (Math.random() * (isCoarse ? 6 : 4)) : 0;
+
+            flake.style.left = left + 'vw';
+            flake.style.fontSize = size + 'px';
+            flake.style.opacity = String(opacity);
+            flake.style.animationDuration = duration + 's';
+            flake.style.animationDelay = delay + 's';
+            flake.style.setProperty('--drift', drift);
+
+            setTimeout(() => flake.remove(), (duration + delay + 0.3) * 1000);
+            snow.appendChild(flake);
+        }
+
+        // -----------------
+        // Theme picker
+        // -----------------
+        const THEME_LS_KEY = 'siteTheme';
+        function getThemeChoice() {
+            const t = localStorage.getItem(THEME_LS_KEY);
+            return (t === 'white' || t === 'beer') ? t : 'beer';
+        }
+        function applyTheme() {
+            document.documentElement.dataset.theme = getThemeChoice();
+        }
+
+        // -----------------
+        // Logo font picker (shared with index.html)
+        // -----------------
+        const LOGO_FONT_LS_KEY = 'logoFontFamily';
+        const LOGO_PRESETS = {
+            'Train One': { family: 'Train One', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Wet Paint': { family: 'Rubik Wet Paint', size: 62, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Moonrocks': { family: 'Rubik Moonrocks', size: 58, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Microbe': { family: 'Rubik Microbe', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Rubik Puddles': { family: 'Rubik Puddles', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Stick': { family: 'Stick', size: 64, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Press Start 2P': { family: 'Press Start 2P', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Reggae One': { family: 'Reggae One', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Dela Gothic One': { family: 'Dela Gothic One', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Amatic SC': { family: 'Amatic SC', size: 78, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Underdog': { family: 'Underdog', size: 60, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Stalinist One': { family: 'Stalinist One', size: 40, textLength: 395, y: 74, mugX: 438, mugY: 2 },
+            'Lobster': { family: 'Lobster', size: 64, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Kablammo': { family: 'Kablammo', size: 54, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Comforter': { family: 'Comforter', size: 76, textLength: 395, y: 84, mugX: 438, mugY: 2 },
+            'Pacifico': { family: 'Pacifico', size: 66, textLength: 395, y: 82, mugX: 438, mugY: 2 },
+            'Ruslan Display': { family: 'Ruslan Display', size: 56, textLength: 395, y: 78, mugX: 438, mugY: 2 },
+            'Caveat': { family: 'Caveat', size: 82, textLength: 395, y: 86, mugX: 438, mugY: 2 },
+            'Rampart One': { family: 'Rampart One', size: 62, textLength: 395, y: 80, mugX: 438, mugY: 2 },
+            'Rubik Scribble': { family: 'Rubik Scribble', size: 52, textLength: 395, y: 80, mugX: 438, mugY: 2 }
+        };
+
+        function getLogoFontChoice() {
+            const saved = localStorage.getItem(LOGO_FONT_LS_KEY);
+            return (saved && LOGO_PRESETS[saved]) ? saved : 'Rubik Wet Paint';
+        }
+
+        // Seamless logo font switching:
+        // - Keep current logo font visible while the new one downloads.
+        // - Swap ONLY after the new font is ready (prevents showing fallback/Comfortaa).
+        const LOGO_GF_LINK_ID = 'logoFontGF';
+        let __logoApplyToken = 0;
+
+        function ensureLogoFontStylesheet(fam) {
+            const family = (fam || '').trim();
+            if (!family) return Promise.resolve();
+
+            const q = encodeURIComponent(family).replace(/%20/g, '+');
+            const href = `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+
+            let link = document.getElementById(LOGO_GF_LINK_ID);
+            if (!link) {
+                link = document.createElement('link');
+                link.id = LOGO_GF_LINK_ID;
+                link.rel = 'stylesheet';
+                document.head.appendChild(link);
+            }
+
+            // If already set to this href, don't block.
+            if (link.getAttribute('href') === href) return Promise.resolve();
+
+            return new Promise((resolve) => {
+                let done = false;
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    link.onload = null;
+                    link.onerror = null;
+                    resolve();
+                };
+
+                link.onload = finish;
+                link.onerror = finish;
+                link.setAttribute('href', href);
+
+                // Safety fallback: don't hang forever (keeps current font if load fails)
+                setTimeout(finish, 4000);
+            });
+        }
+
+        function isFontLoaded(fam) {
+            const family = (fam || '').trim();
+            if (!family) return true;
+            try {
+                return !!(document.fonts && document.fonts.check && document.fonts.check(`1em "${family}"`));
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function loadLogoFontSeamless(fam) {
+            const family = (fam || '').trim();
+            if (!family) return Promise.resolve();
+
+            // Ensure @font-face rules are available first, then wait for the font file.
+            return ensureLogoFontStylesheet(family).then(() => {
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        return document.fonts.load(`1em "${family}"`).then(() => {}, () => {});
+                    }
+                } catch (_) {}
+                return Promise.resolve();
+            });
+        }
+
+        // Also load fonts when a user picks a new one from the selector (prevents "only size changes").
+        function preloadLogoFontFamily(fam) {
+            const family = (fam || '').trim();
+            if (!family) return;
+            // ensure css
+            ensureLogoFontStylesheet(family);
+            try {
+                if (document.fonts && document.fonts.load) {
+                    document.fonts.load(`1em "${family}"`).catch(() => {});
+                }
+            } catch (_) {}
+        }
+
+        function applyLogoPreset(preset) {
+            // Set both CSS variable (used across the site) and inline fontFamily on the SVG text
+            // to ensure instant swap inside SVG on all browsers.
+            document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
+
+            const t = document.getElementById('logoText');
+            if (t) {
+                // SVG can ignore CSS-only font swaps: set attribute too.
+                t.style.fontFamily = `"${preset.family}", Comfortaa, cursive`;
+                t.setAttribute('font-family', preset.family);
+                t.setAttribute('font-size', String(preset.size));
+                t.setAttribute('textLength', String(preset.textLength));
+                t.setAttribute('y', String(preset.y));
+            }
+            const mug = document.getElementById('logoMug');
+            if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
+
+            restartLogoBeerAnimation();
+        }
+
+        function applyLogoSettings(opts = {}) {
+            const { seamless = false } = opts;
+            const choice = getLogoFontChoice();
+            const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Rubik Wet Paint'];
+
+            // Non-seamless path: apply immediately (used on initial render)
+            if (!seamless) {
+                ensureLogoFontStylesheet(preset.family);
+                applyLogoPreset(preset);
+                return;
+            }
+
+            // Seamless: DO NOT swap anything until the target font is actually ready.
+            // This prevents showing fallback/Comfortaa even for a single frame.
+            const token = ++__logoApplyToken;
+            loadLogoFontSeamless(preset.family).then(() => {
+                if (token !== __logoApplyToken) return;
+                if (!isFontLoaded(preset.family)) return;
+                applyLogoPreset(preset);
+            });
+        }
+
+        function restartLogoBeerAnimation() {
+            try {
+                const svg = document.querySelector('header svg');
+                // Force reflow/restart of SVG SMIL animations
+                svg?.setCurrentTime?.(0);
+                svg?.unpauseAnimations?.();
+                svg?.pauseAnimations?.();
+                svg?.unpauseAnimations?.();
+            } catch (_) {}
+        }
+
+        // -----------------
+        // Custom select (for logo font)
+        // -----------------
+        function getChevronSVG() {
+            return `
+                <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `.trim();
+        }
+
+        function closeAllCustomSelects(exceptEl = null) {
+            document.querySelectorAll('.cs.open').forEach(cs => {
+                if (exceptEl && cs === exceptEl) return;
+                cs.classList.remove('open');
+                const btn = cs.querySelector('.cs-btn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function syncCustomSelect(selectEl) {
+            const cs = selectEl?.closest('.cs');
+            if (!cs) return;
+            const label = cs.querySelector('.cs-label');
+            const menu = cs.querySelector('.cs-menu');
+            const selected = selectEl.options[selectEl.selectedIndex];
+            if (label) label.textContent = (selected ? selected.textContent : '').trim();
+            if (menu) {
+                const val = String(selectEl.value);
+                menu.querySelectorAll('.cs-opt').forEach(btn => {
+                    btn.setAttribute('aria-selected', String(btn.dataset.value) === val ? 'true' : 'false');
+                });
+            }
+        }
+
+        function makeCustomSelect(selectEl) {
+            if (!selectEl) return;
+            const cs = selectEl.closest('.cs');
+            if (!cs) return;
+
+            // Do not bind twice
+            if (cs.dataset.bound === '1') {
+                syncCustomSelect(selectEl);
+                return;
+            }
+            cs.dataset.bound = '1';
+
+            const btn = cs.querySelector('.cs-btn');
+            const menu = cs.querySelector('.cs-menu');
+            if (!btn || !menu) return;
+
+            // Build menu options once
+            if (!menu.dataset.built) {
+                menu.innerHTML = '';
+                Array.from(selectEl.options).forEach(opt => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'cs-opt';
+                    item.dataset.value = opt.value;
+                    item.setAttribute('role', 'option');
+                    item.textContent = opt.textContent;
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        selectEl.value = opt.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncCustomSelect(selectEl);
+                        cs.classList.remove('open');
+                        btn.setAttribute('aria-expanded', 'false');
+                    });
+                    menu.appendChild(item);
+                });
+                menu.dataset.built = '1';
+            }
+
+            // Keep the hidden native select enabled so its value changes still work.
+            // Make sure chosen font is actually loaded before swapping sizes/positions.
+
+            // Toggle open/close
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const willOpen = !cs.classList.contains('open');
+                closeAllCustomSelects(cs);
+                cs.classList.toggle('open', willOpen);
+                btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+                syncCustomSelect(selectEl);
+            });
+
+            selectEl.addEventListener('change', () => syncCustomSelect(selectEl));
+            syncCustomSelect(selectEl);
+        }
+
+        function initLogoFontCustomSelect() {
+            // Build custom selects for both desktop + mobile selectors (if present)
+            const selects = Array.from(document.querySelectorAll('.logo-font-select, .theme-select'));
+            if (!selects.length) return;
+            selects.forEach(sel => makeCustomSelect(sel));
+
+            // Outside click closes
+            document.addEventListener('click', (e) => {
+                const cs = e.target.closest('.cs');
+                if (!cs) closeAllCustomSelects();
+            });
+
+            // ESC closes
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeAllCustomSelects();
+            });
+        }
+
+        // Movie table sort state
+        let movieSortBy = 'rating';
+        let movieSortDir = 'desc';
+        const collator = new Intl.Collator(['ru', 'en'], { sensitivity: 'base', numeric: true, ignorePunctuation: true });
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        function getUserName() {
+            return currentUser ? currentUser.name : '';
+        }
+
+        function safeValues(obj) {
+            if (!obj) return [];
+            return Array.isArray(obj) ? obj : Object.values(obj);
+        }
+
+        function formatColName(columns, columnId) {
+            const col = (columns || []).find(c => String(c.id) === String(columnId));
+            return col ? col.name : '—';
+        }
+
+        function setText(id, val) {
+            const el = document.getElementById(id);
+            if (el) el.textContent = String(val);
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+
+        function sortMovieTable(by) {
+            if (movieSortBy === by) {
+                movieSortDir = (movieSortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+                movieSortBy = by;
+                movieSortDir = 'asc';
+            }
+            // Re-render using cached data in window state
+            if (window.__profileCache) {
+                renderMovieRatingsTable(window.__profileCache.cards, window.__profileCache.columns);
+            }
+        }
+
+        function updateMovieSortIndicators() {
+            const fields = ['title','column','rating','views','myReview'];
+            fields.forEach(f => {
+                const span = document.getElementById('ms-' + f);
+                const th = span?.parentElement;
+                if (!span || !th) return;
+                if (movieSortBy === f) {
+                    span.textContent = movieSortDir === 'asc' ? '↑' : '↓';
+                    th.classList.add('active');
+                } else {
+                    span.textContent = '↕';
+                    th.classList.remove('active');
+                }
+            });
+        }
+
+        function renderMovieRatingsTable(cards, columns) {
+            const tbody = document.getElementById('movieRatingsTable');
+            const userName = getUserName();
+
+            const myRated = (cards || [])
+                .filter(c => (c.author === userName) && (parseFloat(c.rating) || 0) > 0)
+                .map(c => {
+                    const colName = formatColName(columns, c.columnId);
+                    const myReview = (c.reviews && c.reviews[userName]) ? 1 : 0;
+                    return {
+                        raw: c,
+                        title: (c.title || '').trim(),
+                        column: colName,
+                        rating: parseFloat(c.rating) || 0,
+                        views: parseInt(c.watchCount || 0, 10) || 0,
+                        myReview,
+                    };
+                });
+
+            if (!myRated.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-600">Пока нет фильмов, где вы указали рейтинг.</td></tr>';
+                setText('statAvgMovieRating', '—');
+                updateMovieSortIndicators();
+                return;
+            }
+
+            const avg = myRated.reduce((s,c) => s + c.rating, 0) / myRated.length;
+            setText('statAvgMovieRating', avg.toFixed(1));
+
+            const dir = movieSortDir === 'asc' ? 1 : -1;
+            myRated.sort((a,b) => {
+                switch (movieSortBy) {
+                    case 'title':
+                        return dir * collator.compare(a.title, b.title);
+                    case 'column':
+                        return dir * collator.compare(a.column, b.column);
+                    case 'rating':
+                        return dir * (a.rating - b.rating);
+                    case 'views':
+                        return dir * (a.views - b.views);
+                    case 'myReview':
+                        return dir * (a.myReview - b.myReview);
+                    default:
+                        return 0;
+                }
+            });
+
+            updateMovieSortIndicators();
+
+            tbody.innerHTML = myRated.map(row => {
+                const c = row.raw;
+                const myReviewMark = row.myReview ? '✅' : '—';
+                return `
+                    <tr class="border-b border-gray-900/70">
+                        <td class="py-3 px-3 text-white font-medium">${escapeHtml(row.title)}</td>
+                        <td class="py-3 px-3 text-gray-400">${escapeHtml(row.column)}</td>
+                        <td class="py-3 px-3 text-amber-300 font-bold">⭐ ${row.rating.toFixed(1).replace(/\.0$/, '')}</td>
+                        <td class="py-3 px-3 text-gray-400">👁 ${row.views}</td>
+                        <td class="py-3 px-3 text-gray-400">${myReviewMark}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadAndRender() {
+            const userName = getUserName();
+
+            const [eventsSnap, backlogSnap, beerSnap] = await Promise.all([
+                db.ref('events').once('value'),
+                db.ref('backlog').once('value'),
+                db.ref('beerRating').once('value')
+            ]);
+
+            const events = eventsSnap.val() || {};
+            const backlog = backlogSnap.val() || { columns: [], cards: [] };
+            const beerRating = beerSnap.val() || [];
+
+            const columns = safeValues(backlog.columns);
+            const cards = safeValues(backlog.cards);
+            const beers = safeValues(beerRating);
+
+            // Cache for re-sorting
+            window.__profileCache = { columns, cards };
+
+            // Beer brought
+            let beerBrought = 0;
+            let attendances = 0;
+            Object.values(events).forEach(ev => {
+                const a = ev?.attendees?.[userName];
+                if (a) {
+                    attendances += 1;
+                    beerBrought += parseInt(a.beer || 0, 10) || 0;
+                }
+            });
+
+            // Movies suggested (in events)
+            let moviesSuggested = 0;
+            let movieVotes = 0;
+            Object.values(events).forEach(ev => {
+                const movies = ev?.movies || {};
+                Object.values(movies).forEach(m => {
+                    if (m?.author === userName) moviesSuggested += 1;
+                    if (m?.votes && m.votes[userName]) movieVotes += 1;
+                });
+            });
+
+            // Backlog cards added
+            const backlogAdded = cards.filter(c => c?.author === userName).length;
+
+            // Beer entries added
+            const beerAdded = beers.filter(b => b?.author === userName).length;
+
+            // Beer votes
+            let beerVotes = 0;
+            beers.forEach(b => {
+                if (b?.ratings && b.ratings[userName] != null) beerVotes += 1;
+            });
+
+            // My reviews
+            let myReviews = 0;
+            cards.forEach(c => {
+                if (c?.reviews && c.reviews[userName]) myReviews += 1;
+            });
+
+            setText('statBeerBrought', beerBrought);
+            setText('statMoviesSuggested', moviesSuggested);
+            setText('statBacklogAdded', backlogAdded);
+            setText('statBeerAdded', beerAdded);
+            setText('statAttendances', attendances);
+            setText('statMovieVotes', movieVotes);
+            setText('statBeerVotes', beerVotes);
+            setText('statMyReviews', myReviews);
+
+            renderMovieRatingsTable(cards, columns);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const userDataStr = localStorage.getItem('currentUser');
+            if (!userDataStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            currentUser = JSON.parse(userDataStr);
+
+            // Apply theme selection + bind selectors
+            applyTheme();
+            document.querySelectorAll('.theme-select').forEach(sel => {
+                sel.value = getThemeChoice();
+                sel.addEventListener('change', () => {
+                    localStorage.setItem(THEME_LS_KEY, sel.value);
+                    applyTheme();
+                    syncCustomSelect(sel);
+                });
+            });
+
+            // Apply logo font selection + bind selector
+            applyLogoSettings();
+            document.querySelectorAll('.logo-font-select').forEach(sel => {
+                sel.value = getLogoFontChoice();
+                sel.addEventListener('change', () => {
+                    localStorage.setItem(LOGO_FONT_LS_KEY, sel.value);
+                    // Preload font and apply seamlessly only after it's ready
+                    preloadLogoFontFamily(sel.value);
+                    applyLogoSettings({ seamless: true });
+                    syncCustomSelect(sel);
+                });
+            });
+
+            // Init custom select UI for logo font
+            initLogoFontCustomSelect();
+
+            // Snow switch init
+            const snowEnabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            setSnowUI(snowEnabled);
+            const sw = document.getElementById('snowSwitch');
+            if (sw) {
+                sw.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleSnow();
+                    }
+                });
+            }
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === LOGO_FONT_LS_KEY) {
+                    // Seamless swap on storage updates too
+                    applyLogoSettings({ seamless: true });
+                    document.querySelectorAll('.logo-font-select').forEach(s => {
+                        s.value = getLogoFontChoice();
+                        syncCustomSelect(s);
+                    });
+                }
+                if (e.key === THEME_LS_KEY) {
+                    applyTheme();
+                    document.querySelectorAll('.theme-select').forEach(s => {
+                        s.value = getThemeChoice();
+                        syncCustomSelect(s);
+                    });
+                }
+            });
+
+            const nameEl = document.getElementById('profileName');
+            if (nameEl) nameEl.textContent = currentUser.name;
+
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+
+            try {
+                await loadAndRender();
+            } catch (e) {
+                console.error('Profile load error', e);
+                document.getElementById('movieRatingsTable').innerHTML = '<tr><td colspan="5" class="py-6 text-center text-red-300">Ошибка загрузки данных профиля.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>
