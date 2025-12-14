@@ -1054,6 +1054,7 @@
                         <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
                             <span class="text-3xl">🍺</span> Рейтинг пива
                         </h2>
+                        <span id="beerCountBadge" class="text-xs px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200">Пива: 0</span>
 
                         <!-- Search (by beer name) -->
                         <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
@@ -3267,7 +3268,8 @@
 
         function renderBeerRating() {
             const tbody = document.getElementById('beerTableBody');
-            let beers = data.beerRating || [];
+            const allBeers = data.beerRating || [];
+            let beers = allBeers;
             
             // Normalize countries to a uniform flag+name representation
             beers.forEach(b => { b.country = formatCountry(b.country); });
@@ -3300,6 +3302,14 @@
                 if (beerFilters.ratingMax && avgRating > parseFloat(beerFilters.ratingMax)) return false;
                 return true;
             });
+
+            // Update beer count badge
+            const badge = document.getElementById('beerCountBadge');
+            if (badge) {
+                const shown = beers.length;
+                const total = allBeers.length;
+                badge.textContent = shown === total ? `Пива: ${shown}` : `Пива: ${shown} из ${total}`;
+            }
             
             // Update headers
             ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating'].forEach(field => {

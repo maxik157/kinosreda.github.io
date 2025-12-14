@@ -309,50 +309,54 @@
   <div class="snow hidden" id="snow"></div>
 
   <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-    <div class="container mx-auto px-3 md:px-4 max-w-7xl flex items-center justify-between gap-3">
-      <a href="index.html" class="inline-flex items-center gap-3">
-        <svg class="w-[200px] md:w-[320px] h-12 md:h-16 float pulse-glow" viewBox="0 0 580 120" style="overflow: visible;">
-          <defs>
-            <linearGradient id="beerGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#fcd34d"/>
-              <stop offset="50%" style="stop-color:#fbbf24"/>
-              <stop offset="100%" style="stop-color:#d97706"/>
-            </linearGradient>
-            <linearGradient id="foamGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#ffffff"/>
-              <stop offset="100%" style="stop-color:#fef3c7"/>
-            </linearGradient>
-            <clipPath id="mugClipRoulette"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
-            <filter id="glowRoulette"><feGaussianBlur stdDeviation="2" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </defs>
-          <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowRoulette)">КИНОСРЕДА</text>
-          <g id="logoMug" transform="translate(438, 2)">
-            <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" class="mug-stroke" stroke-width="3"/>
-            <g clip-path="url(#mugClipRoulette)" transform="translate(0, 30)">
-              <rect x="0" y="55" height="0" width="50" fill="url(#beerGradRoulette)">
-                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
-                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
-              </rect>
+    <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+      <div class="flex items-center gap-3 pl-2">
+        <a href="index.html" class="inline-flex items-center gap-3" aria-label="На главную">
+          <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
+            <defs>
+              <linearGradient id="beerGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#fcd34d"/>
+                <stop offset="50%" style="stop-color:#fbbf24"/>
+                <stop offset="100%" style="stop-color:#d97706"/>
+              </linearGradient>
+              <linearGradient id="foamGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#ffffff"/>
+                <stop offset="100%" style="stop-color:#fef3c7"/>
+              </linearGradient>
+              <clipPath id="mugClipRoulette"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
+              <filter id="glowRoulette"><feGaussianBlur stdDeviation="2" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            </defs>
+            <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowRoulette)">КИНОСРЕДА</text>
+            <g id="logoMug" transform="translate(438, 2)">
+              <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" class="mug-stroke" stroke-width="3"/>
+              <g clip-path="url(#mugClipRoulette)" transform="translate(0, 30)">
+                <rect x="0" y="55" height="0" width="50" fill="url(#beerGradRoulette)">
+                  <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
+                  <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
+                </rect>
+              </g>
+              <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
+                <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradRoulette)"/>
+                <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
+                <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
+                <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
+              </g>
+              <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
             </g>
-            <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
-              <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradRoulette)"/>
-              <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
-              <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
-              <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
-            </g>
-            <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-          </g>
-        </svg>
-      </a>
+          </svg>
+        </a>
+      </div>
 
-      <div class="flex items-center gap-2">
-        <a href="index.html" class="hidden sm:inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/20 text-amber-200 hover:bg-amber-500/10 hover:border-amber-400/30 transition">
-          ← На главную
+      <div class="flex items-center gap-1 md:gap-3 flex-wrap justify-center">
+        <a href="index.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
+          <span>←</span> <span class="hidden sm:inline">На главную</span>
         </a>
-        <a href="profile.html" class="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/20 text-amber-200 hover:bg-amber-500/10 hover:border-amber-400/30 transition" title="Профиль">
-          👤 <span id="profileName" class="hidden sm:inline"></span>
+        <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Профиль">
+          <span>👤</span> <span id="profileName" class="hidden sm:inline"></span>
         </a>
-        <button onclick="logout()" class="text-red-300 hover:text-red-200 transition text-sm px-3 py-2 rounded-xl border border-red-500/20 hover:border-red-400/30 hover:bg-red-500/10">Выйти</button>
+        <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
+          <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
+        </button>
       </div>
     </div>
   </header>

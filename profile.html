@@ -172,7 +172,7 @@
             border-radius: 0.75rem;
             background: rgba(0, 0, 0, 0.35);
             color: #fff;
-            border: 1px solid rgba(245, 158, 11, 0.22);
+            border: 1px solid var(--accent-border-30);
             padding: 0.55rem 0.75rem;
             font-size: 0.875rem;
             line-height: 1.25rem;
@@ -193,7 +193,7 @@
             margin-top: 8px;
             z-index: 100;
             background: rgba(3, 7, 18, 0.98);
-            border: 1px solid rgba(245, 158, 11, 0.25);
+            border: 1px solid var(--accent-border-30);
             border-radius: 0.75rem;
             box-shadow: 0 20px 50px rgba(0,0,0,0.55);
             max-height: 240px;
@@ -210,6 +210,17 @@
         }
         .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
         .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
+
+        /* Beer theme: make select button text match dropdown option text (neutral like the list) */
+        html[data-theme="beer"] .cs-btn {
+            border-color: var(--accent-border-30);
+            color: rgba(229,231,235,0.95);
+        }
+        html[data-theme="beer"] .cs-label { color: rgba(229,231,235,0.95); }
+        html[data-theme="beer"] .cs-chevron { color: rgba(229,231,235,0.85); }
+        html[data-theme="beer"] .cs-menu { border-color: var(--accent-border-30); }
+        html[data-theme="beer"] .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        html[data-theme="beer"] .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
 
         /* -----------------
            White theme: make ALL amber highlights truly white in Profile
@@ -268,10 +279,10 @@
     </style>
 </head>
 <body class="bg-dark min-h-screen">
-    <header class="sticky top-0 z-50 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-        <div class="container mx-auto max-w-7xl px-3 md:px-4 py-3 flex items-center justify-between gap-3 safe-wrap">
+    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
+        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4 safe-wrap">
             <div class="flex items-center gap-3 min-w-0">
-                <svg class="w-[220px] md:w-[320px] h-12 md:h-16 float pulse-glow" viewBox="0 0 580 120" style="overflow: visible;">
+                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
                     <defs>
                         <linearGradient id="beerGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" style="stop-color:#fcd34d"/>
@@ -320,11 +331,7 @@
                     </a>
                 </svg>
             </div>
-            <div class="flex items-center gap-2 min-w-0">
-                <div class="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/20 bg-black/40 min-w-0">
-                    <span class="text-amber-400">👤</span>
-                    <span id="profileName" class="text-sm text-white font-semibold truncate"></span>
-                </div>
+            <div class="flex items-center gap-2 min-w-0 flex-wrap justify-center">
 
                 <!-- Theme selector (desktop only in header) -->
                 <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 160px;">
@@ -378,8 +385,14 @@
                     </div>
                 </div>
 
-                <button onclick="logout()" class="px-3 py-2 rounded-xl text-sm font-semibold border border-red-500/30 text-red-300 hover:text-red-200 hover:border-red-400 hover:bg-red-500/10 transition">
-                    Выйти
+                <!-- Name now right before logout -->
+                <div class="hidden sm:flex items-center gap-2 min-w-0">
+                    <span class="text-amber-400">👤</span>
+                    <span id="profileName" class="text-sm text-amber-400 font-medium truncate"></span>
+                </div>
+
+                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
+                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
                 </button>
             </div>
         </div>
@@ -445,8 +458,8 @@
                 </div>
             </div>
 
-            <a href="index.html" class="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 hover:bg-amber-500/10 transition">
-                ← На главную
+            <a href="index.html" class="inline-flex items-center gap-1 md:gap-2 text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10">
+                <span>←</span> <span class="hidden sm:inline">На главную</span>
             </a>
         </div>
 
