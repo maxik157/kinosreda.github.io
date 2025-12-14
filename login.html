@@ -16,14 +16,81 @@
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Logo font: load selected font from Google Fonts (per-user) -->
+    <script>
+        // Logo font gate: avoid logo flash + load selected Google Font
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet">
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        // No flash: show logo text ONLY after the chosen font is actually loaded
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                window.__loadLogoFont = waitForFont;
+                waitForFont(fam);
+            } catch(_) {
+                window.__loadLogoFont = waitForFont;
+                markReady();
+            }
+        })();
+    </script>
     <style>
+        /* Hide only the logo text until the chosen logo font is loaded */
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
         :root {
             --amber: #f59e0b;
             --bg: #030307;
@@ -47,7 +114,7 @@
             font-display: swap;
         }
         :root {
-            --logo-font: 'Train One';
+            --logo-font: 'Rubik Wet Paint';
             /* Theme variables (Beer by default) */
             --accent-200: #fde68a;
             --accent-300: #fcd34d;
@@ -96,7 +163,7 @@
         html[data-theme="white"] svg rect[stroke],
         html[data-theme="white"] svg path[stroke] { stroke: rgba(255,255,255,0.85) !important; }
 
-        .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+        .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
         .backdrop {
             position: fixed;
             inset: 0;
@@ -305,10 +372,17 @@
         function applyLogoSettings() {
             const choice = getLogoFontChoice();
             const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Train One'];
+
+            // Ensure the chosen font is requested (otherwise only size changes)
+            try { window.__loadLogoFont && window.__loadLogoFont(preset.family); } catch(_) {}
+
             document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
 
             const text = document.querySelector('text.logo-text');
             if (text) {
+                // Force SVG text to swap font immediately
+                text.style.fontFamily = `"${preset.family}", Comfortaa, cursive`;
+                text.setAttribute('font-family', preset.family);
                 text.setAttribute('font-size', String(preset.size));
                 text.setAttribute('textLength', String(preset.textLength));
                 text.setAttribute('y', String(preset.y));
@@ -330,7 +404,10 @@
             } catch(_) {}
         })();
         window.addEventListener('storage', (e) => {
-            if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
+            if (e.key === LOGO_FONT_LS_KEY) {
+                applyLogoSettings();
+                try { window.__loadLogoFont && window.__loadLogoFont(localStorage.getItem(LOGO_FONT_LS_KEY) || 'Rubik Wet Paint'); } catch(_) {}
+            }
         });
 
         // Firebase config

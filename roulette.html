@@ -42,14 +42,82 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet" />
+  <!-- Logo font: load selected font from Google Fonts (per-user) -->
+  <script>
+    // Logo font gate: avoid logo flash + load selected Google Font
+    (function(){
+      const html = document.documentElement;
+      const KEY = 'logoFontFamily';
+      const DEFAULT = 'Rubik Wet Paint';
+      const LINK_ID = 'logoFontGF';
+
+      function familyToHref(fam){
+        const q = encodeURIComponent(fam).replace(/%20/g, '+');
+        return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+      }
+
+      function ensureStylesheet(fam){
+        const family = (fam || DEFAULT).trim();
+        if (!family) return;
+        const href = familyToHref(family);
+        let link = document.getElementById(LINK_ID);
+        if (!link) {
+          link = document.createElement('link');
+          link.id = LINK_ID;
+          link.rel = 'stylesheet';
+          document.head.appendChild(link);
+        }
+        if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+      }
+
+      function markReady(){
+        html.classList.add('logo-font-ready');
+        html.classList.remove('logo-font-loading');
+      }
+
+      function waitForFont(fam){
+        const family = (fam || DEFAULT).trim();
+        if (!family) return markReady();
+
+        ensureStylesheet(family);
+
+        html.classList.add('logo-font-loading');
+        html.classList.remove('logo-font-ready');
+        try {
+          if (document.fonts && document.fonts.load) {
+            // No flash: show logo text ONLY after the chosen font is actually loaded
+            document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+          } else {
+            setTimeout(markReady, 1);
+          }
+        } catch (_) {
+          markReady();
+        }
+      }
+
+      try {
+        const fam = localStorage.getItem(KEY) || DEFAULT;
+        html.style.setProperty('--logo-font', `'${fam}'`);
+        window.__loadLogoFont = waitForFont;
+        waitForFont(fam);
+      } catch(_) {
+        window.__loadLogoFont = waitForFont;
+        markReady();
+      }
+    })();
+  </script>
 
   <style>
+    /* Hide only the logo text until the chosen logo font is loaded */
+    html:not(.logo-font-ready) .logo-text { opacity: 0; }
+    .logo-text { transition: opacity 0.15s ease; }
+
     html { scrollbar-gutter: stable; }
     html, body { background: #000; }
     body {
@@ -61,7 +129,7 @@
     }
 
     :root {
-      --logo-font: 'Oi';
+      --logo-font: 'Rubik Wet Paint';
       --accent-200: #fde68a;
       --accent-300: #fcd34d;
       --accent-400: #f59e0b;
@@ -110,7 +178,7 @@
     .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
     .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
 
-    .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+    .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #111; }
@@ -302,6 +370,57 @@
       align-items: center;
       gap: 8px;
     }
+
+    /* Snow toggle (same as main) */
+    .snow-toggle { display: inline-flex; align-items: center; gap: 10px; }
+    .snow-switch {
+      position: relative;
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(31, 41, 55, 0.85);
+      border: 1px solid rgba(245, 158, 11, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.35);
+      transition: background 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .snow-switch input { position: absolute; opacity: 0; pointer-events: none; }
+    .snow-thumb {
+      position: absolute;
+      left: 3px;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+      box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      color: rgba(37, 99, 235, 0.9);
+      transform: translate3d(0, -50%, 0);
+      transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.2, 1), color 0.2s ease;
+    }
+    .snow-switch.on {
+      background: linear-gradient(135deg, rgba(245,158,11,0.98), rgba(217,119,6,0.95));
+      border-color: rgba(245, 158, 11, 0.55);
+    }
+    html[data-theme="white"] .snow-switch.on {
+      background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
+      border-color: rgba(255,255,255,0.55);
+    }
+    .snow-switch.on .snow-thumb { transform: translate3d(22px, -50%, 0); color: rgba(120, 53, 15, 0.95); }
+    html[data-theme="white"] .snow-switch.on .snow-thumb { color: rgba(37, 99, 235, 0.9); }
+    .snow-icon {
+      font-size: 18px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+    }
   </style>
 </head>
 <body class="bg-dark min-h-screen">
@@ -311,7 +430,6 @@
   <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
     <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
       <div class="flex items-center gap-3 pl-2">
-        <a href="index.html" class="inline-flex items-center gap-3" aria-label="На главную">
           <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
             <defs>
               <linearGradient id="beerGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -326,7 +444,11 @@
               <clipPath id="mugClipRoulette"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
               <filter id="glowRoulette"><feGaussianBlur stdDeviation="2" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
-            <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowRoulette)">КИНОСРЕДА</text>
+
+            <a href="index.html" aria-label="На главную" style="cursor:pointer;">
+              <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowRoulette)">КИНОСРЕДА</text>
+            </a>
+
             <g id="logoMug" transform="translate(438, 2)">
               <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" class="mug-stroke" stroke-width="3"/>
               <g clip-path="url(#mugClipRoulette)" transform="translate(0, 30)">
@@ -344,7 +466,14 @@
               <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
             </g>
           </svg>
-        </a>
+
+        <!-- Snow toggle (same as main) -->
+        <div class="snow-toggle ml-1">
+          <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
+            <input type="checkbox" id="snowToggle" aria-label="Снежинки">
+            <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+          </div>
+        </div>
       </div>
 
       <div class="flex items-center gap-1 md:gap-3 flex-wrap justify-center">
@@ -463,9 +592,16 @@
     function applyLogoSettings() {
       const choice = getLogoFontChoice();
       const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Train One'];
+
+      // Ensure the chosen font is requested (otherwise only size changes)
+      try { window.__loadLogoFont && window.__loadLogoFont(preset.family); } catch(_) {}
+
       document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
       const t = document.getElementById('logoText');
       if (t) {
+        // SVG can ignore CSS font swap in some cases: set attribute too.
+        t.style.fontFamily = `"${preset.family}", Comfortaa, cursive`;
+        t.setAttribute('font-family', preset.family);
         t.setAttribute('font-size', String(preset.size));
         t.setAttribute('textLength', String(preset.textLength));
         t.setAttribute('y', String(preset.y));
@@ -475,8 +611,13 @@
     }
 
     applyLogoSettings();
+    try { window.__loadLogoFont && window.__loadLogoFont(localStorage.getItem(LOGO_FONT_LS_KEY) || 'Rubik Wet Paint'); } catch(_) {}
     window.addEventListener('storage', (e) => {
-      if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
+      if (e.key === LOGO_FONT_LS_KEY) {
+        const fam = localStorage.getItem(LOGO_FONT_LS_KEY) || 'Rubik Wet Paint';
+        try { window.__loadLogoFont && window.__loadLogoFont(fam); } catch(_) {}
+        Promise.resolve().then(applyLogoSettings);
+      }
     });
 
     // Particles
@@ -511,9 +652,23 @@
 
     function setSnowUI(enabled) {
       const snow = document.getElementById('snow');
-      if (!snow) return;
+      const sw = document.getElementById('snowSwitch');
+      const cb = document.getElementById('snowToggle');
+      if (!snow || !sw || !cb) return;
+
+      cb.checked = !!enabled;
+      sw.classList.toggle('on', !!enabled);
+      sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+
       if (enabled) { snow.classList.remove('hidden'); startSnow(); }
       else { stopSnow(); snow.classList.add('hidden'); }
+    }
+
+    function toggleSnow(force = null) {
+      const current = localStorage.getItem(SNOW_LS_KEY) === '1';
+      const next = (force === null) ? !current : !!force;
+      localStorage.setItem(SNOW_LS_KEY, next ? '1' : '0');
+      setSnowUI(next);
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -568,7 +723,18 @@
       snow.appendChild(flake);
     }
 
-    try { setSnowUI(localStorage.getItem(SNOW_LS_KEY) === '1'); } catch(_) {}
+    try {
+      setSnowUI(localStorage.getItem(SNOW_LS_KEY) === '1');
+      const sw = document.getElementById('snowSwitch');
+      if (sw) {
+        sw.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleSnow();
+          }
+        });
+      }
+    } catch(_) {}
 
     // Firebase
     const firebaseConfig = {

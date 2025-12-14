@@ -33,13 +33,82 @@
     </style>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <!-- Logo font: load selected font from Google Fonts (per-user) -->
+    <script>
+        // Logo font gate: avoid logo flash + load selected Google Font
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
 
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Oi&family=Train+One&family=Rubik+Wet+Paint&family=Rubik+Moonrocks&family=Rubik+Microbe&family=Rubik+Puddles&family=Stick&family=Press+Start+2P&family=Reggae+One&family=Dela+Gothic+One&family=Amatic+SC:wght@400;700&family=Underdog&family=Stalinist+One&family=Lobster&family=Kablammo&family=Comforter&family=Pacifico&family=Ruslan+Display&family=Caveat:wght@400;700&family=Rampart+One&family=Rubik+Scribble&display=swap" rel="stylesheet">
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                // Start font download as early as possible
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        // No flash: show logo text ONLY after the chosen font is actually loaded
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                window.__loadLogoFont = waitForFont;
+                waitForFont(fam);
+            } catch(_) {
+                window.__loadLogoFont = waitForFont;
+                markReady();
+            }
+        })();
+    </script>
     <style>
+        /* Hide only the logo text until the chosen logo font is loaded */
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
         html, body {
             background: #000000;
         }
@@ -63,7 +132,7 @@
             font-display: swap;
         }
         :root {
-            --logo-font: 'Oi';
+            --logo-font: 'Rubik Wet Paint';
             /* Theme variables (Beer by default) */
             --accent-200: #fde68a;
             --accent-300: #fcd34d;
@@ -213,7 +282,7 @@
         }
         html[data-theme="white"] .cs-chevron { color: rgba(229,231,235,0.95) !important; }
 
-        .logo-text { font-family: var(--logo-font), 'Oi', 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+        .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
         
         .bg-dark {
             background: #000000;
@@ -1901,9 +1970,14 @@
             const choice = getLogoFontChoice();
             const preset = LOGO_PRESETS[choice] || LOGO_PRESETS['Train One'];
             document.documentElement.style.setProperty('--logo-font', `'${preset.family}'`);
+            try { window.__loadLogoFont && window.__loadLogoFont(preset.family); } catch(_) {}
 
             const t = document.getElementById('logoText');
             if (t) {
+                // Force SVG text to swap font immediately (prevents "only size changes" issue)
+                // SVG is sometimes picky: set BOTH style and SVG attribute.
+                t.style.fontFamily = `"${preset.family}", Comfortaa, cursive`;
+                t.setAttribute('font-family', preset.family);
                 t.setAttribute('font-size', String(preset.size));
                 t.setAttribute('textLength', String(preset.textLength));
                 t.setAttribute('y', String(preset.y));
@@ -1929,7 +2003,18 @@
             // Apply logo font selection
             applyLogoSettings();
             window.addEventListener('storage', (e) => {
-                if (e.key === LOGO_FONT_LS_KEY) applyLogoSettings();
+                if (e.key === LOGO_FONT_LS_KEY) {
+                    // Seamless: load font first, then apply preset
+                    const fam = localStorage.getItem(LOGO_FONT_LS_KEY) || 'Rubik Wet Paint';
+                    try {
+                        if (window.__loadLogoFont) {
+                            // __loadLogoFont will mark logo-font-ready when loaded
+                            window.__loadLogoFont(fam);
+                        }
+                    } catch(_) {}
+                    // Apply sizing/position after a microtask to let font loader kick in
+                    Promise.resolve().then(applyLogoSettings);
+                }
                 if (e.key === THEME_LS_KEY) applyTheme();
             });
             
@@ -2108,11 +2193,12 @@
                 }
                 
                 const attendeeCount = Object.keys(event.attendees || {}).length;
+                const totalBeer = Object.values(event.attendees || {}).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
                 
                 container.innerHTML += `
                     <div class="${classes}" ${isWednesday ? `onclick="openPanel('${dateKey}')"` : ''}>
                         <span class="text-sm font-bold">${day}</span>
-                        ${hasAttendees ? `<span class="text-xs">${attendeeCount}👥</span>` : ''}
+                        ${hasAttendees ? `<span class="text-[10px] leading-none font-semibold">👥${attendeeCount} 🍺${totalBeer}</span>` : ''}
                     </div>
                 `;
             }
