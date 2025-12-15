@@ -226,6 +226,13 @@
             color: #0b0b0f !important;
             box-shadow: 0 10px 24px rgba(255,255,255,0.10), 0 0 0 1px var(--accent-border-20) !important;
         }
+        html[data-theme="white"] #chatBtn {
+            background: linear-gradient(90deg, #ffffff, #e5e7eb) !important;
+            color: #0b0b0f !important;
+            box-shadow: 0 10px 24px rgba(255,255,255,0.10), 0 0 0 1px var(--accent-border-20) !important;
+        }
+        html[data-theme="white"] #chatPanel .text-white { color: #ffffff; }
+        html[data-theme="white"] #chatPanel .border-amber-500\/20 { border-color: var(--accent-border-30) !important; }
 
         /* White theme: past Wednesdays should not be amber */
         html[data-theme="white"] .wednesday.text-amber-700\/50 { color: rgba(255,255,255,0.65) !important; }
@@ -900,6 +907,40 @@
             transform: translateY(0);
             filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
         }
+
+        /* Chat panel animation + textarea scrollbar behavior */
+        .chat-panel {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px) scale(0.98);
+            transform-origin: bottom right;
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+            pointer-events: none;
+        }
+        .chat-panel.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .chat-input {
+            overflow-y: hidden; /* no scrollbar when empty/short */
+        }
+        .chat-input.scroll {
+            overflow-y: auto; /* show only when needed */
+        }
+
+        /* When chat is open, move the "scroll to top" button to the left of the chat button (same baseline)
+           to avoid overlapping the chat panel. Use measured chat button width for perfect alignment. */
+        html.chat-open #scrollTopBtn {
+            right: calc(1.5rem + var(--chatw, 0px) + 0.75rem) !important;
+            bottom: 1.5rem !important;
+        }
+
+        /* Keep Chat + Top buttons aligned and same height */
+        #chatBtn { height: 56px; }
+        #scrollTopBtn { width: 56px; height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; }
+        #chatSendBtn { height: 44px; min-width: 110px; }
     </style>
 </head>
 <body class="bg-dark min-h-screen text-white">
@@ -1633,8 +1674,59 @@
         </div>
     </div>
 
+    <!-- Chat Button + Panel -->
+    <button id="chatBtn" onclick="toggleChat()" class="fixed bottom-6 right-6 left-auto z-50 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-[1.04] flex items-center gap-2" style="position:fixed; right:1.5rem; left:auto; bottom:1.5rem; height:56px;">
+        <span class="text-lg">💬</span>
+        <span class="hidden sm:inline">Чат</span>
+    </button>
+
+    <div id="chatPanel" class="chat-panel fixed bottom-24 right-6 left-auto z-50 w-[92vw] sm:w-[380px] max-w-[92vw]" aria-hidden="true">
+        <div class="bg-black/70 backdrop-blur-xl border border-amber-500/20 rounded-2xl shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-amber-500/10 bg-black/60">
+                <div class="flex items-center gap-2">
+                    <span class="text-amber-300">💬</span>
+                    <div class="font-bold text-amber-400">Чат</div>
+                </div>
+                <button onclick="toggleChat(false)" class="text-gray-400 hover:text-white transition" aria-label="Закрыть чат">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="chatMessages" class="px-3 py-3 space-y-2 max-h-[55vh] sm:max-h-[420px] overflow-y-auto"></div>
+            <div id="typingIndicator" class="hidden px-3 pb-2 text-xs text-gray-400"></div>
+
+            <div class="px-3 py-3 border-t border-amber-500/10 bg-black/60">
+                <div class="flex gap-2 items-end">
+                    <textarea id="chatInput" rows="1" class="chat-input flex-1 min-h-[44px] max-h-28 px-3 py-2 rounded-xl bg-gray-900/80 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm resize-none"></textarea>
+                    <button id="chatSendBtn" onclick="sendChatMessage()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 rounded-xl transition" style="height:44px;">
+                        Отправить
+                    </button>
+                </div>
+                <div class="text-[11px] text-gray-500 mt-2">Enter — отправить • Shift+Enter — новая строка</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Chat Message Modal -->
+    <div id="deleteChatModal" class="modal fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+        <div class="bg-gray-950 rounded-2xl max-w-md w-full p-6 border border-amber-500/30 mx-4">
+            <h3 class="text-xl font-bold text-amber-400 mb-2">Удалить сообщение?</h3>
+            <p class="text-gray-400 text-sm mb-5">Сообщение будет удалено для всех участников чата.</p>
+            <div class="bg-black/40 border border-red-500/20 rounded-xl p-3 mb-5">
+                <div class="text-xs text-gray-500 mb-1">Сообщение:</div>
+                <div id="deleteChatPreview" class="text-white text-sm"></div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="closeDeleteChatModal()" class="flex-1 btn-glow bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">Отмена</button>
+                <button onclick="confirmDeleteChatMessage()" class="flex-1 btn-glow bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-bold py-2 px-4 rounded-xl">Удалить</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scroll to Top Button -->
-    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold p-4 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s; box-shadow: 0 10px 24px var(--glow-box-2), 0 0 0 1px var(--accent-border-20);">
+    <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-24 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s; box-shadow: 0 10px 24px var(--glow-box-2), 0 0 0 1px var(--accent-border-20);">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
         </svg>
@@ -1792,6 +1884,19 @@
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
         let beerSearchQuery = '';
+
+        // -----------------
+        // Chat (Realtime)
+        // -----------------
+        const CHAT_PATH = 'chatMessages';
+        const CHAT_TYPING_PATH = 'chatTyping';
+        let chatOpen = false;
+        let chatInitialized = false;
+        let chatUnsubscribe = null;
+        let chatTypingUnsub = null;
+        let chatTypingTimer = null;
+        let chatEditId = null; // message id being edited
+        let pendingDeleteChatId = null;
         let beerFilters = {
             type: '',
             style: '',
@@ -2045,6 +2150,25 @@
             }
             
             currentUser = JSON.parse(userDataStr);
+
+            // Ensure chat button is on the right even if some CSS overrides exist
+            const chatBtn = document.getElementById('chatBtn');
+            if (chatBtn) {
+                chatBtn.style.right = '1.5rem';
+                chatBtn.style.left = 'auto';
+                chatBtn.style.position = 'fixed';
+                chatBtn.style.bottom = '1.5rem';
+                chatBtn.style.height = '56px';
+                // store width for aligning "scroll to top" button when chat is open
+                try {
+                    const w = chatBtn.getBoundingClientRect().width;
+                    document.documentElement.style.setProperty('--chatw', w + 'px');
+                    window.addEventListener('resize', () => {
+                        const w2 = chatBtn.getBoundingClientRect().width;
+                        document.documentElement.style.setProperty('--chatw', w2 + 'px');
+                    });
+                } catch(_) {}
+            }
 
             // Apply theme selection
             applyTheme();
@@ -4072,6 +4196,334 @@
             };
         }
 
+        // -----------------
+        // Chat UI + Firebase
+        // -----------------
+        function toggleChat(force = null) {
+            const panel = document.getElementById('chatPanel');
+            if (!panel) return;
+            chatOpen = (force === null) ? !chatOpen : !!force;
+
+            panel.classList.toggle('open', chatOpen);
+            panel.setAttribute('aria-hidden', chatOpen ? 'false' : 'true');
+
+            // mark html for layout tweaks (scroll-to-top button position)
+            document.documentElement.classList.toggle('chat-open', chatOpen);
+
+            if (chatOpen) {
+                initChatOnce();
+                requestAnimationFrame(() => {
+                    const inp = document.getElementById('chatInput');
+                    inp && inp.focus();
+                    scrollChatToBottom(true);
+                });
+            } else {
+                // stop typing when closing
+                try { setTyping(false); } catch(_) {}
+                cancelChatEdit();
+            }
+        }
+
+        function initChatOnce() {
+            if (chatInitialized) return;
+            chatInitialized = true;
+
+            const inp = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+            if (inp) {
+                inp.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+
+                const updateOverflow = () => {
+                    // show scrollbar only if content exceeds max height
+                    const needs = inp.scrollHeight > 112;
+                    inp.classList.toggle('scroll', needs);
+                };
+
+                // autosize + typing indicator
+                const resize = () => {
+                    inp.style.height = 'auto';
+                    inp.style.height = Math.min(inp.scrollHeight, 112) + 'px';
+                    updateOverflow();
+                };
+
+                inp.addEventListener('input', () => {
+                    resize();
+                    markTyping();
+                });
+                inp.addEventListener('focus', () => markTyping());
+                inp.addEventListener('blur', () => setTyping(false));
+
+                resize();
+            }
+
+            // Subscribe to Firebase chat
+            if (useFirebase && db) {
+                const ref = db.ref(CHAT_PATH).limitToLast(250);
+                const cb = (snap) => {
+                    const raw = snap.val() || {};
+                    const messages = Array.isArray(raw) ? raw : Object.values(raw);
+                    renderChatMessages(messages);
+                };
+                ref.on('value', cb);
+                chatUnsubscribe = () => ref.off('value', cb);
+
+                // typing
+                const tRef = db.ref(CHAT_TYPING_PATH);
+                const tCb = (snap) => {
+                    const raw = snap.val() || {};
+                    renderTypingIndicator(raw);
+                };
+                tRef.on('value', tCb);
+                chatTypingUnsub = () => tRef.off('value', tCb);
+            } else {
+                // fallback local
+                const raw = localStorage.getItem('chatMessagesLocal');
+                const messages = raw ? JSON.parse(raw) : [];
+                renderChatMessages(messages);
+            }
+        }
+
+        function formatDayHeader(ts) {
+            const d = new Date(ts);
+            return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function sameDay(aTs, bTs) {
+            const a = new Date(aTs);
+            const b = new Date(bTs);
+            return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+        }
+
+        function renderChatMessages(messages) {
+            const box = document.getElementById('chatMessages');
+            if (!box) return;
+
+            // detect if user is near bottom
+            const nearBottom = (box.scrollTop + box.clientHeight) >= (box.scrollHeight - 80);
+
+            const safe = (s) => String(s || '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+
+            const me = getUserName();
+            const sorted = (messages || [])
+                .filter(m => m && (m.text || '').trim())
+                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+
+            let html = '';
+            let prevTs = null;
+            for (const m of sorted) {
+                const mine = m.author === me;
+                const t = new Date(m.timestamp || Date.now());
+                const time = t.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+                if (!prevTs || !sameDay(prevTs, m.timestamp || 0)) {
+                    html += `<div class="text-center text-[11px] text-gray-500 py-2">${safe(formatDayHeader(m.timestamp || Date.now()))}</div>`;
+                }
+                prevTs = m.timestamp || 0;
+
+                const canEdit = mine;
+                html += `
+                    <div class="flex ${mine ? 'justify-end' : 'justify-start'}" data-msg="${safe(m.id)}">
+                        <div class="max-w-[88%] rounded-2xl px-3 py-2 border ${mine ? 'bg-amber-500/15 border-amber-500/25' : 'bg-white/5 border-white/10'}">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="text-xs ${mine ? 'text-amber-200' : 'text-gray-300'} font-semibold truncate">${safe(m.author || '—')}</div>
+                                    <div class="text-sm text-white whitespace-pre-wrap break-words mt-1">${safe(m.text)}</div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                                    <div class="text-[10px] text-gray-500">${time}</div>
+                                    ${canEdit ? `
+                                        <div class="flex items-center gap-1">
+                                            <button class="text-gray-400 hover:text-amber-300 transition text-[12px]" title="Редактировать" onclick="event.preventDefault(); event.stopPropagation(); startChatEdit('${safe(m.id)}')">✏️</button>
+                                            <button class="text-gray-400 hover:text-red-300 transition text-[12px]" title="Удалить" onclick="event.preventDefault(); event.stopPropagation(); openDeleteChatModal('${safe(m.id)}')">🗑️</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            box.innerHTML = html || `<div class="text-center text-gray-500 text-sm py-6">Пока нет сообщений…</div>`;
+
+            if (chatOpen && (nearBottom || sorted.length < 10)) {
+                scrollChatToBottom(true);
+            }
+        }
+
+        function scrollChatToBottom(smooth) {
+            const box = document.getElementById('chatMessages');
+            if (!box) return;
+            try {
+                box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+            } catch (_) {
+                box.scrollTop = box.scrollHeight;
+            }
+        }
+
+        function getMyChatKey() {
+            // stable key for typing indicator (avoid spaces)
+            const u = (currentUser && currentUser.username) ? currentUser.username : (getUserName() || 'me');
+            return String(u).toLowerCase().replace(/[^a-z0-9_-]+/g, '_').slice(0, 40);
+        }
+
+        function markTyping() {
+            if (!chatOpen) return;
+            setTyping(true);
+            if (chatTypingTimer) clearTimeout(chatTypingTimer);
+            chatTypingTimer = setTimeout(() => setTyping(false), 1800);
+        }
+
+        function setTyping(isTyping) {
+            if (!(useFirebase && db)) return;
+            try {
+                const key = getMyChatKey();
+                if (!key) return;
+                const ref = db.ref(`${CHAT_TYPING_PATH}/${key}`);
+                if (isTyping) {
+                    ref.set({ name: getUserName(), ts: Date.now() });
+                } else {
+                    ref.remove();
+                }
+            } catch (_) {}
+        }
+
+        function renderTypingIndicator(raw) {
+            const el = document.getElementById('typingIndicator');
+            if (!el) return;
+            const meKey = getMyChatKey();
+            const now = Date.now();
+            const arr = Object.entries(raw || {})
+                .filter(([k, v]) => k !== meKey && v && v.name && (now - (v.ts || 0) < 3500))
+                .map(([, v]) => v.name);
+            if (!arr.length) {
+                el.classList.add('hidden');
+                el.textContent = '';
+                return;
+            }
+            const names = arr.slice(0, 3).join(', ');
+            const more = arr.length > 3 ? ` и ещё ${arr.length - 3}` : '';
+            el.textContent = `${names}${more} печатает…`;
+            el.classList.remove('hidden');
+        }
+
+        function startChatEdit(id) {
+            if (!id) return;
+            chatEditId = id;
+            const box = document.getElementById('chatMessages');
+            const node = box?.querySelector(`[data-msg="${CSS.escape(id)}"] .text-sm`);
+            const currentText = node ? node.textContent : '';
+            const inp = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+            if (inp) {
+                inp.value = currentText;
+                inp.focus();
+                inp.dispatchEvent(new Event('input'));
+            }
+            if (sendBtn) sendBtn.textContent = 'Сохранить';
+        }
+
+        function cancelChatEdit() {
+            chatEditId = null;
+            const inp = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('chatSendBtn');
+            if (inp) {
+                inp.value = '';
+                inp.dispatchEvent(new Event('input'));
+            }
+            if (sendBtn) sendBtn.textContent = 'Отправить';
+        }
+
+        function openDeleteChatModal(id) {
+            pendingDeleteChatId = id;
+            const preview = document.getElementById('deleteChatPreview');
+            const box = document.getElementById('chatMessages');
+            const node = box?.querySelector(`[data-msg="${CSS.escape(id)}"] .text-sm`);
+            if (preview) preview.textContent = node ? node.textContent : '';
+            const modal = document.getElementById('deleteChatModal');
+            modal?.classList.remove('hidden');
+            modal?.classList.add('flex');
+        }
+
+        function closeDeleteChatModal() {
+            const modal = document.getElementById('deleteChatModal');
+            modal?.classList.add('hidden');
+            modal?.classList.remove('flex');
+            pendingDeleteChatId = null;
+        }
+
+        function confirmDeleteChatMessage() {
+            const id = pendingDeleteChatId;
+            if (!id) return;
+            if (useFirebase && db) {
+                db.ref(`${CHAT_PATH}/${id}`).remove();
+            }
+            closeDeleteChatModal();
+        }
+
+        function sendChatMessage() {
+            const inp = document.getElementById('chatInput');
+            if (!inp) return;
+            const text = (inp.value || '').trim();
+            if (!text) return;
+
+            const author = getUserName();
+            if (!author) return;
+
+            const now = Date.now();
+
+            // edit existing
+            if (chatEditId) {
+                const id = chatEditId;
+                if (useFirebase && db) {
+                    db.ref(`${CHAT_PATH}/${id}`).transaction((m) => {
+                        if (!m) return m;
+                        if (m.author !== author) return m;
+                        m.text = text;
+                        m.editedAt = now;
+                        return m;
+                    });
+                }
+                cancelChatEdit();
+                setTyping(false);
+                return;
+            }
+
+            const msg = {
+                id: now.toString(),
+                author,
+                text,
+                timestamp: now
+            };
+
+            // Optimistic clear
+            inp.value = '';
+            inp.dispatchEvent(new Event('input'));
+            setTyping(false);
+
+            if (useFirebase && db) {
+                db.ref(`${CHAT_PATH}/${msg.id}`).set(msg);
+            } else {
+                const raw = localStorage.getItem('chatMessagesLocal');
+                const arr = raw ? JSON.parse(raw) : [];
+                arr.push(msg);
+                localStorage.setItem('chatMessagesLocal', JSON.stringify(arr));
+                renderChatMessages(arr);
+            }
+
+            requestAnimationFrame(() => scrollChatToBottom(true));
+        }
+
         // Keyboard handlers
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -4084,6 +4536,9 @@
                 closeEditBeerModal();
                 closeDeleteBeerModal();
                 closeBeerColumnsModal();
+                closeDeleteChatModal();
+                // chat
+                if (chatOpen) toggleChat(false);
             }
             if (e.key === 'Enter') {
                 if (document.getElementById('addColumnModal').classList.contains('flex')) createColumn();
