@@ -1136,6 +1136,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 12h12M10 20h4" />
                             </svg>
                         </button>
+
+                        <button onclick="openBeerColumnsModal()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition" title="Настроить колонки">
+                            Колонки
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
                     </div>
                     <div class="flex items-center gap-2">
                         <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
@@ -1600,6 +1607,32 @@
         </div>
     </div>
 
+    <!-- Beer Columns Modal -->
+    <div id="beerColumnsModal" class="modal fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+        <div class="bg-gray-950 rounded-2xl max-w-md w-full p-6 border border-amber-500/30 mx-4">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-400">Колонки таблицы</h3>
+                    <div class="text-xs text-gray-500 mt-1">Выберите, какие колонки показывать в «Рейтинг пива»</div>
+                </div>
+                <button onclick="closeBeerColumnsModal()" class="text-gray-500 hover:text-white transition hover:rotate-90 transform duration-300" title="Закрыть">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="beerColumnsList" class="space-y-2 bg-black/30 rounded-xl p-3 border border-amber-500/20">
+                <!-- checkboxes injected by JS -->
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <button onclick="resetBeerColumns()" class="flex-1 px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Сбросить</button>
+                <button onclick="saveBeerColumns()" class="flex-1 btn-glow bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-2 px-4 rounded-xl">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scroll to Top Button -->
     <button id="scrollTopBtn" onclick="scrollToTop()" class="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold p-4 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-110 opacity-0 invisible" style="transition: opacity 0.3s, visibility 0.3s, transform 0.2s; box-shadow: 0 10px 24px var(--glow-box-2), 0 0 0 1px var(--accent-border-20);">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1770,6 +1803,22 @@
             ratingMin: '',
             ratingMax: ''
         };
+
+        // Beer table column visibility
+        const BEER_COLS_LS_KEY = 'beerTableColumns';
+        const BEER_COLUMNS = [
+            { key: 'name', label: 'Название', required: true },
+            { key: 'type', label: 'Вид' },
+            { key: 'style', label: 'Сорт' },
+            { key: 'filtered', label: 'Фильтрация' },
+            { key: 'country', label: 'Страна' },
+            { key: 'volume', label: 'Объём' },
+            { key: 'alcohol', label: 'Крепость' },
+            { key: 'rating', label: 'Рейтинг' },
+            { key: 'actions', label: 'Действия', required: true }
+        ];
+        let beerColumnsVisible = null; // set in init
+
         let columnSortState = {}; // { columnId: 'asc' | 'desc' | null }
 
         const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 
@@ -2002,6 +2051,10 @@
 
             // Apply logo font selection
             applyLogoSettings();
+
+            // Beer columns visibility init
+            beerColumnsVisible = loadBeerColumnsVisible();
+
             window.addEventListener('storage', (e) => {
                 if (e.key === LOGO_FONT_LS_KEY) {
                     // Seamless: load font first, then apply preset
@@ -2016,6 +2069,10 @@
                     Promise.resolve().then(applyLogoSettings);
                 }
                 if (e.key === THEME_LS_KEY) applyTheme();
+                if (e.key === BEER_COLS_LS_KEY) {
+                    beerColumnsVisible = loadBeerColumnsVisible();
+                    renderBeerRating();
+                }
             });
             
             // Update user profile in header
@@ -3295,6 +3352,119 @@
             syncBeerSelects();
         }
 
+        // -----------------
+        // Beer table columns (customize)
+        // -----------------
+        function getDefaultBeerColumnsVisible() {
+            const vis = {};
+            BEER_COLUMNS.forEach(c => {
+                vis[c.key] = c.required ? true : true;
+            });
+            return vis;
+        }
+
+        function loadBeerColumnsVisible() {
+            try {
+                const raw = localStorage.getItem(BEER_COLS_LS_KEY);
+                if (!raw) return getDefaultBeerColumnsVisible();
+                const parsed = JSON.parse(raw);
+                const vis = getDefaultBeerColumnsVisible();
+                Object.keys(vis).forEach(k => {
+                    if (typeof parsed[k] === 'boolean') vis[k] = parsed[k];
+                });
+                // enforce required
+                BEER_COLUMNS.forEach(c => { if (c.required) vis[c.key] = true; });
+                return vis;
+            } catch (_) {
+                return getDefaultBeerColumnsVisible();
+            }
+        }
+
+        function applyBeerColumnsVisibility() {
+            const vis = beerColumnsVisible || getDefaultBeerColumnsVisible();
+
+            // headers
+            const thMap = {
+                name: document.querySelector('th[onclick="sortBeerBy(\'name\')"]'),
+                type: document.querySelector('th[onclick="sortBeerBy(\'type\')"]'),
+                style: document.querySelector('th[onclick="sortBeerBy(\'style\')"]'),
+                filtered: document.querySelector('th[onclick="sortBeerBy(\'filtered\')"]'),
+                country: document.querySelector('th[onclick="sortBeerBy(\'country\')"]'),
+                volume: document.querySelector('th[onclick="sortBeerBy(\'volume\')"]'),
+                alcohol: document.querySelector('th[onclick="sortBeerBy(\'alcohol\')"]'),
+                rating: document.querySelector('th[onclick="sortBeerBy(\'rating\')"]'),
+                actions: document.querySelector('#beerTable thead th:last-child')
+            };
+            Object.entries(thMap).forEach(([k, el]) => {
+                if (!el) return;
+                el.style.display = vis[k] ? '' : 'none';
+            });
+
+            // body cells (by nth-child) — depends on fixed column order
+            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), rating(8), actions(9)
+            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, rating: 8, actions: 9 };
+            document.querySelectorAll('#beerTableBody tr').forEach(tr => {
+                Object.keys(idx).forEach(k => {
+                    const td = tr.children[idx[k] - 1];
+                    if (td) td.style.display = vis[k] ? '' : 'none';
+                });
+            });
+        }
+
+        function openBeerColumnsModal() {
+            if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
+            const list = document.getElementById('beerColumnsList');
+            if (!list) return;
+
+            list.innerHTML = BEER_COLUMNS.filter(c => !c.required).map(c => {
+                const checked = beerColumnsVisible[c.key] !== false;
+                return `
+                    <label class="flex items-center gap-3 text-sm text-gray-200">
+                        <input type="checkbox" class="accent-amber-500" data-col="${c.key}" ${checked ? 'checked' : ''}>
+                        <span>${c.label}</span>
+                    </label>
+                `;
+            }).join('');
+
+            const modal = document.getElementById('beerColumnsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeBeerColumnsModal() {
+            const modal = document.getElementById('beerColumnsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveBeerColumns() {
+            const list = document.getElementById('beerColumnsList');
+            if (!list) return;
+
+            const vis = loadBeerColumnsVisible();
+            list.querySelectorAll('input[type="checkbox"][data-col]').forEach(cb => {
+                const k = cb.getAttribute('data-col');
+                vis[k] = !!cb.checked;
+            });
+            // enforce required
+            BEER_COLUMNS.forEach(c => { if (c.required) vis[c.key] = true; });
+
+            beerColumnsVisible = vis;
+            try { localStorage.setItem(BEER_COLS_LS_KEY, JSON.stringify(vis)); } catch (_) {}
+
+            closeBeerColumnsModal();
+            // re-render so empty state colspan correct too
+            renderBeerRating();
+        }
+
+        function resetBeerColumns() {
+            beerColumnsVisible = getDefaultBeerColumnsVisible();
+            try { localStorage.removeItem(BEER_COLS_LS_KEY); } catch (_) {}
+            // refresh modal UI
+            openBeerColumnsModal();
+            renderBeerRating();
+        }
+
         function resetBeerFilters() {
             beerFilters = {
                 type: '',
@@ -3354,6 +3524,7 @@
 
         function renderBeerRating() {
             const tbody = document.getElementById('beerTableBody');
+            if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
             const allBeers = data.beerRating || [];
             let beers = allBeers;
             
@@ -3465,9 +3636,18 @@
                 return beerSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
             });
             
+            const visibleCount = (() => {
+                const vis = beerColumnsVisible || loadBeerColumnsVisible();
+                // count visible columns in fixed order
+                const keys = ['name','type','style','filtered','country','volume','alcohol','rating','actions'];
+                return keys.reduce((c, k) => c + (vis[k] ? 1 : 0), 0);
+            })();
+
             if (sortedBeers.length === 0) {
                 const msg = beerSearchQuery ? 'Такое пиво не найдено' : 'Пока нет пива в рейтинге';
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-gray-600 py-8">${msg}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${visibleCount}" class="text-center text-gray-600 py-8">${msg}</td></tr>`;
+                // also keep header in sync
+                applyBeerColumnsVisibility();
                 return;
             }
             
@@ -3513,6 +3693,9 @@
                     </tr>
                 `;
             }).join('');
+
+            // Apply column visibility after rendering
+            applyBeerColumnsVisibility();
         }
 
         function openAddBeerModal() {
@@ -3900,6 +4083,7 @@
                 closeRateBeerModal();
                 closeEditBeerModal();
                 closeDeleteBeerModal();
+                closeBeerColumnsModal();
             }
             if (e.key === 'Enter') {
                 if (document.getElementById('addColumnModal').classList.contains('flex')) createColumn();
