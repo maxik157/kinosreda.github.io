@@ -938,7 +938,8 @@
         }
 
         /* Keep Chat + Top buttons aligned and same height */
-        #chatBtn { height: 56px; overflow: visible !important; }
+        #chatBtnWrap { right: 1.5rem; left: auto; bottom: 1.5rem; }
+        #chatBtn { height: 56px; overflow: visible !important; position: relative; }
         #scrollTopBtn { width: 56px; height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; }
         #chatSendBtn { height: 44px; min-width: 110px; }
 
@@ -948,28 +949,32 @@
         /* Disable shine sweep for chat button specifically to avoid weird glow artifacts */
         #chatBtn.btn-glow::after { content: none !important; }
         #chatBtn > * { position: relative; z-index: 1; }
-        #chatBadge { z-index: 3; }
 
-        /* Unread badge on chat button */
-        .chat-badge {
+        /* Unread badge (iOS-like, half outside). Positioned relative to wrapper, NOT inside the button.
+           Center of badge sits exactly on the wrapper corner (same as button corner). */
+        #chatBtnWrap { position: fixed; }
+        #chatBtnWrap .chat-badge {
             position: absolute;
-            top: -6px;
-            right: -6px;
+            top: 0;
+            right: 0;
+            /* iOS-like: center of badge sits exactly on the wrapper corner (same as button corner) */
+            transform: translate(50%, -50%);
+            pointer-events: none;
             min-width: 20px;
             height: 20px;
             padding: 0 6px;
             border-radius: 999px;
             background: linear-gradient(135deg, #ef4444, #dc2626);
             color: #fff;
-            font-weight: 800;
+            font-weight: 900;
             font-size: 11px;
             line-height: 20px;
             text-align: center;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.45);
-            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.55);
+            border: none;
+            z-index: 3;
         }
-        html[data-theme="white"] .chat-badge {
-            border-color: rgba(255,255,255,0.22);
+        html[data-theme="white"] #chatBtnWrap .chat-badge {
             box-shadow: 0 10px 20px rgba(255,255,255,0.08);
         }
 
@@ -989,16 +994,17 @@
             border-radius: 14px;
             padding: 6px;
             display: none;
-            gap: 5px;
+            gap: 4px;
             flex-wrap: wrap;
-            width: min(360px, calc(100vw - 32px));
-            max-width: min(360px, calc(100vw - 32px));
+            /* Aim for 2 rows when possible */
+            width: min(344px, calc(100vw - 24px));
+            max-width: min(344px, calc(100vw - 24px));
             box-shadow: 0 18px 50px rgba(0,0,0,0.6);
         }
         .react-menu.open { display: flex; }
         .react-emoji-btn {
-            width: 34px;
-            height: 34px;
+            width: 30px;
+            height: 30px;
             border-radius: 10px;
             display: grid;
             place-items: center;
@@ -1770,11 +1776,13 @@
     </div>
 
     <!-- Chat Button + Panel -->
-    <button id="chatBtn" onclick="toggleChat()" class="fixed bottom-6 right-6 left-auto z-50 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-[1.04] flex items-center gap-2 relative" style="position:fixed; right:1.5rem; left:auto; bottom:1.5rem; height:56px;">
-        <span class="text-lg">💬</span>
-        <span class="hidden sm:inline">Чат</span>
+    <div id="chatBtnWrap" class="fixed bottom-6 right-6 left-auto z-50" style="right:1.5rem; left:auto; bottom:1.5rem;">
+        <button id="chatBtn" onclick="toggleChat()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-[1.04] flex items-center gap-2 relative" style="height:56px;">
+            <span class="text-lg">💬</span>
+            <span class="hidden sm:inline">Чат</span>
+        </button>
         <span id="chatBadge" class="chat-badge hidden" aria-label="Непрочитанные сообщения"></span>
-    </button>
+    </div>
 
     <div id="chatPanel" class="chat-panel fixed bottom-24 right-6 left-auto z-50 w-[92vw] sm:w-[380px] max-w-[92vw]" aria-hidden="true">
         <div id="chatShell" class="bg-black/70 backdrop-blur-xl border border-amber-500/20 rounded-2xl shadow-2xl overflow-hidden relative">
@@ -2013,7 +2021,7 @@
         let __chatCache = [];
         let __chatMaxTs = 0;
         let __chatForceScroll = false;
-        const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🤐'];
+        const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🤐','🍺'];
         let beerFilters = {
             type: '',
             style: '',
@@ -2270,12 +2278,16 @@
 
             // Ensure chat button is on the right even if some CSS overrides exist
             const chatBtn = document.getElementById('chatBtn');
+            const chatWrap = document.getElementById('chatBtnWrap');
+            if (chatWrap) {
+                chatWrap.style.right = '1.5rem';
+                chatWrap.style.left = 'auto';
+                chatWrap.style.position = 'fixed';
+                chatWrap.style.bottom = '1.5rem';
+            }
             if (chatBtn) {
-                chatBtn.style.right = '1.5rem';
-                chatBtn.style.left = 'auto';
-                chatBtn.style.position = 'fixed';
-                chatBtn.style.bottom = '1.5rem';
                 chatBtn.style.height = '56px';
+                chatBtn.style.position = 'relative';
                 // store width for aligning "scroll to top" button when chat is open
                 try {
                     const w = chatBtn.getBoundingClientRect().width;
@@ -2405,6 +2417,9 @@
                     }
                     renderBeerRating();
                 });
+
+                // Start chat subscription immediately (for unread badge), even if chat panel was never opened
+                try { ensureChatSubscription(); } catch(_) {}
                 
                 console.log('Firebase connected!');
             } catch (e) {
@@ -4331,14 +4346,38 @@
                 initChatOnce();
                 __chatForceScroll = true;
 
+                // If chat subscription started before the panel was opened,
+                // the initial Firebase callback may have already filled __chatCache without rendering.
+                // Render immediately from cache so messages are visible right away.
+                try {
+                    if (__chatCache && __chatCache.length) {
+                        renderChatMessages(__chatCache);
+                    }
+                } catch (_) {}
+
                 // Focus + reliable scroll-to-bottom (panel opening animation changes height,
                 // and messages may render async from Firebase, so do a few passes)
                 requestAnimationFrame(() => {
                     const inp = document.getElementById('chatInput');
                     inp && inp.focus();
                     scrollChatToBottom(false);
+                    // The panel opens with an animation and messages may reflow (fonts/images),
+                    // so do a few passes to ensure we land at the real bottom.
                     setTimeout(() => scrollChatToBottom(false), 240);
                     setTimeout(() => scrollChatToBottom(false), 520);
+                    setTimeout(() => scrollChatToBottom(false), 900);
+                    setTimeout(() => scrollChatToBottom(false), 1400);
+
+                    // Also scroll after the panel transition ends (reliable for mobile)
+                    try {
+                        const p = document.getElementById('chatPanel');
+                        const onEnd = () => {
+                            p.removeEventListener('transitionend', onEnd);
+                            scrollChatToBottom(false);
+                        };
+                        p && p.addEventListener('transitionend', onEnd);
+                    } catch (_) {}
+
                     markChatAsRead();
                 });
             } else {
@@ -4408,7 +4447,11 @@
                     __chatCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
                     __chatMaxTs = __chatCache.length ? (__chatCache[__chatCache.length - 1].timestamp || 0) : 0;
 
-                    if (chatOpen) renderChatMessages(__chatCache);
+                    // Render immediately if panel is open OR panel has been initialized (so the DOM exists).
+                    // This prevents "empty chat" when subscription starts before the panel is opened.
+                    if (chatOpen || chatInitialized) {
+                        try { renderChatMessages(__chatCache); } catch(_) {}
+                    }
                     updateChatBadgeFromCache();
                 };
                 ref.on('value', cb);
@@ -4551,11 +4594,20 @@
                 // m.reactions structure: { userKey: { '👍': {emoji}, '😂': {emoji} }, ... }
                 const reactEmojis = [];
                 if (m.reactions && typeof m.reactions === 'object') {
-                    Object.values(m.reactions).forEach(userMap => {
-                        if (!userMap || typeof userMap !== 'object') return;
-                        Object.values(userMap).forEach(r => {
-                            if (r && r.emoji) reactEmojis.push(r.emoji);
-                        });
+                    // Support both schemas:
+                    // 1) reactions: { userKey: { name, emoji, ts } }
+                    // 2) legacy multi-emoji per user: { userKey: { '👍': {emoji}, ... } }
+                    Object.values(m.reactions).forEach(val => {
+                        if (!val) return;
+                        if (val && typeof val === 'object' && val.emoji) {
+                            reactEmojis.push(val.emoji);
+                            return;
+                        }
+                        if (val && typeof val === 'object') {
+                            Object.values(val).forEach(r => {
+                                if (r && r.emoji) reactEmojis.push(r.emoji);
+                            });
+                        }
                     });
                 }
                 const reactCounts = reactEmojis.reduce((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {});
@@ -4596,7 +4648,7 @@
                                     </div>
                                 </div>
                             </div>
-                            ${reactionButtons ? `<div class="mt-2"><div class="inline-flex flex-wrap items-center gap-2 max-w-full">${reactionButtons}</div></div>` : ''}
+                            ${reactionButtons ? `<div class="mt-2"><div class="flex flex-wrap items-center gap-2 max-w-full">${reactionButtons}</div></div>` : ''}
                         </div>
                     </div>
                 `;
@@ -4605,11 +4657,14 @@
             box.innerHTML = html || `<div class="text-center text-gray-500 text-sm py-6">Пока нет сообщений…</div>`;
 
             if (chatOpen && (__chatForceScroll || nearBottom || sorted.length < 10)) {
-                scrollChatToBottom(false);
-                // Once we forced the initial scroll, disable forcing
-                __chatForceScroll = false;
-                // If user is viewing the bottom of the chat, mark as read
-                markChatAsRead();
+                // Scroll AFTER layout to ensure we land at the real bottom
+                requestAnimationFrame(() => {
+                    scrollChatToBottom(false);
+                    // Once we forced the initial scroll, disable forcing
+                    __chatForceScroll = false;
+                    // If user is viewing the bottom of the chat, mark as read
+                    markChatAsRead();
+                });
             }
         }
 
@@ -4738,16 +4793,16 @@
             if (!(useFirebase && db)) return;
 
             const myKey = getMyChatKey();
-            // Allow multiple reactions per message from the same user:
-            // store as reactions/{userKey}/{emoji} = {name, emoji, ts}
-            const path = `${CHAT_PATH}/${id}/reactions/${myKey}/${emoji}`;
+            // One reaction per user per message:
+            // reactions/{userKey} = { name, emoji, ts }
+            const path = `${CHAT_PATH}/${id}/reactions/${myKey}`;
             db.ref(path).once('value').then(snap => {
                 const cur = snap.val();
-                if (cur) {
-                    // remove this emoji reaction
+                if (cur && cur.emoji === emoji) {
+                    // same emoji -> remove
                     db.ref(path).remove();
                 } else {
-                    // add this emoji reaction
+                    // set / replace
                     db.ref(path).set({ name: me, emoji, ts: Date.now() });
                 }
             }).finally(() => {
@@ -4774,7 +4829,7 @@
                 const top = (bRect.bottom - sRect.top) + 8;
                 const left = Math.min(
                     Math.max(8, bRect.left - sRect.left),
-                    sRect.width - 8 - 360
+                    sRect.width - 8 - 320
                 );
                 menu.style.top = `${top}px`;
                 menu.style.left = `${left}px`;
