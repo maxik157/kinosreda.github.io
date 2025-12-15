@@ -938,9 +938,104 @@
         }
 
         /* Keep Chat + Top buttons aligned and same height */
-        #chatBtn { height: 56px; }
+        #chatBtn { height: 56px; overflow: visible !important; }
         #scrollTopBtn { width: 56px; height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; }
         #chatSendBtn { height: 44px; min-width: 110px; }
+
+        /* Chat button: keep the shine pseudo-element BEHIND the content (otherwise it can cover the unread badge)
+           and ensure the badge can overflow outside the rounded button */
+        #chatBtn::after { z-index: 0; pointer-events: none; opacity: 0.22; }
+        /* Disable shine sweep for chat button specifically to avoid weird glow artifacts */
+        #chatBtn.btn-glow::after { content: none !important; }
+        #chatBtn > * { position: relative; z-index: 1; }
+        #chatBadge { z-index: 3; }
+
+        /* Unread badge on chat button */
+        .chat-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            font-weight: 800;
+            font-size: 11px;
+            line-height: 20px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+        html[data-theme="white"] .chat-badge {
+            border-color: rgba(255,255,255,0.22);
+            box-shadow: 0 10px 20px rgba(255,255,255,0.08);
+        }
+
+        /* Chat: reply banner + reactions */
+        .reply-banner {
+            background: rgba(255,255,255,0.04);
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .react-menu {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 60;
+            background: rgba(3, 7, 18, 0.96);
+            border: 1px solid var(--accent-border-25);
+            border-radius: 14px;
+            padding: 6px;
+            display: none;
+            gap: 5px;
+            flex-wrap: wrap;
+            width: min(360px, calc(100vw - 32px));
+            max-width: min(360px, calc(100vw - 32px));
+            box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+        }
+        .react-menu.open { display: flex; }
+        .react-emoji-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: grid;
+            place-items: center;
+            font-size: 18px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.12s ease, background 0.12s ease;
+        }
+        .react-emoji-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.10); }
+        .msg-reaction {
+            position: absolute;
+            right: 10px;
+            bottom: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(255,255,255,0.10);
+            color: rgba(255,255,255,0.92);
+        }
+        .msg-actions button { line-height: 1; }
+
+        /* Chat: reaction pills should have blue highlight */
+        .reaction-pill {
+            background: rgba(36, 161, 222, 0.22);
+            border: 1px solid rgba(36, 161, 222, 0.42);
+            color: rgba(255,255,255,0.95);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .reaction-pill:hover { background: rgba(36, 161, 222, 0.32); }
+        html[data-theme="white"] .reaction-pill { color: rgba(17,24,39,0.95); }
     </style>
 </head>
 <body class="bg-dark min-h-screen text-white">
@@ -1675,13 +1770,14 @@
     </div>
 
     <!-- Chat Button + Panel -->
-    <button id="chatBtn" onclick="toggleChat()" class="fixed bottom-6 right-6 left-auto z-50 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-[1.04] flex items-center gap-2" style="position:fixed; right:1.5rem; left:auto; bottom:1.5rem; height:56px;">
+    <button id="chatBtn" onclick="toggleChat()" class="fixed bottom-6 right-6 left-auto z-50 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 py-3 rounded-full shadow-lg shadow-amber-500/30 transition-all transform hover:scale-[1.04] flex items-center gap-2 relative" style="position:fixed; right:1.5rem; left:auto; bottom:1.5rem; height:56px;">
         <span class="text-lg">💬</span>
         <span class="hidden sm:inline">Чат</span>
+        <span id="chatBadge" class="chat-badge hidden" aria-label="Непрочитанные сообщения"></span>
     </button>
 
     <div id="chatPanel" class="chat-panel fixed bottom-24 right-6 left-auto z-50 w-[92vw] sm:w-[380px] max-w-[92vw]" aria-hidden="true">
-        <div class="bg-black/70 backdrop-blur-xl border border-amber-500/20 rounded-2xl shadow-2xl overflow-hidden">
+        <div id="chatShell" class="bg-black/70 backdrop-blur-xl border border-amber-500/20 rounded-2xl shadow-2xl overflow-hidden relative">
             <div class="flex items-center justify-between px-4 py-3 border-b border-amber-500/10 bg-black/60">
                 <div class="flex items-center gap-2">
                     <span class="text-amber-300">💬</span>
@@ -1697,9 +1793,23 @@
             <div id="chatMessages" class="px-3 py-3 space-y-2 max-h-[55vh] sm:max-h-[420px] overflow-y-auto"></div>
             <div id="typingIndicator" class="hidden px-3 pb-2 text-xs text-gray-400"></div>
 
-            <div class="px-3 py-3 border-t border-amber-500/10 bg-black/60">
+            <!-- Reaction picker (positioned near the message being reacted to) -->
+            <div id="reactMenu" class="react-menu" aria-hidden="true"></div>
+
+            <div class="px-3 py-3 border-t border-amber-500/10 bg-black/60 relative">
+                <!-- Reply banner (shown above input) -->
+                <div id="replyBanner" class="hidden reply-banner px-3 py-2 rounded-xl mb-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <div class="text-[11px] text-amber-300 font-semibold">Ответ</div>
+                            <div id="replyPreview" class="text-xs text-gray-200 truncate"></div>
+                        </div>
+                        <button onclick="clearReply()" class="text-gray-400 hover:text-white transition" title="Отменить ответ" aria-label="Отменить ответ">✕</button>
+                    </div>
+                </div>
+
                 <div class="flex gap-2 items-end">
-                    <textarea id="chatInput" rows="1" class="chat-input flex-1 min-h-[44px] max-h-28 px-3 py-2 rounded-xl bg-gray-900/80 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm resize-none"></textarea>
+                    <textarea id="chatInput" rows="1" class="chat-input flex-1 min-h-[44px] max-h-28 px-3 py-2 rounded-xl bg-gray-900/80 text-white border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm resize-none"></textarea>
                     <button id="chatSendBtn" onclick="sendChatMessage()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold px-4 rounded-xl transition" style="height:44px;">
                         Отправить
                     </button>
@@ -1890,13 +2000,20 @@
         // -----------------
         const CHAT_PATH = 'chatMessages';
         const CHAT_TYPING_PATH = 'chatTyping';
+        const CHAT_LASTREAD_PREFIX = 'chatLastRead:';
         let chatOpen = false;
         let chatInitialized = false;
-        let chatUnsubscribe = null;
         let chatTypingUnsub = null;
         let chatTypingTimer = null;
         let chatEditId = null; // message id being edited
+        let chatReplyTo = null; // { id, author, text }
+        let reactTargetId = null;
         let pendingDeleteChatId = null;
+        let __chatSubActive = false;
+        let __chatCache = [];
+        let __chatMaxTs = 0;
+        let __chatForceScroll = false;
+        const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🤐'];
         let beerFilters = {
             type: '',
             style: '',
@@ -4212,21 +4329,142 @@
 
             if (chatOpen) {
                 initChatOnce();
+                __chatForceScroll = true;
+
+                // Focus + reliable scroll-to-bottom (panel opening animation changes height,
+                // and messages may render async from Firebase, so do a few passes)
                 requestAnimationFrame(() => {
                     const inp = document.getElementById('chatInput');
                     inp && inp.focus();
-                    scrollChatToBottom(true);
+                    scrollChatToBottom(false);
+                    setTimeout(() => scrollChatToBottom(false), 240);
+                    setTimeout(() => scrollChatToBottom(false), 520);
+                    markChatAsRead();
                 });
             } else {
                 // stop typing when closing
                 try { setTyping(false); } catch(_) {}
                 cancelChatEdit();
+                clearReply();
+                closeReactMenu();
+            }
+        }
+
+        function getChatLastReadKey() {
+            // per-user last read timestamp
+            const u = (currentUser && currentUser.username) ? currentUser.username : (getUserName() || 'me');
+            return CHAT_LASTREAD_PREFIX + String(u).toLowerCase();
+        }
+
+        function getChatLastRead() {
+            try {
+                return parseInt(localStorage.getItem(getChatLastReadKey()) || '0', 10) || 0;
+            } catch (_) {
+                return 0;
+            }
+        }
+
+        function setChatLastRead(ts) {
+            try {
+                localStorage.setItem(getChatLastReadKey(), String(ts || 0));
+            } catch (_) {}
+        }
+
+        function updateChatBadgeFromCache() {
+            const badge = document.getElementById('chatBadge');
+            if (!badge) return;
+            const me = getUserName();
+            const lastRead = getChatLastRead();
+
+            // Count messages newer than lastRead and not authored by me
+            const unread = (__chatCache || []).filter(m => m && (m.timestamp || 0) > lastRead && (m.author || '') !== me).length;
+            if (!unread) {
+                badge.classList.add('hidden');
+                badge.textContent = '';
+                return;
+            }
+            badge.textContent = unread > 99 ? '99+' : String(unread);
+            badge.classList.remove('hidden');
+        }
+
+        function markChatAsRead() {
+            // Mark everything up to latest timestamp as read
+            const ts = __chatMaxTs || 0;
+            if (ts > 0) setChatLastRead(ts);
+            updateChatBadgeFromCache();
+        }
+
+        function ensureChatSubscription() {
+            if (__chatSubActive) return;
+            __chatSubActive = true;
+
+            if (useFirebase && db) {
+                const ref = db.ref(CHAT_PATH).limitToLast(250);
+                const cb = (snap) => {
+                    const raw = snap.val() || {};
+                    const messages = Array.isArray(raw) ? raw : Object.values(raw);
+                    // keep messages even if empty text? no.
+                    __chatCache = (messages || []).filter(m => m && (m.text || '').trim());
+                    __chatCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                    __chatMaxTs = __chatCache.length ? (__chatCache[__chatCache.length - 1].timestamp || 0) : 0;
+
+                    if (chatOpen) renderChatMessages(__chatCache);
+                    updateChatBadgeFromCache();
+                };
+                ref.on('value', cb);
+
+                // typing
+                const tRef = db.ref(CHAT_TYPING_PATH);
+                const tCb = (snap) => {
+                    const raw = snap.val() || {};
+                    renderTypingIndicator(raw);
+                };
+                tRef.on('value', tCb);
+                chatTypingUnsub = () => tRef.off('value', tCb);
+
+                // On unload: not strictly needed
+                chatUnsubscribe = () => {
+                    ref.off('value', cb);
+                    tRef.off('value', tCb);
+                    __chatSubActive = false;
+                };
+            } else {
+                // fallback local
+                try {
+                    const raw = localStorage.getItem('chatMessagesLocal');
+                    const messages = raw ? JSON.parse(raw) : [];
+                    __chatCache = (messages || []).filter(m => m && (m.text || '').trim());
+                    __chatCache.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                    __chatMaxTs = __chatCache.length ? (__chatCache[__chatCache.length - 1].timestamp || 0) : 0;
+                    if (chatOpen) renderChatMessages(__chatCache);
+                    updateChatBadgeFromCache();
+                } catch (_) {}
             }
         }
 
         function initChatOnce() {
             if (chatInitialized) return;
             chatInitialized = true;
+            // Start chat subscription immediately so badge works even before opening panel later
+            ensureChatSubscription();
+
+            // close reaction menu on outside click
+            document.addEventListener('click', (e) => {
+                const menu = document.getElementById('reactMenu');
+                if (!menu) return;
+                if (menu.classList.contains('open') && !e.target.closest('#reactMenu') && !e.target.closest('.msg-actions')) {
+                    closeReactMenu();
+                }
+            });
+
+            // Close reaction menu when scrolling messages (prevents floating menu)
+            const msgBox = document.getElementById('chatMessages');
+            if (msgBox) {
+                msgBox.addEventListener('scroll', () => {
+                    const menu = document.getElementById('reactMenu');
+                    if (menu && menu.classList.contains('open')) closeReactMenu();
+                });
+            }
 
             const inp = document.getElementById('chatInput');
             const sendBtn = document.getElementById('chatSendBtn');
@@ -4261,30 +4499,13 @@
                 resize();
             }
 
-            // Subscribe to Firebase chat
-            if (useFirebase && db) {
-                const ref = db.ref(CHAT_PATH).limitToLast(250);
-                const cb = (snap) => {
-                    const raw = snap.val() || {};
-                    const messages = Array.isArray(raw) ? raw : Object.values(raw);
-                    renderChatMessages(messages);
-                };
-                ref.on('value', cb);
-                chatUnsubscribe = () => ref.off('value', cb);
-
-                // typing
-                const tRef = db.ref(CHAT_TYPING_PATH);
-                const tCb = (snap) => {
-                    const raw = snap.val() || {};
-                    renderTypingIndicator(raw);
-                };
-                tRef.on('value', tCb);
-                chatTypingUnsub = () => tRef.off('value', tCb);
-            } else {
-                // fallback local
-                const raw = localStorage.getItem('chatMessagesLocal');
-                const messages = raw ? JSON.parse(raw) : [];
-                renderChatMessages(messages);
+            // Subscription is handled by ensureChatSubscription() so the badge works even when the panel is closed.
+            // When chat opens, renderChatMessages() will be called from the shared subscription callback.
+            if (!useFirebase || !db) {
+                // fallback local render once
+                try {
+                    if (__chatCache && __chatCache.length) renderChatMessages(__chatCache);
+                } catch (_) {}
             }
         }
 
@@ -4325,6 +4546,29 @@
                 const t = new Date(m.timestamp || Date.now());
                 const time = t.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
+                // reactions summary (per emoji counts)
+                // reactions summary (support multiple emojis per user):
+                // m.reactions structure: { userKey: { '👍': {emoji}, '😂': {emoji} }, ... }
+                const reactEmojis = [];
+                if (m.reactions && typeof m.reactions === 'object') {
+                    Object.values(m.reactions).forEach(userMap => {
+                        if (!userMap || typeof userMap !== 'object') return;
+                        Object.values(userMap).forEach(r => {
+                            if (r && r.emoji) reactEmojis.push(r.emoji);
+                        });
+                    });
+                }
+                const reactCounts = reactEmojis.reduce((acc, e) => { acc[e] = (acc[e] || 0) + 1; return acc; }, {});
+                const reactionButtons = Object.entries(reactCounts)
+                    .map(([e, c]) => {
+                        const label = c > 1 ? `${e} ${c}` : `${e}`;
+                        return `<button type="button" class="reaction-pill px-2 py-1 rounded-full text-[12px] transition" onclick="event.preventDefault(); event.stopPropagation(); toggleReactionDirect('${safe(m.id)}','${safe(e)}')">${label}</button>`;
+                    })
+                    .join('');
+
+                // reply preview
+                const reply = m.replyTo && m.replyTo.author ? m.replyTo : null;
+
                 if (!prevTs || !sameDay(prevTs, m.timestamp || 0)) {
                     html += `<div class="text-center text-[11px] text-gray-500 py-2">${safe(formatDayHeader(m.timestamp || Date.now()))}</div>`;
                 }
@@ -4333,22 +4577,26 @@
                 const canEdit = mine;
                 html += `
                     <div class="flex ${mine ? 'justify-end' : 'justify-start'}" data-msg="${safe(m.id)}">
-                        <div class="max-w-[88%] rounded-2xl px-3 py-2 border ${mine ? 'bg-amber-500/15 border-amber-500/25' : 'bg-white/5 border-white/10'}">
+                        <div class="relative max-w-[88%] rounded-2xl px-3 py-2 border ${mine ? 'bg-amber-500/15 border-amber-500/25' : 'bg-white/5 border-white/10'}">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="min-w-0">
                                     <div class="text-xs ${mine ? 'text-amber-200' : 'text-gray-300'} font-semibold truncate">${safe(m.author || '—')}</div>
+                                    ${reply ? `<div class="mt-1 mb-1 text-[11px] text-gray-300 border-l-2 border-white/10 pl-2 truncate">↩ ${safe(reply.author)}: ${safe(reply.text || '').slice(0, 80)}</div>` : ''}
                                     <div class="text-sm text-white whitespace-pre-wrap break-words mt-1">${safe(m.text)}</div>
                                 </div>
                                 <div class="flex flex-col items-end gap-1 flex-shrink-0">
                                     <div class="text-[10px] text-gray-500">${time}</div>
-                                    ${canEdit ? `
-                                        <div class="flex items-center gap-1">
+                                    <div class="msg-actions flex items-center gap-1">
+                                        <button class="text-gray-400 hover:text-amber-300 transition text-[12px]" title="Ответить" onclick="event.preventDefault(); event.stopPropagation(); openReplyToMessage('${safe(m.id)}')">↩</button>
+                                        <button class="text-gray-400 hover:text-amber-300 transition text-[12px]" title="Реакция" onclick="event.preventDefault(); event.stopPropagation(); openReactMenuFor('${safe(m.id)}')">😊</button>
+                                        ${canEdit ? `
                                             <button class="text-gray-400 hover:text-amber-300 transition text-[12px]" title="Редактировать" onclick="event.preventDefault(); event.stopPropagation(); startChatEdit('${safe(m.id)}')">✏️</button>
                                             <button class="text-gray-400 hover:text-red-300 transition text-[12px]" title="Удалить" onclick="event.preventDefault(); event.stopPropagation(); openDeleteChatModal('${safe(m.id)}')">🗑️</button>
-                                        </div>
-                                    ` : ''}
+                                        ` : ''}
+                                    </div>
                                 </div>
                             </div>
+                            ${reactionButtons ? `<div class="mt-2"><div class="inline-flex flex-wrap items-center gap-2 max-w-full">${reactionButtons}</div></div>` : ''}
                         </div>
                     </div>
                 `;
@@ -4356,8 +4604,12 @@
 
             box.innerHTML = html || `<div class="text-center text-gray-500 text-sm py-6">Пока нет сообщений…</div>`;
 
-            if (chatOpen && (nearBottom || sorted.length < 10)) {
-                scrollChatToBottom(true);
+            if (chatOpen && (__chatForceScroll || nearBottom || sorted.length < 10)) {
+                scrollChatToBottom(false);
+                // Once we forced the initial scroll, disable forcing
+                __chatForceScroll = false;
+                // If user is viewing the bottom of the chat, mark as read
+                markChatAsRead();
             }
         }
 
@@ -4444,6 +4696,117 @@
             if (sendBtn) sendBtn.textContent = 'Отправить';
         }
 
+        // -----------------
+        // Reply
+        // -----------------
+        function openReplyToMessage(id) {
+            const msg = (__chatCache || []).find(m => String(m.id) === String(id));
+            if (!msg) return;
+            chatReplyTo = { id: msg.id, author: msg.author || '', text: msg.text || '' };
+            const banner = document.getElementById('replyBanner');
+            const preview = document.getElementById('replyPreview');
+            if (preview) preview.textContent = `${chatReplyTo.author}: ${(chatReplyTo.text || '').slice(0, 120)}`;
+            if (banner) banner.classList.remove('hidden');
+            const inp = document.getElementById('chatInput');
+            inp && inp.focus();
+        }
+
+        function clearReply() {
+            chatReplyTo = null;
+            const banner = document.getElementById('replyBanner');
+            if (banner) banner.classList.add('hidden');
+            const preview = document.getElementById('replyPreview');
+            if (preview) preview.textContent = '';
+        }
+
+        // -----------------
+        // Reactions
+        // -----------------
+        function initReactMenu() {
+            const menu = document.getElementById('reactMenu');
+            if (!menu || menu.dataset.ready === '1') return;
+            menu.dataset.ready = '1';
+            menu.innerHTML = CHAT_REACTIONS.map(e => `<button type="button" class="react-emoji-btn" onclick="toggleReactionOnMessage('${e}')">${e}</button>`).join('');
+        }
+
+        // Toggle reaction for current target message (clicking same emoji removes it)
+        function toggleReactionOnMessage(emoji) {
+            const id = reactTargetId;
+            if (!id || !emoji) return;
+            const me = getUserName();
+            if (!me) return;
+            if (!(useFirebase && db)) return;
+
+            const myKey = getMyChatKey();
+            // Allow multiple reactions per message from the same user:
+            // store as reactions/{userKey}/{emoji} = {name, emoji, ts}
+            const path = `${CHAT_PATH}/${id}/reactions/${myKey}/${emoji}`;
+            db.ref(path).once('value').then(snap => {
+                const cur = snap.val();
+                if (cur) {
+                    // remove this emoji reaction
+                    db.ref(path).remove();
+                } else {
+                    // add this emoji reaction
+                    db.ref(path).set({ name: me, emoji, ts: Date.now() });
+                }
+            }).finally(() => {
+                closeReactMenu();
+            });
+        }
+
+        function openReactMenuFor(id) {
+            initReactMenu();
+            reactTargetId = id;
+            const menu = document.getElementById('reactMenu');
+            const shell = document.getElementById('chatShell');
+            const box = document.getElementById('chatMessages');
+            if (!menu || !shell || !box) return;
+
+            // Position menu under the target message bubble
+            const msg = box.querySelector(`[data-msg="${CSS.escape(id)}"]`);
+            const bubble = msg ? msg.querySelector('.relative') : null;
+            if (bubble) {
+                const bRect = bubble.getBoundingClientRect();
+                const sRect = shell.getBoundingClientRect();
+
+                // Place under bubble, align to its left edge, keep inside panel
+                const top = (bRect.bottom - sRect.top) + 8;
+                const left = Math.min(
+                    Math.max(8, bRect.left - sRect.left),
+                    sRect.width - 8 - 360
+                );
+                menu.style.top = `${top}px`;
+                menu.style.left = `${left}px`;
+            } else {
+                menu.style.top = 'auto';
+                menu.style.left = 'auto';
+            }
+
+            menu.classList.add('open');
+            menu.setAttribute('aria-hidden', 'false');
+        }
+
+        // Toggle reaction directly by clicking the reaction pill under a message
+        function toggleReactionDirect(messageId, emoji) {
+            if (!messageId || !emoji) return;
+            reactTargetId = String(messageId);
+            toggleReactionOnMessage(String(emoji));
+        }
+
+        function closeReactMenu() {
+            reactTargetId = null;
+            const menu = document.getElementById('reactMenu');
+            if (!menu) return;
+            menu.classList.remove('open');
+            menu.setAttribute('aria-hidden', 'true');
+        }
+
+        // (deprecated) kept for backward compatibility if some old inline handlers exist
+        function addReactionToMessage(emoji) {
+            toggleReactionOnMessage(emoji);
+        }
+
         function openDeleteChatModal(id) {
             pendingDeleteChatId = id;
             const preview = document.getElementById('deleteChatPreview');
@@ -4496,6 +4859,9 @@
                 }
                 cancelChatEdit();
                 setTyping(false);
+                clearReply();
+                // Editing implies chat is read
+                markChatAsRead();
                 return;
             }
 
@@ -4505,11 +4871,15 @@
                 text,
                 timestamp: now
             };
+            if (chatReplyTo && chatReplyTo.id) {
+                msg.replyTo = { id: chatReplyTo.id, author: chatReplyTo.author || '', text: chatReplyTo.text || '' };
+            }
 
             // Optimistic clear
             inp.value = '';
             inp.dispatchEvent(new Event('input'));
             setTyping(false);
+            clearReply();
 
             if (useFirebase && db) {
                 db.ref(`${CHAT_PATH}/${msg.id}`).set(msg);
@@ -4518,10 +4888,16 @@
                 const arr = raw ? JSON.parse(raw) : [];
                 arr.push(msg);
                 localStorage.setItem('chatMessagesLocal', JSON.stringify(arr));
+                __chatCache = arr;
+                __chatMaxTs = now;
                 renderChatMessages(arr);
+                updateChatBadgeFromCache();
             }
 
-            requestAnimationFrame(() => scrollChatToBottom(true));
+            requestAnimationFrame(() => {
+                scrollChatToBottom(true);
+                markChatAsRead();
+            });
         }
 
         // Keyboard handlers
