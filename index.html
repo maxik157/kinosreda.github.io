@@ -1188,51 +1188,96 @@
                             </button>
                         </div>
 
-                        <!-- RSVP Section -->
-                        <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-green-500/20">
-                            <h4 id="rsvpTitle" class="text-base font-bold text-green-400 mb-3 flex items-center gap-2">
-                                <span>✋</span> Подтвердить участие
-                            </h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-gray-400 text-xs mb-1 block">Сколько пива принесёте? 🍺</label>
-                                    <input type="number" id="beerCount" min="0" max="99" value="2"
-                                        class="w-full px-3 py-2 rounded-lg bg-gray-800/50 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 transition text-sm">
+                        <!-- Switch between kino event and wishlist when both exist -->
+                        <div id="birthdayModeSwitcher" class="hidden mb-4">
+                            <div class="inline-flex rounded-full bg-gray-900/80 border border-amber-500/30 text-xs overflow-hidden">
+                                <button type="button" id="modeEventBtn" onclick="setBirthdayPanelMode('event')" class="px-3 py-1.5 border-r border-amber-500/20 text-gray-300 hover:text-white hover:bg-amber-500/10">
+                                    Участие в киносреде
+                                </button>
+                                <button type="button" id="modeWishlistBtn" onclick="setBirthdayPanelMode('birthday')" class="px-3 py-1.5 text-gray-300 hover:text-white hover:bg-amber-500/10">
+                                    Вишлист
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Wrapper for kino event sections (RSVP, movies, beer) -->
+                        <div id="eventSections">
+                            <!-- RSVP Section -->
+                            <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-green-500/20">
+                                <h4 id="rsvpTitle" class="text-base font-bold text-green-400 mb-3 flex items-center gap-2">
+                                    <span>✋</span> Подтвердить участие
+                                </h4>
+                                <div class="space-y-3">
+                                    <div>
+                                        <label class="text-gray-400 text-xs mb-1 block">Сколько пива принесёте? 🍺</label>
+                                        <input type="number" id="beerCount" min="0" max="99" value="2"
+                                            class="w-full px-3 py-2 rounded-lg bg-gray-800/50 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 transition text-sm">
+                                    </div>
+                                    <button onclick="confirmAttendance()" 
+                                        class="w-full btn-glow bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-[1.02] shadow-lg shadow-green-500/20">
+                                        Я приду! 🎉
+                                    </button>
                                 </div>
-                                <button onclick="confirmAttendance()" 
-                                    class="w-full btn-glow bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-[1.02] shadow-lg shadow-green-500/20">
-                                    Я приду! 🎉
-                                </button>
+                                
+                                <div class="mt-4">
+                                    <h5 class="text-gray-400 text-xs mb-2">Кто придёт:</h5>
+                                    <div id="attendeesList" class="flex flex-wrap gap-2"></div>
+                                </div>
                             </div>
-                            
-                            <div class="mt-4">
-                                <h5 class="text-gray-400 text-xs mb-2">Кто придёт:</h5>
-                                <div id="attendeesList" class="flex flex-wrap gap-2"></div>
+
+                            <!-- Movie Suggestions -->
+                            <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-purple-500/20">
+                                <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center gap-2">
+                                    <span>🎬</span> Предложить фильм
+                                </h4>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="text" id="movieInput" placeholder="Название фильма..."
+                                        class="flex-1 px-3 py-2 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-purple-500/30 focus:outline-none focus:border-purple-400 transition text-sm">
+                                    <button onclick="addMovie()" 
+                                        class="btn-glow bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold py-2 px-3 rounded-lg transition transform hover:scale-105 text-sm">
+                                        +
+                                    </button>
+                                </div>
+                                
+                                <div id="moviesList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+                            </div>
+
+                            <!-- Total Beer -->
+                            <div class="bg-gradient-to-r from-amber-600 to-yellow-500 rounded-xl p-4 text-center relative overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+                                <div class="text-4xl mb-1 relative">🍺</div>
+                                <div class="text-gray-900 font-bold relative text-sm">Всего пива: <span id="totalBeer" class="text-2xl">0</span> шт.</div>
                             </div>
                         </div>
 
-                        <!-- Movie Suggestions -->
-                        <div class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-purple-500/20">
-                            <h4 class="text-base font-bold text-purple-400 mb-3 flex items-center gap-2">
-                                <span>🎬</span> Предложить фильм
-                            </h4>
-                            <div class="flex gap-2 mb-3">
-                                <input type="text" id="movieInput" placeholder="Название фильма..."
-                                    class="flex-1 px-3 py-2 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 border border-purple-500/30 focus:outline-none focus:border-purple-400 transition text-sm">
-                                <button onclick="addMovie()" 
-                                    class="btn-glow bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold py-2 px-3 rounded-lg transition transform hover:scale-105 text-sm">
-                                    +
-                                </button>
+                        <!-- Birthday & Wishlist Section -->
+                        <div id="birthdaySection" class="bg-gray-900/50 rounded-xl p-4 mb-4 border border-pink-500/20 hidden">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-base font-bold text-pink-400 flex items-center gap-2">
+                                    <span>🎂</span> День рождения
+                                </h4>
+                                <span id="birthdayPersonLabel" class="text-sm text-amber-200"></span>
                             </div>
-                            
-                            <div id="moviesList" class="space-y-2 max-h-48 overflow-y-auto"></div>
-                        </div>
+                            <p id="birthdayInfoText" class="text-xs text-gray-400 mb-3"></p>
 
-                        <!-- Total Beer -->
-                        <div class="bg-gradient-to-r from-amber-600 to-yellow-500 rounded-xl p-4 text-center relative overflow-hidden">
-                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-                            <div class="text-4xl mb-1 relative">🍺</div>
-                            <div class="text-gray-900 font-bold relative text-sm">Всего пива: <span id="totalBeer" class="text-2xl">0</span> шт.</div>
+                            <div id="birthdayWishlistView" class="space-y-3">
+                                <div class="text-xs text-gray-400 mb-2">Добавьте вещи, которые вы хотели бы получить:</div>
+                                <div id="birthdayWishlistItems" class="space-y-2"></div>
+                                <button type="button" onclick="addWishlistItem()" 
+                                    class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-gray-800/60 border border-pink-500/40 hover:border-pink-400 text-pink-300 hover:text-pink-200 transition text-sm">
+                                    <span>+</span> Добавить вещь
+                                </button>
+                                <button id="birthdayWishlistSaveBtn" type="button" onclick="saveBirthdayWishlist()"
+                                    class="w-full btn-glow bg-gradient-to-r from-pink-600 to-pink-500 hover:from-pink-500 hover:to-pink-400 text-white font-semibold py-2 px-4 rounded-xl transition transform hover:scale-[1.02]">
+                                    Сохранить вишлист 🎁
+                                </button>
+                                <p id="birthdayWishlistNote" class="text-[11px] text-gray-500"></p>
+                            </div>
+
+                            <div id="birthdayWishlistReadOnly" class="space-y-2 hidden">
+                                <div class="text-xs text-gray-400 mb-2">Вишлист именинника:</div>
+                                <div id="birthdayWishlistContent" class="space-y-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2034,6 +2079,23 @@
             ratingMax: ''
         };
 
+        // Birthday wishlists
+        const BIRTHDAY_WISHLISTS_LS_KEY = 'birthdayWishlistsLocal';
+        // Keys: 'MM-DD' -> { name: 'Имя' }
+        const BIRTHDAYS = {
+            '01-09': { name: 'Алина' },
+            '02-12': { name: 'Влад' },
+            '03-27': { name: 'Ксения' },
+            '06-18': { name: 'Мстислав' },
+            '10-21': { name: 'Татьяна' },
+            '11-03': { name: 'Макс' },
+            '11-10': { name: 'Алексей' },
+            '12-12': { name: 'Андрей' }
+        };
+        let birthdayWishlists = {};
+        // 'event' | 'birthday'
+        let birthdayPanelMode = 'event';
+
         // Beer table column visibility
         const BEER_COLS_LS_KEY = 'beerTableColumns';
         const BEER_COLUMNS = [
@@ -2057,6 +2119,55 @@
         const WATCHED_COLUMN_NAME = 'Просмотрены';
         const BACKLOG_COLUMN_NAME = 'Бэклог';
         const NEW_COLUMN_NAME = 'Новые';
+
+        // -----------------
+        // Birthday helpers
+        // -----------------
+        function getBirthdayForDateKey(dateKey) {
+            if (!dateKey) return null;
+            const parts = dateKey.split('-').map(Number);
+            if (parts.length !== 3) return null;
+            const month = parts[1];
+            const day = parts[2];
+            if (!month || !day) return null;
+            const key = String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+            return BIRTHDAYS[key] || null;
+        }
+
+        function isKinoSredaDate(dateKey) {
+            if (!dateKey) return false;
+            const [year, month, day] = dateKey.split('-').map(Number);
+            if (!year || !month || !day) return false;
+            const d = new Date(year, month - 1, day);
+            return d.getDay() === 3;
+        }
+
+        function loadLocalBirthdayWishlists() {
+            try {
+                const raw = localStorage.getItem(BIRTHDAY_WISHLISTS_LS_KEY);
+                birthdayWishlists = raw ? JSON.parse(raw) || {} : {};
+            } catch (e) {
+                birthdayWishlists = {};
+            }
+        }
+
+        function saveLocalBirthdayWishlists() {
+            try {
+                localStorage.setItem(BIRTHDAY_WISHLISTS_LS_KEY, JSON.stringify(birthdayWishlists || {}));
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         const countryInfo = {
             'be': { flag: '🇧🇪', name: 'Бельгия' },
@@ -2276,6 +2387,9 @@
             
             currentUser = JSON.parse(userDataStr);
 
+            // Load local birthday wishlists (for offline / fallback mode)
+            loadLocalBirthdayWishlists();
+
             // Ensure chat button is on the right even if some CSS overrides exist
             const chatBtn = document.getElementById('chatBtn');
             const chatWrap = document.getElementById('chatBtnWrap');
@@ -2406,7 +2520,7 @@
                     };
                     renderBacklog();
                 });
-                
+
                 db.ref('beerRating').on('value', (snapshot) => {
                     const beerData = snapshot.val() || [];
                     // Конвертируем объект в массив если нужно
@@ -2416,6 +2530,16 @@
                         data.beerRating = beerData || [];
                     }
                     renderBeerRating();
+                });
+
+                db.ref('birthdayWishlists').on('value', (snapshot) => {
+                    birthdayWishlists = snapshot.val() || {};
+                    if (selectedDate) {
+                        const birthday = getBirthdayForDateKey(selectedDate);
+                        const hasKino = isKinoSredaDate(selectedDate);
+                        renderBirthdaySectionForSelectedDate(birthday, hasKino);
+                        applyBirthdayPanelVisibility(hasKino, !!birthday);
+                    }
                 });
 
                 // Start chat subscription immediately (for unread badge), even if chat panel was never opened
@@ -2482,6 +2606,9 @@
                 const isWednesday = date.getDay() === 3;
                 const dateKey = formatDateKey(date);
                 const event = getEvent(dateKey);
+                const monthDayKey = String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                const birthday = BIRTHDAYS[monthDayKey];
+                const isBirthday = !!birthday;
                 const hasAttendees = Object.keys(event.attendees || {}).length > 0;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -2503,15 +2630,20 @@
                     if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black ';
                 } else {
                     classes += 'text-gray-700 ';
+                    if (isBirthday) {
+                        classes += 'cursor-pointer hover:bg-gray-900/60 ';
+                    }
                 }
                 
                 const attendeeCount = Object.keys(event.attendees || {}).length;
                 const totalBeer = Object.values(event.attendees || {}).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
+                const hasPanel = isWednesday || isBirthday;
                 
                 container.innerHTML += `
-                    <div class="${classes}" ${isWednesday ? `onclick="openPanel('${dateKey}')"` : ''}>
+                    <div class="${classes}" ${hasPanel ? `onclick="openPanel('${dateKey}')"` : ''}>
                         <span class="text-sm font-bold">${day}</span>
-                        ${hasAttendees ? `<span class="text-[10px] leading-none font-semibold">👥${attendeeCount} 🍺${totalBeer}</span>` : ''}
+                        ${isBirthday ? `<span class="absolute top-0.5 right-0.5 text-xs" title="День рождения ${birthday.name}">🎂</span>` : ''}
+                        ${hasAttendees ? `<span class="text-[10px] leading-none font-semibold mt-0.5">👥${attendeeCount} 🍺${totalBeer}</span>` : ''}
                     </div>
                 `;
             }
@@ -2565,14 +2697,21 @@
 
         // Panel Methods
         function openPanel(dateKey) {
-            const userName = getUserName();
-            
             selectedDate = dateKey;
             document.getElementById('panelDate').textContent = formatDateDisplay(dateKey);
             
             document.getElementById('eventPlaceholder').classList.add('hidden');
             document.getElementById('eventPanel').classList.remove('hidden');
-            
+
+            // Default mode for panel depending on presence of kino event / birthday
+            const hasBirthday = !!getBirthdayForDateKey(dateKey);
+            const hasKino = isKinoSredaDate(dateKey);
+            if (hasBirthday && !hasKino) {
+                birthdayPanelMode = 'birthday';
+            } else {
+                birthdayPanelMode = 'event';
+            }
+
             renderPanelContent();
             renderCalendar();
         }
@@ -2584,76 +2723,582 @@
             renderCalendar();
         }
 
+        function renderBirthdaySectionForSelectedDate(birthday, hasKino) {
+            const birthdaySection = document.getElementById('birthdaySection');
+            if (!birthdaySection) return;
+
+            const birthdayPersonLabel = document.getElementById('birthdayPersonLabel');
+            const birthdayInfoText = document.getElementById('birthdayInfoText');
+            const itemsContainer = document.getElementById('birthdayWishlistItems');
+            const saveBtn = document.getElementById('birthdayWishlistSaveBtn');
+            const noteEl = document.getElementById('birthdayWishlistNote');
+            const viewEl = document.getElementById('birthdayWishlistView');
+            const roBlock = document.getElementById('birthdayWishlistReadOnly');
+            const contentEl = document.getElementById('birthdayWishlistContent');
+
+            if (!birthday) {
+                birthdaySection.classList.add('hidden');
+                return;
+            }
+
+            const userName = getUserName();
+            const isOwner = userName && userName === birthday.name;
+
+            if (birthdayPersonLabel) birthdayPersonLabel.textContent = birthday.name;
+            if (birthdayInfoText) {
+                birthdayInfoText.textContent = hasKino
+                    ? `В этот день у ${birthday.name} день рождения 🎉 и запланирована киносреда.`
+                    : `В этот день у ${birthday.name} день рождения 🎉`;
+            }
+
+            const wlForDate = (birthdayWishlists && birthdayWishlists[selectedDate] && birthdayWishlists[selectedDate][birthday.name]) || null;
+            const items = (wlForDate && Array.isArray(wlForDate.items)) ? wlForDate.items : [];
+
+            if (isOwner) {
+                if (viewEl) viewEl.classList.remove('hidden');
+                if (roBlock) roBlock.classList.add('hidden');
+                if (saveBtn) saveBtn.disabled = false;
+                if (noteEl) {
+                    noteEl.textContent = 'Заполнить вишлист можешь только ты. Сделать это можно заранее, не дожидаясь дня рождения.';
+                }
+                // Render editable items
+                if (itemsContainer) {
+                    itemsContainer.innerHTML = '';
+                    items.forEach((item, index) => {
+                        renderWishlistItem(itemsContainer, item, index, true);
+                    });
+                    // If no items, add one empty item
+                    if (items.length === 0) {
+                        renderWishlistItem(itemsContainer, { text: '', link: '' }, 0, true);
+                    }
+                }
+            } else {
+                if (viewEl) viewEl.classList.add('hidden');
+                if (roBlock) roBlock.classList.remove('hidden');
+                if (contentEl) {
+                    if (items.length === 0) {
+                        contentEl.innerHTML = '<div class="text-gray-500 text-sm italic">Именинник пока не заполнил вишлист.</div>';
+                    } else {
+                        // Clear and render each item separately
+                        contentEl.innerHTML = '';
+                        items.forEach((item, index) => {
+                            renderWishlistItemReadOnly(contentEl, item, index, userName, birthday.name);
+                        });
+                    }
+                }
+                if (saveBtn) saveBtn.disabled = true;
+                if (noteEl) {
+                    noteEl.textContent = '';
+                }
+            }
+
+            // Не устанавливаем видимость здесь - это делает applyBirthdayPanelVisibility
+        }
+
+        function renderWishlistItem(container, item, index, isEditable) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'mb-2';
+            itemDiv.dataset.index = index;
+            
+            if (isEditable) {
+                const textValue = escapeHtml(item.text || '');
+                const linkValue = escapeHtml(item.link || '');
+                let linkDisplayHtml = '';
+                
+                if (linkValue) {
+                    try {
+                        let url = linkValue;
+                        if (!url.match(/^https?:\/\//i)) {
+                            url = 'https://' + url;
+                        }
+                        new URL(url);
+                        linkDisplayHtml = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="wishlist-link-display text-pink-400 hover:text-pink-300 underline ml-2">🔗 Ссылка</a>`;
+                    } catch (e) {
+                        // Invalid URL
+                    }
+                }
+                
+                itemDiv.innerHTML = `
+                    <div class="bg-gray-800/60 border border-pink-500/40 rounded-lg px-3 py-2 text-sm text-gray-200 relative group">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1 space-y-1">
+                                <div class="font-medium mb-1">
+                                    <span class="text-gray-400">${index + 1}.</span>
+                                    <input type="text" 
+                                        class="wishlist-item-text inline-block bg-transparent border-none outline-none text-white placeholder-gray-500 text-sm font-medium ml-1 w-auto min-w-[200px]" 
+                                        placeholder="Название вещи..."
+                                        value="${textValue}">
+                                </div>
+                                <div class="ml-5">
+                                    <input type="url" 
+                                        class="wishlist-item-link inline-block bg-transparent border-none outline-none text-pink-300 placeholder-gray-600 text-xs w-auto min-w-[200px]" 
+                                        placeholder="Ссылка (необязательно)"
+                                        value="${linkValue}">
+                                    <span class="wishlist-link-display-container">${linkDisplayHtml}</span>
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeWishlistItem(${index})" 
+                                class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity p-1 text-sm flex-shrink-0" title="Удалить">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Update link display when link input changes
+                const linkInput = itemDiv.querySelector('.wishlist-item-link');
+                const linkDisplayContainer = itemDiv.querySelector('.wishlist-link-display-container');
+                if (linkInput && linkDisplayContainer) {
+                    linkInput.addEventListener('input', function() {
+                        const linkValue = this.value.trim();
+                        if (linkValue) {
+                            try {
+                                let url = linkValue;
+                                if (!url.match(/^https?:\/\//i)) {
+                                    url = 'https://' + url;
+                                }
+                                new URL(url);
+                                linkDisplayContainer.innerHTML = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="wishlist-link-display text-pink-400 hover:text-pink-300 underline ml-2">🔗 Ссылка</a>`;
+                            } catch (e) {
+                                linkDisplayContainer.innerHTML = '';
+                            }
+                        } else {
+                            linkDisplayContainer.innerHTML = '';
+                        }
+                    });
+                }
+            }
+            
+            container.appendChild(itemDiv);
+        }
+
+        function renderWishlistItemReadOnly(container, item, index, currentUserName, birthdayPersonName) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'mb-2';
+            itemDiv.dataset.itemIndex = index;
+            
+            const isReserved = item.reservedBy && item.reservedBy !== '';
+            const isReservedByMe = isReserved && item.reservedBy === currentUserName;
+            const showReservationInfo = currentUserName !== birthdayPersonName; // Именинник не видит резервирования
+            
+            let linkPart = '';
+            if (item.link) {
+                try {
+                    const url = new URL(item.link);
+                    linkPart = `<a href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer" class="text-pink-400 hover:text-pink-300 underline ml-2">🔗 Ссылка</a>`;
+                } catch (e) {
+                    // Invalid URL, skip link
+                }
+            }
+            
+            let reservationPart = '';
+            if (showReservationInfo) {
+                if (isReserved) {
+                    if (isReservedByMe) {
+                        reservationPart = `
+                            <div class="mt-2 flex items-center gap-2">
+                                <span class="text-xs text-green-400">✓ Зарезервировано вами</span>
+                                <button type="button" onclick="unreserveWishlistItem(${index})" 
+                                    class="text-xs text-red-400 hover:text-red-300 underline">
+                                    Отменить
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        reservationPart = `
+                            <div class="mt-2 text-xs text-amber-400">
+                                ⚠ Зарезервировано: ${escapeHtml(item.reservedBy)}
+                            </div>
+                        `;
+                    }
+                } else {
+                    reservationPart = `
+                        <div class="mt-2">
+                            <button type="button" onclick="reserveWishlistItem(${index})" 
+                                class="text-xs px-2 py-1 rounded bg-green-600/20 border border-green-500/40 text-green-400 hover:bg-green-600/30 transition">
+                                Зарезервировать подарок
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            
+            itemDiv.innerHTML = `
+                <div class="bg-gray-800/60 border ${isReserved && showReservationInfo && !isReservedByMe ? 'border-amber-500/60' : 'border-pink-500/40'} rounded-lg px-3 py-2 text-sm text-gray-200">
+                    <div class="font-medium mb-1">${index + 1}. ${escapeHtml(item.text || '')}</div>
+                    ${linkPart ? `<div class="mt-1 mb-1">${linkPart}</div>` : ''}
+                    ${reservationPart}
+                </div>
+            `;
+            
+            container.appendChild(itemDiv);
+        }
+
+        function addWishlistItem() {
+            const itemsContainer = document.getElementById('birthdayWishlistItems');
+            if (!itemsContainer) return;
+            
+            const currentItems = Array.from(itemsContainer.children);
+            const newIndex = currentItems.length;
+            renderWishlistItem(itemsContainer, { text: '', link: '' }, newIndex, true);
+        }
+
+        function removeWishlistItem(index) {
+            const itemsContainer = document.getElementById('birthdayWishlistItems');
+            if (!itemsContainer) return;
+            
+            const itemToRemove = itemsContainer.querySelector(`[data-index="${index}"]`);
+            if (itemToRemove) {
+                itemToRemove.remove();
+                // Re-index remaining items
+                Array.from(itemsContainer.children).forEach((child, i) => {
+                    child.dataset.index = i;
+                    const removeBtn = child.querySelector('button[onclick*="removeWishlistItem"]');
+                    if (removeBtn) {
+                        removeBtn.setAttribute('onclick', `removeWishlistItem(${i})`);
+                    }
+                });
+            }
+        }
+
+        function applyBirthdayPanelVisibility(hasKino, hasBirthday) {
+            const eventSections = document.getElementById('eventSections');
+            const birthdaySection = document.getElementById('birthdaySection');
+            const switcher = document.getElementById('birthdayModeSwitcher');
+            const modeEventBtn = document.getElementById('modeEventBtn');
+            const modeWishlistBtn = document.getElementById('modeWishlistBtn');
+
+            if (!eventSections || !birthdaySection || !switcher || !modeEventBtn || !modeWishlistBtn) return;
+
+            // Если нет ни киносреды, ни дня рождения - показываем только eventSections
+            if (!hasKino && !hasBirthday) {
+                switcher.classList.add('hidden');
+                eventSections.classList.remove('hidden');
+                birthdaySection.classList.add('hidden');
+                return;
+            }
+
+            // Если есть и киносреда, и день рождения - показываем переключатель
+            if (hasKino && hasBirthday) {
+                switcher.classList.remove('hidden');
+                // Убеждаемся, что режим валидный
+                if (birthdayPanelMode !== 'birthday' && birthdayPanelMode !== 'event') {
+                    birthdayPanelMode = 'event';
+                }
+            } else {
+                // Если только одно из двух - скрываем переключатель и устанавливаем режим автоматически
+                switcher.classList.add('hidden');
+                if (hasBirthday) {
+                    birthdayPanelMode = 'birthday';
+                } else {
+                    birthdayPanelMode = 'event';
+                }
+            }
+
+            // Применяем видимость в зависимости от режима
+            if (birthdayPanelMode === 'birthday') {
+                // Режим вишлиста: скрываем eventSections, показываем birthdaySection
+                eventSections.classList.add('hidden');
+                birthdaySection.classList.remove('hidden');
+                // Обновляем стили кнопок
+                modeEventBtn.classList.remove('bg-amber-500/20', 'text-white');
+                modeEventBtn.classList.add('text-gray-300');
+                modeWishlistBtn.classList.add('bg-amber-500/20', 'text-white');
+                modeWishlistBtn.classList.remove('text-gray-300');
+            } else {
+                // Режим события: показываем eventSections (если есть киносреда), скрываем birthdaySection
+                if (hasKino) {
+                    eventSections.classList.remove('hidden');
+                } else {
+                    eventSections.classList.add('hidden');
+                }
+                birthdaySection.classList.add('hidden');
+                // Обновляем стили кнопок
+                modeEventBtn.classList.add('bg-amber-500/20', 'text-white');
+                modeEventBtn.classList.remove('text-gray-300');
+                modeWishlistBtn.classList.remove('bg-amber-500/20', 'text-white');
+                modeWishlistBtn.classList.add('text-gray-300');
+            }
+        }
+
+        function setBirthdayPanelMode(mode) {
+            if (mode !== 'event' && mode !== 'birthday') return;
+            birthdayPanelMode = mode;
+            const hasBirthday = !!getBirthdayForDateKey(selectedDate);
+            const hasKino = isKinoSredaDate(selectedDate);
+            applyBirthdayPanelVisibility(hasKino, hasBirthday);
+        }
+
+        function saveBirthdayWishlist() {
+            const birthday = getBirthdayForDateKey(selectedDate);
+            if (!birthday) return;
+
+            const userName = getUserName();
+            if (!userName || userName !== birthday.name) return;
+
+            const itemsContainer = document.getElementById('birthdayWishlistItems');
+            if (!itemsContainer) return;
+
+            // Collect all items from inputs
+            const items = [];
+            const itemDivs = itemsContainer.querySelectorAll('[data-index]');
+            const existingWishlist = (birthdayWishlists[selectedDate] && birthdayWishlists[selectedDate][birthday.name]) || null;
+            const existingItems = (existingWishlist && existingWishlist.items) || [];
+            
+            itemDivs.forEach((div, divIndex) => {
+                const textInput = div.querySelector('.wishlist-item-text');
+                const linkInput = div.querySelector('.wishlist-item-link');
+                const text = textInput ? textInput.value.trim() : '';
+                let link = linkInput ? linkInput.value.trim() : '';
+                
+                // Validate and normalize URL
+                if (link) {
+                    try {
+                        // Add protocol if missing
+                        if (!link.match(/^https?:\/\//i)) {
+                            link = 'https://' + link;
+                        }
+                        new URL(link); // Validate URL
+                    } catch (e) {
+                        // Invalid URL, clear it
+                        link = '';
+                        if (linkInput) linkInput.value = '';
+                    }
+                }
+                
+                // Only add items with text
+                if (text) {
+                    // Preserve reservation if it exists (match by text or index)
+                    let reservedBy = '';
+                    const existingItem = existingItems[divIndex] || existingItems.find(ex => ex.text === text);
+                    if (existingItem && existingItem.reservedBy) {
+                        reservedBy = existingItem.reservedBy;
+                    }
+                    
+                    items.push({ 
+                        text, 
+                        link,
+                        reservedBy: reservedBy
+                    });
+                }
+            });
+
+            if (!birthdayWishlists[selectedDate]) birthdayWishlists[selectedDate] = {};
+            birthdayWishlists[selectedDate][birthday.name] = {
+                items,
+                updatedBy: userName,
+                updatedAt: Date.now()
+            };
+
+            if (useFirebase && db) {
+                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).then(() => {
+                    // Show success feedback
+                    const saveBtn = document.getElementById('birthdayWishlistSaveBtn');
+                    if (saveBtn) {
+                        const originalText = saveBtn.textContent;
+                        saveBtn.textContent = '✓ Сохранено!';
+                        saveBtn.disabled = true;
+                        setTimeout(() => {
+                            saveBtn.textContent = originalText;
+                            saveBtn.disabled = false;
+                        }, 2000);
+                    }
+                }).catch(err => {
+                    console.error('Error saving wishlist:', err);
+                    alert('Ошибка при сохранении вишлиста. Попробуйте еще раз.');
+                });
+            } else {
+                saveLocalBirthdayWishlists();
+                // Show success feedback
+                const saveBtn = document.getElementById('birthdayWishlistSaveBtn');
+                if (saveBtn) {
+                    const originalText = saveBtn.textContent;
+                    saveBtn.textContent = '✓ Сохранено!';
+                    setTimeout(() => {
+                        saveBtn.textContent = originalText;
+                    }, 2000);
+                }
+            }
+
+            // Re-render to update display
+            const hasKino = isKinoSredaDate(selectedDate);
+            renderBirthdaySectionForSelectedDate(birthday, hasKino);
+        }
+
+        function reserveWishlistItem(itemIndex) {
+            const birthday = getBirthdayForDateKey(selectedDate);
+            if (!birthday) return;
+
+            const userName = getUserName();
+            if (!userName || userName === birthday.name) return; // Именинник не может резервировать
+
+            const wlForDate = (birthdayWishlists && birthdayWishlists[selectedDate] && birthdayWishlists[selectedDate][birthday.name]) || null;
+            if (!wlForDate || !wlForDate.items || !wlForDate.items[itemIndex]) return;
+
+            const item = wlForDate.items[itemIndex];
+            if (item.reservedBy && item.reservedBy !== '') {
+                alert('Этот подарок уже зарезервирован другим пользователем.');
+                return;
+            }
+
+            // Update item reservation
+            item.reservedBy = userName;
+
+            if (!birthdayWishlists[selectedDate]) birthdayWishlists[selectedDate] = {};
+            birthdayWishlists[selectedDate][birthday.name] = {
+                ...wlForDate,
+                items: wlForDate.items,
+                updatedAt: Date.now()
+            };
+
+            if (useFirebase && db) {
+                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).catch(err => {
+                    console.error('Error reserving item:', err);
+                    alert('Ошибка при резервировании подарка. Попробуйте еще раз.');
+                });
+            } else {
+                saveLocalBirthdayWishlists();
+            }
+
+            // Re-render
+            const hasKino = isKinoSredaDate(selectedDate);
+            renderBirthdaySectionForSelectedDate(birthday, hasKino);
+        }
+
+        function unreserveWishlistItem(itemIndex) {
+            const birthday = getBirthdayForDateKey(selectedDate);
+            if (!birthday) return;
+
+            const userName = getUserName();
+            if (!userName || userName === birthday.name) return; // Именинник не может отменять резервирование
+
+            const wlForDate = (birthdayWishlists && birthdayWishlists[selectedDate] && birthdayWishlists[selectedDate][birthday.name]) || null;
+            if (!wlForDate || !wlForDate.items || !wlForDate.items[itemIndex]) return;
+
+            const item = wlForDate.items[itemIndex];
+            if (item.reservedBy !== userName) {
+                alert('Вы не можете отменить резервирование другого пользователя.');
+                return;
+            }
+
+            // Remove reservation
+            item.reservedBy = '';
+
+            if (!birthdayWishlists[selectedDate]) birthdayWishlists[selectedDate] = {};
+            birthdayWishlists[selectedDate][birthday.name] = {
+                ...wlForDate,
+                items: wlForDate.items,
+                updatedAt: Date.now()
+            };
+
+            if (useFirebase && db) {
+                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).catch(err => {
+                    console.error('Error unreserving item:', err);
+                    alert('Ошибка при отмене резервирования. Попробуйте еще раз.');
+                });
+            } else {
+                saveLocalBirthdayWishlists();
+            }
+
+            // Re-render
+            const hasKino = isKinoSredaDate(selectedDate);
+            renderBirthdaySectionForSelectedDate(birthday, hasKino);
+        }
+
         function renderPanelContent() {
             const event = getEvent(selectedDate);
             const userName = getUserName();
-            
-            // Update RSVP title based on user attendance
+            const birthday = getBirthdayForDateKey(selectedDate);
+            const hasBirthday = !!birthday;
+            const hasKino = isKinoSredaDate(selectedDate);
+
+            // Update RSVP / kino sections
             const rsvpTitle = document.getElementById('rsvpTitle');
             const attendees = event.attendees || {};
             const isUserAttending = attendees[userName] !== undefined;
-            
-            if (isUserAttending) {
-                rsvpTitle.innerHTML = '<span>✅</span> Участие заявлено';
-            } else {
-                rsvpTitle.innerHTML = '<span>✋</span> Подтвердить участие';
-            }
-            
-            const attendeesContainer = document.getElementById('attendeesList');
-            
-            if (Object.keys(attendees).length === 0) {
-                attendeesContainer.innerHTML = '<span class="text-gray-600 text-xs italic">Пока никто не подтвердил...</span>';
-            } else {
-                attendeesContainer.innerHTML = Object.entries(attendees).map(([name, info]) => `
-                    <div class="bg-green-600/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-green-500/30 text-sm">
-                        <span class="text-white font-medium">${name}</span>
-                        <span class="text-amber-300 font-bold text-xs">🍺${info.beer}</span>
-                        ${name === userName ? `<button onclick="removeAttendance('${name}')" class="text-red-400 hover:text-red-300 ml-1 text-xs">✕</button>` : ''}
-                    </div>
-                `).join('');
-            }
-            
-            if (attendees[userName]) {
-                document.getElementById('beerCount').value = attendees[userName].beer;
-            }
-            
-            const totalBeer = Object.values(attendees).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
-            document.getElementById('totalBeer').textContent = totalBeer;
-            
-            const moviesContainer = document.getElementById('moviesList');
-            const movies = event.movies || {};
-            
-            if (Object.keys(movies).length === 0) {
-                moviesContainer.innerHTML = '<p class="text-gray-600 text-xs text-center italic py-3">Пока нет предложений...</p>';
-            } else {
-                const sortedMovies = Object.entries(movies).sort((a, b) => 
-                    (Object.keys(b[1].votes || {}).length) - (Object.keys(a[1].votes || {}).length)
-                );
-                
-                moviesContainer.innerHTML = sortedMovies.map(([id, movie], index) => {
-                    const votes = Object.keys(movie.votes || {});
-                    const hasVoted = votes.includes(userName);
-                    const isAuthor = movie.author === userName;
-                    const isLeader = index === 0 && votes.length > 0;
-                    
-                    return `
-                        <div class="bg-gray-800/30 rounded-lg p-2.5 flex items-center gap-2 border ${isLeader ? 'border-amber-500/50 glow-amber' : 'border-gray-700/30'} transition-all hover:bg-gray-800/50">
-                            <button onclick="voteMovie('${id}')" 
-                                class="movie-vote-btn w-10 h-10 rounded-lg ${hasVoted ? 'voted bg-gradient-to-br from-amber-500 to-amber-600 shadow shadow-amber-500/30' : 'bg-gray-700/50 hover:bg-gray-600/50'} flex flex-col items-center justify-center transition-all transform hover:scale-105">
-                                <span class="text-sm">${hasVoted ? '👍' : '👆'}</span>
-                                <span class="text-xs text-white font-bold">${votes.length}</span>
-                            </button>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-white font-medium text-sm truncate" title="${movie.title}">
-                                    ${isLeader ? '👑 ' : ''}${movie.title}
-                                </div>
-                                <div class="text-gray-500 text-xs truncate">${movie.author}</div>
+
+            const eventSections = document.getElementById('eventSections');
+
+            if (hasKino && eventSections) {
+                eventSections.classList.remove('hidden');
+                if (rsvpTitle) {
+                    if (isUserAttending) {
+                        rsvpTitle.innerHTML = '<span>✅</span> Участие заявлено';
+                    } else {
+                        rsvpTitle.innerHTML = '<span>✋</span> Подтвердить участие';
+                    }
+                }
+
+                const attendeesContainer = document.getElementById('attendeesList');
+
+                if (attendeesContainer) {
+                    if (Object.keys(attendees).length === 0) {
+                        attendeesContainer.innerHTML = '<span class="text-gray-600 text-xs italic">Пока никто не подтвердил...</span>';
+                    } else {
+                        attendeesContainer.innerHTML = Object.entries(attendees).map(([name, info]) => `
+                            <div class="bg-green-600/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-green-500/30 text-sm">
+                                <span class="text-white font-medium">${name}</span>
+                                <span class="text-amber-300 font-bold text-xs">🍺${info.beer}</span>
+                                ${name === userName ? `<button onclick="removeAttendance('${name}')" class="text-red-400 hover:text-red-300 ml-1 text-xs">✕</button>` : ''}
                             </div>
-                            ${isAuthor ? `<button onclick="removeMovie('${id}')" class="text-red-400/60 hover:text-red-400 p-1 text-sm">🗑️</button>` : ''}
-                        </div>
-                    `;
-                }).join('');
+                        `).join('');
+                    }
+                }
+
+                if (attendees[userName]) {
+                    const beerCountInput = document.getElementById('beerCount');
+                    if (beerCountInput) beerCountInput.value = attendees[userName].beer;
+                }
+
+                const totalBeer = Object.values(attendees).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
+                const totalBeerEl = document.getElementById('totalBeer');
+                if (totalBeerEl) totalBeerEl.textContent = totalBeer;
+
+                const moviesContainer = document.getElementById('moviesList');
+                const movies = event.movies || {};
+
+                if (moviesContainer) {
+                    if (Object.keys(movies).length === 0) {
+                        moviesContainer.innerHTML = '<p class="text-gray-600 text-xs text-center italic py-3">Пока нет предложений...</p>';
+                    } else {
+                        const sortedMovies = Object.entries(movies).sort((a, b) => 
+                            (Object.keys(b[1].votes || {}).length) - (Object.keys(a[1].votes || {}).length)
+                        );
+                        
+                        moviesContainer.innerHTML = sortedMovies.map(([id, movie], index) => {
+                            const votes = Object.keys(movie.votes || {});
+                            const hasVoted = votes.includes(userName);
+                            const isAuthor = movie.author === userName;
+                            const isLeader = index === 0 && votes.length > 0;
+                            
+                            return `
+                                <div class="bg-gray-800/30 rounded-lg p-2.5 flex items-center gap-2 border ${isLeader ? 'border-amber-500/50 glow-amber' : 'border-gray-700/30'} transition-all hover:bg-gray-800/50">
+                                    <button onclick="voteMovie('${id}')" 
+                                        class="movie-vote-btn w-10 h-10 rounded-lg ${hasVoted ? 'voted bg-gradient-to-br from-amber-500 to-amber-600 shadow shadow-amber-500/30' : 'bg-gray-700/50 hover:bg-gray-600/50'} flex flex-col items-center justify-center transition-all transform hover:scale-105">
+                                        <span class="text-sm">${hasVoted ? '👍' : '👆'}</span>
+                                        <span class="text-xs text-white font-bold">${votes.length}</span>
+                                    </button>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-white font-medium text-sm truncate" title="${movie.title}">
+                                            ${isLeader ? '👑 ' : ''}${movie.title}
+                                        </div>
+                                        <div class="text-gray-500 text-xs truncate">${movie.author}</div>
+                                    </div>
+                                    ${isAuthor ? `<button onclick="removeMovie('${id}')" class="text-red-400/60 hover:text-red-400 p-1 text-sm">🗑️</button>` : ''}
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+            } else if (eventSections) {
+                // Нет киносреды в этот день — скрываем блоки участия/фильмов
+                eventSections.classList.add('hidden');
             }
+
+            // Birthday / wishlist section - render content first
+            renderBirthdaySectionForSelectedDate(birthday, hasKino);
+            // Then apply visibility based on mode
+            applyBirthdayPanelVisibility(hasKino, hasBirthday);
         }
 
         // Event Actions
