@@ -1426,12 +1426,22 @@
                         </div>
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг от</label>
+                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий от</label>
                                 <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
                             </div>
                             <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг до</label>
+                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий до</label>
                                 <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг от</label>
+                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг до</label>
+                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
                             </div>
                         </div>
                     </div>
@@ -1466,8 +1476,11 @@
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('alcohol')">
                                     Крепость, % <span id="sort-alcohol">↕</span>
                                 </th>
-                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating')">
-                                    Рейтинг <span id="sort-rating">↕</span>
+                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating_avg')">
+                                    Рейтинг общий <span id="sort-rating-avg">↕</span>
+                                </th>
+                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating_my')">
+                                    Мой рейтинг <span id="sort-rating-my">↕</span>
                                 </th>
                                 <th class="py-3 px-4 text-center text-amber-400" style="min-width: 120px;">Действия</th>
                             </tr>
@@ -2076,7 +2089,9 @@
             alcoholMin: '',
             alcoholMax: '',
             ratingMin: '',
-            ratingMax: ''
+            ratingMax: '',
+            ratingMyMin: '',
+            ratingMyMax: ''
         };
 
         // Birthday wishlists
@@ -2106,7 +2121,8 @@
             { key: 'country', label: 'Страна' },
             { key: 'volume', label: 'Объём' },
             { key: 'alcohol', label: 'Крепость' },
-            { key: 'rating', label: 'Рейтинг' },
+            { key: 'rating_avg', label: 'Рейтинг общий' },
+            { key: 'rating_my', label: 'Мой рейтинг' },
             { key: 'actions', label: 'Действия', required: true }
         ];
         let beerColumnsVisible = null; // set in init
@@ -2632,6 +2648,7 @@
                     classes += 'text-gray-700 ';
                     if (isBirthday) {
                         classes += 'cursor-pointer hover:bg-gray-900/60 ';
+                        if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black scale-110 ';
                     }
                 }
                 
@@ -4293,7 +4310,8 @@
                 country: document.querySelector('th[onclick="sortBeerBy(\'country\')"]'),
                 volume: document.querySelector('th[onclick="sortBeerBy(\'volume\')"]'),
                 alcohol: document.querySelector('th[onclick="sortBeerBy(\'alcohol\')"]'),
-                rating: document.querySelector('th[onclick="sortBeerBy(\'rating\')"]'),
+                rating_avg: document.querySelector('th[onclick="sortBeerBy(\'rating_avg\')"]'),
+                rating_my: document.querySelector('th[onclick="sortBeerBy(\'rating_my\')"]'),
                 actions: document.querySelector('#beerTable thead th:last-child')
             };
             Object.entries(thMap).forEach(([k, el]) => {
@@ -4302,8 +4320,8 @@
             });
 
             // body cells (by nth-child) — depends on fixed column order
-            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), rating(8), actions(9)
-            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, rating: 8, actions: 9 };
+            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), rating_avg(8), rating_my(9), actions(10)
+            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, rating_avg: 8, rating_my: 9, actions: 10 };
             document.querySelectorAll('#beerTableBody tr').forEach(tr => {
                 Object.keys(idx).forEach(k => {
                     const td = tr.children[idx[k] - 1];
@@ -4376,7 +4394,9 @@
                 alcoholMin: '',
                 alcoholMax: '',
                 ratingMin: '',
-                ratingMax: ''
+                ratingMax: '',
+                ratingMyMin: '',
+                ratingMyMax: ''
             };
             beerSearchQuery = '';
             const searchEl = document.getElementById('beerSearchInput');
@@ -4391,6 +4411,8 @@
             document.getElementById('beerFilterAlcoholMax').value = '';
             document.getElementById('beerFilterRatingMin').value = '';
             document.getElementById('beerFilterRatingMax').value = '';
+            document.getElementById('beerFilterRatingMyMin').value = '';
+            document.getElementById('beerFilterRatingMyMax').value = '';
             renderBeerRating();
         }
 
@@ -4409,6 +4431,8 @@
             beerFilters.alcoholMax = document.getElementById('beerFilterAlcoholMax').value;
             beerFilters.ratingMin = document.getElementById('beerFilterRatingMin').value;
             beerFilters.ratingMax = document.getElementById('beerFilterRatingMax').value;
+            beerFilters.ratingMyMin = document.getElementById('beerFilterRatingMyMin').value;
+            beerFilters.ratingMyMax = document.getElementById('beerFilterRatingMyMax').value;
             // если есть фильтры/поиск — показываем сброс только внутри панели фильтров
             renderBeerRating();
         }
@@ -4428,6 +4452,7 @@
             if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
             const allBeers = data.beerRating || [];
             let beers = allBeers;
+            const userName = getUserName();
             
             // Normalize countries to a uniform flag+name representation
             beers.forEach(b => { b.country = formatCountry(b.country); });
@@ -4453,11 +4478,15 @@
                 const alcoholVal = parseFloat(beer.alcohol) || 0;
                 if (beerFilters.alcoholMin && alcoholVal < parseFloat(beerFilters.alcoholMin)) return false;
                 if (beerFilters.alcoholMax && alcoholVal > parseFloat(beerFilters.alcoholMax)) return false;
-                // rating
+                // rating (общий)
                 const ratings = Object.values(beer.ratings || {});
                 const avgRating = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
                 if (beerFilters.ratingMin && avgRating < parseFloat(beerFilters.ratingMin)) return false;
                 if (beerFilters.ratingMax && avgRating > parseFloat(beerFilters.ratingMax)) return false;
+                // мой рейтинг
+                const myRatingRaw = userName && beer.ratings && beer.ratings[userName] != null ? parseFloat(beer.ratings[userName]) : null;
+                if (beerFilters.ratingMyMin && (myRatingRaw == null || myRatingRaw < parseFloat(beerFilters.ratingMyMin))) return false;
+                if (beerFilters.ratingMyMax && (myRatingRaw == null || myRatingRaw > parseFloat(beerFilters.ratingMyMax))) return false;
                 return true;
             });
 
@@ -4470,10 +4499,12 @@
             }
             
             // Update headers
-            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating'].forEach(field => {
+            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating_avg', 'rating_my'].forEach(field => {
                 const span = document.getElementById(`sort-${field}`);
+                if (!span) return;
                 const th = span.parentElement;
-                if (beerSortBy === field) {
+                const normalizedSort = beerSortBy === 'rating' ? 'rating_avg' : beerSortBy;
+                if (normalizedSort === field) {
                     span.textContent = beerSortDirection === 'asc' ? '↑' : '↓';
                     th.classList.add('active');
                 } else {
@@ -4485,8 +4516,11 @@
             // Sort beers
             const sortedBeers = [...beers].sort((a, b) => {
                 let aVal, bVal;
+                let aMissing = false;
+                let bMissing = false;
 
-                switch(beerSortBy) {
+                const normalizedSort = beerSortBy === 'rating' ? 'rating_avg' : beerSortBy;
+                switch(normalizedSort) {
                     case 'name': {
                         const aName = (a.name || '').trim();
                         const bName = (b.name || '').trim();
@@ -4520,14 +4554,29 @@
                         aVal = parseFloat(a.alcohol) || 0;
                         bVal = parseFloat(b.alcohol) || 0;
                         break;
-                    case 'rating':
+                    case 'rating_avg': {
                         const aRatings = Object.values(a.ratings || {});
                         const bRatings = Object.values(b.ratings || {});
                         aVal = aRatings.length ? aRatings.reduce((sum, r) => sum + r, 0) / aRatings.length : 0;
                         bVal = bRatings.length ? bRatings.reduce((sum, r) => sum + r, 0) / bRatings.length : 0;
                         break;
+                    }
+                    case 'rating_my': {
+                        const aMy = a.ratings && a.ratings[userName];
+                        const bMy = b.ratings && b.ratings[userName];
+                        aMissing = aMy == null;
+                        bMissing = bMy == null;
+                        aVal = aMissing ? 0 : parseFloat(aMy);
+                        bVal = bMissing ? 0 : parseFloat(bMy);
+                        break;
+                    }
                     default:
                         return 0;
+                }
+
+                if (normalizedSort === 'rating_my' && (aMissing || bMissing)) {
+                    if (aMissing && bMissing) return 0;
+                    return aMissing ? 1 : -1;
                 }
 
                 if (typeof aVal === 'string') {
@@ -4540,7 +4589,7 @@
             const visibleCount = (() => {
                 const vis = beerColumnsVisible || loadBeerColumnsVisible();
                 // count visible columns in fixed order
-                const keys = ['name','type','style','filtered','country','volume','alcohol','rating','actions'];
+                const keys = ['name','type','style','filtered','country','volume','alcohol','rating_avg','rating_my','actions'];
                 return keys.reduce((c, k) => c + (vis[k] ? 1 : 0), 0);
             })();
 
@@ -4551,8 +4600,6 @@
                 applyBeerColumnsVisibility();
                 return;
             }
-            
-            const userName = getUserName();
             
             tbody.innerHTML = sortedBeers.map(beer => {
                 const ratings = Object.entries(beer.ratings || {});
@@ -4581,6 +4628,9 @@
                         <td class="py-3 px-4">
                             <div class="text-amber-400 font-bold">${avgRating}</div>
                             <div class="text-xs text-gray-500">${ratings.length} ${ratings.length === 1 ? 'оценка' : 'оценок'}</div>
+                        </td>
+                        <td class="py-3 px-4">
+                            <div class="text-blue-300 font-bold">${userRating != null ? String(userRating).replace(/\.0$/, '') : '—'}</div>
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex gap-2 justify-center">
@@ -5624,6 +5674,26 @@
                 if (document.getElementById('addBeerModal').classList.contains('flex')) addBeer();
                 if (document.getElementById('editBeerModal').classList.contains('flex')) saveBeerEdit();
             }
+        });
+
+        const MODAL_CLOSE_HANDLERS = {
+            addColumnModal: closeAddColumnModal,
+            editColumnModal: closeEditColumnModal,
+            addCardModal: closeAddCardModal,
+            editCardModal: closeEditCardModal,
+            addBeerModal: closeAddBeerModal,
+            rateBeerModal: closeRateBeerModal,
+            editBeerModal: closeEditBeerModal,
+            deleteBeerModal: closeDeleteBeerModal,
+            beerColumnsModal: closeBeerColumnsModal,
+            deleteChatModal: closeDeleteChatModal
+        };
+
+        document.addEventListener('click', (e) => {
+            const modal = e.target?.classList?.contains('modal') ? e.target : null;
+            if (!modal) return;
+            const closeHandler = MODAL_CLOSE_HANDLERS[modal.id];
+            if (typeof closeHandler === 'function') closeHandler();
         });
 
         document.getElementById('movieInput').addEventListener('keypress', (e) => {
