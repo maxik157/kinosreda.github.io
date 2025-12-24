@@ -2485,6 +2485,9 @@
             const nav = document.querySelector('header nav');
             const profileHTML = `
                 <div class="flex items-center gap-1 md:gap-3 ml-1 md:ml-4 pl-1 md:pl-4 border-l border-amber-500/30">
+                    <a href="pokaki.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="График покаков">
+                        💩
+                    </a>
                     <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Профиль">
                         👤 <span class="hidden sm:inline">${currentUser.name}</span>
                     </a>
@@ -4626,11 +4629,16 @@
                         <td class="py-3 px-4 text-gray-400">${beer.volume}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.alcohol}%</td>
                         <td class="py-3 px-4">
-                            <div class="text-amber-400 font-bold">${avgRating}</div>
-                            <div class="text-xs text-gray-500">${ratings.length} ${ratings.length === 1 ? 'оценка' : 'оценок'}</div>
+                            <div class="flex flex-col items-center justify-start leading-none">
+                                <div class="text-amber-400 font-bold mt-4">${avgRating}</div>
+                                <div class="text-xs text-gray-500 mt-0.5">${ratings.length} ${ratings.length === 1 ? 'оценка' : 'оценок'}</div>
+                            </div>
                         </td>
                         <td class="py-3 px-4">
-                            <div class="text-blue-300 font-bold">${userRating != null ? String(userRating).replace(/\.0$/, '') : '—'}</div>
+                            <div class="flex flex-col items-center justify-start leading-none">
+                                <div class="text-blue-300 font-bold mt-4">${userRating != null ? String(userRating).replace(/\.0$/, '') : '—'}</div>
+                                <div class="text-xs text-transparent select-none mt-0.5">.</div>
+                            </div>
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex gap-2 justify-center">

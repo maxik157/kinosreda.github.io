@@ -716,6 +716,66 @@
             </div>
         </section>
 
+        <!-- Poop Stats -->
+        <section class="card rounded-2xl p-5 mt-4 safe-wrap">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-3">
+                <div>
+                    <div class="text-white font-bold">Статистика покаков</div>
+                    <div class="text-xs text-gray-500">Личные метрики по Бристольской шкале</div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button data-poop-range="week" class="px-3 py-2 rounded-lg border border-amber-500/20 text-amber-200 text-xs hover:border-amber-500/40 transition">Неделя</button>
+                    <button data-poop-range="month" class="px-3 py-2 rounded-lg border border-amber-500/20 text-amber-200 text-xs hover:border-amber-500/40 transition">Месяц</button>
+                    <button data-poop-range="year" class="px-3 py-2 rounded-lg border border-amber-500/20 text-amber-200 text-xs hover:border-amber-500/40 transition">Год</button>
+                    <button data-poop-range="all" class="px-3 py-2 rounded-lg border border-amber-500/20 text-amber-200 text-xs hover:border-amber-500/40 transition">Всё время</button>
+                    <button data-poop-range="custom" class="px-3 py-2 rounded-lg border border-amber-500/20 text-amber-200 text-xs hover:border-amber-500/40 transition">Выбрать даты</button>
+                </div>
+            </div>
+
+            <div id="poopCustomRange" class="grid sm:grid-cols-[1fr_1fr_auto] gap-2 mb-4 hidden">
+                <input type="date" id="poopCustomStart" class="w-full px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none">
+                <input type="date" id="poopCustomEnd" class="w-full px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none">
+                <button id="poopApplyCustom" class="px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200 text-sm hover:border-amber-500/50 transition">Применить</button>
+            </div>
+
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-3 text-xs text-gray-400">
+                <div>Период: <span id="poopRangeLabel" class="text-amber-200">—</span></div>
+                <div class="text-gray-500">Только ваши записи</div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-3">
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Покаков в день (ср.)</div>
+                    <div class="text-2xl font-bold text-white" id="poopAvgPerDay">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Длительность, мин (ср.)</div>
+                    <div class="text-2xl font-bold text-white" id="poopAvgDuration">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Бумаги, шт (ср.)</div>
+                    <div class="text-2xl font-bold text-white" id="poopAvgPaper">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Лёгкость, 1–10 (ср.)</div>
+                    <div class="text-2xl font-bold text-white" id="poopAvgEase">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Удовлетворённость, 1–10 (ср.)</div>
+                    <div class="text-2xl font-bold text-white" id="poopAvgSatisfaction">—</div>
+                </div>
+                <div class="rounded-xl p-4 border border-gray-800 bg-black/40">
+                    <div class="text-xs text-gray-500">Всего записей</div>
+                    <div class="text-2xl font-bold text-white" id="poopTotal">—</div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="text-xs text-gray-500 mb-2">Типы по Бристольской шкале</div>
+                <div id="poopBristolCounts" class="flex flex-wrap gap-2 text-sm"></div>
+            </div>
+        </section>
+
         <footer class="text-center py-8 text-gray-700 text-xs">
             <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
         </footer>
@@ -1122,6 +1182,19 @@
         let movieSortBy = 'rating';
         let movieSortDir = 'desc';
         const collator = new Intl.Collator(['ru', 'en'], { sensitivity: 'base', numeric: true, ignorePunctuation: true });
+        const BRISTOL_LABELS = {
+            1: 'Отдельные твёрдые комочки',
+            2: 'Комковатая колбаска',
+            3: 'Колбаска с трещинами',
+            4: 'Гладкая колбаска',
+            5: 'Мягкие комки',
+            6: 'Кашицеобразный стул',
+            7: 'Водянистый без твёрдых частиц'
+        };
+        let poopEntries = [];
+        let poopRange = 'week';
+        let poopCustomStart = '';
+        let poopCustomEnd = '';
 
         function logout() {
             localStorage.removeItem('currentUser');
@@ -1156,6 +1229,45 @@
                 .replaceAll("'", '&#39;');
         }
 
+        function dateKeyToDate(key) {
+            const [y,m,d] = key.split('-').map(Number);
+            return new Date(y, (m || 1) - 1, d || 1);
+        }
+        function formatDateKey(date){
+            const pad = (n) => String(n).padStart(2,'0');
+            return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+        }
+        function getRangeDates(range){
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            let start = new Date(today);
+            let end = new Date(today);
+            if (range === 'week') {
+                start.setDate(today.getDate() - 6);
+            } else if (range === 'month') {
+                start = new Date(today.getFullYear(), today.getMonth(), 1);
+                end = new Date(today.getFullYear(), today.getMonth()+1, 0);
+            } else if (range === 'year') {
+                start = new Date(today.getFullYear(), 0, 1);
+                end = new Date(today.getFullYear(), 11, 31);
+            } else if (range === 'all') {
+                const dates = poopEntries.map(p => dateKeyToDate(p.dateKey).getTime());
+                if (dates.length) {
+                    const min = Math.min(...dates);
+                    const max = Math.max(...dates);
+                    start = new Date(min);
+                    end = new Date(max);
+                }
+            } else if (range === 'custom') {
+                if (poopCustomStart) start = dateKeyToDate(poopCustomStart);
+                if (poopCustomEnd) end = dateKeyToDate(poopCustomEnd);
+                if (start > end) [start, end] = [end, start];
+            }
+            start.setHours(0,0,0,0);
+            end.setHours(23,59,59,999);
+            return { start, end };
+        }
+
         function sortMovieTable(by) {
             if (movieSortBy === by) {
                 movieSortDir = (movieSortDir === 'asc') ? 'desc' : 'asc';
@@ -1183,6 +1295,53 @@
                     th.classList.remove('active');
                 }
             });
+        }
+
+        function highlightPoopRangeButtons() {
+            document.querySelectorAll('[data-poop-range]').forEach(btn => {
+                btn.classList.remove('border-amber-500/50','bg-amber-500/10','text-white');
+                if (btn.dataset.poopRange === poopRange) {
+                    btn.classList.add('border-amber-500/50','bg-amber-500/10','text-white');
+                }
+            });
+            const customBlock = document.getElementById('poopCustomRange');
+            if (customBlock) customBlock.classList.toggle('hidden', poopRange !== 'custom');
+        }
+
+        function renderPoopStats() {
+            const { start, end } = getRangeDates(poopRange);
+            const filtered = poopEntries.filter(p => {
+                const dt = dateKeyToDate(p.dateKey);
+                return dt >= start && dt <= end;
+            });
+            const dayMs = 24*60*60*1000;
+            const days = Math.max(1, Math.floor((end - start) / dayMs) + 1);
+
+            const avgPerDay = filtered.length ? (filtered.length / days) : 0;
+            const avgDuration = filtered.length ? filtered.reduce((s,p)=>s+(p.duration||0),0) / filtered.length : 0;
+            const avgPaper = filtered.length ? filtered.reduce((s,p)=>s+(p.paper||0),0) / filtered.length : 0;
+            const avgEase = filtered.length ? filtered.reduce((s,p)=>s+(p.ease||0),0) / filtered.length : 0;
+            const avgSatisfaction = filtered.length ? filtered.reduce((s,p)=>s+(p.satisfaction||0),0) / filtered.length : 0;
+
+            setText('poopRangeLabel', `${start.toLocaleDateString('ru-RU')} — ${end.toLocaleDateString('ru-RU')}`);
+            setText('poopAvgPerDay', avgPerDay ? avgPerDay.toFixed(2) : '—');
+            setText('poopAvgDuration', avgDuration ? avgDuration.toFixed(1) : '—');
+            setText('poopAvgPaper', avgPaper ? avgPaper.toFixed(1) : '—');
+            setText('poopAvgEase', avgEase ? avgEase.toFixed(1) : '—');
+            setText('poopAvgSatisfaction', avgSatisfaction ? avgSatisfaction.toFixed(1) : '—');
+            setText('poopTotal', filtered.length || '—');
+
+            const counts = {1:0,2:0,3:0,4:0,5:0,6:0,7:0};
+            filtered.forEach(p => {
+                const k = p.bristol;
+                if (counts[k] != null) counts[k] += 1;
+            });
+            const chips = Object.entries(counts).map(([k,v]) => {
+                const label = BRISTOL_LABELS[k] || `Тип ${k}`;
+                return `<span class="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-amber-500/20 bg-black/40 text-xs text-amber-200">${label} — <strong class="text-white">${v}</strong></span>`;
+            }).join('');
+            const holder = document.getElementById('poopBristolCounts');
+            if (holder) holder.innerHTML = chips || '<span class="text-gray-500 text-sm">Нет данных за период</span>';
         }
 
         function renderMovieRatingsTable(cards, columns) {
@@ -1252,15 +1411,17 @@
         async function loadAndRender() {
             const userName = getUserName();
 
-            const [eventsSnap, backlogSnap, beerSnap] = await Promise.all([
+            const [eventsSnap, backlogSnap, beerSnap, poopSnap] = await Promise.all([
                 db.ref('events').once('value'),
                 db.ref('backlog').once('value'),
-                db.ref('beerRating').once('value')
+                db.ref('beerRating').once('value'),
+                db.ref('poopSchedule').once('value')
             ]);
 
             const events = eventsSnap.val() || {};
             const backlog = backlogSnap.val() || { columns: [], cards: [] };
             const beerRating = beerSnap.val() || [];
+            const poopData = poopSnap.val() || {};
 
             const columns = safeValues(backlog.columns);
             const cards = safeValues(backlog.cards);
@@ -1319,6 +1480,17 @@
             setText('statMyReviews', myReviews);
 
             renderMovieRatingsTable(cards, columns);
+
+            // Poop stats
+            poopEntries = [];
+            Object.entries(poopData).forEach(([dateKey, day]) => {
+                if (!day) return;
+                Object.entries(day).forEach(([id, entry]) => {
+                    if (!entry || entry.author !== currentUser.username) return;
+                    poopEntries.push({ id, dateKey, ...entry });
+                });
+            });
+            renderPoopStats();
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
@@ -1389,6 +1561,37 @@
 
             const nameEl = document.getElementById('profileName');
             if (nameEl) nameEl.textContent = currentUser.name;
+
+            // Poop stats controls
+            document.querySelectorAll('[data-poop-range]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    poopRange = btn.dataset.poopRange;
+                    highlightPoopRangeButtons();
+                    if (poopRange !== 'custom') {
+                        renderPoopStats();
+                    }
+                });
+            });
+            const poopStartInput = document.getElementById('poopCustomStart');
+            const poopEndInput = document.getElementById('poopCustomEnd');
+            const applyCustomBtn = document.getElementById('poopApplyCustom');
+            if (applyCustomBtn) {
+                applyCustomBtn.addEventListener('click', () => {
+                    poopCustomStart = poopStartInput?.value || '';
+                    poopCustomEnd = poopEndInput?.value || '';
+                    poopRange = 'custom';
+                    highlightPoopRangeButtons();
+                    renderPoopStats();
+                });
+            }
+            if (poopStartInput && poopEndInput) {
+                const todayKey = formatDateKey(new Date());
+                if (!poopCustomStart) poopCustomStart = poopStartInput.value || todayKey;
+                if (!poopCustomEnd) poopCustomEnd = poopEndInput.value || todayKey;
+                poopStartInput.value = poopCustomStart;
+                poopEndInput.value = poopCustomEnd;
+            }
+            highlightPoopRangeButtons();
 
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.database();
