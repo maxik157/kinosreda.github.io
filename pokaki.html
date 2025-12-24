@@ -163,10 +163,10 @@
                             <button id="nextRangeBtn" class="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:text-white hover:border-amber-500/40 transition">След. →</button>
                         </div>
                     </div>
-                    <div class="grid grid-cols-7 gap-2 mt-4 text-center text-[11px] text-gray-500 uppercase tracking-wide">
+                    <div class="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-4 text-center text-[11px] text-gray-500 uppercase tracking-wide">
                         <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
                     </div>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-3 mt-3"></div>
+                    <div id="calendarGrid" class="grid grid-cols-4 sm:grid-cols-7 gap-3 mt-3"></div>
                 </section>
 
                 <section class="card glow p-5" id="dayPanel">
@@ -204,8 +204,8 @@
     </div>
 
     <!-- Modal -->
-    <div id="poopModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center px-4 z-20">
-        <div class="relative w-full max-w-3xl card glow p-6">
+    <div id="poopModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center px-4 z-20 overflow-y-auto py-6">
+        <div class="relative w-full max-w-3xl card glow p-6 max-h-[90vh] overflow-y-auto">
             <button aria-label="Закрыть" id="closeModalBtn" class="absolute top-3 right-3 text-gray-400 hover:text-white transition">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -254,6 +254,10 @@
                         <div id="bristolOptions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full"></div>
                     </div>
                 </div>
+                <label class="block text-sm text-gray-300">
+                    <span class="block mb-2">Комментарий (опционально)</span>
+                    <textarea name="comment" rows="2" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100 resize-none" placeholder="Например, что ел или как себя чувствовал"></textarea>
+                </label>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="cancelModalBtn" class="px-4 py-3 rounded-xl border border-amber-500/20 text-gray-300 hover:text-white hover:border-amber-500/40 transition">Отмена</button>
                     <button type="submit" class="px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:text-white hover:bg-amber-500/30 transition font-semibold">Сохранить покак</button>
@@ -404,6 +408,14 @@
             }
             function formatHumanDate(date){
                 return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+            }
+            function escapeHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
             }
             function timeToMinutes(t){
                 const [h,m] = t.split(':').map(Number);
@@ -717,6 +729,7 @@
                             <div class="flex items-center gap-2"><span class="text-amber-300">✨</span> Лёгкость: ${item.ease}/10</div>
                             <div class="flex items-center gap-2"><span class="text-amber-300">🤝</span> Удовлетворённость: ${item.satisfaction}/10</div>
                         </div>
+                        ${item.comment ? `<div class="text-sm text-gray-200 bg-black/40 border border-amber-500/10 rounded-lg px-3 py-2">💬 ${escapeHtml(item.comment)}</div>` : ''}
                     `;
                     const editBtn = card.querySelector('[data-action="edit"]');
                     const delBtn = card.querySelector('[data-action="delete"]');
@@ -754,6 +767,7 @@
                 form.elements['satisfaction'].value = entry.satisfaction;
                 const radio = form.querySelector(`input[name="bristol"][value="${entry.bristol}"]`);
                 if (radio) radio.checked = true;
+                if (form.elements['comment']) form.elements['comment'].value = entry.comment || '';
                 openModal(entry.time);
             }
 
@@ -859,6 +873,7 @@
                     ease: Number(formData.get('ease')),
                     satisfaction: Number(formData.get('satisfaction')),
                     bristol: Number(formData.get('bristol')),
+                    comment: (formData.get('comment') || '').trim(),
                     createdAt: existing.createdAt || new Date().toISOString(),
                     author: currentUser ? currentUser.username : '',
                     authorName: anonymityOn ? 'Аноним' : (currentUser ? currentUser.name : 'Аноним')
