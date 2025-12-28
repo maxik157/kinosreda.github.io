@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Киносреда — График покаков</title>
+    <script>
+        // Auth gate: keep page hidden until we know the user is logged in
+        (function () {
+            try {
+                const cu = localStorage.getItem('currentUser');
+                if (!cu) {
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+            } catch (e) {
+                location.replace('login.html');
+            }
+        })();
+        // Theme gate: apply theme before first paint
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
+    </script>
+    <style>
+        html:not(.authed) body { visibility: hidden; }
+    </style>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root {
+            --logo-font: 'Rubik Wet Paint';
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.12);
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #e5e7eb;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 10% 20%, rgba(245,158,11,0.12), transparent 30%),
+                        radial-gradient(circle at 80% 10%, rgba(79,70,229,0.12), transparent 30%),
+                        radial-gradient(circle at 60% 80%, rgba(34,197,94,0.10), transparent 35%),
+                        #050505;
+            filter: saturate(110%);
+            z-index: 0;
+        }
+        .glow {
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.12), 0 10px 60px rgba(245,158,11,0.08);
+        }
+        .card {
+            background: rgba(10,10,10,0.7);
+            border: 1px solid var(--accent-border-20);
+            border-radius: 22px;
+            backdrop-filter: blur(8px);
+        }
+        .time-dropdown {
+            max-height: 260px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .time-dropdown::-webkit-scrollbar { width: 8px; }
+        .time-dropdown::-webkit-scrollbar-thumb { background: var(--accent-400); border-radius: 999px; }
+        .bristol-icon { width: 38px; height: 22px; }
+        .bristol-icon path, .bristol-icon rect, .bristol-icon circle { stroke-linecap: round; stroke-linejoin: round; }
+        .bristol-icon { display: block; }
+        .toggle-on { background: rgba(245,158,11,0.35) !important; border-color: rgba(245,158,11,0.6) !important; }
+        .anon-thumb { top: 50%; transform: translateY(-50%); }
+        .toggle-on .anon-thumb { transform: translate(24px, -50%); background: rgba(245,158,11,0.8); }
+        .reaction-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+        .modal-scroll { -webkit-overflow-scrolling: touch; }
+        .comment-card { position: relative; }
+        .reaction-menu { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; overflow-x: auto; }
+        @media (max-width: 640px) {
+            .reaction-menu { display: grid; grid-template-columns: repeat(8, max-content); gap: 4px; overflow-x: visible; justify-content: start; }
+            .reaction-menu button { min-width: auto; padding: 6px 8px; }
+        }
+        .reaction-menu button { min-width: 34px; text-align: center; white-space: nowrap; }
+        .reaction-menu.hidden { display: none !important; }
+        .comment-actions { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 6px; align-items: center; transition: opacity 0.2s ease; }
+        .comment-card.comment-editing .comment-actions { display: none; }
+        .confirm-modal { background: rgba(0,0,0,0.85); }
+        body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+        #poopModal {
+            overscroll-behavior: contain;
+            align-items: flex-start;
+            padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
+        }
+        .modal-card { max-height: calc(var(--modal-vh, 100vh) - 2rem); }
+    </style>
+</head>
+<body class="relative">
+    <div class="backdrop"></div>
+    <div class="relative z-10 min-h-screen flex flex-col">
+        <header class="container mx-auto px-4 pt-6">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    <a href="index.html" class="inline-flex items-center gap-2 text-sm text-amber-300 hover:text-amber-200 transition px-3 py-2 rounded-xl border border-amber-500/20 bg-amber-500/10">
+                        <span class="text-lg">←</span>
+                        <span>На главную</span>
+                    </a>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">График покаков</h1>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-gray-400">Анонимность</span>
+                    <button id="anonToggle" type="button" class="relative inline-flex items-center w-14 h-8 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none">
+                        <span class="absolute left-1 anon-thumb w-6 h-6 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8 flex-1 w-full">
+            <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] items-start">
+                <section class="card glow p-5">
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <div>
+                            <p class="text-sm text-gray-400">Выбери день, чтобы посмотреть историю</p>
+                            <h2 class="text-xl font-bold text-amber-400 mt-1" id="rangeTitle"></h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="inline-flex rounded-xl border border-amber-500/30 bg-black/50 p-1">
+                                <button id="weekModeBtn" class="px-3 py-2 rounded-lg text-amber-300 hover:text-white hover:bg-amber-500/10 transition font-semibold">Неделя</button>
+                                <button id="monthModeBtn" class="px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-amber-500/10 transition">Месяц</button>
+                            </div>
+                            <button id="prevRangeBtn" class="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:text-white hover:border-amber-500/40 transition">← Пред.</button>
+                            <button id="nextRangeBtn" class="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-300 hover:text-white hover:border-amber-500/40 transition">След. →</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-4 sm:grid-cols-7 gap-2 mt-4 text-center text-[11px] text-gray-500 uppercase tracking-wide">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-4 sm:grid-cols-7 gap-3 mt-3"></div>
+                </section>
+
+                <section class="card glow p-5" id="dayPanel">
+                    <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
+                        <div>
+                            <p class="text-sm text-gray-400">Выбранный день</p>
+                            <h2 class="text-xl font-bold text-amber-400" id="selectedDateLabel"></h2>
+                        </div>
+                        <div class="flex flex-col gap-1 relative">
+                            <span class="text-xs text-gray-400">Автор покака</span>
+                            <div class="relative">
+                                <button id="authorFilterBtn" type="button" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/30 bg-black/60 text-sm text-amber-200 hover:border-amber-500/50 transition min-w-[160px] relative pr-9">
+                                    <span id="authorFilterLabel">Все</span>
+                                    <svg class="w-4 h-4 text-amber-300 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                <div id="authorDropdown" class="hidden absolute right-0 mt-2 min-w-[160px] bg-black/90 border border-amber-500/25 rounded-xl shadow-lg z-10">
+                                    <div id="authorOptions" class="max-h-56 overflow-y-auto divide-y divide-amber-500/10"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="addPoopBtn" class="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:text-white hover:bg-amber-500/30 transition flex items-center gap-2">
+                            <span class="text-lg">＋</span>
+                            <span class="font-semibold">Добавить покак</span>
+                        </button>
+                    </div>
+
+                    <div id="entriesList" class="space-y-3">
+                        <div class="text-gray-400 text-sm">Нет записей за этот день. Добавь первую.</div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="poopModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-start sm:items-center justify-center px-4 z-20 overflow-y-auto py-6 modal-scroll">
+        <div class="relative w-full max-w-3xl card glow p-6 overflow-y-auto modal-scroll min-h-0 modal-card">
+            <button aria-label="Закрыть" id="closeModalBtn" class="absolute top-3 right-3 text-gray-400 hover:text-white transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <h3 class="text-xl font-bold text-amber-400 mb-4">Новый покак</h3>
+            <form id="poopForm" class="grid gap-4">
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="block text-sm text-gray-300">
+                        <span class="block mb-2">Время покака</span>
+                        <div class="relative">
+                            <input type="hidden" name="time" id="timeInput">
+                            <button type="button" id="timeButton" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl text-left flex items-center justify-between text-amber-200 hover:border-amber-500/50 transition">
+                                <span id="timeLabel" class="font-semibold"></span>
+                                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            <div id="timeDropdown" class="time-dropdown absolute left-0 right-0 mt-2 bg-black/90 border border-amber-500/25 rounded-xl shadow-lg hidden z-10">
+                                <div id="timeOptions" class="divide-y divide-amber-500/10"></div>
+                            </div>
+                        </div>
+                    </label>
+                    <label class="block text-sm text-gray-300">
+                        <span class="block mb-2">Продолжительность, мин</span>
+                        <input type="number" min="1" max="180" name="duration" required class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="Например, 7">
+                    </label>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="block text-sm text-gray-300">
+                        <span class="block mb-2">Кол-во кусков бумаги, шт</span>
+                        <input type="number" min="0" max="100" name="paper" required class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="Например, 4">
+                    </label>
+                    <label class="block text-sm text-gray-300">
+                        <span class="block mb-2">Лёгкость очистки, 1–10</span>
+                        <input type="number" min="1" max="10" name="ease" required class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="10 = очень легко">
+                    </label>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <label class="block text-sm text-gray-300">
+                        <span class="block mb-2">Удовлетворённость покаком, 1–10</span>
+                        <input type="number" min="1" max="10" name="satisfaction" required class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="10 = восторг">
+                    </label>
+                    <div class="block text-sm text-gray-300 md:col-span-2">
+                        <span class="block mb-2">Бристольская шкала (1–7)</span>
+                        <div id="bristolOptions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full"></div>
+                    </div>
+                </div>
+                <label class="block text-sm text-gray-300">
+                    <span class="block mb-2">Комментарий (опционально)</span>
+                    <textarea name="comment" rows="2" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100 resize-none" placeholder="Например, что ел или как себя чувствовал"></textarea>
+                </label>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="cancelModalBtn" class="px-4 py-3 rounded-xl border border-amber-500/20 text-gray-300 hover:text-white hover:border-amber-500/40 transition">Отмена</button>
+                    <button type="submit" class="px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:text-white hover:bg-amber-500/30 transition font-semibold">Сохранить покак</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirmModal" class="fixed inset-0 hidden flex items-center justify-center px-4 z-40 confirm-modal">
+        <div class="bg-black/85 border border-amber-500/30 rounded-xl p-5 w-full max-w-sm text-sm text-gray-200">
+            <div class="font-semibold text-amber-200 mb-2">Удалить комментарий?</div>
+            <div class="text-gray-400 mb-4">Действие нельзя отменить.</div>
+            <div class="flex justify-end gap-2">
+                <button id="confirmCancel" class="px-3 py-2 rounded-lg border border-amber-500/25 text-gray-300 hover:border-amber-500/40 transition">Отмена</button>
+                <button id="confirmOk" class="px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-200 hover:bg-red-500/30 transition">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Logo font gate: avoid logo flash + load selected Google Font
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
+
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                window.__loadLogoFont = waitForFont;
+                waitForFont(fam);
+            } catch(_) {
+                window.__loadLogoFont = waitForFont;
+                markReady();
+            }
+        })();
+
+        (function(){
+            const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+            const rangeTitle = document.getElementById('rangeTitle');
+            const calendarGrid = document.getElementById('calendarGrid');
+            const selectedDateLabel = document.getElementById('selectedDateLabel');
+            const entriesList = document.getElementById('entriesList');
+            const addPoopBtn = document.getElementById('addPoopBtn');
+            const modal = document.getElementById('poopModal');
+            const timeButton = document.getElementById('timeButton');
+            const timeDropdown = document.getElementById('timeDropdown');
+            const timeOptions = document.getElementById('timeOptions');
+            const timeLabel = document.getElementById('timeLabel');
+            const timeInput = document.getElementById('timeInput');
+            const form = document.getElementById('poopForm');
+            const weekModeBtn = document.getElementById('weekModeBtn');
+            const monthModeBtn = document.getElementById('monthModeBtn');
+            const prevRangeBtn = document.getElementById('prevRangeBtn');
+            const nextRangeBtn = document.getElementById('nextRangeBtn');
+            const bristolOptions = document.getElementById('bristolOptions');
+            const authorFilterBtn = document.getElementById('authorFilterBtn');
+            const authorFilterLabel = document.getElementById('authorFilterLabel');
+            const authorDropdown = document.getElementById('authorDropdown');
+            const authorOptions = document.getElementById('authorOptions');
+            const anonToggle = document.getElementById('anonToggle');
+
+            const AUTHOR_FILTER_LS_KEY = 'gpPoopAuthorFilter';
+            const ANON_LS_KEY = 'gpAnonMode';
+            const VIEW_MODE_LS_KEY = 'gpViewMode';
+            const firebaseConfig = {
+                apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+                authDomain: "kinosreda-ce8ef.firebaseapp.com",
+                databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "kinosreda-ce8ef",
+                storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+                messagingSenderId: "889337905300",
+                appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+                measurementId: "G-MGW6GF67H3"
+            };
+
+            const BRISTOL = {
+                1: { title: 'Отдельные твёрдые комочки', slug: 'комочки', icon: bristolIcon('1') },
+                2: { title: 'Комковатая колбаска', slug: 'комковатая колбаска', icon: bristolIcon('2') },
+                3: { title: 'Колбаска с трещинами', slug: 'трещины на поверхности', icon: bristolIcon('3') },
+                4: { title: 'Гладкая колбаска', slug: 'гладкая колбаска', icon: bristolIcon('4') },
+                5: { title: 'Мягкие комки', slug: 'мягкие комки', icon: bristolIcon('5') },
+                6: { title: 'Кашицеобразный стул', slug: 'кашицеобразный', icon: bristolIcon('6') },
+                7: { title: 'Водянистый без твёрдых частиц', slug: 'водянистый', icon: bristolIcon('7') }
+            };
+
+            let db = null;
+            let useFirebase = false;
+            let entries = {};
+            let selectedDate = new Date();
+            let weekStart = getWeekStart(selectedDate);
+            let monthCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+            let editingEntry = null;
+            let currentUser = null;
+            let viewMode = loadViewMode();
+            let selectedAuthor = loadSelectedAuthor();
+            let anonymityOn = loadAnonMode();
+            const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
+            let pendingDelete = null;
+
+            try {
+                currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            } catch (_) {
+                currentUser = null;
+            }
+
+            function pad(n){ return String(n).padStart(2,'0'); }
+            function getWeekStart(date){
+                const d = new Date(date);
+                const day = (d.getDay() + 6) % 7; // Monday = 0
+                d.setHours(0,0,0,0);
+                d.setDate(d.getDate() - day);
+                return d;
+            }
+            function formatDateKey(date){
+                return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+            }
+            function formatHumanDate(date){
+                return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+            }
+            function escapeHtml(str) {
+                return String(str || '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+            function updateModalVh(){
+                const vv = window.visualViewport;
+                const h = vv ? vv.height : window.innerHeight;
+                const offset = vv ? vv.offsetTop : 0;
+                document.documentElement.style.setProperty('--modal-vh', `${h}px`);
+                document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
+            }
+            function timeToMinutes(t){
+                const [h,m] = t.split(':').map(Number);
+                return h*60 + m;
+            }
+            function defaultTime(){
+                const now = new Date();
+                const mins = now.getHours()*60 + now.getMinutes();
+                const rounded = Math.min(1439, Math.round(mins / 15) * 15);
+                const h = Math.floor(rounded / 60);
+                const m = rounded % 60;
+                return `${pad(h)}:${pad(m)}`;
+            }
+            function buildTimeOptions(){
+                const list = [];
+                for (let h = 0; h < 24; h++) {
+                    for (let m = 0; m < 60; m += 15) {
+                        list.push(`${pad(h)}:${pad(m)}`);
+                    }
+                }
+                list.push('23:59');
+                return list;
+            }
+            function setTime(val){
+                timeInput.value = val;
+                timeLabel.textContent = val;
+            }
+            function renderTimeOptions(current){
+                timeOptions.innerHTML = '';
+                buildTimeOptions().forEach((t) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = t;
+                    btn.className = `w-full text-left px-4 py-2 hover:bg-amber-500/10 ${t === current ? 'text-amber-300 font-semibold' : 'text-gray-200'}`;
+                    btn.addEventListener('click', () => {
+                        setTime(t);
+                        closeTimeDropdown();
+                    });
+                    timeOptions.appendChild(btn);
+                });
+            }
+            function toggleTimeDropdown(){
+                const isOpen = !timeDropdown.classList.contains('hidden');
+                if (isOpen) {
+                    closeTimeDropdown();
+                } else {
+                    renderTimeOptions(timeInput.value);
+                    timeDropdown.classList.remove('hidden');
+                }
+            }
+            function closeTimeDropdown(){
+                timeDropdown.classList.add('hidden');
+            }
+            function toggleAuthorDropdown(){
+                const isOpen = !authorDropdown.classList.contains('hidden');
+                if (isOpen) {
+                    closeAuthorDropdown();
+                } else {
+                    authorDropdown.classList.remove('hidden');
+                }
+            }
+            function closeAuthorDropdown(){
+                authorDropdown.classList.add('hidden');
+            }
+
+            function bristolIcon(type){
+                const base = 'stroke="rgba(245,158,11,0.7)" fill="rgba(245,158,11,0.35)" stroke-width="1.5"';
+                switch (type) {
+                    case '1': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="12" cy="16" r="6" ${base}/><circle cx="23" cy="12" r="5.5" ${base}/><circle cx="32" cy="17" r="5.5" ${base}/></svg>`;
+                    case '2': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="10" y="9" width="28" height="12" rx="6" ${base}/><path d="M16 11c2 2 0 5 3 6" ${base}/><path d="M30 12c-1 2 2 4 0 6" ${base}/></svg>`;
+                    case '3': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="8" y="9" width="32" height="12" rx="6" ${base}/><path d="M16 11l3 5M26 10l-2 7M34 12l-1 6" ${base}/></svg>`;
+                    case '4': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="8" y="8" width="32" height="12" rx="6" ${base.replace('0.35','0.45')}/></svg>`;
+                    case '5': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="15" cy="14" r="6" ${base}/><circle cx="25" cy="12" r="5" ${base}/><circle cx="32" cy="15" r="5.5" ${base}/></svg>`;
+                    case '6': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="8" cy="16" r="3" ${base}/><circle cx="14" cy="12" r="2.5" ${base}/><circle cx="20" cy="16" r="3" ${base}/><circle cx="26" cy="11" r="2.5" ${base}/><circle cx="30" cy="16" r="3" ${base}/><circle cx="36" cy="12" r="2.5" ${base}/><circle cx="40" cy="17" r="2.5" ${base}/><circle cx="23" cy="20" r="2.5" ${base}/></svg>`;
+                    case '7': return `<svg class="bristol-icon" viewBox="0 0 48 28"><path d="M8 15c4-5 10 1 14-1s7-5 12-2 6 7 1 8-9-4-14-2-10 4-13-3z" ${base.replace('0.35','0.25')}/></svg>`;
+                    default: return '';
+                }
+        }
+
+        function renderBristolOptions(){
+            bristolOptions.innerHTML = '';
+            Object.entries(BRISTOL).forEach(([value, meta]) => {
+                    const label = document.createElement('label');
+                    label.className = 'relative block';
+                    label.innerHTML = `
+                        <input class="peer sr-only" type="radio" name="bristol" value="${value}" required>
+                        <div class="flex items-center gap-3 px-4 py-4 rounded-xl border border-amber-500/20 bg-black/60 peer-checked:border-amber-400 peer-checked:bg-amber-500/10 transition min-h-[96px]">
+                            <span class="inline-flex items-center justify-center w-14 h-12 rounded-lg bg-amber-500/10 border border-amber-500/25 shrink-0">${meta.icon}</span>
+                            <span class="text-[13px] leading-snug text-left text-gray-100 w-full break-words">
+                                <span class="font-semibold text-amber-200 block">Тип ${value}</span>
+                                <span class="block">${meta.title}</span>
+                            </span>
+                        </div>
+                    `;
+                    bristolOptions.appendChild(label);
+                });
+            }
+
+            function loadSelectedAuthor(){
+                try {
+                    return localStorage.getItem(AUTHOR_FILTER_LS_KEY) || 'all';
+                } catch (_) {
+                    return 'all';
+                }
+            }
+            function saveSelectedAuthor(val){
+                try {
+                    localStorage.setItem(AUTHOR_FILTER_LS_KEY, val);
+                } catch (_) {}
+            }
+            function loadAnonMode(){
+                try {
+                    return localStorage.getItem(ANON_LS_KEY) === '1';
+                } catch (_) { return false; }
+            }
+            function saveAnonMode(val){
+                try { localStorage.setItem(ANON_LS_KEY, val ? '1' : '0'); } catch(_) {}
+            }
+            function loadViewMode(){
+                try { return localStorage.getItem(VIEW_MODE_LS_KEY) === 'month' ? 'month' : 'week'; }
+                catch(_) { return 'week'; }
+            }
+            function saveViewMode(mode){
+                try { localStorage.setItem(VIEW_MODE_LS_KEY, mode); } catch(_) {}
+            }
+            function setAnonUI(){
+                if (!anonToggle) return;
+                if (anonymityOn) {
+                    anonToggle.classList.add('toggle-on');
+                } else {
+                    anonToggle.classList.remove('toggle-on');
+                }
+            }
+            function submitComment(dateKey, entryId, text){
+                if (!db || !text.trim()) return;
+                const path = `poopSchedule/${dateKey}/${entryId}/comments`;
+                db.ref(path).push({
+                    author: currentUser ? currentUser.username : '',
+                    authorName: currentUser ? currentUser.name : 'Аноним',
+                    text: text.trim(),
+                    ts: Date.now()
+                });
+            }
+            function renderComments(dateKey, entryId, holder){
+                const entry = entries && entries[dateKey] && entries[dateKey][entryId];
+                const commentsObj = entry && entry.comments ? entry.comments : {};
+                const comments = Object.entries(commentsObj)
+                    .filter(([id]) => id !== '__entry')
+                    .map(([id, c]) => ({ id, ...c }));
+                if (!comments.length) {
+                    holder.innerHTML = '<div class="text-xs text-gray-500">Комментариев нет</div>';
+                    return;
+                }
+                holder.innerHTML = comments.sort((a,b)=> (a.ts||0) - (b.ts||0)).map(c => `
+                    <div class="text-xs bg-black/30 border border-amber-500/10 rounded-lg px-3 py-2 text-gray-200 comment-card">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="font-semibold text-amber-200">${escapeHtml(c.authorName || 'Аноним')}</span>
+                            <span class="text-[10px] text-gray-500">${c.ts ? new Date(c.ts).toLocaleTimeString('ru-RU',{hour:'2-digit', minute:'2-digit'}) : ''}</span>
+                        </div>
+                        <div class="mt-1">${escapeHtml(c.text || '')}</div>
+                        <div class="comment-actions">
+                            ${currentUser && c.author === currentUser.username ? `
+                                <button type="button" class="px-2 py-1 rounded border border-amber-500/25 text-amber-200 hover:border-amber-500/40 transition" data-action="edit-comment" data-comment-id="${escapeHtml(c.id || '')}">✏️</button>
+                                <button type="button" class="px-2 py-1 rounded border border-red-500/30 text-red-300 hover:border-red-500/50 transition" data-action="delete-comment" data-comment-id="${escapeHtml(c.id || '')}">🗑</button>
+                            ` : ''}
+                            <button type="button" class="px-2 py-1 rounded border border-amber-500/25 text-amber-200 hover:border-amber-500/40 transition" data-action="open-comment-reactions" aria-label="Реакции" data-comment-id="${escapeHtml(c.id || '')}">😊</button>
+                            <div class="reaction-menu hidden absolute right-0 top-full mt-1 bg-black/90 border border-amber-500/25 rounded-xl p-2 z-30" data-comment-menu data-comment-id="${escapeHtml(c.id || '')}"></div>
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-2" data-comment-reactions data-comment-id="${escapeHtml(c.id || '')}"></div>
+                    </div>
+                `).join('');
+            }
+            function toggleReaction(dateKey, entryId, emoji){
+                if (!db || !currentUser || !emoji) return;
+                const path = `poopSchedule/${dateKey}/${entryId}/reactions/${currentUser.username}`;
+                const ref = db.ref(path);
+                ref.get().then((snap) => {
+                    const cur = snap.val();
+                    if (cur && cur.emoji === emoji) {
+                        ref.remove();
+                    } else {
+                        ref.set({ emoji, name: currentUser.name, ts: Date.now() });
+                    }
+                });
+            }
+            function toggleCommentReaction(dateKey, entryId, commentId, emoji){
+                if (!db || !currentUser || !emoji || !commentId) return;
+                const user = currentUser.username;
+                const basePath = `poopSchedule/${dateKey}/${entryId}/comments/${commentId}/reactions/${emoji}/${user}`;
+                const ref = db.ref(basePath);
+                ref.get().then((snap) => {
+                    if (snap.exists()) {
+                        ref.remove();
+                    } else {
+                        ref.set({ name: currentUser.name, ts: Date.now() });
+                    }
+                });
+            }
+            function renderReactionSummary(dateKey, entryId, holder){
+                const entry = entries && entries[dateKey] && entries[dateKey][entryId];
+                const reactions = entry && entry.reactions ? entry.reactions : {};
+                const summary = {};
+                Object.values(reactions || {}).forEach(r => {
+                    if (!r || !r.emoji) return;
+                    summary[r.emoji] = (summary[r.emoji] || 0) + 1;
+                });
+                const chips = Object.entries(summary)
+                    .filter(([,v]) => v > 0)
+                    .map(([emoji, count]) => `<span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">${emoji} ${count}</span>`)
+                    .join('');
+                holder.innerHTML = chips;
+            }
+            function buildReactionMenu(dateKey, entryId, menu){
+                const entry = entries && entries[dateKey] && entries[dateKey][entryId];
+                const reactions = entry && entry.reactions ? entry.reactions : {};
+                const myEmoji = reactions[currentUser?.username]?.emoji;
+                menu.innerHTML = CHAT_REACTIONS.map(e => {
+                    const active = myEmoji === e ? 'border-amber-500/60 text-amber-200 bg-amber-500/10' : 'border-amber-500/20 text-gray-200';
+                    return `<button type="button" data-emoji="${e}" class="px-2 py-1 rounded-lg border ${active} hover:border-amber-500/40 transition text-xs">${e}</button>`;
+                }).join('');
+            }
+            function buildCommentReactionMenu(dateKey, entryId, commentId, menu){
+                const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId];
+                const reactions = comment && comment.reactions ? comment.reactions : {};
+                const myEmojis = new Set(Object.entries(reactions).filter(([,u]) => u && u[currentUser?.username]).map(([emoji]) => emoji));
+                menu.innerHTML = CHAT_REACTIONS.map(e => {
+                    const active = myEmojis.has(e) ? 'border-amber-500/60 text-amber-200 bg-amber-500/10' : 'border-amber-500/20 text-gray-200';
+                    return `<button type="button" data-emoji="${e}" class="px-2 py-1 rounded-lg border ${active} hover:border-amber-500/40 transition text-xs">${e}</button>`;
+                }).join('');
+            }
+            function renderCommentReactions(dateKey, entryId, commentId, holder){
+                const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId];
+                const reactions = comment && comment.reactions ? comment.reactions : {};
+                const summary = {};
+                Object.entries(reactions).forEach(([emoji, users]) => {
+                    const count = users ? Object.keys(users).length : 0;
+                    if (count > 0) summary[emoji] = count;
+                });
+                holder.innerHTML = Object.entries(summary)
+                    .map(([emoji, count]) => `<span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">${emoji} ${count}</span>`)
+                    .join('');
+            }
+            function closeAllReactionMenus(){
+                document.querySelectorAll('[data-reaction-menu]').forEach(m => m.classList.add('hidden'));
+            }
+            function attachCommentReactions(dateKey, entryId, holder){
+                holder.querySelectorAll('[data-comment-reactions]').forEach(div => {
+                    const id = div.dataset.commentId;
+                    renderCommentReactions(dateKey, entryId, id, div);
+                });
+                holder.querySelectorAll('[data-comment-menu]').forEach(menu => {
+                    const id = menu.dataset.commentId;
+                    buildCommentReactionMenu(dateKey, entryId, id, menu);
+                });
+                holder.querySelectorAll('[data-action="open-comment-reactions"]').forEach(btn => {
+                    const id = btn.dataset.commentId;
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('[data-comment-menu]').forEach(m => {
+                            if (m.dataset.commentId !== id) m.classList.add('hidden');
+                        });
+                        const menu = holder.querySelector(`[data-comment-menu][data-comment-id="${id}"]`);
+                        if (menu) menu.classList.toggle('hidden');
+                    });
+                });
+                holder.querySelectorAll('[data-comment-menu]').forEach(menu => {
+                    menu.addEventListener('click', (e) => {
+                        const btn = e.target.closest('[data-emoji]');
+                        if (!btn) return;
+                        const commentId = menu.dataset.commentId;
+                        toggleCommentReaction(dateKey, entryId, commentId, btn.dataset.emoji);
+                        menu.classList.add('hidden');
+                    });
+                });
+                holder.querySelectorAll('[data-action="edit-comment"]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const commentId = btn.dataset.commentId;
+                        const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId] || null;
+                        if (!comment || !currentUser || comment.author !== currentUser.username) return;
+                        const card = btn.closest('.comment-card');
+                        if (!card || card.dataset.editing === '1') return;
+                        card.dataset.editing = '1';
+                        card.classList.add('comment-editing');
+                        // inline edit
+                        const textDiv = card.querySelector('.mt-1');
+                        const actions = card.querySelector('.comment-actions');
+                        const oldText = comment.text || '';
+                        const editor = document.createElement('div');
+                        editor.className = 'mt-2 flex flex-col gap-2';
+                        editor.setAttribute('data-editor', '1');
+                        editor.innerHTML = `
+                            <textarea class="flex-1 max-w-[520px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3">${escapeHtml(oldText)}</textarea>
+                            <div class="text-xs text-red-400 hidden" data-edit-error>Минимальное количество символов - 1</div>
+                            <div class="flex gap-2">
+                                <button type="button" class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:bg-amber-500/30 transition text-sm" data-action="save-edit">Сохранить</button>
+                                <button type="button" class="px-3 py-2 rounded-lg border border-amber-500/25 text-gray-300 hover:border-amber-500/40 transition text-sm" data-action="cancel-edit">Отмена</button>
+                            </div>
+                        `;
+                        if (textDiv) textDiv.classList.add('hidden');
+                        if (actions) actions.classList.add('hidden');
+                        card.appendChild(editor);
+                        const ta = editor.querySelector('textarea');
+                        if (ta) ta.focus();
+                        const saveBtn = editor.querySelector('[data-action="save-edit"]');
+                        const cancelBtn = editor.querySelector('[data-action="cancel-edit"]');
+                        const cleanup = () => {
+                            editor.remove();
+                            if (textDiv) textDiv.classList.remove('hidden');
+                            if (actions) actions.classList.remove('hidden');
+                            delete card.dataset.editing;
+                            card.classList.remove('comment-editing');
+                        };
+                        const errorEl = editor.querySelector('[data-edit-error]');
+                        if (ta) {
+                            const resize = () => {
+                                ta.style.height = 'auto';
+                                ta.style.height = `${ta.scrollHeight}px`;
+                            };
+                            ta.addEventListener('input', () => {
+                                ta.classList.remove('border-red-500/50');
+                                if (errorEl) errorEl.classList.add('hidden');
+                                resize();
+                            });
+                            resize();
+                        }
+                        if (saveBtn && ta) {
+                            saveBtn.addEventListener('click', () => {
+                                const val = ta.value.trim();
+                                if (!val) {
+                                    ta.classList.add('border-red-500/50');
+                                    if (errorEl) errorEl.classList.remove('hidden');
+                                    ta.focus();
+                                    return;
+                                }
+                                db.ref(`poopSchedule/${dateKey}/${entryId}/comments/${commentId}/text`).set(val);
+                                cleanup();
+                            });
+                        }
+                        if (cancelBtn) {
+                            cancelBtn.addEventListener('click', (evt) => {
+                                evt.preventDefault();
+                                cleanup();
+                            });
+                        }
+                    });
+                });
+                holder.querySelectorAll('[data-action="delete-comment"]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const commentId = btn.dataset.commentId;
+                        const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId] || null;
+                        if (!comment || !currentUser || comment.author !== currentUser.username) return;
+                        pendingDelete = { dateKey, entryId, commentId };
+                        openConfirmModal();
+                    });
+                });
+                holder.querySelectorAll('[data-comment-reactions]').forEach(div => {
+                    div.addEventListener('click', (e) => {
+                        const chip = e.target.closest('span');
+                        if (!chip || !chip.textContent) return;
+                        const emoji = chip.textContent.trim().split(' ')[0];
+                        const commentId = div.dataset.commentId;
+                        toggleCommentReaction(dateKey, entryId, commentId, emoji);
+                    });
+                });
+                // Delegated cancel-edit fallback
+                holder.addEventListener('click', (e) => {
+                    const cancel = e.target.closest('[data-action="cancel-edit"]');
+                    if (!cancel) return;
+                    e.preventDefault();
+                    const card = cancel.closest('.comment-card');
+                    const editor = cancel.closest('[data-editor]');
+                    if (editor) editor.remove();
+                    if (card) {
+                        const textDiv = card.querySelector('.mt-1');
+                        const actions = card.querySelector('.comment-actions');
+                        if (textDiv) textDiv.classList.remove('hidden');
+                        if (actions) actions.classList.remove('hidden');
+                        delete card.dataset.editing;
+                    }
+                });
+            }
+
+            // Confirm modal helpers
+            function openConfirmModal(){
+                const modal = document.getElementById('confirmModal');
+                if (modal) modal.classList.remove('hidden');
+            }
+            function closeConfirmModal(){
+                const modal = document.getElementById('confirmModal');
+                if (modal) modal.classList.add('hidden');
+                pendingDelete = null;
+            }
+
+            function renderAuthorFilter(authors){
+                const opts = ['all', ...authors];
+                if (selectedAuthor && selectedAuthor !== 'all' && !opts.includes(selectedAuthor)) {
+                    opts.push(selectedAuthor);
+                }
+                if (!selectedAuthor) selectedAuthor = 'all';
+                authorOptions.innerHTML = '';
+                opts.forEach((a) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    const label = a === 'all' ? 'Все' : a;
+                    btn.textContent = label;
+                    btn.className = `w-full text-left px-4 py-2 hover:bg-amber-500/10 ${selectedAuthor === a ? 'text-amber-300 font-semibold' : 'text-gray-200'}`;
+                    btn.addEventListener('click', () => {
+                        selectedAuthor = a;
+                        saveSelectedAuthor(selectedAuthor);
+                        authorFilterLabel.textContent = label;
+                        closeAuthorDropdown();
+                        renderEntries();
+                    });
+                    authorOptions.appendChild(btn);
+                });
+                authorFilterLabel.textContent = selectedAuthor === 'all' ? 'Все' : selectedAuthor;
+            }
+
+            function initFirebase(){
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(firebaseConfig);
+                    }
+                    db = firebase.database();
+                    useFirebase = true;
+                    db.ref('poopSchedule').on('value', (snapshot) => {
+                        entries = snapshot.val() || {};
+                        renderCalendar();
+                        renderEntries();
+                    });
+                } catch (error) {
+                    console.error('Firebase unavailable, данные не будут синхронизированы:', error);
+                }
+            }
+
+            function getDayEntries(dateKey){
+                const day = entries ? entries[dateKey] : null;
+                if (!day) return [];
+                return Object.entries(day).map(([id, entry]) => ({ id, ...entry }));
+            }
+            function getEntriesCount(dateKey){
+                return getDayEntries(dateKey).length;
+            }
+
+            function renderCalendar(){
+                if (viewMode === 'month') {
+                    renderMonth();
+                } else {
+                    renderWeek();
+                }
+            }
+
+            function renderWeek(){
+                const end = new Date(weekStart);
+                end.setDate(end.getDate() + 6);
+                rangeTitle.textContent = `${weekStart.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long' })} — ${end.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long' })}`;
+
+                calendarGrid.innerHTML = '';
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(weekStart);
+                    d.setDate(d.getDate() + i);
+                    const key = formatDateKey(d);
+                    const count = getEntriesCount(key);
+                    const isSelected = formatDateKey(d) === formatDateKey(selectedDate);
+
+                    const btn = document.createElement('button');
+                    btn.className = `flex flex-col gap-1 p-3 rounded-xl border transition text-left ${isSelected ? 'border-amber-400 bg-amber-500/10 text-white' : 'border-amber-500/20 bg-black/50 text-gray-100 hover:border-amber-500/40'}`;
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm ${isSelected ? 'text-amber-200' : 'text-gray-400'}">${dayNames[i]}</span>
+                            ${count ? `<span class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-200 leading-none ml-1 sm:ml-0">${count}</span>` : '<span class="text-[11px] text-transparent px-2 py-1">.</span>'}
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-semibold">${d.getDate()}</span>
+                        </div>
+                    `;
+                    btn.addEventListener('click', () => {
+                        selectedDate = d;
+                        renderCalendar();
+                        renderEntries();
+                    });
+                    calendarGrid.appendChild(btn);
+                }
+            }
+
+            function renderMonth(){
+                const year = monthCursor.getFullYear();
+                const month = monthCursor.getMonth();
+                rangeTitle.textContent = monthCursor.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+                const start = new Date(year, month, 1);
+                const offset = (start.getDay() + 6) % 7; // Monday start
+                start.setDate(start.getDate() - offset);
+                calendarGrid.innerHTML = '';
+
+                for (let i = 0; i < 42; i++) {
+                    const d = new Date(start);
+                    d.setDate(start.getDate() + i);
+                    const key = formatDateKey(d);
+                    const count = getEntriesCount(key);
+                    const isCurrentMonth = d.getMonth() === month;
+                    const isSelected = formatDateKey(d) === formatDateKey(selectedDate);
+                    const isToday = formatDateKey(d) === formatDateKey(new Date());
+
+                    const btn = document.createElement('button');
+                    btn.className = `flex flex-col gap-2 p-3 rounded-xl border transition text-left ${
+                        isSelected ? 'border-amber-400 bg-amber-500/10 text-white' :
+                        isCurrentMonth ? 'border-amber-500/20 bg-black/50 text-gray-100 hover:border-amber-500/40' :
+                        'border-transparent bg-black/20 text-gray-600'
+                    }`;
+                    btn.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm ${isCurrentMonth ? 'text-gray-400' : 'text-gray-600'}">${dayNames[(i % 7)]}</span>
+                            ${count ? `<span class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-200 leading-none ml-1 sm:ml-0">${count}</span>` : '<span class="text-[11px] text-transparent px-2 py-1">.</span>'}
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-semibold ${!isCurrentMonth ? 'opacity-60' : ''}">${d.getDate()}</span>
+                            ${isToday ? '<span class="text-[9px] text-amber-300">●</span>' : ''}
+                        </div>
+                    `;
+                    btn.addEventListener('click', () => {
+                        selectedDate = d;
+                        renderEntries();
+                        renderCalendar();
+                    });
+                    calendarGrid.appendChild(btn);
+                }
+            }
+
+            function renderEntries(){
+                const key = formatDateKey(selectedDate);
+                const list = getDayEntries(key).sort((a,b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+                selectedDateLabel.textContent = formatHumanDate(selectedDate);
+                const authors = Array.from(new Set(list.map((i) => i.authorName || 'Аноним')));
+                renderAuthorFilter(authors);
+                const filtered = selectedAuthor === 'all' ? list : list.filter((i) => (i.authorName || 'Аноним') === selectedAuthor);
+
+                if (!filtered.length) {
+                    entriesList.innerHTML = '<div class="text-gray-400 text-sm">Нет записей за этот день. Добавь первую.</div>';
+                    return;
+                }
+
+                entriesList.innerHTML = '';
+                filtered.forEach((item) => {
+                    const meta = BRISTOL[item.bristol] || {};
+                    const canModify = currentUser && item.author && currentUser.username === item.author;
+                    const entryKey = key;
+                    const card = document.createElement('div');
+                    card.className = 'rounded-xl border border-amber-500/25 bg-black/50 p-4 flex flex-col gap-3';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <span class="text-lg font-semibold text-amber-300">${item.time}</span>
+                                <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200">
+                                    <span class="inline-flex items-center justify-center w-7 h-5">${meta.icon || ''}</span>
+                                    <span>${meta.title || 'Бристоль'}</span>
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap justify-end text-xs">
+                                <span class="text-gray-400">${item.authorName || 'Аноним'}</span>
+                                ${canModify ? `
+                                    <button class="px-2 py-1 rounded-lg border border-amber-500/25 text-amber-200 hover:border-amber-500/40 hover:text-white transition" data-action="edit" aria-label="Редактировать">✏️</button>
+                                    <button class="px-2 py-1 rounded-lg border border-red-500/30 text-red-300 hover:bg-red-500/10 transition" data-action="delete" aria-label="Удалить">🗑</button>
+                                ` : ''}
+                                <span class="text-gray-500">${item.createdAt ? new Date(item.createdAt).toLocaleTimeString('ru-RU',{hour:'2-digit', minute:'2-digit'}) : ''}</span>
+                            </div>
+                        </div>
+                        <div class="grid sm:grid-cols-2 gap-2 text-sm text-gray-200">
+                            <div class="flex items-center gap-2"><span class="text-amber-300">⏱</span> ${item.duration} мин</div>
+                            <div class="flex items-center gap-2"><span class="text-amber-300">🧻</span> ${item.paper} шт</div>
+                            <div class="flex items-center gap-2"><span class="text-amber-300">✨</span> Лёгкость: ${item.ease}/10</div>
+                            <div class="flex items-center gap-2"><span class="text-amber-300">🤝</span> Удовлетворённость: ${item.satisfaction}/10</div>
+                        </div>
+                        ${item.comment ? `
+                        <div class="text-sm text-gray-200 bg-black/40 border border-amber-500/10 rounded-lg px-3 py-2 relative">
+                            💬 ${escapeHtml(item.comment)}
+                            <div class="comment-actions">
+                                <button type="button" class="px-2 py-1 rounded border border-amber-500/25 text-amber-200 hover:border-amber-500/40 transition" data-action="open-entry-reactions" data-entry-id="${entryKey}">😊</button>
+                                <div class="reaction-menu hidden absolute right-0 top-full mt-1 bg-black/90 border border-amber-500/25 rounded-xl p-2 z-30" data-entry-reaction-menu data-entry-id="${entryKey}"></div>
+                            </div>
+                            <div class="flex flex-wrap gap-1 mt-2" data-entry-reaction-summary data-entry-id="${entryKey}"></div>
+                        </div>
+                        ` : ''}
+                        <div class="flex flex-col gap-2 relative">
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <span>Комментарии</span>
+                                <button class="px-2 py-1 rounded border border-amber-500/25 text-amber-200 hover:border-amber-500/40 transition" data-action="add-comment">Добавить</button>
+                            </div>
+                            <div class="space-y-2" data-comments></div>
+                            <div class="flex justify-end mt-1">
+                                <div class="flex flex-wrap gap-1 text-xs text-amber-200" data-reaction-summary></div>
+                            </div>
+                        </div>
+                    `;
+                    const editBtn = card.querySelector('[data-action="edit"]');
+                    const delBtn = card.querySelector('[data-action="delete"]');
+                    if (editBtn) editBtn.addEventListener('click', () => startEdit(key, item));
+                    if (delBtn) delBtn.addEventListener('click', () => deleteEntry(key, item.id));
+                    // Comments
+                    const commentsHolder = card.querySelector('[data-comments]');
+                    const addCommentBtn = card.querySelector('[data-action="add-comment"]');
+                    const commentForm = document.createElement('div');
+                    commentForm.className = 'flex gap-2 items-start hidden';
+                    commentForm.innerHTML = `
+                        <textarea class="flex-1 max-w-[520px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3" placeholder="Комментарий"></textarea>
+                        <div class="flex flex-col gap-1">
+                            <button type="button" class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:bg-amber-500/30 transition text-sm" data-action="send-comment">Отправить</button>
+                        </div>
+                    `;
+                    if (commentsHolder && commentsHolder.parentElement) commentsHolder.after(commentForm);
+                    if (addCommentBtn && commentsHolder) {
+                        addCommentBtn.addEventListener('click', () => {
+                            const ta = commentForm.querySelector('textarea');
+                            const isOpen = !commentForm.classList.contains('hidden');
+                            if (isOpen) {
+                                commentForm.classList.add('hidden');
+                                if (ta) ta.value = '';
+                            } else {
+                                commentForm.classList.remove('hidden');
+                                if (ta) ta.focus();
+                            }
+                        });
+                        const sendBtn = commentForm.querySelector('[data-action="send-comment"]');
+                        const textarea = commentForm.querySelector('textarea');
+                        if (sendBtn && textarea) {
+                            const resize = () => {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = `${textarea.scrollHeight}px`;
+                            };
+                            textarea.addEventListener('input', resize);
+                            sendBtn.addEventListener('click', () => {
+                                submitComment(entryKey, item.id, textarea.value || '');
+                                textarea.value = '';
+                                textarea.style.height = 'auto';
+                                commentForm.classList.add('hidden');
+                            });
+                            resize();
+                        }
+                        renderComments(entryKey, item.id, commentsHolder);
+                        attachCommentReactions(entryKey, item.id, card);
+                    }
+                    // Reactions
+                    const summaryHolder = card.querySelector('[data-reaction-summary]');
+                    if (summaryHolder) renderReactionSummary(entryKey, item.id, summaryHolder);
+                    // Entry comment reactions
+                    if (item.comment) {
+                        const entryMenu = card.querySelector('[data-entry-reaction-menu]');
+                        const entrySummary = card.querySelector('[data-entry-reaction-summary]');
+                        const entryBtn = card.querySelector('[data-action="open-entry-reactions"]');
+                        if (entrySummary) renderCommentReactions(entryKey, item.id, '__entry', entrySummary);
+                        if (entryMenu) buildCommentReactionMenu(entryKey, item.id, '__entry', entryMenu);
+                        if (entryBtn && entryMenu) {
+                            entryBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const isOpen = !entryMenu.classList.contains('hidden');
+                                document.querySelectorAll('[data-entry-reaction-menu]').forEach(m => m.classList.add('hidden'));
+                                if (isOpen) {
+                                    entryMenu.classList.add('hidden');
+                                } else {
+                                    entryMenu.classList.remove('hidden');
+                                }
+                            });
+                            entryMenu.addEventListener('click', (e) => {
+                                const btn = e.target.closest('[data-emoji]');
+                                if (!btn) return;
+                                toggleCommentReaction(entryKey, item.id, '__entry', btn.dataset.emoji);
+                                entryMenu.classList.add('hidden');
+                            });
+                            entrySummary.addEventListener('click', (e) => {
+                                const chip = e.target.closest('span');
+                                if (!chip || !chip.textContent) return;
+                                const emoji = chip.textContent.trim().split(' ')[0];
+                                toggleCommentReaction(entryKey, item.id, '__entry', emoji);
+                            });
+                        }
+                    }
+                    entriesList.appendChild(card);
+                });
+            }
+
+            function openModal(withTime){
+                setTime(withTime || defaultTime());
+                closeTimeDropdown();
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.classList.add('modal-open');
+                updateModalVh();
+                const modalCard = modal.querySelector('.card');
+                if (modalCard) modalCard.scrollTop = 0;
+                modal.scrollTop = 0;
+                const firstField = form.querySelector('input[name="duration"]');
+                if (firstField) firstField.focus({ preventScroll: true });
+            }
+            function closeModal(){
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                closeTimeDropdown();
+                editingEntry = null;
+                form.reset();
+                setTime(defaultTime());
+                document.body.classList.remove('modal-open');
+            }
+
+            function startEdit(dateKey, entry){
+                if (!currentUser || entry.author !== currentUser.username) return;
+                editingEntry = { dateKey, id: entry.id };
+                selectedDate = new Date(dateKey);
+                setTime(entry.time);
+                form.elements['duration'].value = entry.duration;
+                form.elements['paper'].value = entry.paper;
+                form.elements['ease'].value = entry.ease;
+                form.elements['satisfaction'].value = entry.satisfaction;
+                const radio = form.querySelector(`input[name="bristol"][value="${entry.bristol}"]`);
+                if (radio) radio.checked = true;
+                if (form.elements['comment']) form.elements['comment'].value = entry.comment || '';
+                openModal(entry.time);
+            }
+
+            function deleteEntry(dateKey, id){
+                const entry = entries && entries[dateKey] && entries[dateKey][id];
+                if (!entry || !currentUser || entry.author !== currentUser.username) return;
+                if (!db) return;
+                if (!confirm('Удалить запись?')) return;
+                db.ref(`poopSchedule/${dateKey}/${id}`).remove();
+                if (editingEntry && editingEntry.id === id) editingEntry = null;
+            }
+
+            function highlightViewButtons(){
+                if (viewMode === 'month') {
+                    monthModeBtn.classList.add('bg-amber-500/15','border','border-amber-500/40','text-amber-200','font-semibold');
+                    weekModeBtn.classList.remove('bg-amber-500/15','border','border-amber-500/40','text-amber-200','font-semibold');
+                } else {
+                    weekModeBtn.classList.add('bg-amber-500/15','border','border-amber-500/40','text-amber-200','font-semibold');
+                    monthModeBtn.classList.remove('bg-amber-500/15','border','border-amber-500/40','text-amber-200','font-semibold');
+                }
+            }
+
+            // Event bindings
+            prevRangeBtn.addEventListener('click', () => {
+                if (viewMode === 'month') {
+                    monthCursor.setMonth(monthCursor.getMonth() - 1);
+                    selectedDate = new Date(monthCursor);
+                } else {
+                    weekStart.setDate(weekStart.getDate() - 7);
+                    selectedDate = new Date(weekStart);
+                }
+                renderCalendar();
+                renderEntries();
+            });
+            nextRangeBtn.addEventListener('click', () => {
+                if (viewMode === 'month') {
+                    monthCursor.setMonth(monthCursor.getMonth() + 1);
+                    selectedDate = new Date(monthCursor);
+                } else {
+                    weekStart.setDate(weekStart.getDate() + 7);
+                    selectedDate = new Date(weekStart);
+                }
+                renderCalendar();
+                renderEntries();
+            });
+            weekModeBtn.addEventListener('click', () => {
+                viewMode = 'week';
+                saveViewMode(viewMode);
+                weekStart = getWeekStart(selectedDate);
+                highlightViewButtons();
+                renderCalendar();
+            });
+            monthModeBtn.addEventListener('click', () => {
+                viewMode = 'month';
+                saveViewMode(viewMode);
+                monthCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+                highlightViewButtons();
+                renderCalendar();
+            });
+            addPoopBtn.addEventListener('click', () => openModal());
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+            timeButton.addEventListener('click', (e) => { e.stopPropagation(); toggleTimeDropdown(); });
+            if (anonToggle) {
+                anonToggle.addEventListener('click', () => {
+                    anonymityOn = !anonymityOn;
+                    saveAnonMode(anonymityOn);
+                    selectedAuthor = 'all';
+                    saveSelectedAuthor(selectedAuthor);
+                    setAnonUI();
+                    authorFilterLabel.textContent = 'Все';
+                    renderEntries();
+                });
+                setAnonUI();
+            }
+            document.addEventListener('click', (e) => {
+                if (!timeDropdown.classList.contains('hidden') && !timeDropdown.contains(e.target) && !timeButton.contains(e.target)) {
+                    closeTimeDropdown();
+                }
+                if (!authorDropdown.classList.contains('hidden') && !authorDropdown.contains(e.target) && !authorFilterBtn.contains(e.target)) {
+                    closeAuthorDropdown();
+                }
+                if (!e.target.closest('[data-reaction-menu]') && !e.target.closest('[data-action="open-reactions"]')) {
+                    closeAllReactionMenus();
+                }
+                if (!e.target.closest('[data-comment-menu]') && !e.target.closest('[data-action="open-comment-reactions"]')) {
+                    document.querySelectorAll('[data-comment-menu]').forEach(m => m.classList.add('hidden'));
+                    document.querySelectorAll('[data-entry-reaction-menu]').forEach(m => m.classList.add('hidden'));
+                }
+                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
+                if (cancelEditBtn) {
+                    e.preventDefault();
+                    const editor = cancelEditBtn.closest('[data-editor]');
+                    const card = cancelEditBtn.closest('.comment-card');
+                    if (editor) editor.remove();
+                    if (card) {
+                        const textDiv = card.querySelector('.mt-1');
+                        const actions = card.querySelector('.comment-actions');
+                        if (textDiv) textDiv.classList.remove('hidden');
+                        if (actions) actions.classList.remove('hidden');
+                        delete card.dataset.editing;
+                        card.classList.remove('comment-editing');
+                    }
+                }
+                if (!modal.classList.contains('hidden') && e.target === modal) {
+                    closeModal();
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeModal();
+                }
+            });
+            modal.addEventListener('focusin', (e) => {
+                if (modal.classList.contains('hidden')) return;
+                const modalCard = modal.querySelector('.card');
+                if (!modalCard) return;
+                const el = e.target;
+                if (!(el instanceof Element)) return;
+                const rect = el.getBoundingClientRect();
+                const cardRect = modalCard.getBoundingClientRect();
+                const pad = 12;
+                if (rect.bottom > cardRect.bottom - pad) {
+                    modalCard.scrollTop += rect.bottom - cardRect.bottom + pad;
+                } else if (rect.top < cardRect.top + pad) {
+                    modalCard.scrollTop -= cardRect.top - rect.top + pad;
+                }
+            });
+            authorFilterBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleAuthorDropdown(); });
+            const confirmOk = document.getElementById('confirmOk');
+            const confirmCancel = document.getElementById('confirmCancel');
+            if (confirmOk) {
+                confirmOk.addEventListener('click', () => {
+                    if (pendingDelete && db) {
+                        const { dateKey, entryId, commentId } = pendingDelete;
+                        db.ref(`poopSchedule/${dateKey}/${entryId}/comments/${commentId}`).remove();
+                    }
+                    closeConfirmModal();
+                });
+            }
+            if (confirmCancel) {
+                confirmCancel.addEventListener('click', () => closeConfirmModal());
+            }
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(form);
+                const dateKey = editingEntry ? editingEntry.dateKey : formatDateKey(selectedDate);
+                const existing = editingEntry && entries && entries[dateKey] && entries[dateKey][editingEntry.id] ? entries[dateKey][editingEntry.id] : {};
+                const commentText = (formData.get('comment') || '').trim();
+                const base = {
+                    time: formData.get('time'),
+                    duration: Number(formData.get('duration')),
+                    paper: Number(formData.get('paper')),
+                    ease: Number(formData.get('ease')),
+                    satisfaction: Number(formData.get('satisfaction')),
+                    bristol: Number(formData.get('bristol')),
+                    comment: commentText,
+                    createdAt: existing.createdAt || new Date().toISOString(),
+                    author: currentUser ? currentUser.username : '',
+                    authorName: anonymityOn ? 'Аноним' : (currentUser ? currentUser.name : 'Аноним')
+                };
+                if (!db) return alert('Сеть недоступна, попробуй позже.');
+
+                if (editingEntry) {
+                    db.ref(`poopSchedule/${editingEntry.dateKey}/${editingEntry.id}`).set(base);
+                } else {
+                    db.ref(`poopSchedule/${dateKey}`).push(base);
+                }
+
+                editingEntry = null;
+                closeModal();
+            });
+
+            // Init
+            renderBristolOptions();
+            highlightViewButtons();
+            setTime(defaultTime());
+            initFirebase();
+            renderCalendar();
+            renderEntries();
+            authorFilterLabel.textContent = selectedAuthor === 'all' ? 'Все' : selectedAuthor;
+            updateModalVh();
+            window.addEventListener('resize', updateModalVh);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateModalVh);
+                window.visualViewport.addEventListener('scroll', updateModalVh);
+            }
+        })();
+    </script>
+</body>
+</html>
