@@ -133,7 +133,9 @@
         .reaction-menu.hidden { display: none !important; }
         .comment-actions { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 6px; align-items: center; transition: opacity 0.2s ease; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
-        .comment-card { position: relative; }
+        body.modal-open { overflow: hidden; }
+        #poopModal { overscroll-behavior: contain; }
+        .modal-card { max-height: calc(var(--modal-vh, 100vh) - 2rem); }
     </style>
 </head>
 <body class="relative">
@@ -218,7 +220,7 @@
 
     <!-- Modal -->
     <div id="poopModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-start sm:items-center justify-center px-4 z-20 overflow-y-auto py-6 modal-scroll">
-        <div class="relative w-full max-w-3xl card glow p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto modal-scroll min-h-0">
+        <div class="relative w-full max-w-3xl card glow p-6 overflow-y-auto modal-scroll min-h-0 modal-card">
             <button aria-label="Закрыть" id="closeModalBtn" class="absolute top-3 right-3 text-gray-400 hover:text-white transition">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -443,6 +445,10 @@
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
+            }
+            function updateModalVh(){
+                const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                document.documentElement.style.setProperty('--modal-vh', `${h}px`);
             }
             function timeToMinutes(t){
                 const [h,m] = t.split(':').map(Number);
@@ -1098,8 +1104,11 @@
                 closeTimeDropdown();
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
+                document.body.classList.add('modal-open');
+                updateModalVh();
                 const modalCard = modal.querySelector('.card');
                 if (modalCard) modalCard.scrollTop = 0;
+                modal.scrollTop = 0;
                 const firstField = form.querySelector('input[name="duration"]');
                 if (firstField) firstField.focus({ preventScroll: true });
             }
@@ -1110,6 +1119,7 @@
                 editingEntry = null;
                 form.reset();
                 setTime(defaultTime());
+                document.body.classList.remove('modal-open');
             }
 
             function startEdit(dateKey, entry){
@@ -1290,6 +1300,12 @@
             renderCalendar();
             renderEntries();
             authorFilterLabel.textContent = selectedAuthor === 'all' ? 'Все' : selectedAuthor;
+            updateModalVh();
+            window.addEventListener('resize', updateModalVh);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateModalVh);
+                window.visualViewport.addEventListener('scroll', updateModalVh);
+            }
         })();
     </script>
 </body>
