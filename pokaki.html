@@ -132,6 +132,7 @@
         .reaction-menu button { min-width: 34px; text-align: center; white-space: nowrap; }
         .reaction-menu.hidden { display: none !important; }
         .comment-actions { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 6px; align-items: center; transition: opacity 0.2s ease; }
+        .comment-card.comment-editing .comment-actions { display: none; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         #poopModal {
@@ -738,21 +739,24 @@
                         const card = btn.closest('.comment-card');
                         if (!card || card.dataset.editing === '1') return;
                         card.dataset.editing = '1';
+                        card.classList.add('comment-editing');
                         // inline edit
                         const textDiv = card.querySelector('.mt-1');
                         const actions = card.querySelector('.comment-actions');
                         const oldText = comment.text || '';
                         const editor = document.createElement('div');
-                        editor.className = 'mt-2 flex gap-2 items-start';
+                        editor.className = 'mt-2 flex flex-col gap-2';
                         editor.setAttribute('data-editor', '1');
                         editor.innerHTML = `
-                            <textarea class="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none" rows="2">${escapeHtml(oldText)}</textarea>
-                            <div class="flex flex-col gap-1">
+                            <textarea class="flex-1 max-w-[520px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3">${escapeHtml(oldText)}</textarea>
+                            <div class="text-xs text-red-400 hidden" data-edit-error>Минимальное количество символов - 1</div>
+                            <div class="flex gap-2">
                                 <button type="button" class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:bg-amber-500/30 transition text-sm" data-action="save-edit">Сохранить</button>
+                                <button type="button" class="px-3 py-2 rounded-lg border border-amber-500/25 text-gray-300 hover:border-amber-500/40 transition text-sm" data-action="cancel-edit">Отмена</button>
                             </div>
                         `;
                         if (textDiv) textDiv.classList.add('hidden');
-                        if (actions) actions.classList.add('hidden', 'opacity-0');
+                        if (actions) actions.classList.add('hidden');
                         card.appendChild(editor);
                         const ta = editor.querySelector('textarea');
                         if (ta) ta.focus();
@@ -761,12 +765,32 @@
                         const cleanup = () => {
                             editor.remove();
                             if (textDiv) textDiv.classList.remove('hidden');
-                            if (actions) actions.classList.remove('hidden','opacity-0');
+                            if (actions) actions.classList.remove('hidden');
                             delete card.dataset.editing;
+                            card.classList.remove('comment-editing');
                         };
+                        const errorEl = editor.querySelector('[data-edit-error]');
+                        if (ta) {
+                            const resize = () => {
+                                ta.style.height = 'auto';
+                                ta.style.height = `${ta.scrollHeight}px`;
+                            };
+                            ta.addEventListener('input', () => {
+                                ta.classList.remove('border-red-500/50');
+                                if (errorEl) errorEl.classList.add('hidden');
+                                resize();
+                            });
+                            resize();
+                        }
                         if (saveBtn && ta) {
                             saveBtn.addEventListener('click', () => {
                                 const val = ta.value.trim();
+                                if (!val) {
+                                    ta.classList.add('border-red-500/50');
+                                    if (errorEl) errorEl.classList.remove('hidden');
+                                    ta.focus();
+                                    return;
+                                }
                                 db.ref(`poopSchedule/${dateKey}/${entryId}/comments/${commentId}/text`).set(val);
                                 cleanup();
                             });
@@ -809,7 +833,7 @@
                         const textDiv = card.querySelector('.mt-1');
                         const actions = card.querySelector('.comment-actions');
                         if (textDiv) textDiv.classList.remove('hidden');
-                        if (actions) actions.classList.remove('hidden','opacity-0');
+                        if (actions) actions.classList.remove('hidden');
                         delete card.dataset.editing;
                     }
                 });
@@ -1037,7 +1061,7 @@
                     const commentForm = document.createElement('div');
                     commentForm.className = 'flex gap-2 items-start hidden';
                     commentForm.innerHTML = `
-                        <textarea class="flex-1 px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none" rows="2" placeholder="Комментарий"></textarea>
+                        <textarea class="flex-1 max-w-[520px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3" placeholder="Комментарий"></textarea>
                         <div class="flex flex-col gap-1">
                             <button type="button" class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:bg-amber-500/30 transition text-sm" data-action="send-comment">Отправить</button>
                         </div>
@@ -1058,11 +1082,18 @@
                         const sendBtn = commentForm.querySelector('[data-action="send-comment"]');
                         const textarea = commentForm.querySelector('textarea');
                         if (sendBtn && textarea) {
+                            const resize = () => {
+                                textarea.style.height = 'auto';
+                                textarea.style.height = `${textarea.scrollHeight}px`;
+                            };
+                            textarea.addEventListener('input', resize);
                             sendBtn.addEventListener('click', () => {
                                 submitComment(entryKey, item.id, textarea.value || '');
                                 textarea.value = '';
+                                textarea.style.height = 'auto';
                                 commentForm.classList.add('hidden');
                             });
+                            resize();
                         }
                         renderComments(entryKey, item.id, commentsHolder);
                         attachCommentReactions(entryKey, item.id, card);
@@ -1240,8 +1271,9 @@
                         const textDiv = card.querySelector('.mt-1');
                         const actions = card.querySelector('.comment-actions');
                         if (textDiv) textDiv.classList.remove('hidden');
-                        if (actions) actions.classList.remove('hidden','opacity-0');
+                        if (actions) actions.classList.remove('hidden');
                         delete card.dataset.editing;
+                        card.classList.remove('comment-editing');
                     }
                 }
                 if (!modal.classList.contains('hidden') && e.target === modal) {
