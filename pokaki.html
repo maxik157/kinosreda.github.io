@@ -1059,11 +1059,12 @@
                     const commentsHolder = card.querySelector('[data-comments]');
                     const addCommentBtn = card.querySelector('[data-action="add-comment"]');
                     const commentForm = document.createElement('div');
-                    commentForm.className = 'flex gap-2 items-start hidden';
+                    commentForm.className = 'flex flex-col gap-2 hidden';
                     commentForm.innerHTML = `
-                        <textarea class="flex-1 max-w-[520px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3" placeholder="Комментарий"></textarea>
-                        <div class="flex flex-col gap-1">
+                        <textarea class="w-full max-w-[640px] px-3 py-2 rounded-lg bg-black/50 border border-amber-500/20 text-sm text-amber-100 focus:border-amber-500/50 focus:outline-none resize-none min-h-[88px]" rows="3" placeholder="Комментарий"></textarea>
+                        <div class="flex justify-start gap-2">
                             <button type="button" class="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:bg-amber-500/30 transition text-sm" data-action="send-comment">Отправить</button>
+                            <button type="button" class="px-3 py-2 rounded-lg border border-amber-500/25 text-gray-300 hover:border-amber-500/40 transition text-sm" data-action="cancel-comment">Отмена</button>
                         </div>
                     `;
                     if (commentsHolder && commentsHolder.parentElement) commentsHolder.after(commentForm);
@@ -1080,6 +1081,7 @@
                             }
                         });
                         const sendBtn = commentForm.querySelector('[data-action="send-comment"]');
+                        const cancelBtn = commentForm.querySelector('[data-action="cancel-comment"]');
                         const textarea = commentForm.querySelector('textarea');
                         if (sendBtn && textarea) {
                             const resize = () => {
@@ -1094,6 +1096,13 @@
                                 commentForm.classList.add('hidden');
                             });
                             resize();
+                        }
+                        if (cancelBtn && textarea) {
+                            cancelBtn.addEventListener('click', () => {
+                                textarea.value = '';
+                                textarea.style.height = 'auto';
+                                commentForm.classList.add('hidden');
+                            });
                         }
                         renderComments(entryKey, item.id, commentsHolder);
                         attachCommentReactions(entryKey, item.id, card);
