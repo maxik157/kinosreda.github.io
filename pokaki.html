@@ -133,8 +133,12 @@
         .reaction-menu.hidden { display: none !important; }
         .comment-actions { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 6px; align-items: center; transition: opacity 0.2s ease; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
-        body.modal-open { overflow: hidden; }
-        #poopModal { overscroll-behavior: contain; }
+        body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+        #poopModal {
+            overscroll-behavior: contain;
+            align-items: flex-start;
+            padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
+        }
         .modal-card { max-height: calc(var(--modal-vh, 100vh) - 2rem); }
     </style>
 </head>
@@ -447,8 +451,11 @@
                     .replace(/'/g, '&#39;');
             }
             function updateModalVh(){
-                const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                const vv = window.visualViewport;
+                const h = vv ? vv.height : window.innerHeight;
+                const offset = vv ? vv.offsetTop : 0;
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
+                document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
             }
             function timeToMinutes(t){
                 const [h,m] = t.split(':').map(Number);
@@ -1244,6 +1251,21 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
                     closeModal();
+                }
+            });
+            modal.addEventListener('focusin', (e) => {
+                if (modal.classList.contains('hidden')) return;
+                const modalCard = modal.querySelector('.card');
+                if (!modalCard) return;
+                const el = e.target;
+                if (!(el instanceof Element)) return;
+                const rect = el.getBoundingClientRect();
+                const cardRect = modalCard.getBoundingClientRect();
+                const pad = 12;
+                if (rect.bottom > cardRect.bottom - pad) {
+                    modalCard.scrollTop += rect.bottom - cardRect.bottom + pad;
+                } else if (rect.top < cardRect.top + pad) {
+                    modalCard.scrollTop -= cardRect.top - rect.top + pad;
                 }
             });
             authorFilterBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleAuthorDropdown(); });
