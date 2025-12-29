@@ -141,6 +141,21 @@
             padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
         }
         .modal-card { max-height: calc(var(--modal-vh, 100vh) - 2rem); }
+        .game-canvas {
+            width: 100%;
+            max-width: 100%;
+            background: #000;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 18px;
+            display: block;
+            touch-action: none;
+        }
+        .game-shell { display: flex; flex-direction: column; gap: 12px; }
+        .game-hint { font-size: 12px; color: #9ca3af; }
+        @media (max-width: 640px) {
+            .game-controls { flex-wrap: nowrap; }
+            .game-controls button { flex: 1 1 0; text-align: center; }
+        }
     </style>
 </head>
 <body class="relative">
@@ -158,6 +173,10 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="poopGameBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/40 transition text-sm">
+                        <span class="text-base">🕹️</span>
+                        <span class="font-semibold">Говноид</span>
+                    </button>
                     <span class="text-xs text-gray-400">Анонимность</span>
                     <button id="anonToggle" type="button" class="relative inline-flex items-center w-14 h-8 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none">
                         <span class="absolute left-1 anon-thumb w-6 h-6 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
@@ -286,6 +305,35 @@
         </div>
     </div>
 
+    <!-- Game Modal -->
+    <div id="poopGameModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-start sm:items-center justify-center px-4 z-30 overflow-y-auto py-6 modal-scroll">
+        <div class="relative w-full max-w-5xl card glow p-6 overflow-y-auto modal-scroll min-h-0 modal-card">
+            <button aria-label="Закрыть игру" id="closeGameModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white transition z-10">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-4 pr-12">
+                <div>
+                    <h3 class="text-xl font-bold text-amber-400">Говноид</h3>
+                    <p class="text-xs text-gray-400 mt-1">Убивай говно и заноси новый покак.</p>
+                </div>
+                <div class="flex items-center gap-3 flex-wrap game-controls">
+                    <div class="flex items-center gap-3 text-xs text-amber-200">
+                        <span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">Счёт: <span id="gameScoreLabel">0</span></span>
+                        <span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">Жизни: <span id="gameLivesLabel">3</span></span>
+                    </div>
+                    <button id="gameStartBtn" type="button" class="px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/40 transition text-sm font-semibold">Старт</button>
+                    <button id="gameResetBtn" type="button" class="px-3 py-2 rounded-xl border border-amber-500/25 text-gray-300 hover:text-white hover:border-amber-500/40 transition text-sm">Заново</button>
+                </div>
+            </div>
+            <div class="game-shell">
+                <canvas id="poopGameCanvas" class="game-canvas" aria-label="Говноид с ладонью и бумагой"></canvas>
+                <div class="game-hint">Управление: ← → или A/D, мышь/палец по полю. Пауза — кнопка «Старт».</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirm Delete Modal -->
     <div id="confirmModal" class="fixed inset-0 hidden flex items-center justify-center px-4 z-40 confirm-modal">
         <div class="bg-black/85 border border-amber-500/30 rounded-xl p-5 w-full max-w-sm text-sm text-gray-200">
@@ -384,6 +432,14 @@
             const authorDropdown = document.getElementById('authorDropdown');
             const authorOptions = document.getElementById('authorOptions');
             const anonToggle = document.getElementById('anonToggle');
+            const gameBtn = document.getElementById('poopGameBtn');
+            const gameModal = document.getElementById('poopGameModal');
+            const gameCanvas = document.getElementById('poopGameCanvas');
+            const gameStartBtn = document.getElementById('gameStartBtn');
+            const gameResetBtn = document.getElementById('gameResetBtn');
+            const gameCloseBtn = document.getElementById('closeGameModalBtn');
+            const gameScoreLabel = document.getElementById('gameScoreLabel');
+            const gameLivesLabel = document.getElementById('gameLivesLabel');
 
             const AUTHOR_FILTER_LS_KEY = 'gpPoopAuthorFilter';
             const ANON_LS_KEY = 'gpAnonMode';
@@ -422,6 +478,32 @@
             let anonymityOn = loadAnonMode();
             const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
             let pendingDelete = null;
+            const GAME_EMOJI = {
+                hand: '🫴',
+                paper: '🧻',
+                poop: '💩'
+            };
+            const gameState = {
+                running: false,
+                paused: true,
+                over: false,
+                win: false,
+                score: 0,
+                lives: 3,
+                width: 0,
+                height: 0,
+                ball: { x: 0, y: 0, r: 12, vx: 0, vy: 0, speed: 5 },
+                paddle: { x: 0, y: 0, width: 140, height: 24, speed: 8 },
+                bricks: [],
+                rows: 6,
+                cols: 12,
+                animationId: null,
+                lastTime: 0,
+                message: 'Нажми «Старт»'
+            };
+            let leftPressed = false;
+            let rightPressed = false;
+            let gameCtx = null;
 
             try {
                 currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -457,6 +539,290 @@
                 const offset = vv ? vv.offsetTop : 0;
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
                 document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
+            }
+            function roundRectPath(ctx, x, y, w, h, r){
+                const radius = Math.min(r, w / 2, h / 2);
+                if (ctx.roundRect) {
+                    ctx.roundRect(x, y, w, h, radius);
+                    return;
+                }
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + w - radius, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                ctx.lineTo(x + w, y + h - radius);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                ctx.lineTo(x + radius, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+            }
+            function setupGameCanvas(){
+                if (!gameCanvas) return;
+                const rect = gameCanvas.getBoundingClientRect();
+                const ratio = window.devicePixelRatio || 1;
+                const maxWidth = Math.max(240, Math.round(window.innerWidth - 48));
+                const baseWidth = rect.width > 0 ? rect.width : maxWidth;
+                const width = Math.max(240, Math.min(maxWidth, Math.round(baseWidth)));
+                const height = Math.min(560, Math.max(320, Math.round(width * 0.7)));
+                gameCanvas.width = Math.round(width * ratio);
+                gameCanvas.height = Math.round(height * ratio);
+                gameCanvas.style.width = '100%';
+                gameCanvas.style.height = `${height}px`;
+                gameCtx = gameCanvas.getContext('2d');
+                if (gameCtx) gameCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+                gameState.width = width;
+                gameState.height = height;
+                resetGame(true);
+            }
+            function resetGame(full){
+                if (gameState.animationId) {
+                    cancelAnimationFrame(gameState.animationId);
+                    gameState.animationId = null;
+                }
+                if (full) {
+                    gameState.score = 0;
+                    gameState.lives = 3;
+                    gameState.over = false;
+                    gameState.win = false;
+                    gameState.bricks = buildBricks();
+                }
+                resetRound();
+                gameState.paused = true;
+                gameState.running = false;
+                gameState.message = 'Нажми «Старт»';
+                updateGameButton();
+                updateGameHud();
+                drawGame();
+            }
+            function updateGameHud(){
+                if (gameScoreLabel) gameScoreLabel.textContent = String(gameState.score);
+                if (gameLivesLabel) gameLivesLabel.textContent = String(gameState.lives);
+            }
+            function resetRound(){
+                const width = gameState.width;
+                const speedFactor = width < 420 ? 0.78 : 1;
+                const base = Math.max(3.6, (width / 200) * speedFactor);
+                gameState.ball.r = Math.max(11, Math.min(16, Math.round(gameState.width / 60)));
+                gameState.ball.speed = base;
+                gameState.ball.x = gameState.width / 2;
+                gameState.ball.y = gameState.height - 80;
+                gameState.ball.vx = base * (Math.random() > 0.5 ? 1 : -1);
+                gameState.ball.vy = -base * 1.2;
+                const isMobile = gameState.width < 640;
+                const handScale = isMobile ? 0.16 : 0.12;
+                const handSize = Math.max(isMobile ? 52 : 44, Math.round(gameState.width * handScale));
+                gameState.paddle.width = handSize;
+                gameState.paddle.height = handSize;
+                gameState.paddle.x = (gameState.width - gameState.paddle.width) / 2;
+                gameState.paddle.y = gameState.height - handSize;
+                gameState.paddle.speed = Math.max(6, gameState.width / 110);
+            }
+            function buildBricks(){
+                const list = [];
+                const padding = Math.max(8, Math.round(gameState.width * 0.015));
+                const offsetTop = 18;
+                const brickW = (gameState.width - padding * (gameState.cols + 1)) / gameState.cols;
+                const maxArea = gameState.height * 0.5 - offsetTop;
+                const idealH = Math.round(gameState.height * 0.065);
+                const brickH = Math.max(18, Math.min(idealH, (maxArea - padding * (gameState.rows - 1)) / gameState.rows));
+                for (let r = 0; r < gameState.rows; r++) {
+                    for (let c = 0; c < gameState.cols; c++) {
+                        list.push({
+                            x: padding + c * (brickW + padding),
+                            y: offsetTop + r * (brickH + padding),
+                            w: brickW,
+                            h: brickH,
+                            alive: true
+                        });
+                    }
+                }
+                return list;
+            }
+            function updateGameButton(){
+                if (!gameStartBtn) return;
+                if (gameState.over || gameState.win) {
+                    gameStartBtn.textContent = 'Снова';
+                    return;
+                }
+                gameStartBtn.textContent = gameState.paused ? 'Старт' : 'Пауза';
+            }
+            function setGameMessage(msg){
+                gameState.message = msg || '';
+            }
+            function openGameModal(){
+                if (!gameModal) return;
+                gameModal.classList.remove('hidden');
+                gameModal.classList.add('flex');
+                document.body.classList.add('modal-open');
+                updateModalVh();
+                setupGameCanvas();
+            }
+            function closeGameModal(){
+                if (!gameModal) return;
+                gameModal.classList.add('hidden');
+                gameModal.classList.remove('flex');
+                document.body.classList.remove('modal-open');
+                leftPressed = false;
+                rightPressed = false;
+                stopGameLoop();
+            }
+            function stopGameLoop(){
+                if (gameState.animationId) {
+                    cancelAnimationFrame(gameState.animationId);
+                    gameState.animationId = null;
+                }
+                gameState.running = false;
+                gameState.paused = true;
+                updateGameButton();
+            }
+            function toggleGame(){
+                if (gameState.over || gameState.win) {
+                    resetGame(true);
+                    startGame();
+                    return;
+                }
+                if (gameState.paused) {
+                    startGame();
+                } else {
+                    pauseGame();
+                }
+            }
+            function startGame(){
+                gameState.running = true;
+                gameState.paused = false;
+                setGameMessage('');
+                updateGameButton();
+                if (!gameState.animationId) {
+                    gameState.lastTime = 0;
+                    gameState.animationId = requestAnimationFrame(gameLoop);
+                }
+            }
+            function pauseGame(){
+                gameState.paused = true;
+                if (!gameState.over && !gameState.win) setGameMessage('Пауза');
+                updateGameButton();
+            }
+            function gameLoop(ts){
+                if (!gameState.running) return;
+                if (!gameState.lastTime) gameState.lastTime = ts;
+                const delta = Math.min((ts - gameState.lastTime) / 16.67, 2);
+                gameState.lastTime = ts;
+                if (!gameState.paused && !gameState.over && !gameState.win) {
+                    updateGame(delta);
+                }
+                drawGame();
+                gameState.animationId = requestAnimationFrame(gameLoop);
+            }
+            function updateGame(step){
+                const ball = gameState.ball;
+                const paddle = gameState.paddle;
+                if (leftPressed) paddle.x -= paddle.speed * step;
+                if (rightPressed) paddle.x += paddle.speed * step;
+                paddle.x = Math.max(0, Math.min(gameState.width - paddle.width, paddle.x));
+
+                ball.x += ball.vx * step;
+                ball.y += ball.vy * step;
+
+                if (ball.x - ball.r <= 0) {
+                    ball.x = ball.r;
+                    ball.vx = Math.abs(ball.vx);
+                } else if (ball.x + ball.r >= gameState.width) {
+                    ball.x = gameState.width - ball.r;
+                    ball.vx = -Math.abs(ball.vx);
+                }
+                if (ball.y - ball.r <= 0) {
+                    ball.y = ball.r;
+                    ball.vy = Math.abs(ball.vy);
+                }
+
+                if (ball.y + ball.r >= gameState.height) {
+                    gameState.lives -= 1;
+                    if (gameState.lives <= 0) {
+                        gameState.over = true;
+                        setGameMessage('Рука в говне\nПиздуй под струю');
+                        pauseGame();
+                    } else {
+                        resetRound();
+                        pauseGame();
+                        setGameMessage('Жизнь потеряна');
+                    }
+                    updateGameHud();
+                    return;
+                }
+
+                const hitSize = paddle.height * 0.72;
+                const hitX = paddle.x + (paddle.width - hitSize) / 2;
+                const hitY = paddle.y + paddle.height - hitSize;
+                if (ball.y + ball.r >= hitY && ball.y - ball.r <= hitY + hitSize &&
+                    ball.x >= hitX && ball.x <= hitX + hitSize && ball.vy > 0) {
+                    const hit = (ball.x - (hitX + hitSize / 2)) / (hitSize / 2);
+                    const speed = ball.speed * 1.35;
+                    ball.vx = speed * hit;
+                    ball.vy = -Math.abs(speed * (1 - Math.abs(hit) * 0.35));
+                    ball.y = hitY - ball.r - 1;
+                }
+
+                for (let i = 0; i < gameState.bricks.length; i++) {
+                    const b = gameState.bricks[i];
+                    if (!b.alive) continue;
+                    if (ball.x + ball.r > b.x && ball.x - ball.r < b.x + b.w &&
+                        ball.y + ball.r > b.y && ball.y - ball.r < b.y + b.h) {
+                        b.alive = false;
+                        gameState.score += 10;
+                        updateGameHud();
+                        ball.vy = -ball.vy;
+                        break;
+                    }
+                }
+
+                const remaining = gameState.bricks.filter(b => b.alive).length;
+                if (!remaining) {
+                    gameState.win = true;
+                    setGameMessage('Покак успешен');
+                    pauseGame();
+                }
+            }
+            function drawGame(){
+                if (!gameCtx) return;
+                gameCtx.clearRect(0, 0, gameState.width, gameState.height);
+                gameCtx.fillStyle = 'rgba(0,0,0,1)';
+                gameCtx.fillRect(0, 0, gameState.width, gameState.height);
+
+                const brickFont = Math.max(18, Math.round(gameState.height * 0.055));
+                gameCtx.textAlign = 'center';
+                gameCtx.textBaseline = 'middle';
+                gameCtx.font = `${brickFont}px "Comfortaa", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+                gameState.bricks.forEach((b) => {
+                    if (!b.alive) return;
+                    gameCtx.fillText(GAME_EMOJI.poop, b.x + b.w / 2, b.y + b.h / 2 + 1);
+                });
+
+                const paddle = gameState.paddle;
+                const handSize = paddle.height;
+                gameCtx.font = `${handSize}px "Comfortaa", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+                gameCtx.fillText(GAME_EMOJI.hand, paddle.x + paddle.width / 2, paddle.y + paddle.height / 2 + 2);
+
+                const ball = gameState.ball;
+                const ballSize = Math.max(22, Math.round(ball.r * 2.2));
+                gameCtx.font = `${ballSize}px "Comfortaa", "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+                gameCtx.fillText(GAME_EMOJI.paper, ball.x, ball.y);
+
+                if (gameState.message) {
+                    const lines = String(gameState.message).split('\n');
+                    const lineHeight = 26;
+                    const blockHeight = lineHeight * lines.length + 22;
+                    const top = gameState.height / 2 - blockHeight / 2;
+                    gameCtx.fillStyle = 'rgba(0,0,0,0.55)';
+                    gameCtx.fillRect(0, top, gameState.width, blockHeight);
+                    gameCtx.fillStyle = '#fcd34d';
+                    gameCtx.textAlign = 'center';
+                    gameCtx.textBaseline = 'middle';
+                    gameCtx.font = '22px "Comfortaa", sans-serif';
+                    lines.forEach((line, idx) => {
+                        const y = top + 11 + lineHeight * idx + lineHeight / 2;
+                        gameCtx.fillText(line, gameState.width / 2, y);
+                    });
+                }
             }
             function timeToMinutes(t){
                 const [h,m] = t.split(':').map(Number);
@@ -644,6 +1010,7 @@
             }
             function toggleCommentReaction(dateKey, entryId, commentId, emoji){
                 if (!db || !currentUser || !emoji || !commentId) return;
+                normalizeCommentReactions(dateKey, entryId, commentId);
                 const user = currentUser.username;
                 const basePath = `poopSchedule/${dateKey}/${entryId}/comments/${commentId}/reactions/${emoji}/${user}`;
                 const ref = db.ref(basePath);
@@ -679,6 +1046,7 @@
                 }).join('');
             }
             function buildCommentReactionMenu(dateKey, entryId, commentId, menu){
+                normalizeCommentReactions(dateKey, entryId, commentId);
                 const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId];
                 const reactions = comment && comment.reactions ? comment.reactions : {};
                 const myEmojis = new Set(Object.entries(reactions).filter(([,u]) => u && u[currentUser?.username]).map(([emoji]) => emoji));
@@ -688,6 +1056,7 @@
                 }).join('');
             }
             function renderCommentReactions(dateKey, entryId, commentId, holder){
+                normalizeCommentReactions(dateKey, entryId, commentId);
                 const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId];
                 const reactions = comment && comment.reactions ? comment.reactions : {};
                 const summary = {};
@@ -701,6 +1070,19 @@
             }
             function closeAllReactionMenus(){
                 document.querySelectorAll('[data-reaction-menu]').forEach(m => m.classList.add('hidden'));
+            }
+            function normalizeCommentReactions(dateKey, entryId, commentId){
+                const comment = entries?.[dateKey]?.[entryId]?.comments?.[commentId];
+                if (!comment || !comment.reactions) return;
+                const legacyKeys = Object.keys(comment.reactions).filter(k => !CHAT_REACTIONS.includes(k));
+                if (!legacyKeys.length) return;
+                legacyKeys.forEach((userKey) => {
+                    const data = comment.reactions[userKey];
+                    if (!data || !data.emoji) return;
+                    const newPath = `poopSchedule/${dateKey}/${entryId}/comments/${commentId}/reactions/${data.emoji}/${userKey}`;
+                    db.ref(newPath).set({ name: data.name || '', ts: data.ts || Date.now() });
+                    db.ref(`poopSchedule/${dateKey}/${entryId}/comments/${commentId}/reactions/${userKey}`).remove();
+                });
             }
             function attachCommentReactions(dateKey, entryId, holder){
                 holder.querySelectorAll('[data-comment-reactions]').forEach(div => {
@@ -1204,6 +1586,22 @@
             }
 
             // Event bindings
+            if (gameBtn) gameBtn.addEventListener('click', openGameModal);
+            if (gameCloseBtn) gameCloseBtn.addEventListener('click', closeGameModal);
+            if (gameStartBtn) gameStartBtn.addEventListener('click', toggleGame);
+            if (gameResetBtn) gameResetBtn.addEventListener('click', () => resetGame(true));
+            if (gameCanvas) {
+                gameCanvas.addEventListener('pointermove', (e) => {
+                    if (!gameModal || gameModal.classList.contains('hidden')) return;
+                    const rect = gameCanvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    gameState.paddle.x = Math.max(0, Math.min(gameState.width - gameState.paddle.width, x - gameState.paddle.width / 2));
+                    if (gameState.paused && !gameState.over && !gameState.win) drawGame();
+                });
+                gameCanvas.addEventListener('pointerdown', () => {
+                    if (gameState.paused && !gameState.over && !gameState.win) startGame();
+                });
+            }
             prevRangeBtn.addEventListener('click', () => {
                 if (viewMode === 'month') {
                     monthCursor.setMonth(monthCursor.getMonth() - 1);
@@ -1288,11 +1686,33 @@
                 if (!modal.classList.contains('hidden') && e.target === modal) {
                     closeModal();
                 }
+                if (gameModal && !gameModal.classList.contains('hidden') && e.target === gameModal) {
+                    closeGameModal();
+                }
             });
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    closeModal();
+                if (e.key === 'Escape') {
+                    if (!modal.classList.contains('hidden')) closeModal();
+                    if (gameModal && !gameModal.classList.contains('hidden')) closeGameModal();
                 }
+                if (gameModal && !gameModal.classList.contains('hidden')) {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                        leftPressed = true;
+                        e.preventDefault();
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                        rightPressed = true;
+                        e.preventDefault();
+                    }
+                    if (e.key === ' ') {
+                        toggleGame();
+                        e.preventDefault();
+                    }
+                }
+            });
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') leftPressed = false;
+                if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rightPressed = false;
             });
             modal.addEventListener('focusin', (e) => {
                 if (modal.classList.contains('hidden')) return;
@@ -1369,6 +1789,11 @@
                 window.visualViewport.addEventListener('resize', updateModalVh);
                 window.visualViewport.addEventListener('scroll', updateModalVh);
             }
+            window.addEventListener('resize', () => {
+                if (gameModal && !gameModal.classList.contains('hidden')) {
+                    setupGameCanvas();
+                }
+            });
         })();
     </script>
 </body>
