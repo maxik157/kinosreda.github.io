@@ -173,7 +173,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="poopGameBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-200 hover:text-white hover:border-amber-500/40 transition text-sm">
+                    <button id="poopGameBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-sm">
                         <span class="text-base">🕹️</span>
                         <span class="font-semibold">Говноид</span>
                     </button>
@@ -600,8 +600,8 @@
             }
             function resetRound(){
                 const width = gameState.width;
-                const speedFactor = width < 420 ? 0.78 : 1;
-                const base = Math.max(3.6, (width / 200) * speedFactor);
+                const speedFactor = width < 420 ? 0.65 : 1;
+                const base = Math.max(3.2, (width / 200) * speedFactor);
                 gameState.ball.r = Math.max(11, Math.min(16, Math.round(gameState.width / 60)));
                 gameState.ball.speed = base;
                 gameState.ball.x = gameState.width / 2;
@@ -1590,17 +1590,23 @@
             if (gameCloseBtn) gameCloseBtn.addEventListener('click', closeGameModal);
             if (gameStartBtn) gameStartBtn.addEventListener('click', toggleGame);
             if (gameResetBtn) gameResetBtn.addEventListener('click', () => resetGame(true));
+            function handleGamePointerMove(e){
+                if (!gameModal || gameModal.classList.contains('hidden')) return;
+                if (!gameCanvas) return;
+                const rect = gameCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                if (x < 0 || x > rect.width) return;
+                gameState.paddle.x = Math.max(0, Math.min(gameState.width - gameState.paddle.width, x - gameState.paddle.width / 2));
+                if (gameState.paused && !gameState.over && !gameState.win) drawGame();
+            }
             if (gameCanvas) {
-                gameCanvas.addEventListener('pointermove', (e) => {
-                    if (!gameModal || gameModal.classList.contains('hidden')) return;
-                    const rect = gameCanvas.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    gameState.paddle.x = Math.max(0, Math.min(gameState.width - gameState.paddle.width, x - gameState.paddle.width / 2));
-                    if (gameState.paused && !gameState.over && !gameState.win) drawGame();
-                });
+                gameCanvas.addEventListener('pointermove', handleGamePointerMove);
                 gameCanvas.addEventListener('pointerdown', () => {
                     if (gameState.paused && !gameState.over && !gameState.win) startGame();
                 });
+            }
+            if (gameModal) {
+                gameModal.addEventListener('pointermove', handleGamePointerMove);
             }
             prevRangeBtn.addEventListener('click', () => {
                 if (viewMode === 'month') {
