@@ -238,8 +238,6 @@
             .sheet th[data-col-id="item"],
             .sheet td[data-col-id="item"] {
                 min-width: 240px;
-                white-space: normal;
-                word-break: break-word;
             }
         }
         .sheet th {
@@ -561,6 +559,28 @@
             background: rgba(245,158,11,0.12);
             color: var(--accent-200);
         }
+        .expense-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(245,158,11,0.10);
+            color: var(--accent-300);
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .expense-toggle:hover {
+            background: rgba(245,158,11,0.20);
+            color: var(--accent-200);
+        }
+        .expense-toggle.active {
+            background: rgba(245,158,11,0.28);
+            border-color: var(--accent-border-50);
+            color: #fff;
+        }
         .row-closed td {
             background: rgba(34,197,94,0.12);
         }
@@ -583,6 +603,36 @@
             color: #86efac;
             background: rgba(34,197,94,0.12);
             margin-right: 6px;
+        }
+        .cost-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cost-cell input {
+            flex: 1;
+            min-width: 0;
+        }
+        .cost-cell .share-toggle {
+            margin-left: auto;
+        }
+        .share-toggle {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-20);
+            color: var(--accent-200);
+            background: rgba(245,158,11,0.08);
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .share-toggle.active {
+            background: rgba(245,158,11,0.28);
+            border-color: var(--accent-border-50);
+            color: #fff;
         }
         .item-cell {
             display: flex;
@@ -759,11 +809,40 @@
                 <p class="text-gray-400 text-sm mt-1">Собирайте список вещей по разделам.</p>
             </div>
             <div class="flex flex-wrap gap-2">
+                <button id="expenseToggleBtn" class="expense-toggle" type="button" aria-expanded="false">
+                    ₽ Калькулятор расходов
+                </button>
                 <div class="relative">
                     <button id="addSectionBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition">
                         + Добавить раздел
                     </button>
                     <div id="sectionMenu" class="section-menu hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="expensePanel" class="card glow p-4 md:p-6 mb-6 hidden">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="text-xs text-gray-400">Калькулятор расходов</div>
+                    <h2 class="text-lg font-semibold text-amber-200">Сводка по скидыванию</h2>
+                    <p class="text-xs text-gray-400 mt-1">Учитываются строки со стоимостью и выбранным ответственным. Метка «Общее» делит сумму на всех участников.</p>
+                </div>
+                <div class="text-xs text-gray-400">
+                    Участники: <span id="expenseParticipants">—</span>
+                </div>
+            </div>
+            <div id="expenseMeta" class="mt-3 text-xs text-gray-400"></div>
+            <div id="expenseWarnings" class="mt-2 text-xs text-red-300 hidden"></div>
+            <div id="expenseEmpty" class="text-gray-400 text-sm mt-4 hidden">Нет данных для расчета.</div>
+            <div id="expenseSummary" class="grid gap-4 md:grid-cols-2 mt-4 hidden">
+                <div class="rounded-xl border border-amber-500/20 bg-black/40 p-3">
+                    <div class="text-xs text-gray-400 mb-2">Баланс</div>
+                    <div id="expenseBalances" class="space-y-2"></div>
+                </div>
+                <div class="rounded-xl border border-amber-500/20 bg-black/40 p-3">
+                    <div class="text-xs text-gray-400 mb-2">Кто кому должен</div>
+                    <div id="expenseTransfers" class="space-y-2"></div>
                 </div>
             </div>
         </div>
@@ -919,6 +998,7 @@
         let sectionAutoScrollRaf = null;
         let sectionAutoScrollSpeed = 0;
         let activeTooltipTarget = null;
+        let expensesOpen = false;
         let newSectionColumnsDraft = [];
         const SORT_LS_PREFIX = 'planningSortState:';
         const ownerFilterState = {};
@@ -1013,7 +1093,8 @@
                         return {
                             id: row.id || `row_${Math.random().toString(36).slice(2, 6)}`,
                             cells: normalizedCells,
-                            closed: !!row.closed
+                            closed: !!row.closed,
+                            shared: typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(sec.name)
                         };
                     });
                     return {
@@ -1036,10 +1117,14 @@
             }, 200);
         }
 
-        function createRow(columns) {
+        function createRow(columns, shared) {
             const cells = {};
             columns.forEach(col => { cells[col.id] = col.type === 'owners' ? [] : ''; });
-            return { id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, cells };
+            return {
+                id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                cells,
+                shared: typeof shared === 'boolean' ? shared : true
+            };
         }
 
         function createSection(name, columnsOverride) {
@@ -1116,6 +1201,296 @@
                 }
                 return name;
             }).join(', ');
+        }
+
+        function getDefaultShareForSection(name) {
+            if (!name) return true;
+            const lower = String(name).toLowerCase();
+            if (lower.includes('личн')) return false;
+            return true;
+        }
+
+        function normalizeOwnerList(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+            return String(value).split(',').map(v => v.trim()).filter(Boolean);
+        }
+
+        function uniqueList(list) {
+            const seen = new Set();
+            const result = [];
+            list.forEach((item) => {
+                if (!seen.has(item)) {
+                    seen.add(item);
+                    result.push(item);
+                }
+            });
+            return result;
+        }
+
+        function parseCostValue(value) {
+            if (value == null) return 0;
+            const raw = String(value).trim();
+            if (!raw || raw === '-' || raw === '—') return 0;
+            const cleaned = raw.replace(',', '.').replace(/[^\d.-]/g, '');
+            const num = parseFloat(cleaned);
+            return Number.isFinite(num) ? num : 0;
+        }
+
+        function formatMoneyValue(value) {
+            const rounded = Math.round(value * 100) / 100;
+            const abs = Math.abs(rounded);
+            const digits = Number.isInteger(abs) ? 0 : 2;
+            return `${rounded.toLocaleString('ru-RU', { minimumFractionDigits: digits, maximumFractionDigits: 2 })} ₽`;
+        }
+
+        function formatMoneyFromCents(cents) {
+            return formatMoneyValue(cents / 100);
+        }
+
+        function collectParticipants() {
+            if (!eventData) return [];
+            const names = new Set();
+            eventData.sections.forEach(section => {
+                const ownerCols = section.columns.filter(col => col.type === 'owners');
+                if (!ownerCols.length) return;
+                section.rows.forEach(row => {
+                    ownerCols.forEach(col => {
+                        normalizeOwnerList(row.cells[col.id]).forEach(name => names.add(name));
+                    });
+                });
+            });
+            const list = Array.from(names);
+            list.sort((a, b) => collator.compare(a, b));
+            return list;
+        }
+
+        function calculateExpenses() {
+            if (!eventData) {
+                return {
+                    participants: [],
+                    balances: [],
+                    transfers: [],
+                    sharedCount: 0,
+                    personalCount: 0,
+                    sharedTotal: 0,
+                    personalTotal: 0,
+                    rowsCount: 0,
+                    missingOwner: 0,
+                    missingCost: 0
+                };
+            }
+            const participants = collectParticipants();
+            const paid = {};
+            const owed = {};
+            participants.forEach(name => {
+                paid[name] = 0;
+                owed[name] = 0;
+            });
+            let sharedTotal = 0;
+            let personalTotal = 0;
+            let sharedCount = 0;
+            let personalCount = 0;
+            let rowsCount = 0;
+            let missingOwner = 0;
+            let missingCost = 0;
+
+            eventData.sections.forEach(section => {
+                const ownerCols = section.columns.filter(col => col.type === 'owners');
+                const costCols = section.columns.filter(col => col.type === 'cost');
+                section.rows.forEach(row => {
+                    const costRaw = costCols.reduce((sum, col) => sum + parseCostValue(row.cells[col.id]), 0);
+                    const costCents = Math.round(costRaw * 100);
+                    const payers = uniqueList(ownerCols.flatMap(col => normalizeOwnerList(row.cells[col.id])));
+                    if (!costCents) {
+                        if (payers.length) missingCost += 1;
+                        return;
+                    }
+                    if (!payers.length) {
+                        missingOwner += 1;
+                        return;
+                    }
+                    const shared = typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(section.name);
+                    rowsCount += 1;
+                    if (!shared) {
+                        personalTotal += costCents;
+                        personalCount += 1;
+                        return;
+                    }
+
+                    const participantList = participants.length ? participants.slice() : payers.slice();
+                    if (!participantList.length) return;
+
+                    sharedTotal += costCents;
+                    sharedCount += 1;
+                    const sortedPayers = payers.slice().sort((a, b) => collator.compare(a, b));
+                    const payerShare = Math.floor(costCents / sortedPayers.length);
+                    let payerRemainder = costCents - payerShare * sortedPayers.length;
+                    sortedPayers.forEach(name => {
+                        paid[name] = (paid[name] || 0) + payerShare + (payerRemainder > 0 ? 1 : 0);
+                        if (payerRemainder > 0) payerRemainder -= 1;
+                    });
+
+                    const sortedParticipants = participantList.slice().sort((a, b) => collator.compare(a, b));
+                    const participantShare = Math.floor(costCents / sortedParticipants.length);
+                    let participantRemainder = costCents - participantShare * sortedParticipants.length;
+                    sortedParticipants.forEach(name => {
+                        owed[name] = (owed[name] || 0) + participantShare + (participantRemainder > 0 ? 1 : 0);
+                        if (participantRemainder > 0) participantRemainder -= 1;
+                    });
+                });
+            });
+
+            const balances = participants.map(name => {
+                const paidCents = paid[name] || 0;
+                const owedCents = owed[name] || 0;
+                return {
+                    name,
+                    paid: paidCents,
+                    owed: owedCents,
+                    balance: paidCents - owedCents
+                };
+            }).sort((a, b) => b.balance - a.balance);
+
+            const creditors = balances.filter(b => b.balance > 0).map(b => ({ name: b.name, amount: b.balance }));
+            const debtors = balances.filter(b => b.balance < 0).map(b => ({ name: b.name, amount: -b.balance }));
+            const transfers = [];
+            let i = 0;
+            let j = 0;
+            while (i < debtors.length && j < creditors.length) {
+                const payAmount = Math.min(debtors[i].amount, creditors[j].amount);
+                if (payAmount > 0) {
+                    transfers.push({
+                        from: debtors[i].name,
+                        to: creditors[j].name,
+                        amount: payAmount
+                    });
+                }
+                debtors[i].amount -= payAmount;
+                creditors[j].amount -= payAmount;
+                if (debtors[i].amount === 0) i += 1;
+                if (creditors[j].amount === 0) j += 1;
+            }
+
+            return {
+                participants,
+                balances,
+                transfers,
+                sharedCount,
+                personalCount,
+                sharedTotal,
+                personalTotal,
+                rowsCount,
+                missingOwner,
+                missingCost
+            };
+        }
+
+        function renderExpenseSummary() {
+            if (!expensesOpen) return;
+            const panel = document.getElementById('expensePanel');
+            if (!panel) return;
+            const participantsEl = document.getElementById('expenseParticipants');
+            const metaEl = document.getElementById('expenseMeta');
+            const warnEl = document.getElementById('expenseWarnings');
+            const emptyEl = document.getElementById('expenseEmpty');
+            const summaryEl = document.getElementById('expenseSummary');
+            const balancesEl = document.getElementById('expenseBalances');
+            const transfersEl = document.getElementById('expenseTransfers');
+            if (!participantsEl || !metaEl || !warnEl || !emptyEl || !summaryEl || !balancesEl || !transfersEl) return;
+
+            const result = calculateExpenses();
+            participantsEl.textContent = result.participants.length ? result.participants.join(', ') : '—';
+
+            metaEl.innerHTML = `
+                Позиции: <span class="text-amber-200 font-semibold">${result.rowsCount}</span>
+                · Общие: <span class="text-amber-200 font-semibold">${result.sharedCount}</span> (${formatMoneyFromCents(result.sharedTotal)})
+                · Личные: <span class="text-amber-200 font-semibold">${result.personalCount}</span> (${formatMoneyFromCents(result.personalTotal)})
+                · Всего: <span class="text-amber-200 font-semibold">${formatMoneyFromCents(result.sharedTotal + result.personalTotal)}</span>
+            `;
+
+            const warnings = [];
+            if (result.missingOwner) warnings.push(`Без ответственного: ${result.missingOwner}`);
+            if (result.missingCost) warnings.push(`Без стоимости: ${result.missingCost}`);
+            if (warnings.length) {
+                warnEl.textContent = warnings.join(' · ');
+                warnEl.classList.remove('hidden');
+            } else {
+                warnEl.classList.add('hidden');
+                warnEl.textContent = '';
+            }
+
+            const hasRows = result.rowsCount > 0;
+            const hasShared = result.sharedCount > 0;
+            if (!result.participants.length || !hasRows || !hasShared) {
+                emptyEl.textContent = (!result.participants.length || !hasRows)
+                    ? 'Нет данных для расчета.'
+                    : 'Нет общих расходов для расчета.';
+                emptyEl.classList.remove('hidden');
+                summaryEl.classList.add('hidden');
+                balancesEl.innerHTML = '';
+                transfersEl.innerHTML = '';
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            summaryEl.classList.remove('hidden');
+
+            balancesEl.innerHTML = '';
+            result.balances.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'space-y-0.5';
+                const header = document.createElement('div');
+                header.className = 'flex items-center justify-between text-sm';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'text-gray-200';
+                nameSpan.textContent = item.name;
+                const valueSpan = document.createElement('span');
+                valueSpan.className = item.balance >= 0 ? 'text-emerald-300 font-semibold' : 'text-red-300 font-semibold';
+                const sign = item.balance >= 0 ? '+' : '−';
+                valueSpan.textContent = `${sign}${formatMoneyFromCents(Math.abs(item.balance))}`;
+                header.appendChild(nameSpan);
+                header.appendChild(valueSpan);
+                const meta = document.createElement('div');
+                meta.className = 'text-xs text-gray-500';
+                meta.textContent = `Заплатил ${formatMoneyFromCents(item.paid)} · Доля ${formatMoneyFromCents(item.owed)}`;
+                row.appendChild(header);
+                row.appendChild(meta);
+                balancesEl.appendChild(row);
+            });
+
+            transfersEl.innerHTML = '';
+            if (!result.transfers.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-sm text-gray-400';
+                empty.textContent = 'Никто никому не должен.';
+                transfersEl.appendChild(empty);
+            } else {
+                result.transfers.forEach(t => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between text-sm';
+                    const text = document.createElement('span');
+                    text.className = 'text-gray-200';
+                    text.textContent = `${t.from} → ${t.to}`;
+                    const amount = document.createElement('span');
+                    amount.className = 'text-amber-200 font-semibold';
+                    amount.textContent = formatMoneyFromCents(t.amount);
+                    row.appendChild(text);
+                    row.appendChild(amount);
+                    transfersEl.appendChild(row);
+                });
+            }
+        }
+
+        function toggleExpensePanel(force) {
+            const panel = document.getElementById('expensePanel');
+            const btn = document.getElementById('expenseToggleBtn');
+            if (!panel || !btn) return;
+            expensesOpen = typeof force === 'boolean' ? force : !expensesOpen;
+            panel.classList.toggle('hidden', !expensesOpen);
+            btn.classList.toggle('active', expensesOpen);
+            btn.setAttribute('aria-expanded', expensesOpen ? 'true' : 'false');
+            if (expensesOpen) renderExpenseSummary();
         }
 
         function getTooltipText(el) {
@@ -1243,6 +1618,7 @@
 
                 const tbody = document.createElement('tbody');
 
+                const shareToggleColId = (section.columns.find(col => col.type === 'cost') || {}).id;
                 const rows = filterRowsByOwner(section, getSortedRows(section));
                 if (!rows.length) {
                     const row = document.createElement('tr');
@@ -1326,7 +1702,26 @@
                                     tr.appendChild(td);
                                     return;
                                 }
-                                td.appendChild(input);
+                                if (col.type === 'cost') {
+                                    const costWrap = document.createElement('div');
+                                    costWrap.className = 'cost-cell';
+                                    costWrap.appendChild(input);
+                                    if (col.id === shareToggleColId) {
+                                        const shared = typeof rowData.shared === 'boolean' ? rowData.shared : getDefaultShareForSection(section.name);
+                                        const shareBtn = document.createElement('button');
+                                        shareBtn.type = 'button';
+                                        shareBtn.className = `share-toggle ${shared ? 'active' : ''}`;
+                                        shareBtn.dataset.shareToggle = section.id;
+                                        shareBtn.dataset.rowId = rowData.id;
+                                        shareBtn.textContent = shared ? 'Общее' : 'Личное';
+                                        shareBtn.title = shared ? 'Скидываются все участники' : 'Скидывается только ответственный';
+                                        shareBtn.setAttribute('aria-pressed', shared ? 'true' : 'false');
+                                        costWrap.appendChild(shareBtn);
+                                    }
+                                    td.appendChild(costWrap);
+                                } else {
+                                    td.appendChild(input);
+                                }
                             }
 
                             tr.appendChild(td);
@@ -1354,6 +1749,7 @@
 
             renderSectionMenu();
             restoreActiveField(active);
+            renderExpenseSummary();
             renderTick += 1;
             updateStickyHeaders();
         }
@@ -1577,12 +1973,13 @@
             if (!row) return;
             row.cells[colId] = value;
             saveEventData();
+            renderExpenseSummary();
         }
 
         function addRow(sectionId) {
             const section = eventData.sections.find(sec => sec.id === sectionId);
             if (!section) return;
-            section.rows.push(createRow(section.columns));
+            section.rows.push(createRow(section.columns, getDefaultShareForSection(section.name)));
             saveEventData();
             renderSections();
         }
@@ -1601,6 +1998,16 @@
             const row = section.rows.find(r => r.id === rowId);
             if (!row) return;
             row.closed = !row.closed;
+            saveEventData();
+            renderSections();
+        }
+
+        function toggleRowShared(sectionId, rowId) {
+            const section = eventData.sections.find(sec => sec.id === sectionId);
+            if (!section) return;
+            const row = section.rows.find(r => r.id === rowId);
+            if (!row) return;
+            row.shared = !row.shared;
             saveEventData();
             renderSections();
         }
@@ -2231,6 +2638,11 @@
             initUsers();
             initBeerList();
 
+            const expenseBtn = document.getElementById('expenseToggleBtn');
+            if (expenseBtn) {
+                expenseBtn.addEventListener('click', () => toggleExpensePanel());
+            }
+
             document.getElementById('addSectionBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleSectionMenu();
@@ -2485,6 +2897,12 @@
                     const sectionId = ownerFilterBtn.dataset.ownerFilter;
                     ownerFilterState[sectionId] = !ownerFilterState[sectionId];
                     renderSections();
+                    return;
+                }
+
+                const shareToggleBtn = e.target.closest('[data-share-toggle]');
+                if (shareToggleBtn) {
+                    toggleRowShared(shareToggleBtn.dataset.shareToggle, shareToggleBtn.dataset.rowId);
                     return;
                 }
 
