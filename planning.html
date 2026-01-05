@@ -241,6 +241,78 @@
             gap: 10px;
             margin-top: 16px;
         }
+        .participant-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .participant-action-btn {
+            flex: 1;
+            font-size: 11px;
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-border-20);
+            color: var(--accent-200);
+            background: rgba(245,158,11,0.08);
+        }
+        .participant-action-btn:hover {
+            background: rgba(245,158,11,0.18);
+            border-color: var(--accent-border-50);
+        }
+        .participant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0,0,0,0.35);
+            margin-top: 10px;
+        }
+        .participant-add {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .participant-add .modal-input {
+            flex: 1;
+        }
+        .participant-add-btn {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            color: var(--accent-200);
+            background: rgba(245,158,11,0.12);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        .participant-add-btn:hover {
+            background: rgba(245,158,11,0.22);
+            border-color: var(--accent-border-50);
+        }
+        .participant-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            padding: 6px 8px;
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.4);
+        }
+        .participant-opt:hover {
+            background: rgba(245,158,11,0.12);
+            color: var(--accent-200);
+        }
+        .participant-note {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body class="bg-dark min-h-screen">
@@ -334,6 +406,19 @@
             <h3 id="addEventTitle" class="text-lg font-semibold text-amber-200">Новое мероприятие</h3>
             <p class="text-xs text-gray-400 mt-1">Введите название события.</p>
             <input id="eventNameInput" class="modal-input mt-4" type="text" placeholder="Название мероприятия" />
+            <div class="mt-4">
+                <div class="text-xs text-gray-400 mb-2">Участники</div>
+                <div class="participant-actions">
+                    <button type="button" class="participant-action-btn" data-event-participants-action="all">Выбрать всех</button>
+                    <button type="button" class="participant-action-btn" data-event-participants-action="clear">Сбросить</button>
+                </div>
+                <div id="eventParticipantsList" class="participant-list"></div>
+                <div class="participant-add">
+                    <input id="eventParticipantsCustomInput" class="modal-input" type="text" placeholder="Добавить участника вручную" />
+                    <button type="button" id="addEventParticipantBtn" class="participant-add-btn">Добавить</button>
+                </div>
+                <div class="participant-note">Если никого не выбрать — участвуют все пользователи сайта.</div>
+            </div>
             <div class="modal-actions">
                 <button id="cancelEventBtn" class="flex-1 px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Отмена</button>
                 <button id="createEventBtn" class="flex-1 px-4 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition font-semibold">Создать</button>
@@ -356,6 +441,8 @@
         let db = null;
         let eventsCache = [];
         let currentUserLogin = '';
+        let usersList = [];
+        let eventCustomParticipants = [];
 
         function initFirebase() {
             if (!firebase.apps.length) {
@@ -374,6 +461,20 @@
                 events.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 eventsCache = events;
                 renderEvents();
+            });
+        }
+
+        function initUsers() {
+            if (!db) return;
+            db.ref('users').on('value', (snapshot) => {
+                const val = snapshot.val() || {};
+                usersList = Object.values(val).map(user => user && user.name).filter(Boolean);
+                usersList.sort((a, b) => a.localeCompare(b, 'ru'));
+                const modal = document.getElementById('addEventModal');
+                const selected = modal && modal.classList.contains('active')
+                    ? getSelectedEventParticipantsFromModal()
+                    : null;
+                renderEventParticipantsList(selected);
             });
         }
 
@@ -419,11 +520,79 @@
             });
         }
 
+        function renderEventParticipantsList(selected) {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return;
+            list.innerHTML = '';
+            const baseList = usersList.slice();
+            const extra = eventCustomParticipants.filter(name => !baseList.includes(name));
+            const listNames = baseList.concat(extra);
+            if (!listNames.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-gray-400 px-2 py-1';
+                empty.textContent = 'Нет пользователей';
+                list.appendChild(empty);
+                return;
+            }
+            const selectedSet = Array.isArray(selected) ? new Set(selected) : null;
+            listNames.forEach(name => {
+                const label = document.createElement('label');
+                label.className = 'participant-opt';
+                const checked = selectedSet ? selectedSet.has(name) : true;
+                label.innerHTML = `
+                    <input type="checkbox" ${checked ? 'checked' : ''} data-event-participant="${name}" />
+                    <span>${name}</span>
+                `;
+                list.appendChild(label);
+            });
+        }
+
+        function addCustomParticipantToEventModal() {
+            const input = document.getElementById('eventParticipantsCustomInput');
+            if (!input) return;
+            const raw = input.value.trim();
+            if (!raw) return;
+            const normalized = raw.toLowerCase();
+            const selected = getSelectedEventParticipantsFromModal() || [];
+            const existsInUsers = usersList.some(name => name.toLowerCase() === normalized);
+            const existsInCustom = eventCustomParticipants.some(name => name.toLowerCase() === normalized);
+            if (!existsInUsers && !existsInCustom) {
+                eventCustomParticipants.push(raw);
+            }
+            if (!selected.some(name => name.toLowerCase() === normalized)) {
+                selected.push(raw);
+            }
+            renderEventParticipantsList(selected);
+            input.value = '';
+        }
+
+        function getSelectedEventParticipantsFromModal() {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return null;
+            const inputs = list.querySelectorAll('input[data-event-participant]');
+            if (!inputs.length) return null;
+            return Array.from(inputs)
+                .filter(input => input.checked)
+                .map(input => input.dataset.eventParticipant);
+        }
+
+        function setEventParticipantsSelection(checked) {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return;
+            list.querySelectorAll('input[data-event-participant]').forEach(input => {
+                input.checked = checked;
+            });
+        }
+
         function openAddEventModal() {
             const modal = document.getElementById('addEventModal');
             const input = document.getElementById('eventNameInput');
             if (!modal || !input) return;
             input.value = '';
+            eventCustomParticipants = [];
+            renderEventParticipantsList(null);
+            const customInput = document.getElementById('eventParticipantsCustomInput');
+            if (customInput) customInput.value = '';
             modal.classList.add('active');
             setTimeout(() => input.focus(), 0);
         }
@@ -438,11 +607,23 @@
             if (!input) return;
             const trimmed = input.value.trim();
             if (!trimmed || !db) return;
+            const selected = getSelectedEventParticipantsFromModal();
+            const participants = Array.isArray(selected) ? selected : [];
+            const hasCustom = participants.some(name => !usersList.includes(name));
+            const customParticipants = participants.filter(name => !usersList.includes(name));
 
-            const ref = db.ref('planning/events').push({
+            const payload = {
                 name: trimmed,
                 createdAt: Date.now()
-            });
+            };
+            if (participants.length && (hasCustom || participants.length < usersList.length)) {
+                payload.participants = participants;
+            }
+            if (customParticipants.length) {
+                payload.participantsCustom = customParticipants;
+            }
+
+            const ref = db.ref('planning/events').push(payload);
             if (ref && ref.key) {
                 db.ref(`planning/data/${ref.key}`).set({ sections: [] });
             }
@@ -481,15 +662,27 @@
         });
         document.getElementById('cancelEventBtn').addEventListener('click', closeAddEventModal);
         document.getElementById('createEventBtn').addEventListener('click', createEvent);
+        document.getElementById('addEventParticipantBtn').addEventListener('click', addCustomParticipantToEventModal);
         document.getElementById('addEventModal').addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('[data-event-participants-action]');
+            if (actionBtn) {
+                const action = actionBtn.dataset.eventParticipantsAction;
+                setEventParticipantsSelection(action === 'all');
+                return;
+            }
             if (e.target.id === 'addEventModal') closeAddEventModal();
         });
         document.getElementById('eventNameInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') createEvent();
             if (e.key === 'Escape') closeAddEventModal();
         });
+        document.getElementById('eventParticipantsCustomInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addCustomParticipantToEventModal();
+            if (e.key === 'Escape') closeAddEventModal();
+        });
         initProfileName();
         initFirebase();
+        initUsers();
     </script>
 </body>
 </html>
