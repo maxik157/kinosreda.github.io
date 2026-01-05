@@ -110,6 +110,15 @@
             color: #fff;
             min-height: 100vh;
         }
+        html.modal-open,
+        body.modal-open {
+            overflow: hidden;
+            height: 100%;
+        }
+        body.modal-open {
+            position: fixed;
+            width: 100%;
+        }
         @font-face {
             font-family: 'Egyptian Bold Extended';
             src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
@@ -532,6 +541,21 @@
         .icon-btn:hover {
             background: rgba(248,113,113,0.15);
             color: #fecaca;
+        }
+        .row-delete-btn {
+            border: none;
+            background: transparent;
+            width: auto;
+            height: auto;
+            padding: 0;
+            border-radius: 6px;
+            transition: transform 0.15s ease, color 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .row-delete-btn:hover {
+            background: transparent;
+            color: #fee2e2;
+            transform: scale(1.12);
+            filter: drop-shadow(0 0 6px rgba(248,113,113,0.6)) drop-shadow(0 0 14px rgba(248,113,113,0.35));
         }
         .section-actions {
             display: flex;
@@ -1230,6 +1254,7 @@
         let eventParticipants = [];
         let eventCustomParticipants = [];
         let newSectionColumnsDraft = [];
+        let modalScrollTop = 0;
         const SORT_LS_PREFIX = 'planningSortState:';
         const ownerFilterState = {};
         let pendingColumnSectionId = null;
@@ -2193,9 +2218,9 @@
 
                         const tdAction = document.createElement('td');
                         const delBtn = document.createElement('button');
-                        delBtn.className = 'icon-btn';
+                        delBtn.className = 'icon-btn row-delete-btn';
                         delBtn.title = 'Удалить строку';
-                        delBtn.textContent = '✕';
+                        delBtn.textContent = '🗑️';
                         delBtn.dataset.deleteRow = section.id;
                         delBtn.dataset.rowId = rowData.id;
                         tdAction.appendChild(delBtn);
@@ -2505,6 +2530,27 @@
             return name;
         }
 
+        function updateModalScrollLock() {
+            const anyOpen = document.querySelector('.modal.active');
+            const html = document.documentElement;
+            if (anyOpen) {
+                if (!document.body.classList.contains('modal-open')) {
+                    modalScrollTop = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                    document.body.style.top = `-${modalScrollTop}px`;
+                }
+                document.body.classList.add('modal-open');
+                html.classList.add('modal-open');
+            } else {
+                document.body.classList.remove('modal-open');
+                html.classList.remove('modal-open');
+                document.body.style.top = '';
+                if (modalScrollTop) {
+                    window.scrollTo(0, modalScrollTop);
+                    modalScrollTop = 0;
+                }
+            }
+        }
+
         function renderEventParticipantsModal() {
             const list = document.getElementById('eventParticipantsList');
             if (!list) return;
@@ -2595,11 +2641,13 @@
             const input = document.getElementById('participantsCustomInput');
             if (input) input.value = '';
             modal.classList.add('active');
+            updateModalScrollLock();
         }
 
         function closeParticipantsModal() {
             const modal = document.getElementById('participantsModal');
             if (modal) modal.classList.remove('active');
+            updateModalScrollLock();
         }
 
         function saveEventParticipants() {
@@ -2854,6 +2902,7 @@
             input.value = '';
             setColumnType('text');
             modal.classList.add('active');
+            updateModalScrollLock();
             setTimeout(() => input.focus(), 0);
         }
 
@@ -2861,6 +2910,7 @@
             const modal = document.getElementById('addColumnModal');
             if (modal) modal.classList.remove('active');
             pendingColumnSectionId = null;
+            updateModalScrollLock();
         }
 
         function setColumnType(value) {
@@ -2948,6 +2998,7 @@
             input.value = col.name || '';
             setEditColumnType(col.type || 'text');
             modal.classList.add('active');
+            updateModalScrollLock();
             setTimeout(() => input.focus(), 0);
         }
 
@@ -2955,6 +3006,7 @@
             const modal = document.getElementById('editColumnModal');
             if (modal) modal.classList.remove('active');
             pendingEditColumn = null;
+            updateModalScrollLock();
         }
 
         function saveEditColumn() {
@@ -3022,12 +3074,14 @@
             const modal = document.getElementById('deleteColumnModal');
             if (nameEl) nameEl.textContent = col.name || '';
             if (modal) modal.classList.add('active');
+            updateModalScrollLock();
         }
 
         function closeDeleteColumnModal() {
             const modal = document.getElementById('deleteColumnModal');
             if (modal) modal.classList.remove('active');
             pendingDeleteColumn = null;
+            updateModalScrollLock();
         }
 
         function confirmDeleteColumn() {
@@ -3176,6 +3230,7 @@
             newSectionColumnsDraft = defaultColumns.map(col => ({ id: col.id, name: col.name, type: col.type }));
             renderNewSectionColumns();
             modal.classList.add('active');
+            updateModalScrollLock();
             setTimeout(() => input.focus(), 0);
         }
 
@@ -3183,6 +3238,7 @@
             const modal = document.getElementById('newSectionModal');
             if (modal) modal.classList.remove('active');
             newSectionColumnsDraft = [];
+            updateModalScrollLock();
         }
 
         function renderNewSectionColumns() {
@@ -3241,12 +3297,14 @@
             const section = eventData.sections.find(sec => sec.id === sectionId);
             nameEl.textContent = section ? section.name : '';
             modal.classList.add('active');
+            updateModalScrollLock();
         }
 
         function closeDeleteSectionModal() {
             const modal = document.getElementById('deleteSectionModal');
             if (modal) modal.classList.remove('active');
             pendingDeleteSectionId = null;
+            updateModalScrollLock();
         }
 
         function confirmDeleteSection() {
@@ -3373,6 +3431,18 @@
                     if (e.key === 'Escape') closeParticipantsModal();
                 });
             }
+
+            document.addEventListener('wheel', (e) => {
+                if (!document.body.classList.contains('modal-open')) return;
+                if (e.target.closest('.modal-card')) return;
+                e.preventDefault();
+            }, { passive: false });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!document.body.classList.contains('modal-open')) return;
+                if (e.target.closest('.modal-card')) return;
+                e.preventDefault();
+            }, { passive: false });
 
             document.getElementById('addSectionBtn').addEventListener('click', (e) => {
                 e.stopPropagation();

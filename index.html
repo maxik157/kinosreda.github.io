@@ -157,6 +157,7 @@
             --particle-color: rgba(245,158,11,0.40);
             --scrollbar-thumb: #f59e0b;
             --scrollbar-thumb-hover: #d97706;
+            --header-offset: 0px;
         }
         html[data-theme="white"] {
             /* White scheme */
@@ -605,6 +606,31 @@
         .beer-type-dark {
             background: linear-gradient(135deg, #78350f, #451a03);
             color: #fff;
+        }
+        #beerSection {
+            scroll-margin-top: max(8rem, calc(var(--header-offset, 0px) + 1.5rem));
+        }
+        #beerSticky {
+            position: sticky;
+            top: var(--header-offset, 0px);
+            z-index: 45;
+            display: flow-root;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--accent-border-20);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+            border-radius: 0.75rem;
+            transition: box-shadow 0.25s ease, background-color 0.25s ease;
+        }
+        #beerSticky::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -10px;
+            height: 10px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+            pointer-events: none;
         }
         .star-btn {
             transition: all 0.2s;
@@ -1345,149 +1371,151 @@
         <!-- Beer Rating Section -->
         <div id="beerSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
             <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in">
-                <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
-                    <div class="flex items-center gap-3 flex-wrap">
-                        <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
-                            <span class="text-3xl">🍺</span> Рейтинг пива
-                        </h2>
-                        <span id="beerCountBadge" class="text-xs px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200">Пива: 0</span>
+                <div id="beerSticky">
+                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
+                                <span class="text-3xl">🍺</span> Рейтинг пива
+                            </h2>
+                            <span id="beerCountBadge" class="text-xs px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200">Пива: 0</span>
 
-                        <!-- Search (by beer name) -->
-                        <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
-                            oninput="setBeerSearch(this.value)"
-                            class="w-full sm:w-64 md:w-72 px-3 py-2 rounded-xl bg-gray-900/70 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm" />
+                            <!-- Search (by beer name) -->
+                            <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
+                                oninput="setBeerSearch(this.value)"
+                                class="w-full sm:w-64 md:w-72 px-3 py-2 rounded-xl bg-gray-900/70 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/15 transition text-sm" />
 
-                        <button onclick="toggleBeerFilters()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition">
-                            Фильтры
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 12h12M10 20h4" />
-                            </svg>
-                        </button>
+                            <button onclick="toggleBeerFilters()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition">
+                                Фильтры
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 12h12M10 20h4" />
+                                </svg>
+                            </button>
 
-                        <button onclick="openBeerColumnsModal()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition" title="Настроить колонки">
-                            Колонки
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
-                            ➕ Добавить пиво
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Панель фильтров -->
-                <div id="beerFiltersPanel" class="hidden mb-4 bg-black/50 border border-amber-500/20 rounded-2xl p-4 text-sm">
-                    <div class="grid md:grid-cols-3 gap-3">
-                        <div>
-                            <label class="text-gray-400 text-xs mb-1 block">Вид</label>
-                            <select id="beerFilterType" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
-                                <option value="">Все</option>
-                                <option value="Светлое">Светлое</option>
-                                <option value="Тёмное">Тёмное</option>
-                            </select>
+                            <button onclick="openBeerColumnsModal()" class="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-300 hover:text-amber-200 hover:border-amber-400 transition" title="Настроить колонки">
+                                Колонки
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                                </svg>
+                            </button>
                         </div>
-                        <div>
-                            <label class="text-gray-400 text-xs mb-1 block">Сорт</label>
-                            <select id="beerFilterStyle" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
-                                <option value="">Все</option>
-                                <option value="Lager">Lager</option>
-                                <option value="Wheat">Wheat</option>
-                                <option value="Pilsner">Pilsner</option>
-                                <option value="Cider">Cider</option>
-                                <option value="Bock">Bock</option>
-                                <option value="Marzen">Marzen</option>
-                                <option value="Ale">Ale</option>
-                                <option value="Porter">Porter</option>
-                                <option value="Stout">Stout</option>
-                                <option value="Dunkel">Dunkel</option>
-                                <option value="Weizen">Weizen</option>
-                                <option value="Hell">Hell</option>
-                                <option value="IPA">IPA</option>
-                                <option value="APA">APA</option>
-                                <option value="Kellerbier">Kellerbier</option>
-                                <option value="Dubbel">Dubbel</option>
-                                <option value="Tripel">Tripel</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-gray-400 text-xs mb-1 block">Фильтрация</label>
-                            <select id="beerFilterFiltered" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
-                                <option value="">Все</option>
-                                <option value="Фильтрованное">Фильтрованное</option>
-                                <option value="Нефильтрованное">Нефильтрованное</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-gray-400 text-xs mb-1 block">Страна</label>
-                            <select id="beerFilterCountry" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
-                                <option value="">Все</option>
-                                <option value="Бельгия">Бельгия</option>
-                                <option value="Великобритания">Великобритания</option>
-                                <option value="Германия">Германия</option>
-                                <option value="Китай">Китай</option>
-                                <option value="Нидерланды">Нидерланды</option>
-                                <option value="Россия">Россия</option>
-                                <option value="Чехия">Чехия</option>
-                                <option value="Австрия">Австрия</option>
-                                <option value="Сербия">Сербия</option>
-                                <option value="Франция">Франция</option>
-                                <option value="Испания">Испания</option>
-                                <option value="Литва">Литва</option>
-                                <option value="Южная Корея">Южная Корея</option>
-                                <option value="Вьетнам">Вьетнам</option>
-                                <option value="США">США</option>
-                                <option value="Мексика">Мексика</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="text-gray-400 text-xs mb-1 block">Объём, л</label>
-                            <select id="beerFilterVolume" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
-                                <option value="">Все</option>
-                                <option value="0.33">0.33</option>
-                                <option value="0.45">0.45</option>
-                                <option value="0.5">0.5</option>
-                                <option value="0.75">0.75</option>
-                                <option value="1">1</option>
-                                <option value="5">5</option>
-                            </select>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Крепость от, %</label>
-                                <input type="number" step="0.1" id="beerFilterAlcoholMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
-                            </div>
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Крепость до, %</label>
-                                <input type="number" step="0.1" id="beerFilterAlcoholMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="100">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий от</label>
-                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
-                            </div>
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий до</label>
-                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг от</label>
-                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
-                            </div>
-                            <div>
-                                <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг до</label>
-                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
-                            </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
+                                ➕ Добавить пиво
+                            </button>
                         </div>
                     </div>
-                    <div class="mt-4 flex gap-2 justify-end">
-                        <button onclick="resetBeerFilters()" class="px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Сбросить</button>
-                        <button onclick="applyBeerFiltersFromUI()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold hover:from-amber-500 hover:to-amber-400 transition">Применить</button>
+
+                    <!-- Панель фильтров -->
+                    <div id="beerFiltersPanel" class="hidden mb-4 bg-black/50 border border-amber-500/20 rounded-2xl p-4 text-sm">
+                        <div class="grid md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Вид</label>
+                                <select id="beerFilterType" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                    <option value="">Все</option>
+                                    <option value="Светлое">Светлое</option>
+                                    <option value="Тёмное">Тёмное</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Сорт</label>
+                                <select id="beerFilterStyle" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                    <option value="">Все</option>
+                                    <option value="Lager">Lager</option>
+                                    <option value="Wheat">Wheat</option>
+                                    <option value="Pilsner">Pilsner</option>
+                                    <option value="Cider">Cider</option>
+                                    <option value="Bock">Bock</option>
+                                    <option value="Marzen">Marzen</option>
+                                    <option value="Ale">Ale</option>
+                                    <option value="Porter">Porter</option>
+                                    <option value="Stout">Stout</option>
+                                    <option value="Dunkel">Dunkel</option>
+                                    <option value="Weizen">Weizen</option>
+                                    <option value="Hell">Hell</option>
+                                    <option value="IPA">IPA</option>
+                                    <option value="APA">APA</option>
+                                    <option value="Kellerbier">Kellerbier</option>
+                                    <option value="Dubbel">Dubbel</option>
+                                    <option value="Tripel">Tripel</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Фильтрация</label>
+                                <select id="beerFilterFiltered" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                    <option value="">Все</option>
+                                    <option value="Фильтрованное">Фильтрованное</option>
+                                    <option value="Нефильтрованное">Нефильтрованное</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Страна</label>
+                                <select id="beerFilterCountry" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                    <option value="">Все</option>
+                                    <option value="Бельгия">Бельгия</option>
+                                    <option value="Великобритания">Великобритания</option>
+                                    <option value="Германия">Германия</option>
+                                    <option value="Китай">Китай</option>
+                                    <option value="Нидерланды">Нидерланды</option>
+                                    <option value="Россия">Россия</option>
+                                    <option value="Чехия">Чехия</option>
+                                    <option value="Австрия">Австрия</option>
+                                    <option value="Сербия">Сербия</option>
+                                    <option value="Франция">Франция</option>
+                                    <option value="Испания">Испания</option>
+                                    <option value="Литва">Литва</option>
+                                    <option value="Южная Корея">Южная Корея</option>
+                                    <option value="Вьетнам">Вьетнам</option>
+                                    <option value="США">США</option>
+                                    <option value="Мексика">Мексика</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Объём, л</label>
+                                <select id="beerFilterVolume" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400">
+                                    <option value="">Все</option>
+                                    <option value="0.33">0.33</option>
+                                    <option value="0.45">0.45</option>
+                                    <option value="0.5">0.5</option>
+                                    <option value="0.75">0.75</option>
+                                    <option value="1">1</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Крепость от, %</label>
+                                    <input type="number" step="0.1" id="beerFilterAlcoholMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Крепость до, %</label>
+                                    <input type="number" step="0.1" id="beerFilterAlcoholMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="100">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий от</label>
+                                    <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий до</label>
+                                    <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг от</label>
+                                    <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-gray-400 text-xs mb-1 block">Мой рейтинг до</label>
+                                    <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMyMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex gap-2 justify-end">
+                            <button onclick="resetBeerFilters()" class="px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Сбросить</button>
+                            <button onclick="applyBeerFiltersFromUI()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white font-semibold hover:from-amber-500 hover:to-amber-400 transition">Применить</button>
+                        </div>
                     </div>
                 </div>
 
@@ -2432,6 +2460,27 @@
             if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
         }
 
+        function initBeerSticky() {
+            const header = document.querySelector('header');
+            const beerSticky = document.getElementById('beerSticky');
+            if (!header || !beerSticky) return;
+
+            const root = document.documentElement;
+            const syncOffset = () => {
+                const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+                root.style.setProperty('--header-offset', `${headerHeight}px`);
+            };
+
+            syncOffset();
+
+            if ('ResizeObserver' in window) {
+                const ro = new ResizeObserver(syncOffset);
+                ro.observe(header);
+            } else {
+                window.addEventListener('resize', syncOffset);
+            }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             // Check authorization
@@ -2502,6 +2551,8 @@
             
             // Update user profile in header
             updateUserProfile();
+
+            initBeerSticky();
 
             // Snow switch init
             const snowEnabled = localStorage.getItem(SNOW_LS_KEY) === '1';
