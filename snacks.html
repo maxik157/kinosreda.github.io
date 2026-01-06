@@ -249,15 +249,20 @@
             justify-self: start;
             box-sizing: border-box;
             margin: 0;
-            transform: translateX(-30px);
         }
         @media (min-width: 640px) {
-            .row-remove { justify-self: start; }
+            .row-remove {
+                justify-self: start;
+                transform: translateX(-30px);
+            }
         }
         .row-remove:hover {
             background: rgba(248,113,113,0.15);
             color: #fecaca;
-            transform: translateX(-30px) scale(1.05);
+            transform: scale(1.05);
+        }
+        @media (min-width: 640px) {
+            .row-remove:hover { transform: translateX(-30px) scale(1.05); }
         }
         .beer-select {
             position: relative;
