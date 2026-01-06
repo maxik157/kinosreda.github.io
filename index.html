@@ -552,6 +552,18 @@
             opacity: 0.5;
             cursor: grabbing;
         }
+        .backlog-drag-ghost {
+            position: fixed;
+            z-index: 60;
+            pointer-events: none;
+            transform: translate3d(0, 0, 0);
+            opacity: 0.85;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            will-change: transform;
+        }
+        body.backlog-touch-dragging {
+            touch-action: none;
+        }
         
         .add-column-btn {
             min-width: 280px;
@@ -1481,21 +1493,31 @@
                                     <option value="5">5</option>
                                 </select>
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-gray-400 text-xs mb-1 block">Крепость от, %</label>
-                                    <input type="number" step="0.1" id="beerFilterAlcoholMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
-                                </div>
-                                <div>
-                                    <label class="text-gray-400 text-xs mb-1 block">Крепость до, %</label>
-                                    <input type="number" step="0.1" id="beerFilterAlcoholMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="100">
-                                </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Крепость от, %</label>
+                                <input type="number" step="0.1" id="beerFilterAlcoholMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
                             </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий от</label>
-                                    <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
-                                </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Крепость до, %</label>
+                                <input type="number" step="0.1" id="beerFilterAlcoholMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="100">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Калорийность от, ккал</label>
+                                <input type="number" step="1" min="0" id="beerFilterCaloriesMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Калорийность до, ккал</label>
+                                <input type="number" step="1" min="0" id="beerFilterCaloriesMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="2000">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий от</label>
+                                <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMin" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="0">
+                            </div>
                                 <div>
                                     <label class="text-gray-400 text-xs mb-1 block">Рейтинг общий до</label>
                                     <input type="number" step="0.1" min="0" max="10" id="beerFilterRatingMax" class="w-full px-3 py-2 rounded-lg bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400" placeholder="10">
@@ -1543,6 +1565,13 @@
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('alcohol')">
                                     Крепость, % <span id="sort-alcohol">↕</span>
+                                </th>
+                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('calories')">
+                                    Калорийность
+                                    <span id="sort-calories">↕</span>
+                                    <button type="button" onclick="event.stopPropagation(); toggleCaloriesMode()" class="ml-2 px-2 py-0.5 rounded-full text-[10px] border border-amber-500/30 text-amber-200 hover:text-amber-100 hover:border-amber-400 transition" title="Переключить базу калорийности">
+                                        <span id="caloriesModeLabel">100 мл</span>
+                                    </button>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating_avg')">
                                     Рейтинг общий <span id="sort-rating-avg">↕</span>
@@ -1750,6 +1779,8 @@
                 <option value="5">5 л</option>
             </select>
             <input type="number" id="beerAlcoholInput" placeholder="Крепость (%)" min="0" max="100" step="0.1"
+                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+            <input type="number" id="beerCaloriesInput" placeholder="Калорийность (ккал)" min="0" max="2000" step="1"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4 text-sm">
             <div class="flex gap-2">
                 <button onclick="addBeer()" class="flex-1 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold py-2 px-4 rounded-xl">
@@ -1843,6 +1874,8 @@
                 <option value="5">5 л</option>
             </select>
             <input type="number" id="editBeerAlcoholInput" placeholder="Крепость (%)" min="0" max="100" step="0.1"
+                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+            <input type="number" id="editBeerCaloriesInput" placeholder="Калорийность (ккал)" min="0" max="2000" step="1"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4 text-sm">
             <div class="flex gap-2">
                 <button onclick="saveBeerEdit()" class="flex-1 btn-glow bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-2 px-4 rounded-xl">
@@ -2128,6 +2161,7 @@
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
         let beerSearchQuery = '';
+        let beerCaloriesMode = 'per100';
 
         // -----------------
         // Chat (Realtime)
@@ -2156,6 +2190,8 @@
             volume: '',
             alcoholMin: '',
             alcoholMax: '',
+            caloriesMin: '',
+            caloriesMax: '',
             ratingMin: '',
             ratingMax: '',
             ratingMyMin: '',
@@ -2189,6 +2225,7 @@
             { key: 'country', label: 'Страна' },
             { key: 'volume', label: 'Объём' },
             { key: 'alcohol', label: 'Крепость' },
+            { key: 'calories', label: 'Калорийность' },
             { key: 'rating_avg', label: 'Рейтинг общий' },
             { key: 'rating_my', label: 'Мой рейтинг' },
             { key: 'actions', label: 'Действия', required: true }
@@ -2583,6 +2620,9 @@
                     </a>
                     <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Планирование">
                         🌴
+                    </a>
+                    <a href="snacks.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Калькулятор перекусов">
+                        🥨
                     </a>
                     <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Профиль">
                         👤 <span class="hidden sm:inline">${currentUser.name}</span>
@@ -3865,6 +3905,23 @@
         function setupBacklogDragDrop() {
             let draggedCard = null;
             let draggedColumn = null;
+            let touchDrag = null;
+            let touchRaf = 0;
+
+            const handleCardMove = (cardId, newColumnId) => {
+                const card = data.backlog.cards.find(c => c.id === cardId);
+                if (!card) return;
+                const oldColumnId = card.columnId;
+                card.columnId = newColumnId;
+
+                const watchedColumn = data.backlog.columns.find(col => col.name === WATCHED_COLUMN_NAME);
+                if (watchedColumn && newColumnId === watchedColumn.id && oldColumnId !== watchedColumn.id) {
+                    card.watchCount = (card.watchCount || 0) + 1;
+                    if (!card.watchHistory) card.watchHistory = [];
+                    card.watchHistory.push(Date.now());
+                }
+                saveData();
+            };
             
             // Card drag
             document.querySelectorAll('.backlog-card').forEach(card => {
@@ -3878,6 +3935,102 @@
                     card.classList.remove('dragging');
                     draggedCard = null;
                 });
+
+                card.addEventListener('click', (e) => {
+                    if (card.dataset.touchDrag === '1') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        card.dataset.touchDrag = '';
+                    }
+                }, true);
+
+                card.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) return;
+                    const touch = e.touches[0];
+                    const rect = card.getBoundingClientRect();
+                    touchDrag = {
+                        card,
+                        ghost: null,
+                        offsetX: touch.clientX - rect.left,
+                        offsetY: touch.clientY - rect.top,
+                        currentZone: null,
+                        moved: false,
+                        lastX: touch.clientX,
+                        lastY: touch.clientY
+                    };
+                    card.classList.add('dragging');
+                    document.body.classList.add('backlog-touch-dragging');
+                }, { passive: true });
+
+                card.addEventListener('touchmove', (e) => {
+                    if (!touchDrag || touchDrag.card !== card) return;
+                    if (e.touches.length !== 1) return;
+                    const touch = e.touches[0];
+                    touchDrag.lastX = touch.clientX;
+                    touchDrag.lastY = touch.clientY;
+                    if (!touchRaf) {
+                        touchRaf = requestAnimationFrame(() => {
+                            touchRaf = 0;
+                            if (!touchDrag || touchDrag.card !== card) return;
+                            const x = touchDrag.lastX;
+                            const y = touchDrag.lastY;
+
+                            if (!touchDrag.ghost) {
+                                const ghost = card.cloneNode(true);
+                                ghost.classList.add('backlog-drag-ghost');
+                                ghost.style.width = `${card.getBoundingClientRect().width}px`;
+                                ghost.style.height = `${card.getBoundingClientRect().height}px`;
+                                ghost.style.left = '0px';
+                                ghost.style.top = '0px';
+                                document.body.appendChild(ghost);
+                                touchDrag.ghost = ghost;
+                            }
+
+                            touchDrag.moved = true;
+                            card.dataset.touchDrag = '1';
+                            if (touchDrag.ghost) {
+                                touchDrag.ghost.style.transform = `translate3d(${x - touchDrag.offsetX}px, ${y - touchDrag.offsetY}px, 0)`;
+                            }
+
+                            const el = document.elementFromPoint(x, y);
+                            const zone = el ? el.closest('.column-cards') : null;
+                            if (zone !== touchDrag.currentZone) {
+                                if (touchDrag.currentZone) {
+                                    touchDrag.currentZone.parentElement.classList.remove('drag-over');
+                                }
+                                if (zone) zone.parentElement.classList.add('drag-over');
+                                touchDrag.currentZone = zone;
+                            }
+                        });
+                    }
+                    e.preventDefault();
+                }, { passive: false });
+
+                const endTouchDrag = (e) => {
+                    if (!touchDrag || touchDrag.card !== card) return;
+                    if (touchRaf) {
+                        cancelAnimationFrame(touchRaf);
+                        touchRaf = 0;
+                    }
+                    if (touchDrag.ghost) touchDrag.ghost.remove();
+                    if (touchDrag.currentZone) {
+                        touchDrag.currentZone.parentElement.classList.remove('drag-over');
+                    }
+
+                    if (touchDrag.moved && touchDrag.currentZone) {
+                        const cardId = card.dataset.cardId;
+                        const newColumnId = touchDrag.currentZone.dataset.columnId;
+                        handleCardMove(cardId, newColumnId);
+                        e.preventDefault();
+                    }
+
+                    card.classList.remove('dragging');
+                    document.body.classList.remove('backlog-touch-dragging');
+                    touchDrag = null;
+                };
+
+                card.addEventListener('touchend', endTouchDrag);
+                card.addEventListener('touchcancel', endTouchDrag);
             });
             
             // Column drag
@@ -3948,22 +4101,7 @@
                     
                     const cardId = draggedCard.dataset.cardId;
                     const newColumnId = zone.dataset.columnId;
-                    const card = data.backlog.cards.find(c => c.id === cardId);
-                    const oldColumnId = card.columnId;
-                    
-                    if (card) {
-                        card.columnId = newColumnId;
-                        
-                        const watchedColumn = data.backlog.columns.find(col => col.name === WATCHED_COLUMN_NAME);
-                        if (watchedColumn && newColumnId === watchedColumn.id && oldColumnId !== watchedColumn.id) {
-                            card.watchCount = (card.watchCount || 0) + 1;
-                            // Add watch date to history
-                            if (!card.watchHistory) card.watchHistory = [];
-                            card.watchHistory.push(Date.now());
-                        }
-                        
-                        saveData();
-                    }
+                    handleCardMove(cardId, newColumnId);
                 });
             });
         }
@@ -4573,6 +4711,7 @@
                 country: document.querySelector('th[onclick="sortBeerBy(\'country\')"]'),
                 volume: document.querySelector('th[onclick="sortBeerBy(\'volume\')"]'),
                 alcohol: document.querySelector('th[onclick="sortBeerBy(\'alcohol\')"]'),
+                calories: document.querySelector('th[onclick="sortBeerBy(\'calories\')"]'),
                 rating_avg: document.querySelector('th[onclick="sortBeerBy(\'rating_avg\')"]'),
                 rating_my: document.querySelector('th[onclick="sortBeerBy(\'rating_my\')"]'),
                 actions: document.querySelector('#beerTable thead th:last-child')
@@ -4583,8 +4722,8 @@
             });
 
             // body cells (by nth-child) — depends on fixed column order
-            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), rating_avg(8), rating_my(9), actions(10)
-            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, rating_avg: 8, rating_my: 9, actions: 10 };
+            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), calories(8), rating_avg(9), rating_my(10), actions(11)
+            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, calories: 8, rating_avg: 9, rating_my: 10, actions: 11 };
             document.querySelectorAll('#beerTableBody tr').forEach(tr => {
                 Object.keys(idx).forEach(k => {
                     const td = tr.children[idx[k] - 1];
@@ -4672,6 +4811,8 @@
             document.getElementById('beerFilterVolume').value = '';
             document.getElementById('beerFilterAlcoholMin').value = '';
             document.getElementById('beerFilterAlcoholMax').value = '';
+            document.getElementById('beerFilterCaloriesMin').value = '';
+            document.getElementById('beerFilterCaloriesMax').value = '';
             document.getElementById('beerFilterRatingMin').value = '';
             document.getElementById('beerFilterRatingMax').value = '';
             document.getElementById('beerFilterRatingMyMin').value = '';
@@ -4692,12 +4833,48 @@
             beerFilters.volume = document.getElementById('beerFilterVolume').value;
             beerFilters.alcoholMin = document.getElementById('beerFilterAlcoholMin').value;
             beerFilters.alcoholMax = document.getElementById('beerFilterAlcoholMax').value;
+            beerFilters.caloriesMin = document.getElementById('beerFilterCaloriesMin').value;
+            beerFilters.caloriesMax = document.getElementById('beerFilterCaloriesMax').value;
             beerFilters.ratingMin = document.getElementById('beerFilterRatingMin').value;
             beerFilters.ratingMax = document.getElementById('beerFilterRatingMax').value;
             beerFilters.ratingMyMin = document.getElementById('beerFilterRatingMyMin').value;
             beerFilters.ratingMyMax = document.getElementById('beerFilterRatingMyMax').value;
             // если есть фильтры/поиск — показываем сброс только внутри панели фильтров
             renderBeerRating();
+        }
+
+        function toggleCaloriesMode() {
+            beerCaloriesMode = beerCaloriesMode === 'per100' ? 'perBottle' : 'per100';
+            updateCaloriesModeLabel();
+            renderBeerRating();
+        }
+
+        function updateCaloriesModeLabel() {
+            const label = document.getElementById('caloriesModeLabel');
+            if (!label) return;
+            label.textContent = beerCaloriesMode === 'per100' ? '100 мл' : 'бутылка';
+        }
+
+        function formatCaloriesValue(beer) {
+            const caloriesVal = parseFloat(beer.calories);
+            if (!caloriesVal) return '—';
+            if (beerCaloriesMode === 'per100') {
+                return `${String(caloriesVal).replace(/\.0$/, '')} ккал`;
+            }
+            const volumeVal = parseFloat(beer.volume);
+            if (!volumeVal) return '—';
+            const perBottle = caloriesVal * volumeVal * 10;
+            const display = perBottle.toFixed(1).replace(/\.0$/, '');
+            return `${display} ккал`;
+        }
+
+        function caloriesSortValue(beer) {
+            const caloriesVal = parseFloat(beer.calories);
+            if (!caloriesVal) return 0;
+            if (beerCaloriesMode === 'per100') return caloriesVal;
+            const volumeVal = parseFloat(beer.volume);
+            if (!volumeVal) return 0;
+            return caloriesVal * volumeVal * 10;
         }
 
         function sortBeerBy(sortType) {
@@ -4713,6 +4890,7 @@
         function renderBeerRating() {
             const tbody = document.getElementById('beerTableBody');
             if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
+            updateCaloriesModeLabel();
             const allBeers = data.beerRating || [];
             let beers = allBeers;
             const userName = getUserName();
@@ -4741,6 +4919,9 @@
                 const alcoholVal = parseFloat(beer.alcohol) || 0;
                 if (beerFilters.alcoholMin && alcoholVal < parseFloat(beerFilters.alcoholMin)) return false;
                 if (beerFilters.alcoholMax && alcoholVal > parseFloat(beerFilters.alcoholMax)) return false;
+                const caloriesVal = parseFloat(beer.calories) || 0;
+                if (beerFilters.caloriesMin && caloriesVal < parseFloat(beerFilters.caloriesMin)) return false;
+                if (beerFilters.caloriesMax && caloriesVal > parseFloat(beerFilters.caloriesMax)) return false;
                 // rating (общий)
                 const ratings = Object.values(beer.ratings || {});
                 const avgRating = ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0;
@@ -4762,7 +4943,7 @@
             }
             
             // Update headers
-            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'rating_avg', 'rating_my'].forEach(field => {
+            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'calories', 'rating_avg', 'rating_my'].forEach(field => {
                 const span = document.getElementById(`sort-${field}`);
                 if (!span) return;
                 const th = span.parentElement;
@@ -4817,6 +4998,10 @@
                         aVal = parseFloat(a.alcohol) || 0;
                         bVal = parseFloat(b.alcohol) || 0;
                         break;
+                    case 'calories':
+                        aVal = caloriesSortValue(a);
+                        bVal = caloriesSortValue(b);
+                        break;
                     case 'rating_avg': {
                         const aRatings = Object.values(a.ratings || {});
                         const bRatings = Object.values(b.ratings || {});
@@ -4852,7 +5037,7 @@
             const visibleCount = (() => {
                 const vis = beerColumnsVisible || loadBeerColumnsVisible();
                 // count visible columns in fixed order
-                const keys = ['name','type','style','filtered','country','volume','alcohol','rating_avg','rating_my','actions'];
+                const keys = ['name','type','style','filtered','country','volume','alcohol','calories','rating_avg','rating_my','actions'];
                 return keys.reduce((c, k) => c + (vis[k] ? 1 : 0), 0);
             })();
 
@@ -4888,6 +5073,7 @@
                         <td class="py-3 px-4 text-gray-400">${formatCountry(beer.country)}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.volume}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.alcohol}%</td>
+                        <td class="py-3 px-4 text-gray-400">${formatCaloriesValue(beer)}</td>
                         <td class="py-3 px-4">
                             <div class="flex flex-col items-center justify-start leading-none">
                                 <div class="text-amber-400 font-bold mt-4">${avgRating}</div>
@@ -4922,6 +5108,7 @@
             document.getElementById('addBeerModal').classList.add('flex');
             document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
+            document.getElementById('beerCaloriesInput').value = '';
             // default style
             const styleSel = document.getElementById('beerStyleInput');
             if (styleSel) styleSel.value = 'Lager';
@@ -4944,6 +5131,7 @@
             const country = document.getElementById('beerCountryInput').value;
             const volume = document.getElementById('beerVolumeInput').value;
             const alcohol = document.getElementById('beerAlcoholInput').value.trim();
+            const calories = document.getElementById('beerCaloriesInput').value.trim();
             const userName = getUserName();
             
             if (!name || !alcohol || !userName) {
@@ -4953,7 +5141,7 @@
             
             const beer = {
                 id: Date.now().toString(),
-                name, type, style, filtered, country, volume, alcohol,
+                name, type, style, filtered, country, volume, alcohol, calories,
                 author: userName,
                 ratings: {},
                 timestamp: Date.now()
@@ -5019,6 +5207,7 @@
             document.getElementById('editBeerCountryInput').value = getCountryNameForSelect(beer.country);
             document.getElementById('editBeerVolumeInput').value = beer.volume || '0.5';
             document.getElementById('editBeerAlcoholInput').value = beer.alcohol || '';
+            document.getElementById('editBeerCaloriesInput').value = beer.calories || '';
             document.getElementById('editBeerModal').classList.remove('hidden');
             document.getElementById('editBeerModal').classList.add('flex');
 
@@ -5041,6 +5230,7 @@
             const country = document.getElementById('editBeerCountryInput').value;
             const volume = document.getElementById('editBeerVolumeInput').value;
             const alcohol = document.getElementById('editBeerAlcoholInput').value.trim();
+            const calories = document.getElementById('editBeerCaloriesInput').value.trim();
             
             if (!name || !alcohol || !editingBeerId) return;
             
@@ -5053,6 +5243,7 @@
                 beer.country = country;
                 beer.volume = volume;
                 beer.alcohol = alcohol;
+                beer.calories = calories;
                 saveData();
                 closeEditBeerModal();
             }

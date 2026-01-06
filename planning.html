@@ -443,6 +443,7 @@
         let currentUserLogin = '';
         let usersList = [];
         let eventCustomParticipants = [];
+        let editingEventId = null;
 
         function initFirebase() {
             if (!firebase.apps.length) {
@@ -512,6 +513,7 @@
                         <div class="event-meta">Создано: ${formatDate(event.createdAt)}</div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <button type="button" class="text-amber-300 hover:text-amber-200 text-lg px-2" data-edit-event="${event.id}" title="Редактировать">✎</button>
                         ${canDelete ? `<button type="button" class="text-red-300 hover:text-red-200 text-lg px-2" data-delete-event="${event.id}" title="Удалить">🗑️</button>` : ''}
                         <div class="text-amber-300 text-lg">→</div>
                     </div>
@@ -566,6 +568,19 @@
             input.value = '';
         }
 
+        function setEventModalMode(mode) {
+            const title = document.getElementById('addEventTitle');
+            const btn = document.getElementById('createEventBtn');
+            if (!title || !btn) return;
+            if (mode === 'edit') {
+                title.textContent = 'Редактировать мероприятие';
+                btn.textContent = 'Сохранить';
+            } else {
+                title.textContent = 'Новое мероприятие';
+                btn.textContent = 'Создать';
+            }
+        }
+
         function getSelectedEventParticipantsFromModal() {
             const list = document.getElementById('eventParticipantsList');
             if (!list) return null;
@@ -588,6 +603,8 @@
             const modal = document.getElementById('addEventModal');
             const input = document.getElementById('eventNameInput');
             if (!modal || !input) return;
+            editingEventId = null;
+            setEventModalMode('add');
             input.value = '';
             eventCustomParticipants = [];
             renderEventParticipantsList(null);
@@ -597,9 +614,29 @@
             setTimeout(() => input.focus(), 0);
         }
 
+        function openEditEventModal(event) {
+            const modal = document.getElementById('addEventModal');
+            const input = document.getElementById('eventNameInput');
+            if (!modal || !input || !event) return;
+            editingEventId = event.id;
+            setEventModalMode('edit');
+            input.value = event.name || '';
+            const storedCustom = Array.isArray(event.participantsCustom) ? event.participantsCustom : [];
+            const storedParticipants = Array.isArray(event.participants) ? event.participants : [];
+            const inferredCustom = storedParticipants.filter(name => !usersList.includes(name));
+            eventCustomParticipants = Array.from(new Set(storedCustom.concat(inferredCustom)));
+            renderEventParticipantsList(storedParticipants.length ? storedParticipants : null);
+            const customInput = document.getElementById('eventParticipantsCustomInput');
+            if (customInput) customInput.value = '';
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 0);
+        }
+
         function closeAddEventModal() {
             const modal = document.getElementById('addEventModal');
             if (modal) modal.classList.remove('active');
+            editingEventId = null;
+            setEventModalMode('add');
         }
 
         function createEvent() {
@@ -612,20 +649,34 @@
             const hasCustom = participants.some(name => !usersList.includes(name));
             const customParticipants = participants.filter(name => !usersList.includes(name));
 
-            const payload = {
-                name: trimmed,
-                createdAt: Date.now()
-            };
-            if (participants.length && (hasCustom || participants.length < usersList.length)) {
-                payload.participants = participants;
-            }
-            if (customParticipants.length) {
-                payload.participantsCustom = customParticipants;
-            }
-
-            const ref = db.ref('planning/events').push(payload);
-            if (ref && ref.key) {
-                db.ref(`planning/data/${ref.key}`).set({ sections: [] });
+            if (editingEventId) {
+                const update = { name: trimmed };
+                if (participants.length && (hasCustom || participants.length < usersList.length)) {
+                    update.participants = participants;
+                } else {
+                    update.participants = null;
+                }
+                if (customParticipants.length) {
+                    update.participantsCustom = customParticipants;
+                } else {
+                    update.participantsCustom = null;
+                }
+                db.ref(`planning/events/${editingEventId}`).update(update);
+            } else {
+                const payload = {
+                    name: trimmed,
+                    createdAt: Date.now()
+                };
+                if (participants.length && (hasCustom || participants.length < usersList.length)) {
+                    payload.participants = participants;
+                }
+                if (customParticipants.length) {
+                    payload.participantsCustom = customParticipants;
+                }
+                const ref = db.ref('planning/events').push(payload);
+                if (ref && ref.key) {
+                    db.ref(`planning/data/${ref.key}`).set({ sections: [] });
+                }
             }
             closeAddEventModal();
         }
@@ -654,6 +705,14 @@
 
         document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
         document.getElementById('eventsList').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-edit-event]');
+            if (editBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const event = eventsCache.find(item => item.id === editBtn.dataset.editEvent);
+                if (event) openEditEventModal(event);
+                return;
+            }
             const btn = e.target.closest('[data-delete-event]');
             if (!btn) return;
             e.preventDefault();

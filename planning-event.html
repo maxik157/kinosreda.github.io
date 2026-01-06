@@ -2006,12 +2006,38 @@
             return ['item', 'qty', 'owner', 'cost'].includes(col.id);
         }
 
+        function getSectionScrollState() {
+            const state = {};
+            document.querySelectorAll('.card[data-section-id] .table-scroll').forEach((wrap) => {
+                const card = wrap.closest('.card[data-section-id]');
+                if (!card) return;
+                const id = card.dataset.sectionId;
+                if (!id) return;
+                state[id] = wrap.scrollLeft;
+            });
+            return state;
+        }
+
+        function restoreSectionScrollState(state) {
+            if (!state) return;
+            const apply = () => {
+                Object.entries(state).forEach(([id, left]) => {
+                    const wrap = document.querySelector(`.card[data-section-id="${id}"] .table-scroll`);
+                    if (wrap) wrap.scrollLeft = left;
+                });
+            };
+            apply();
+            requestAnimationFrame(apply);
+            setTimeout(apply, 0);
+        }
+
         function renderSections() {
             const active = getActiveField();
             const container = document.getElementById('sectionsContainer');
             const empty = document.getElementById('emptySections');
             if (!eventData) return;
             const allParticipants = collectParticipants();
+            const scrollState = getSectionScrollState();
 
             container.innerHTML = '';
             if (!eventData.sections.length) {
@@ -2238,6 +2264,7 @@
 
             renderSectionMenu();
             restoreActiveField(active);
+            restoreSectionScrollState(scrollState);
             renderExpenseSummary();
             renderTick += 1;
             updateStickyHeaders();
