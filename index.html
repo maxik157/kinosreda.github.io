@@ -3907,6 +3907,7 @@
             let draggedColumn = null;
             let touchDrag = null;
             let touchRaf = 0;
+            let touchLongPressTimer = 0;
 
             const handleCardMove = (cardId, newColumnId) => {
                 const card = data.backlog.cards.find(c => c.id === cardId);
@@ -3956,22 +3957,42 @@
                         currentZone: null,
                         moved: false,
                         lastX: touch.clientX,
-                        lastY: touch.clientY
+                        lastY: touch.clientY,
+                        active: false
                     };
-                    card.classList.add('dragging');
-                    document.body.classList.add('backlog-touch-dragging');
+                    if (touchLongPressTimer) clearTimeout(touchLongPressTimer);
+                    touchLongPressTimer = setTimeout(() => {
+                        if (!touchDrag || touchDrag.card !== card) return;
+                        if (touchDrag.moved) return;
+                        touchDrag.active = true;
+                        card.classList.add('dragging');
+                        document.body.classList.add('backlog-touch-dragging');
+                    }, 260);
                 }, { passive: true });
 
                 card.addEventListener('touchmove', (e) => {
                     if (!touchDrag || touchDrag.card !== card) return;
                     if (e.touches.length !== 1) return;
                     const touch = e.touches[0];
+                    const dx = Math.abs(touch.clientX - touchDrag.lastX);
+                    const dy = Math.abs(touch.clientY - touchDrag.lastY);
+                    if (!touchDrag.active && (dx > 6 || dy > 6)) {
+                        if (touchLongPressTimer) {
+                            clearTimeout(touchLongPressTimer);
+                            touchLongPressTimer = 0;
+                        }
+                        touchDrag.moved = true;
+                        return;
+                    }
+
+                    if (!touchDrag.active) return;
+
                     touchDrag.lastX = touch.clientX;
                     touchDrag.lastY = touch.clientY;
                     if (!touchRaf) {
                         touchRaf = requestAnimationFrame(() => {
                             touchRaf = 0;
-                            if (!touchDrag || touchDrag.card !== card) return;
+                            if (!touchDrag || touchDrag.card !== card || !touchDrag.active) return;
                             const x = touchDrag.lastX;
                             const y = touchDrag.lastY;
 
@@ -3986,7 +4007,6 @@
                                 touchDrag.ghost = ghost;
                             }
 
-                            touchDrag.moved = true;
                             card.dataset.touchDrag = '1';
                             if (touchDrag.ghost) {
                                 touchDrag.ghost.style.transform = `translate3d(${x - touchDrag.offsetX}px, ${y - touchDrag.offsetY}px, 0)`;
@@ -4012,12 +4032,16 @@
                         cancelAnimationFrame(touchRaf);
                         touchRaf = 0;
                     }
+                    if (touchLongPressTimer) {
+                        clearTimeout(touchLongPressTimer);
+                        touchLongPressTimer = 0;
+                    }
                     if (touchDrag.ghost) touchDrag.ghost.remove();
                     if (touchDrag.currentZone) {
                         touchDrag.currentZone.parentElement.classList.remove('drag-over');
                     }
 
-                    if (touchDrag.moved && touchDrag.currentZone) {
+                    if (touchDrag.active && touchDrag.currentZone) {
                         const cardId = card.dataset.cardId;
                         const newColumnId = touchDrag.currentZone.dataset.columnId;
                         handleCardMove(cardId, newColumnId);
