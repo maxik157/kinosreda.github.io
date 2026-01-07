@@ -830,7 +830,7 @@
         #editBeerModal .cs { margin-bottom: 0.75rem; }
 
         .scroll-mt-24 {
-            scroll-margin-top: 8rem;
+            scroll-margin-top: max(8rem, calc(var(--header-offset, 0px) + 1.5rem));
         }
         
         .nav-btn {
@@ -838,6 +838,136 @@
         }
         .nav-btn:hover {
             transform: translateY(-2px);
+        }
+        .header-shell {
+            background: rgba(0, 0, 0, 0.92);
+            border-bottom: 1px solid var(--accent-border-10);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+        }
+        .site-nav {
+            flex: 1 1 auto;
+            margin-left: auto;
+            min-width: 0;
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 8px 12px;
+            justify-content: flex-end;
+            padding-left: 10px;
+            overflow: visible;
+        }
+        @media (max-width: 768px) {
+            .site-nav {
+                margin-left: 0;
+                padding-left: 0;
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+            }
+            .nav-list { flex-wrap: wrap; }
+        }
+        .nav-list {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px 12px;
+            align-items: center;
+        }
+        .nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--accent-200);
+            font-size: 13px;
+            font-weight: 600;
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+            max-width: 100%;
+            min-width: 0;
+            text-align: left;
+            white-space: nowrap;
+            line-height: 1.1;
+        }
+        .nav-pill:hover {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: var(--accent-border-25);
+            color: var(--accent-300);
+        }
+        .nav-pill-danger {
+            color: rgba(248, 113, 113, 0.9);
+        }
+        .nav-pill-danger:hover {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: rgba(252, 165, 165, 1);
+        }
+        .nav-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+            line-height: 1.15;
+        }
+        .nav-label { white-space: nowrap; }
+        .nav-sub {
+            font-size: 10px;
+            color: rgba(148, 163, 184, 0.9);
+            font-weight: 500;
+        }
+        .nav-dropdown {
+            position: relative;
+            display: inline-flex;
+        }
+        .nav-dropdown summary {
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        .nav-dropdown summary::-webkit-details-marker { display: none; }
+        .nav-dropdown[open] .nav-pill {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: var(--accent-border-25);
+            color: var(--accent-300);
+        }
+        .nav-caret {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-left: 2px;
+        }
+        .nav-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 8px;
+            min-width: 220px;
+            background: rgba(3, 7, 18, 0.96);
+            border: 1px solid var(--accent-border-25);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+            z-index: 60;
+        }
+        .nav-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            color: rgba(229,231,235,0.95);
+            font-size: 13px;
+            font-weight: 600;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .nav-dropdown-item:hover {
+            background: rgba(245, 158, 11, 0.12);
+            color: #fff;
+        }
+        .logo-block {
+            flex-shrink: 0;
         }
 
         /* Snow mode */
@@ -1094,10 +1224,11 @@
     <div class="snow hidden" id="snow"></div>
 
     <!-- Header with Logo and Navigation -->
-    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-            <!-- Logo -->
-            <div class="flex items-center gap-3 pl-2">
+    <header class="py-3 md:py-4 relative z-50 sticky top-0 header-shell backdrop-blur-sm">
+        <div class="container mx-auto px-3 md:px-4 max-w-7xl">
+            <div class="flex flex-col md:flex-row md:items-center items-start gap-3">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 pl-2 logo-block">
                 <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
                 <defs>
                     <linearGradient id="beerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1159,20 +1290,27 @@
                     </div>
                 </div>
 
+                </div>
+
+                <!-- Navigation -->
+                <div class="site-nav">
+                    <nav id="indexNav" class="nav-list nav-list--local" aria-label="Разделы на странице">
+                        <button type="button" onclick="scrollToSection('calendarSection')" class="nav-pill">
+                            <span>📅</span>
+                            <span class="nav-text"><span class="nav-label">Календарь</span></span>
+                        </button>
+                        <button type="button" onclick="scrollToSection('backlogSection')" class="nav-pill">
+                            <span>🎥</span>
+                            <span class="nav-text"><span class="nav-label">Бэклог фильмов</span></span>
+                        </button>
+                        <button type="button" onclick="scrollToSection('beerSection')" class="nav-pill">
+                            <span>🍺</span>
+                            <span class="nav-text"><span class="nav-label">Рейтинг пива</span></span>
+                        </button>
+                    </nav>
+                    <nav id="globalNav" class="nav-list nav-list--global" aria-label="Другие страницы"></nav>
+                </div>
             </div>
-            
-            <!-- Navigation Menu -->
-            <nav class="flex items-center gap-1 md:gap-4 flex-nowrap whitespace-nowrap justify-center">
-                <button onclick="scrollToSection('calendarSection')" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-                    <span>📅</span> <span class="hidden sm:inline">Календарь</span>
-                </button>
-                <button onclick="scrollToSection('backlogSection')" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-                    <span>🎥</span> <span class="hidden sm:inline">Бэклог фильмов</span>
-                </button>
-                <button onclick="scrollToSection('beerSection')" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-                    <span>🍺</span> <span class="hidden sm:inline">Рейтинг пива</span>
-                </button>
-            </nav>
         </div>
     </header>
 
@@ -1553,9 +1691,6 @@
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('style')">
                                     Сорт <span id="sort-style">↕</span>
-                                </th>
-                                <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('filtered')">
-                                    Фильтрация <span id="sort-filtered">↕</span>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('country')">
                                     Страна <span id="sort-country">↕</span>
@@ -2221,7 +2356,6 @@
             { key: 'name', label: 'Название', required: true },
             { key: 'type', label: 'Вид' },
             { key: 'style', label: 'Сорт' },
-            { key: 'filtered', label: 'Фильтрация' },
             { key: 'country', label: 'Страна' },
             { key: 'volume', label: 'Объём' },
             { key: 'alcohol', label: 'Крепость' },
@@ -2612,28 +2746,49 @@
         });
         
         function updateUserProfile() {
-            const nav = document.querySelector('header nav');
+            const nav = document.getElementById('globalNav');
+            if (!nav) return;
             const profileHTML = `
-                <div class="flex items-center gap-1 md:gap-3 ml-1 md:ml-4 pl-1 md:pl-4 border-l border-amber-500/30">
-                    <a href="pokaki.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="График покаков">
-                        💩
-                    </a>
-                    <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Планирование">
-                        🌴
-                    </a>
-                    <a href="snacks.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Калькулятор перекусов">
-                        🥨
-                    </a>
-                    <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10" title="Профиль">
-                        👤 <span class="hidden sm:inline">${currentUser.name}</span>
-                    </a>
-                    <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
-                        <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
-                    </button>
-                </div>
+                <details class="nav-dropdown">
+                    <summary class="nav-pill nav-dropdown-btn" title="Сервисы">
+                        <span>🗂️</span>
+                        <span class="nav-text"><span class="nav-label">Сервисы</span></span>
+                        <span class="nav-caret">▾</span>
+                    </summary>
+                    <div class="nav-dropdown-menu">
+                        <a href="pokaki.html" class="nav-dropdown-item" title="График покаков">
+                            <span>💩</span>
+                            <span>График покаков</span>
+                        </a>
+                        <a href="planning.html" class="nav-dropdown-item" title="Планирование">
+                            <span>🌴</span>
+                            <span>Планирование</span>
+                        </a>
+                        <a href="snacks.html" class="nav-dropdown-item" title="Перекусы">
+                            <span>🥨</span>
+                            <span>Перекусы</span>
+                        </a>
+                    </div>
+                </details>
+                <a href="profile.html" class="nav-pill" title="Профиль: ${currentUser.name}">
+                    <span>👤</span>
+                    <span class="nav-text"><span class="nav-label">${currentUser.name}</span></span>
+                </a>
+                <button type="button" onclick="logout()" class="nav-pill nav-pill-danger" title="Выйти">
+                    <span>🚪</span>
+                    <span class="nav-text"><span class="nav-label">Выйти</span></span>
+                </button>
             `;
-            nav.insertAdjacentHTML('beforeend', profileHTML);
+            nav.innerHTML = profileHTML;
         }
+
+        document.addEventListener('click', (e) => {
+            const openDropdown = document.querySelector('.nav-dropdown[open]');
+            if (!openDropdown) return;
+            if (!e.target.closest('.nav-dropdown')) {
+                openDropdown.removeAttribute('open');
+            }
+        });
         
         function logout() {
             localStorage.removeItem('currentUser');
@@ -4731,7 +4886,6 @@
                 name: document.querySelector('th[onclick="sortBeerBy(\'name\')"]'),
                 type: document.querySelector('th[onclick="sortBeerBy(\'type\')"]'),
                 style: document.querySelector('th[onclick="sortBeerBy(\'style\')"]'),
-                filtered: document.querySelector('th[onclick="sortBeerBy(\'filtered\')"]'),
                 country: document.querySelector('th[onclick="sortBeerBy(\'country\')"]'),
                 volume: document.querySelector('th[onclick="sortBeerBy(\'volume\')"]'),
                 alcohol: document.querySelector('th[onclick="sortBeerBy(\'alcohol\')"]'),
@@ -4746,8 +4900,8 @@
             });
 
             // body cells (by nth-child) — depends on fixed column order
-            // order: name(1), type(2), style(3), filtered(4), country(5), volume(6), alcohol(7), calories(8), rating_avg(9), rating_my(10), actions(11)
-            const idx = { name: 1, type: 2, style: 3, filtered: 4, country: 5, volume: 6, alcohol: 7, calories: 8, rating_avg: 9, rating_my: 10, actions: 11 };
+            // order: name(1), type(2), style(3), country(4), volume(5), alcohol(6), calories(7), rating_avg(8), rating_my(9), actions(10)
+            const idx = { name: 1, type: 2, style: 3, country: 4, volume: 5, alcohol: 6, calories: 7, rating_avg: 8, rating_my: 9, actions: 10 };
             document.querySelectorAll('#beerTableBody tr').forEach(tr => {
                 Object.keys(idx).forEach(k => {
                     const td = tr.children[idx[k] - 1];
@@ -4967,7 +5121,7 @@
             }
             
             // Update headers
-            ['name', 'type', 'style', 'filtered', 'country', 'volume', 'alcohol', 'calories', 'rating_avg', 'rating_my'].forEach(field => {
+            ['name', 'type', 'style', 'country', 'volume', 'alcohol', 'calories', 'rating_avg', 'rating_my'].forEach(field => {
                 const span = document.getElementById(`sort-${field}`);
                 if (!span) return;
                 const th = span.parentElement;
@@ -5005,10 +5159,6 @@
                     case 'style':
                         aVal = a.style || '';
                         bVal = b.style || '';
-                        break;
-                    case 'filtered':
-                        aVal = a.filtered || '';
-                        bVal = b.filtered || '';
                         break;
                     case 'country':
                         aVal = normalizeCountryCode(a.country);
@@ -5061,7 +5211,7 @@
             const visibleCount = (() => {
                 const vis = beerColumnsVisible || loadBeerColumnsVisible();
                 // count visible columns in fixed order
-                const keys = ['name','type','style','filtered','country','volume','alcohol','calories','rating_avg','rating_my','actions'];
+                const keys = ['name','type','style','country','volume','alcohol','calories','rating_avg','rating_my','actions'];
                 return keys.reduce((c, k) => c + (vis[k] ? 1 : 0), 0);
             })();
 
@@ -5088,12 +5238,20 @@
                             ${ratings.length > 0 ? `<div class="text-xs text-gray-500 mt-1">${ratings.map(([name, rating]) => `${name}: ${rating}`).join(', ')}</div>` : ''}
                         </td>
                         <td class="py-3 px-4">
-                            <span class="beer-type-${beer.type === 'Светлое' ? 'light' : 'dark'} px-2 py-1 rounded text-xs font-bold">
-                                ${beer.type}
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="beer-type-${beer.type === 'Светлое' ? 'light' : 'dark'} px-2 py-1 rounded text-xs font-bold">
+                                    ${beer.type}
+                                </span>
+                                ${beer.filtered === 'Фильтрованное' ? `
+                                    <span class="inline-flex items-center text-amber-300/90" title="Фильтрованное" aria-label="Фильтрованное">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"/>
+                                        </svg>
+                                    </span>
+                                ` : ''}
+                            </div>
                         </td>
                         <td class="py-3 px-4 text-gray-400">${beer.style || '—'}</td>
-                        <td class="py-3 px-4 text-gray-400">${beer.filtered}</td>
                         <td class="py-3 px-4 text-gray-400">${formatCountry(beer.country)}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.volume}</td>
                         <td class="py-3 px-4 text-gray-400">${beer.alcohol}%</td>
