@@ -152,6 +152,57 @@
         }
         .game-shell { display: flex; flex-direction: column; gap: 12px; }
         .game-hint { font-size: 12px; color: #9ca3af; }
+        .poop-scale { display: flex; align-items: flex-end; gap: 4px; touch-action: pan-y; user-select: none; }
+        .poop-seg { flex: 1 1 0; cursor: pointer; }
+        .poop-seg input { pointer-events: none; }
+        .poop-dot {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 12px;
+            border-radius: 999px 999px 800px 800px;
+            background: linear-gradient(180deg, rgba(146,74,0,0.95), rgba(95,45,0,0.95));
+            border: 1px solid rgba(86,41,0,0.7);
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), inset 0 2px 2px rgba(255,255,255,0.12);
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .poop-dot::after {
+            content: '';
+            position: absolute;
+            right: 10%;
+            top: 15%;
+            width: 22%;
+            height: 55%;
+            border-radius: 999px;
+            background: rgba(255,205,90,0.12);
+            transform: rotate(-12deg);
+        }
+        .poop-scale .poop-seg:nth-child(1) .poop-dot { height: 9px; }
+        .poop-scale .poop-seg:nth-child(2) .poop-dot { height: 10px; }
+        .poop-scale .poop-seg:nth-child(3) .poop-dot { height: 12px; }
+        .poop-scale .poop-seg:nth-child(4) .poop-dot { height: 14px; }
+        .poop-scale .poop-seg:nth-child(5) .poop-dot { height: 16px; }
+        .poop-scale .poop-seg:nth-child(6) .poop-dot { height: 18px; }
+        .poop-scale .poop-seg:nth-child(7) .poop-dot { height: 20px; }
+        .poop-scale .poop-seg:nth-child(8) .poop-dot { height: 22px; }
+        .poop-scale .poop-seg:nth-child(9) .poop-dot { height: 24px; }
+        .poop-scale .poop-seg:nth-child(10) .poop-dot { height: 28px; }
+        .poop-scale .poop-seg:nth-child(1) .poop-dot { border-radius: 999px 999px 420px 420px; transform: rotate(-1.5deg); }
+        .poop-scale .poop-seg:nth-child(2) .poop-dot { border-radius: 999px 700px 600px 500px; transform: rotate(0.8deg); }
+        .poop-scale .poop-seg:nth-child(3) .poop-dot { border-radius: 850px 999px 600px 650px; transform: rotate(-0.8deg); }
+        .poop-scale .poop-seg:nth-child(4) .poop-dot { border-radius: 700px 900px 420px 520px; transform: rotate(1.2deg); }
+        .poop-scale .poop-seg:nth-child(5) .poop-dot { border-radius: 900px 700px 520px 420px; transform: rotate(-1deg); }
+        .poop-scale .poop-seg:nth-child(6) .poop-dot { border-radius: 650px 950px 520px 620px; transform: rotate(0.6deg); }
+        .poop-scale .poop-seg:nth-child(7) .poop-dot { border-radius: 999px 800px 520px 700px; transform: rotate(-0.6deg); }
+        .poop-scale .poop-seg:nth-child(8) .poop-dot { border-radius: 900px 999px 600px 420px; transform: rotate(0.9deg); }
+        .poop-scale .poop-seg:nth-child(9) .poop-dot { border-radius: 720px 980px 560px 420px; transform: rotate(-1.2deg); }
+        .poop-scale .poop-seg:nth-child(10) .poop-dot { border-radius: 999px 760px 620px 520px; transform: rotate(0.5deg); }
+        .poop-seg.is-active .poop-dot,
+        .poop-seg.is-hover .poop-dot {
+            background: linear-gradient(180deg, rgba(170,88,0,0.98), rgba(112,52,0,0.98));
+            border-color: rgba(245,158,11,0.9);
+            box-shadow: 0 0 10px rgba(245,158,11,0.35), inset 0 -2px 0 rgba(0,0,0,0.35);
+        }
         @media (max-width: 640px) {
             .game-controls { flex-wrap: nowrap; }
             .game-controls button { flex: 1 1 0; text-align: center; }
@@ -288,6 +339,51 @@
                         <span class="block mb-2">Удовлетворённость покаком, 1–10</span>
                         <input type="number" min="1" max="10" name="satisfaction" required class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="10 = восторг">
                     </label>
+                    <div class="block text-sm text-gray-300">
+                        <span class="block mb-2">Размер, 1–10</span>
+                        <div id="sizeScale" class="poop-scale mt-6">
+                            <label class="poop-seg" data-size="1" title="Размер 1">
+                                <input class="sr-only" type="radio" name="size" value="1" required>
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="2" title="Размер 2">
+                                <input class="sr-only" type="radio" name="size" value="2">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="3" title="Размер 3">
+                                <input class="sr-only" type="radio" name="size" value="3">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="4" title="Размер 4">
+                                <input class="sr-only" type="radio" name="size" value="4">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="5" title="Размер 5">
+                                <input class="sr-only" type="radio" name="size" value="5">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="6" title="Размер 6">
+                                <input class="sr-only" type="radio" name="size" value="6">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="7" title="Размер 7">
+                                <input class="sr-only" type="radio" name="size" value="7">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="8" title="Размер 8">
+                                <input class="sr-only" type="radio" name="size" value="8">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="9" title="Размер 9">
+                                <input class="sr-only" type="radio" name="size" value="9">
+                                <span class="poop-dot"></span>
+                            </label>
+                            <label class="poop-seg" data-size="10" title="Размер 10">
+                                <input class="sr-only" type="radio" name="size" value="10">
+                                <span class="poop-dot"></span>
+                            </label>
+                        </div>
+                    </div>
                     <div class="block text-sm text-gray-300 md:col-span-2">
                         <span class="block mb-2">Бристольская шкала (1–7)</span>
                         <div id="bristolOptions" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 w-full"></div>
@@ -432,6 +528,7 @@
             const authorDropdown = document.getElementById('authorDropdown');
             const authorOptions = document.getElementById('authorOptions');
             const anonToggle = document.getElementById('anonToggle');
+            const sizeScale = document.getElementById('sizeScale');
             const gameBtn = document.getElementById('poopGameBtn');
             const gameModal = document.getElementById('poopGameModal');
             const gameCanvas = document.getElementById('poopGameCanvas');
@@ -478,6 +575,8 @@
             let anonymityOn = loadAnonMode();
             const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
             let pendingDelete = null;
+            let sizeValue = null;
+            let sizeHover = 0;
             const GAME_EMOJI = {
                 hand: '🫴',
                 paper: '🧻',
@@ -849,6 +948,19 @@
             function setTime(val){
                 timeInput.value = val;
                 timeLabel.textContent = val;
+            }
+            function setSizeValue(val){
+                const num = Number(val);
+                sizeValue = Number.isFinite(num) && num > 0 ? num : null;
+                renderSizeScale();
+            }
+            function renderSizeScale(){
+                if (!sizeScale) return;
+                sizeScale.querySelectorAll('[data-size]').forEach((seg) => {
+                    const val = Number(seg.dataset.size);
+                    seg.classList.toggle('is-active', sizeValue && val <= sizeValue);
+                    seg.classList.toggle('is-hover', sizeHover && val <= sizeHover);
+                });
             }
             function renderTimeOptions(current){
                 timeOptions.innerHTML = '';
@@ -1396,6 +1508,12 @@
                                     <span class="inline-flex items-center justify-center w-7 h-5">${meta.icon || ''}</span>
                                     <span>${meta.title || 'Бристоль'}</span>
                                 </span>
+                                ${item.size ? `
+                                <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200">
+                                    <span>📏</span>
+                                    <span>Размер: ${item.size}/10</span>
+                                </span>
+                                ` : ''}
                             </div>
                             <div class="flex items-center gap-2 flex-wrap justify-end text-xs">
                                 <span class="text-gray-400">${item.authorName || 'Аноним'}</span>
@@ -1548,6 +1666,9 @@
                 editingEntry = null;
                 form.reset();
                 setTime(defaultTime());
+                sizeValue = null;
+                sizeHover = 0;
+                renderSizeScale();
                 document.body.classList.remove('modal-open');
             }
 
@@ -1560,6 +1681,9 @@
                 form.elements['paper'].value = entry.paper;
                 form.elements['ease'].value = entry.ease;
                 form.elements['satisfaction'].value = entry.satisfaction;
+                const sizeRadio = form.querySelector(`input[name="size"][value="${entry.size}"]`);
+                if (sizeRadio) sizeRadio.checked = true;
+                setSizeValue(entry.size);
                 const radio = form.querySelector(`input[name="bristol"][value="${entry.bristol}"]`);
                 if (radio) radio.checked = true;
                 if (form.elements['comment']) form.elements['comment'].value = entry.comment || '';
@@ -1586,6 +1710,74 @@
             }
 
             // Event bindings
+            if (sizeScale) {
+                const pickSizeFromX = (clientX) => {
+                    const rect = sizeScale.getBoundingClientRect();
+                    const ratio = (clientX - rect.left) / rect.width;
+                    const val = Math.ceil(ratio * 10);
+                    return Math.max(1, Math.min(10, val));
+                };
+                let sizePointerActive = false;
+                sizeScale.addEventListener('mouseover', (e) => {
+                    const seg = e.target.closest('[data-size]');
+                    if (!seg) return;
+                    sizeHover = Number(seg.dataset.size);
+                    renderSizeScale();
+                });
+                sizeScale.addEventListener('mouseleave', () => {
+                    sizeHover = 0;
+                    renderSizeScale();
+                });
+                sizeScale.addEventListener('click', (e) => {
+                    const seg = e.target.closest('[data-size]');
+                    if (!seg) return;
+                    const input = seg.querySelector('input[name="size"]');
+                    if (input) input.checked = true;
+                    setSizeValue(seg.dataset.size);
+                });
+                sizeScale.addEventListener('change', (e) => {
+                    const input = e.target.closest('input[name="size"]');
+                    if (!input) return;
+                    setSizeValue(input.value);
+                });
+                sizeScale.addEventListener('pointerdown', (e) => {
+                    if (e.pointerType === 'mouse') return;
+                    sizePointerActive = true;
+                    sizeScale.setPointerCapture(e.pointerId);
+                    const val = pickSizeFromX(e.clientX);
+                    sizeHover = val;
+                    setSizeValue(val);
+                    e.preventDefault();
+                });
+                sizeScale.addEventListener('pointermove', (e) => {
+                    if (!sizePointerActive || e.pointerType === 'mouse') return;
+                    const val = pickSizeFromX(e.clientX);
+                    sizeHover = val;
+                    setSizeValue(val);
+                    e.preventDefault();
+                });
+                sizeScale.addEventListener('pointerup', (e) => {
+                    if (e.pointerType === 'mouse') return;
+                    if (sizePointerActive) {
+                        sizePointerActive = false;
+                        sizeHover = 0;
+                        renderSizeScale();
+                    }
+                    if (sizeScale.hasPointerCapture(e.pointerId)) {
+                        sizeScale.releasePointerCapture(e.pointerId);
+                    }
+                });
+                sizeScale.addEventListener('pointercancel', (e) => {
+                    if (sizePointerActive) {
+                        sizePointerActive = false;
+                        sizeHover = 0;
+                        renderSizeScale();
+                    }
+                    if (sizeScale.hasPointerCapture(e.pointerId)) {
+                        sizeScale.releasePointerCapture(e.pointerId);
+                    }
+                });
+            }
             if (gameBtn) gameBtn.addEventListener('click', openGameModal);
             if (gameCloseBtn) gameCloseBtn.addEventListener('click', closeGameModal);
             if (gameStartBtn) gameStartBtn.addEventListener('click', toggleGame);
@@ -1754,6 +1946,11 @@
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const formData = new FormData(form);
+                const sizeVal = Number(formData.get('size') || 0);
+                if (!sizeVal) {
+                    alert('Укажи размер покака.');
+                    return;
+                }
                 const dateKey = editingEntry ? editingEntry.dateKey : formatDateKey(selectedDate);
                 const existing = editingEntry && entries && entries[dateKey] && entries[dateKey][editingEntry.id] ? entries[dateKey][editingEntry.id] : {};
                 const commentText = (formData.get('comment') || '').trim();
@@ -1763,6 +1960,7 @@
                     paper: Number(formData.get('paper')),
                     ease: Number(formData.get('ease')),
                     satisfaction: Number(formData.get('satisfaction')),
+                    size: sizeVal,
                     bristol: Number(formData.get('bristol')),
                     comment: commentText,
                     createdAt: existing.createdAt || new Date().toISOString(),
