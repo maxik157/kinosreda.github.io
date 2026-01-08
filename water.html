@@ -1309,6 +1309,7 @@
                     const bottomEdgePx = outlineRect.bottom - svgRect.top;
                     const span = bottomEdgePx - topEdgePx;
                     if (span) {
+                        scale.style.height = `${svgRect.height}px`;
                         scale.querySelectorAll('.jug-scale-line').forEach(line => {
                             const ratio = Number(line.dataset.ratio || 0);
                             const pos = topEdgePx + span * ratio;
@@ -1894,13 +1895,15 @@
 
                 trigger.addEventListener('click', () => {
                     const isOpen = wrapper.classList.contains('open');
-                    closeCustomSelects(wrapper);
-                    if (!isOpen) {
-                        wrapper.classList.add('open');
-                        trigger.setAttribute('aria-expanded', 'true');
-                        const card = wrapper.closest('.card');
-                        if (card) card.classList.add('select-open');
+                    if (isOpen) {
+                        closeCustomSelects();
+                        return;
                     }
+                    closeCustomSelects(wrapper);
+                    wrapper.classList.add('open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    const card = wrapper.closest('.card');
+                    if (card) card.classList.add('select-open');
                 });
 
                 menu.addEventListener('click', (e) => {
