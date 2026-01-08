@@ -27,12 +27,15 @@
     </script>
     <style>
         html:not(.authed) body { visibility: hidden; }
+        html.authed:not(.settings-ready) body { visibility: hidden; }
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
         (function(){
@@ -1098,7 +1101,16 @@
     </main>
 
     <script>
-        const STORAGE_KEY = 'waterTrackerData';
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
         const DEFAULT_SETTINGS = {
             weight: 70,
             activity: 'medium',
@@ -1122,9 +1134,13 @@
         const JUG_VIEWBOX_HEIGHT = 512;
 
         const state = {
+            db: null,
+            logsRef: null,
+            settingsRef: null,
             data: { settings: {}, logs: {} },
             currentUser: null,
             userKey: '',
+            userDbKey: '',
             userName: '',
             currentDate: '',
             calendarMonth: null,
@@ -1133,7 +1149,10 @@
             entries: [],
             goalMl: 0,
             dateCounts: {},
-            rangeType: 'day'
+            rangeType: 'day',
+            suppressLogUpdate: false,
+            lastSavedAt: null,
+            settingsLoaded: false
         };
         let ratingCalendarTarget = null;
 
@@ -1146,16 +1165,43 @@
             }
         }
 
-        function loadData() {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            const parsed = safeParse(raw, { settings: {}, logs: {} });
-            parsed.settings = parsed.settings || {};
-            parsed.logs = parsed.logs || {};
-            return parsed;
-        }
+        function initFirebase() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            state.db = firebase.database();
+            state.settingsRef = state.db.ref('waterTracker/settings');
+            state.logsRef = state.db.ref('waterTracker/logs');
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+            state.settingsRef.on('value', snapshot => {
+                state.data.settings = snapshot.val() || {};
+                getUserSettings();
+                applySettingsToForm();
+                if (!state.settingsLoaded) {
+                    state.settingsLoaded = true;
+                    document.documentElement.classList.add('settings-ready');
+                }
+            });
+
+            state.logsRef.on('value', snapshot => {
+                state.data.logs = snapshot.val() || {};
+                rebuildDateCounts();
+                const currentEntry = state.currentDate
+                    ? (state.data.logs[state.currentDate] || {})[state.userDbKey]
+                    : null;
+                const shouldSkip = state.suppressLogUpdate
+                    && currentEntry
+                    && state.lastSavedAt != null
+                    && currentEntry.updatedAt === state.lastSavedAt;
+                if (!shouldSkip) {
+                    state.entries = getEntriesForDate(state.currentDate);
+                    renderEntries();
+                    updateTotals();
+                }
+                state.suppressLogUpdate = false;
+                renderCalendar();
+                renderRating();
+            });
         }
 
         function formatLocalDateFromDate(date) {
@@ -1191,6 +1237,10 @@
                 return raw.toLowerCase();
             }
             return DEFAULT_SETTINGS.color;
+        }
+
+        function toDbKey(value) {
+            return String(value || 'user').replace(/[.#$\[\]/]/g, '_');
         }
 
         function expandHex(hex) {
@@ -1230,8 +1280,11 @@
         }
 
         function getUserSettings() {
-            const saved = state.data.settings[state.userKey];
+            const saved = state.data.settings[state.userDbKey];
             state.settings = { ...DEFAULT_SETTINGS, ...(saved || {}) };
+            if (saved && Object.prototype.hasOwnProperty.call(saved, 'weight') && (saved.weight === '' || saved.weight == null)) {
+                state.settings.weight = '';
+            }
             state.settings.color = normalizeColor(state.settings.color);
             state.goalMl = computeGoal(state.settings);
         }
@@ -1340,7 +1393,7 @@
             const climateInput = document.getElementById('climateInput');
             const colorInput = document.getElementById('colorInput');
 
-            if (weightInput) weightInput.value = state.settings.weight;
+            if (weightInput) weightInput.value = state.settings.weight === '' ? '' : state.settings.weight;
             if (activityInput) activityInput.value = state.settings.activity;
             if (climateInput) climateInput.value = state.settings.climate;
             if (colorInput) colorInput.value = state.settings.color;
@@ -1363,30 +1416,29 @@
         function getEntriesForDate(dateKey) {
             const day = state.data.logs[dateKey];
             if (!day) return [];
-            const entry = day[state.userKey];
+            const entry = day[state.userDbKey];
             return entry && Array.isArray(entry.entries) ? entry.entries : [];
         }
 
         function saveCurrentDay() {
-            if (!state.currentDate) return;
-            if (!state.data.logs[state.currentDate]) state.data.logs[state.currentDate] = {};
-            state.data.logs[state.currentDate][state.userKey] = {
+            if (!state.currentDate || !state.db) return;
+            const updatedAt = Date.now();
+            const payload = {
                 name: state.userName,
                 entries: state.entries,
                 goalMl: state.goalMl,
                 color: state.settings.color,
-                updatedAt: Date.now()
+                updatedAt
             };
-            saveData();
-            rebuildDateCounts();
-            renderCalendar();
-            renderRating();
+            state.suppressLogUpdate = true;
+            state.lastSavedAt = updatedAt;
+            state.db.ref(`waterTracker/logs/${state.currentDate}/${state.userDbKey}`).set(payload);
         }
 
         function rebuildDateCounts() {
             const counts = {};
             Object.entries(state.data.logs).forEach(([dateKey, day]) => {
-                const entry = day[state.userKey];
+                const entry = day[state.userDbKey];
                 if (!entry || !Array.isArray(entry.entries)) return;
                 const totalEntries = entry.entries.filter(item => Number(item.amount) > 0).length;
                 if (totalEntries > 0) counts[dateKey] = totalEntries;
@@ -1459,7 +1511,7 @@
                 return `
                     <tr data-index="${idx}">
                         <td><input type="time" class="input-field entry-time" value="${entry.time || ''}"></td>
-                        <td><input type="number" min="0" step="10" class="input-field entry-amount" value="${entry.amount || ''}" placeholder="250"></td>
+                        <td><input type="number" min="0" step="10" class="input-field entry-amount" value="${entry.amount || ''}" placeholder="Введите значение"></td>
                         <td class="text-right">
                             <button type="button" class="row-remove" aria-label="Удалить">✕</button>
                         </td>
@@ -1816,18 +1868,17 @@
             }
 
             state.userKey = state.currentUser.username || state.currentUser.name || 'user';
+            state.userDbKey = toDbKey(state.userKey);
             state.userName = state.currentUser.name || state.userKey;
 
             const nameEl = document.getElementById('profileName');
             if (nameEl) nameEl.textContent = state.userName;
 
-            state.data = loadData();
-            getUserSettings();
-            rebuildDateCounts();
+            document.documentElement.classList.remove('settings-ready');
+            initFirebase();
 
             const today = formatLocalDate();
             setDate(today);
-            applySettingsToForm();
             requestAnimationFrame(syncJugScale);
 
             const weightInput = document.getElementById('weightInput');
@@ -1863,16 +1914,25 @@
             });
 
             function onSettingsChange() {
-                state.settings.weight = Number(weightInput.value) || DEFAULT_SETTINGS.weight;
+                const rawWeight = weightInput.value.trim();
+                state.settings.weight = rawWeight === '' ? '' : Number(rawWeight) || DEFAULT_SETTINGS.weight;
                 state.settings.activity = activityInput.value;
                 state.settings.climate = climateInput.value;
                 state.settings.color = normalizeColor(colorInput.value);
                 state.goalMl = computeGoal(state.settings);
-                state.data.settings[state.userKey] = { ...state.settings };
+                const settingsPayload = {
+                    ...state.settings,
+                    name: state.userName,
+                    updatedAt: Date.now()
+                };
+                state.data.settings[state.userDbKey] = settingsPayload;
                 syncCustomSelect(activityInput);
                 syncCustomSelect(climateInput);
                 updateGoalUI();
                 setThemeWaterColor();
+                if (state.db) {
+                    state.db.ref(`waterTracker/settings/${state.userDbKey}`).set(settingsPayload);
+                }
                 saveCurrentDay();
                 updateTotals();
             }

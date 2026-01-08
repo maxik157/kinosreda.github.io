@@ -363,6 +363,86 @@
         .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
         .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
 
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 120;
+            padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+            width: min(420px, 92vw);
+            background: rgba(5, 5, 5, 0.95);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+            padding: 18px;
+        }
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fbbf24;
+        }
+        .modal-subtitle {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: #d1d5db;
+        }
+        .modal-input {
+            width: 100%;
+            background: #0b0b0b;
+            border: 1px solid rgba(245,158,11,0.25);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        .modal-input:focus {
+            outline: none;
+            border-color: rgba(245,158,11,0.65);
+            box-shadow: 0 0 0 2px rgba(245,158,11,0.2);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+        .modal-btn {
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid rgba(245,158,11,0.35);
+            color: #fcd34d;
+            background: rgba(245,158,11,0.12);
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .modal-btn:hover { border-color: rgba(245,158,11,0.6); background: rgba(245,158,11,0.2); }
+        .modal-btn.secondary {
+            border-color: rgba(255,255,255,0.15);
+            color: #cbd5f5;
+            background: rgba(255,255,255,0.05);
+        }
+        .modal-error {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #fca5a5;
+            display: none;
+        }
+
         /* Beer theme: make select button text match dropdown option text (neutral like the list) */
         html[data-theme="beer"] .cs-btn {
             border-color: var(--accent-border-30);
@@ -620,9 +700,14 @@
                 </div>
             </div>
 
-            <a href="index.html" class="inline-flex items-center gap-1 md:gap-2 text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10">
-                <span>←</span> <span class="hidden sm:inline">На главную</span>
-            </a>
+            <div class="flex items-center gap-2">
+                <button id="changePasswordBtn" type="button" class="inline-flex items-center gap-2 text-amber-200 hover:text-amber-100 transition font-medium text-xs md:text-sm px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50">
+                    🔒 <span>Сменить пароль</span>
+                </button>
+                <a href="index.html" class="inline-flex items-center gap-1 md:gap-2 text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10">
+                    <span>←</span> <span class="hidden sm:inline">На главную</span>
+                </a>
+            </div>
         </div>
 
         <div class="grid lg:grid-cols-3 gap-4 safe-wrap">
@@ -775,6 +860,32 @@
                 <div id="poopBristolCounts" class="flex flex-wrap gap-2 text-sm"></div>
             </div>
         </section>
+
+        <div id="changePasswordModal" class="modal-overlay" aria-hidden="true">
+            <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="changePasswordTitle">
+                <div class="modal-title" id="changePasswordTitle">Сменить пароль</div>
+                <div class="modal-subtitle">Введите текущий пароль и новый пароль дважды.</div>
+                <form id="changePasswordForm" class="mt-4 space-y-3">
+                    <label class="modal-field">
+                        Текущий пароль
+                        <input id="currentPasswordInput" type="password" class="modal-input" autocomplete="current-password" required />
+                    </label>
+                    <label class="modal-field">
+                        Новый пароль
+                        <input id="newPasswordInput" type="password" class="modal-input" autocomplete="new-password" required />
+                    </label>
+                    <label class="modal-field">
+                        Повторите новый пароль
+                        <input id="newPasswordRepeatInput" type="password" class="modal-input" autocomplete="new-password" required />
+                    </label>
+                    <div id="changePasswordError" class="modal-error"></div>
+                    <div class="modal-actions">
+                        <button type="button" id="changePasswordCancel" class="modal-btn secondary">Отмена</button>
+                        <button type="submit" id="changePasswordSave" class="modal-btn">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <footer class="text-center py-8 text-gray-700 text-xs">
             <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
@@ -1595,6 +1706,101 @@
 
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.database();
+
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
+            const changePasswordModal = document.getElementById('changePasswordModal');
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            const changePasswordError = document.getElementById('changePasswordError');
+            const changePasswordCancel = document.getElementById('changePasswordCancel');
+            const changePasswordSave = document.getElementById('changePasswordSave');
+            const currentPasswordInput = document.getElementById('currentPasswordInput');
+            const newPasswordInput = document.getElementById('newPasswordInput');
+            const newPasswordRepeatInput = document.getElementById('newPasswordRepeatInput');
+
+            function openChangePasswordModal() {
+                if (!changePasswordModal) return;
+                changePasswordModal.classList.add('open');
+                changePasswordModal.setAttribute('aria-hidden', 'false');
+                if (changePasswordError) {
+                    changePasswordError.style.display = 'none';
+                    changePasswordError.textContent = '';
+                }
+                if (changePasswordForm) changePasswordForm.reset();
+                if (currentPasswordInput) currentPasswordInput.focus();
+            }
+
+            function closeChangePasswordModal() {
+                if (!changePasswordModal) return;
+                changePasswordModal.classList.remove('open');
+                changePasswordModal.setAttribute('aria-hidden', 'true');
+            }
+
+            function showChangePasswordError(message) {
+                if (!changePasswordError) return;
+                changePasswordError.textContent = message;
+                changePasswordError.style.display = 'block';
+            }
+
+            if (changePasswordBtn) {
+                changePasswordBtn.addEventListener('click', () => {
+                    openChangePasswordModal();
+                });
+            }
+            if (changePasswordCancel) {
+                changePasswordCancel.addEventListener('click', () => {
+                    closeChangePasswordModal();
+                });
+            }
+            if (changePasswordModal) {
+                changePasswordModal.addEventListener('click', (e) => {
+                    if (e.target === changePasswordModal) closeChangePasswordModal();
+                });
+            }
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeChangePasswordModal();
+            });
+            if (changePasswordForm) {
+                changePasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!db || !currentUser || !currentUser.username) return;
+                    const login = String(currentUser.username).trim().toLowerCase();
+                    const currentPass = currentPasswordInput ? currentPasswordInput.value : '';
+                    const newPass = newPasswordInput ? newPasswordInput.value : '';
+                    const newPassRepeat = newPasswordRepeatInput ? newPasswordRepeatInput.value : '';
+
+                    if (!currentPass || !newPass || !newPassRepeat) {
+                        showChangePasswordError('Заполните все поля.');
+                        return;
+                    }
+                    if (newPass !== newPassRepeat) {
+                        showChangePasswordError('Новые пароли не совпадают.');
+                        return;
+                    }
+
+                    if (changePasswordSave) {
+                        changePasswordSave.disabled = true;
+                        changePasswordSave.textContent = 'Сохранение...';
+                    }
+                    try {
+                        const snapshot = await db.ref('users/' + login).once('value');
+                        const userData = snapshot.val();
+                        if (!userData || userData.password !== currentPass) {
+                            showChangePasswordError('Текущий пароль неверный.');
+                            return;
+                        }
+                        await db.ref('users/' + login).update({ password: newPass });
+                        closeChangePasswordModal();
+                    } catch (err) {
+                        console.error('Password update error:', err);
+                        showChangePasswordError('Не удалось обновить пароль. Попробуйте позже.');
+                    } finally {
+                        if (changePasswordSave) {
+                            changePasswordSave.disabled = false;
+                            changePasswordSave.textContent = 'Сохранить';
+                        }
+                    }
+                });
+            }
 
             try {
                 await loadAndRender();
