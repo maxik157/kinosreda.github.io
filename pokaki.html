@@ -393,6 +393,43 @@
                     <span class="block mb-2">Комментарий (опционально)</span>
                     <textarea name="comment" rows="2" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100 resize-none" placeholder="Например, что ел или как себя чувствовал"></textarea>
                 </label>
+                <input type="hidden" name="drawing" id="drawingInput">
+                <div class="space-y-2">
+                    <button type="button" id="drawingToggle" aria-expanded="false" class="text-xs text-amber-200 underline hover:text-amber-100 transition">🎨 Нарисовать кал</button>
+                    <div id="drawingPanel" class="hidden mt-2 p-4 border border-amber-500/25 rounded-2xl bg-black/50 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-2 text-xs text-gray-200">
+                                <button type="button" data-drawing-tool="pencil" class="px-3 py-1 rounded-full border border-amber-500/40 bg-black/60 hover:border-amber-500/60 transition text-amber-100 flex items-center gap-1">
+                                    ✏️ Карандаш
+                                </button>
+                                <button type="button" data-drawing-tool="marker" class="px-3 py-1 rounded-full border border-amber-500/40 bg-black/60 hover:border-amber-500/60 transition text-amber-100 flex items-center gap-1">
+                                    🖋 Маркер
+                                </button>
+                                <button type="button" data-drawing-tool="fill" class="px-3 py-1 rounded-full border border-amber-500/40 bg-black/60 hover:border-amber-500/60 transition text-amber-100 flex items-center justify-center" aria-label="Заливка">
+                                    <span class="text-lg leading-none">🖌️</span>
+                                </button>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-200">
+                                <span>Цвет:</span>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#3d1f0a" style="background:#3d1f0a" aria-label="Глубокий шоколадный"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#5d3a1a" style="background:#5d3a1a" aria-label="Тёмно-коричневый"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#7c4f22" style="background:#7c4f22" aria-label="Коричневый"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#4a2e15" style="background:#4a2e15" aria-label="Глубокий коричневый"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#8b5a2b" style="background:#8b5a2b" aria-label="Светло-коричневый"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#a8550e" style="background:#a8550e" aria-label="Медово-коричневый"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#c2782a" style="background:#c2782a" aria-label="Карамельный"></button>
+                                <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#b56b2d" style="background:#b56b2d" aria-label="Тёпло-терракотовый"></button>
+                                <button type="button" id="drawingClear" class="px-2 py-1 rounded-lg border border-amber-500/30 text-amber-200 text-[11px] hover:border-amber-500/50 transition">Очистить</button>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl bg-black/60 overflow-hidden relative">
+                            <div class="relative w-full" style="aspect-ratio: 504 / 308;">
+                                <canvas id="drawingCanvas" width="504" height="308" class="absolute inset-0 w-full h-full game-canvas"></canvas>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-gray-400 text-right">Сохрани рисунок, чтобы можно было показать друзьям.</p>
+                    </div>
+                </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="cancelModalBtn" class="px-4 py-3 rounded-xl border border-amber-500/20 text-gray-300 hover:text-white hover:border-amber-500/40 transition">Отмена</button>
                     <button type="submit" class="px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:text-white hover:bg-amber-500/30 transition font-semibold">Сохранить покак</button>
@@ -528,6 +565,12 @@
             const authorDropdown = document.getElementById('authorDropdown');
             const authorOptions = document.getElementById('authorOptions');
             const anonToggle = document.getElementById('anonToggle');
+            const drawingToggle = document.getElementById('drawingToggle');
+            const drawingPanel = document.getElementById('drawingPanel');
+            const drawingCanvas = document.getElementById('drawingCanvas');
+            const drawingClear = document.getElementById('drawingClear');
+            const drawingInput = document.getElementById('drawingInput');
+            const drawingToolButtons = document.querySelectorAll('[data-drawing-tool]');
             const sizeScale = document.getElementById('sizeScale');
             const gameBtn = document.getElementById('poopGameBtn');
             const gameModal = document.getElementById('poopGameModal');
@@ -574,6 +617,18 @@
             let selectedAuthor = loadSelectedAuthor();
             let anonymityOn = loadAnonMode();
             const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
+            const DRAWING_COLORS = ['#3d1f0a','#5d3a1a','#7c4f22','#4a2e15','#8b5a2b','#a8550e','#c2782a','#b56b2d'];
+            const DRAWING_TOOLS = {
+                pencil: { width: 4, opacity: 1 },
+                marker: { width: 12, opacity: 0.75 },
+                fill: { width: 1, opacity: 1 }
+            };
+            let drawingCtx = null;
+            let drawingColor = DRAWING_COLORS[0];
+            let drawingTool = 'pencil';
+            let drawingActive = false;
+            let drawingHasContent = false;
+            let drawingPos = null;
             let pendingDelete = null;
             let sizeValue = null;
             let sizeHover = 0;
@@ -631,6 +686,9 @@
                     .replace(/>/g, '&gt;')
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, '&#39;');
+            }
+            function isDrawingData(value){
+                return typeof value === 'string' && value.startsWith('data:image/');
             }
             function updateModalVh(){
                 const vv = window.visualViewport;
@@ -1369,6 +1427,198 @@
                 authorFilterLabel.textContent = selectedAuthor === 'all' ? 'Все' : selectedAuthor;
             }
 
+            function initDrawing(){
+                if (!drawingCanvas) return;
+                drawingCtx = drawingCanvas.getContext('2d');
+                drawingCtx.strokeStyle = drawingColor;
+                drawingCtx.lineCap = 'round';
+                drawingCtx.lineJoin = 'round';
+                applyDrawingTool();
+                drawingCanvas.style.touchAction = 'none';
+                const pointerDown = (e) => {
+                    const pos = getCanvasPos(e);
+                    if (drawingTool === 'fill') {
+                        floodFillAt(Math.floor(pos.x), Math.floor(pos.y));
+                        return;
+                    }
+                    drawingActive = true;
+                    drawingHasContent = true;
+                    drawingPos = pos;
+                    drawingCtx.beginPath();
+                    drawingCtx.moveTo(drawingPos.x, drawingPos.y);
+                    drawingCanvas.setPointerCapture(e.pointerId);
+                };
+                const pointerMove = (e) => {
+                    if (!drawingActive) return;
+                    const pos = getCanvasPos(e);
+                    drawingCtx.lineTo(pos.x, pos.y);
+                    drawingCtx.strokeStyle = drawingColor;
+                    drawingCtx.stroke();
+                    drawingPos = pos;
+                };
+                const stop = (e) => {
+                    if (!drawingActive) return;
+                    drawingActive = false;
+                    drawingCanvas.releasePointerCapture(e.pointerId);
+                    updateDrawingInput();
+                };
+                drawingCanvas.addEventListener('pointerdown', pointerDown);
+                drawingCanvas.addEventListener('pointermove', pointerMove);
+                drawingCanvas.addEventListener('pointerup', stop);
+                drawingCanvas.addEventListener('pointerleave', () => { drawingActive = false; });
+                drawingCanvas.addEventListener('pointercancel', () => { drawingActive = false; });
+            }
+
+            function getCanvasPos(e){
+                const rect = drawingCanvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX - rect.left) * (drawingCanvas.width / rect.width),
+                    y: (e.clientY - rect.top) * (drawingCanvas.height / rect.height)
+                };
+            }
+
+            function setDrawingColor(color){
+                drawingColor = color;
+                if (drawingCtx) {
+                    drawingCtx.strokeStyle = color;
+                }
+                document.querySelectorAll('.drawing-color').forEach(btn => {
+                    const active = btn.dataset.color === color;
+                    btn.classList.toggle('ring-2', active);
+                    btn.classList.toggle('ring-amber-400', active);
+                });
+            }
+
+            function applyDrawingTool(){
+                const config = DRAWING_TOOLS[drawingTool] || DRAWING_TOOLS.pencil;
+                if (drawingCtx) {
+                    drawingCtx.strokeStyle = drawingColor;
+                    if (drawingTool === 'fill') {
+                        drawingCtx.lineWidth = 1;
+                        drawingCtx.globalAlpha = 1;
+                    } else {
+                        drawingCtx.lineWidth = config.width;
+                        drawingCtx.globalAlpha = config.opacity;
+                    }
+                }
+                drawingToolButtons.forEach(btn => {
+                    const active = btn.dataset.drawingTool === drawingTool;
+                    btn.classList.toggle('ring-2', active);
+                    btn.classList.toggle('ring-amber-400', active);
+                    btn.classList.toggle('bg-amber-500/10', active);
+                });
+            }
+
+            function setDrawingTool(tool){
+                drawingTool = DRAWING_TOOLS[tool] ? tool : 'pencil';
+                applyDrawingTool();
+            }
+
+            function hexToRgba(hex){
+                let clean = (hex || '').replace('#', '').toLowerCase();
+                if (clean.length === 3) {
+                    clean = clean.split('').map(ch => ch + ch).join('');
+                }
+                const value = parseInt(clean, 16);
+                if (Number.isNaN(value)) return { r: 0, g: 0, b: 0, a: 255 };
+                return {
+                    r: (value >> 16) & 255,
+                    g: (value >> 8) & 255,
+                    b: value & 255,
+                    a: 255
+                };
+            }
+
+            function colorsMatch(data, idx, colorArr){
+                return data[idx] === colorArr[0]
+                    && data[idx + 1] === colorArr[1]
+                    && data[idx + 2] === colorArr[2]
+                    && data[idx + 3] === colorArr[3];
+            }
+
+            function setColorAt(data, idx, color){
+                data[idx] = color[0];
+                data[idx + 1] = color[1];
+                data[idx + 2] = color[2];
+                data[idx + 3] = color[3];
+            }
+
+            function floodFillAt(x, y){
+                if (!drawingCtx || !drawingCanvas) return;
+                const width = drawingCanvas.width;
+                const height = drawingCanvas.height;
+                if (x < 0 || x >= width || y < 0 || y >= height) return;
+                const imageData = drawingCtx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                const idx = (y * width + x) * 4;
+                const targetColor = [data[idx], data[idx + 1], data[idx + 2], data[idx + 3]];
+                const fillColorObj = hexToRgba(drawingColor);
+                const fillColor = [fillColorObj.r, fillColorObj.g, fillColorObj.b, fillColorObj.a];
+                if (colorsMatch(data, idx, fillColor)) return;
+                const stack = [{ x, y }];
+                while (stack.length) {
+                    const { x: cx, y: cy } = stack.pop();
+                    if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+                    const currentIdx = (cy * width + cx) * 4;
+                    if (!colorsMatch(data, currentIdx, targetColor)) continue;
+                    setColorAt(data, currentIdx, fillColor);
+                    stack.push({ x: cx + 1, y: cy });
+                    stack.push({ x: cx - 1, y: cy });
+                    stack.push({ x: cx, y: cy + 1 });
+                    stack.push({ x: cx, y: cy - 1 });
+                }
+                drawingCtx.putImageData(imageData, 0, 0);
+                drawingHasContent = true;
+                updateDrawingInput();
+            }
+
+            function getExportCanvas(){
+                if (!drawingCanvas) return null;
+                const targetWidth = drawingCanvas.width;
+                const targetHeight = drawingCanvas.height;
+                const tmp = document.createElement('canvas');
+                tmp.width = targetWidth;
+                tmp.height = targetHeight;
+                const ctx = tmp.getContext('2d');
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, targetWidth, targetHeight);
+                ctx.drawImage(drawingCanvas, 0, 0, targetWidth, targetHeight);
+                return tmp;
+            }
+
+            function updateDrawingInput(){
+                if (!drawingInput) return;
+                if (!drawingHasContent) {
+                    drawingInput.value = '';
+                    return;
+                }
+                const exportCanvas = getExportCanvas();
+                drawingInput.value = exportCanvas ? exportCanvas.toDataURL('image/png') : '';
+            }
+
+            function clearDrawingCanvas(){
+                if (!drawingCtx || !drawingCanvas) return;
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                drawingHasContent = false;
+                if (drawingInput) drawingInput.value = '';
+            }
+
+            function loadDrawing(data){
+                if (!drawingCtx || !drawingCanvas) return;
+                drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                drawingHasContent = Boolean(data);
+                if (!data) {
+                    updateDrawingInput();
+                    return;
+                }
+                const img = new Image();
+                img.onload = () => {
+                    drawingCtx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+                    updateDrawingInput();
+                };
+                img.src = data;
+            }
+
             function initFirebase(){
                 try {
                     if (!firebase.apps.length) {
@@ -1500,10 +1750,20 @@
                     const entryKey = key;
                     const card = document.createElement('div');
                     card.className = 'rounded-xl border border-amber-500/25 bg-black/50 p-4 flex flex-col gap-3';
+                    const drawingMarkup = isDrawingData(item.drawing) ? `
+                        <div class="space-y-2">
+                            <button type="button" data-action="toggle-drawing" class="px-3 py-2 rounded-lg border border-amber-500/25 text-amber-200 hover:border-amber-500/40 transition text-sm bg-black/40">Показать кал</button>
+                            <div class="hidden rounded-2xl border border-amber-500/20 overflow-hidden bg-black/30" data-drawing-panel>
+                                <div class="relative w-full" style="aspect-ratio: 504 / 308;">
+                                    <img src="${item.drawing}" alt="Рисунок покака ${escapeHtml(item.time || '')}" class="absolute inset-0 w-full h-full object-contain bg-black/80">
+                                </div>
+                            </div>
+                        </div>
+                    ` : '';
                     card.innerHTML = `
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-3 flex-wrap">
-                                <span class="text-lg font-semibold text-amber-300">${item.time}</span>
+                                <span class="text-lg font-semibold text-amber-300">${escapeHtml(item.time || '')}</span>
                                 <span class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-200">
                                     <span class="inline-flex items-center justify-center w-7 h-5">${meta.icon || ''}</span>
                                     <span>${meta.title || 'Бристоль'}</span>
@@ -1530,6 +1790,7 @@
                             <div class="flex items-center gap-2"><span class="text-amber-300">✨</span> Лёгкость: ${item.ease}/10</div>
                             <div class="flex items-center gap-2"><span class="text-amber-300">🤝</span> Удовлетворённость: ${item.satisfaction}/10</div>
                         </div>
+                        ${drawingMarkup}
                         ${item.comment ? `
                         <div class="text-sm text-gray-200 bg-black/40 border border-amber-500/10 rounded-lg px-3 py-2 relative">
                             💬 ${escapeHtml(item.comment)}
@@ -1610,6 +1871,16 @@
                     // Reactions
                     const summaryHolder = card.querySelector('[data-reaction-summary]');
                     if (summaryHolder) renderReactionSummary(entryKey, item.id, summaryHolder);
+                    const toggleDrawingBtn = card.querySelector('[data-action="toggle-drawing"]');
+                    if (toggleDrawingBtn) {
+                        const panel = card.querySelector('[data-drawing-panel]');
+                        if (panel) {
+                            toggleDrawingBtn.addEventListener('click', () => {
+                                const nowHidden = panel.classList.toggle('hidden');
+                                toggleDrawingBtn.textContent = nowHidden ? 'Показать кал' : 'Скрыть кал';
+                            });
+                        }
+                    }
                     // Entry comment reactions
                     if (item.comment) {
                         const entryMenu = card.querySelector('[data-entry-reaction-menu]');
@@ -1656,6 +1927,14 @@
                 const modalCard = modal.querySelector('.card');
                 if (modalCard) modalCard.scrollTop = 0;
                 modal.scrollTop = 0;
+                const entryDrawing = editingEntry ? (entries?.[editingEntry.dateKey]?.[editingEntry.id]?.drawing || '') : '';
+                if (entryDrawing) {
+                    loadDrawing(entryDrawing);
+                    drawingInput.value = entryDrawing;
+                } else {
+                    clearDrawingCanvas();
+                    if (drawingInput) drawingInput.value = '';
+                }
                 const firstField = form.querySelector('input[name="duration"]');
                 if (firstField) firstField.focus({ preventScroll: true });
             }
@@ -1666,6 +1945,10 @@
                 editingEntry = null;
                 form.reset();
                 setTime(defaultTime());
+                clearDrawingCanvas();
+                if (drawingInput) drawingInput.value = '';
+                if (drawingPanel) drawingPanel.classList.add('hidden');
+                if (drawingToggle) drawingToggle.setAttribute('aria-expanded', 'false');
                 sizeValue = null;
                 sizeHover = 0;
                 renderSizeScale();
@@ -1840,6 +2123,28 @@
             document.getElementById('closeModalBtn').addEventListener('click', closeModal);
             document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
             timeButton.addEventListener('click', (e) => { e.stopPropagation(); toggleTimeDropdown(); });
+            if (drawingToggle && drawingPanel) {
+                drawingToggle.addEventListener('click', () => {
+                    const isHidden = drawingPanel.classList.toggle('hidden');
+                    drawingToggle.setAttribute('aria-expanded', String(!isHidden));
+                });
+            }
+            const colorButtons = document.querySelectorAll('.drawing-color');
+            colorButtons.forEach(btn => {
+                btn.addEventListener('click', () => setDrawingColor(btn.dataset.color));
+            });
+            setDrawingColor(drawingColor);
+            if (drawingToolButtons.length) {
+                drawingToolButtons.forEach(btn => {
+                    btn.addEventListener('click', () => setDrawingTool(btn.dataset.drawingTool));
+                });
+                setDrawingTool(drawingTool);
+            }
+            if (drawingClear) {
+                drawingClear.addEventListener('click', () => {
+                    clearDrawingCanvas();
+                });
+            }
             if (anonToggle) {
                 anonToggle.addEventListener('click', () => {
                     anonymityOn = !anonymityOn;
@@ -1963,6 +2268,7 @@
                     size: sizeVal,
                     bristol: Number(formData.get('bristol')),
                     comment: commentText,
+                    drawing: formData.get('drawing') || '',
                     createdAt: existing.createdAt || new Date().toISOString(),
                     author: currentUser ? currentUser.username : '',
                     authorName: anonymityOn ? 'Аноним' : (currentUser ? currentUser.name : 'Аноним')
@@ -1980,6 +2286,7 @@
             });
 
             // Init
+            initDrawing();
             renderBristolOptions();
             highlightViewButtons();
             setTime(defaultTime());
