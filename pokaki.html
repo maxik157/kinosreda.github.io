@@ -171,12 +171,87 @@
             color: #fcd34d;
             opacity: 1;
         }
+        .time-field-header { position: relative; min-height: 18px; }
+        .time-field-title { display: inline-block; padding-right: 100px; max-width: calc(100% - 100px); }
+        .time-field-toggle {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cs { position: relative; }
+        .cs select,
+        .cs .cs-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: 0;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .cs-btn {
+            width: 100%;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.6);
+            color: #fef3c7;
+            border: 1px solid var(--accent-border-20);
+            padding: 0 16px;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            text-align: left;
+        }
+        .cs-btn:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.6);
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+        }
+        .cs-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cs-chevron { flex: 0 0 auto; width: 18px; height: 18px; color: #9ca3af; transition: transform 0.18s ease; }
+        .cs.open .cs-chevron { transform: rotate(180deg); }
+        .cs-menu {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            z-index: 30;
+            background: rgba(10, 10, 10, 0.98);
+            border: 1px solid var(--accent-border-25);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+            max-height: 260px;
+            overflow: auto;
+            display: none;
+        }
+        .cs.open .cs-menu { display: block; }
+        .cs-opt {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: rgba(229,231,235,0.95);
+        }
+        .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
+        .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.18); color: #fff; }
         .bristol-icon { width: 38px; height: 22px; }
         .bristol-icon path, .bristol-icon rect, .bristol-icon circle { stroke-linecap: round; stroke-linejoin: round; }
         .bristol-icon { display: block; }
         .toggle-on { background: rgba(245,158,11,0.35) !important; border-color: rgba(245,158,11,0.6) !important; }
         .anon-thumb { top: 50%; transform: translateY(-50%); }
         .toggle-on .anon-thumb { transform: translate(24px, -50%); background: rgba(245,158,11,0.8); }
+        .time-mode-thumb { top: 50%; transform: translateY(-50%); }
+        .toggle-on .time-mode-thumb { transform: translate(20px, -50%); background: rgba(245,158,11,0.8); }
+        #timeModeToggle.toggle-on { background: rgba(0,0,0,0.6) !important; border-color: rgba(245,158,11,0.3) !important; }
         .reaction-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
         .modal-scroll { -webkit-overflow-scrolling: touch; }
         .comment-card { position: relative; }
@@ -459,18 +534,31 @@
             <form id="poopForm" class="grid gap-4">
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="block text-sm text-gray-300">
-                        <span class="block mb-2">Время покака</span>
+                        <div class="time-field-header mb-2">
+                            <span class="time-field-title">Время покака</span>
+                            <div class="time-field-toggle text-[11px] text-gray-400">
+                                <span id="timeModeLabel">Колесо</span>
+                                <button id="timeModeToggle" type="button" class="relative inline-flex items-center w-11 h-6 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none" aria-label="Переключить режим времени">
+                                    <span class="absolute left-1 time-mode-thumb w-4 h-4 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
+                                </button>
+                            </div>
+                        </div>
                         <div class="grid gap-3">
                             <input type="hidden" name="time" id="timeInput">
-                            <div id="timeWheel" class="time-wheel" aria-label="Выбор времени">
-                                <div class="time-wheel-col" data-part="hour" aria-label="Часы">
-                                    <span class="time-wheel-static">Часы</span>
-                                    <div class="time-wheel-list"></div>
+                            <div id="timeWheelWrap" class="grid gap-3">
+                                <div id="timeWheel" class="time-wheel" aria-label="Выбор времени">
+                                    <div class="time-wheel-col" data-part="hour" aria-label="Часы">
+                                        <span class="time-wheel-static">Часы</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
+                                    <div class="time-wheel-col" data-part="minute" aria-label="Минуты">
+                                        <span class="time-wheel-static">Минуты</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
                                 </div>
-                                <div class="time-wheel-col" data-part="minute" aria-label="Минуты">
-                                    <span class="time-wheel-static">Минуты</span>
-                                    <div class="time-wheel-list"></div>
-                                </div>
+                            </div>
+                            <div id="timeSelectWrap" class="grid gap-3 hidden">
+                                <select id="timeSelect" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100"></select>
                             </div>
                         </div>
                     </div>
@@ -665,6 +753,9 @@
                                 <button type="button" data-drawing-tool="fill" class="px-3 py-1 rounded-full border border-amber-500/40 bg-black/60 hover:border-amber-500/60 transition text-amber-100 flex items-center justify-center" aria-label="Заливка">
                                     <span class="text-lg leading-none">🖌️</span>
                                 </button>
+                                <button type="button" data-drawing-tool="eraser" class="px-3 py-1 rounded-full border border-amber-500/40 bg-black/60 hover:border-amber-500/60 transition text-amber-100 flex items-center justify-center" aria-label="Ластик">
+                                    <span class="text-lg leading-none">🧽</span>
+                                </button>
                             </div>
                             <div class="flex flex-wrap items-center gap-2 text-xs text-gray-200">
                                 <span>Цвет:</span>
@@ -677,6 +768,13 @@
                                 <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#c2782a" style="background:#c2782a" aria-label="Карамельный"></button>
                                 <button type="button" class="drawing-color w-6 h-6 rounded-full border border-amber-500/40" data-color="#b56b2d" style="background:#b56b2d" aria-label="Тёпло-терракотовый"></button>
                                 <button type="button" id="drawingClear" class="px-2 py-1 rounded-lg border border-amber-500/30 text-amber-200 text-[11px] hover:border-amber-500/50 transition">Очистить</button>
+                            </div>
+                            <div id="eraserSizePanel" class="hidden flex items-center gap-2 text-xs text-gray-200">
+                                <span>Размер ластика:</span>
+                                <button type="button" data-eraser-size="8" class="px-2 py-1 rounded-full border border-amber-500/30 hover:border-amber-500/50 transition">8</button>
+                                <button type="button" data-eraser-size="12" class="px-2 py-1 rounded-full border border-amber-500/30 hover:border-amber-500/50 transition">12</button>
+                                <button type="button" data-eraser-size="20" class="px-2 py-1 rounded-full border border-amber-500/30 hover:border-amber-500/50 transition">20</button>
+                                <button type="button" data-eraser-size="28" class="px-2 py-1 rounded-full border border-amber-500/30 hover:border-amber-500/50 transition">28</button>
                             </div>
                         </div>
                         <div class="rounded-2xl bg-black/60 overflow-hidden relative">
@@ -879,6 +977,11 @@
             const modal = document.getElementById('poopModal');
             const timeInput = document.getElementById('timeInput');
             const timeWheel = document.getElementById('timeWheel');
+            const timeWheelWrap = document.getElementById('timeWheelWrap');
+            const timeSelectWrap = document.getElementById('timeSelectWrap');
+            const timeSelect = document.getElementById('timeSelect');
+            const timeModeToggle = document.getElementById('timeModeToggle');
+            const timeModeLabel = document.getElementById('timeModeLabel');
             const durationInput = document.getElementById('durationInput');
             const durationSecondsInput = document.getElementById('durationSecondsInput');
             const durationWheel = document.getElementById('durationWheel');
@@ -906,6 +1009,8 @@
             const drawingClear = document.getElementById('drawingClear');
             const drawingInput = document.getElementById('drawingInput');
             const drawingToolButtons = document.querySelectorAll('[data-drawing-tool]');
+            const eraserSizePanel = document.getElementById('eraserSizePanel');
+            const eraserSizeButtons = document.querySelectorAll('[data-eraser-size]');
             const sizeScale = document.getElementById('sizeScale');
             const exportBtn = document.getElementById('poopExportBtn');
             const exportModal = document.getElementById('poopExportModal');
@@ -927,6 +1032,7 @@
             const AUTHOR_FILTER_LS_KEY = 'gpPoopAuthorFilter';
             const ANON_LS_KEY = 'gpAnonMode';
             const VIEW_MODE_LS_KEY = 'gpViewMode';
+            const TIME_MODE_LS_KEY = 'gpTimeMode';
             const firebaseConfig = {
                 apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
                 authDomain: "kinosreda-ce8ef.firebaseapp.com",
@@ -976,6 +1082,7 @@
             let viewMode = loadViewMode();
             let selectedAuthor = loadSelectedAuthor();
             let anonymityOn = loadAnonMode();
+            let timeInputMode = loadTimeInputMode();
             const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
             const TIME_WHEEL_ITEM_HEIGHT = 48;
             const DURATION_MAX_MINUTES = 180;
@@ -984,11 +1091,14 @@
             const DRAWING_TOOLS = {
                 pencil: { width: 4, opacity: 1 },
                 marker: { width: 12, opacity: 0.75 },
-                fill: { width: 1, opacity: 1 }
+                fill: { width: 1, opacity: 1 },
+                eraser: { width: 1, opacity: 1 }
             };
+            const ERASER_SIZES = [8, 12, 20, 28];
             let drawingCtx = null;
             let drawingColor = DRAWING_COLORS[0];
             let drawingTool = 'pencil';
+            let eraserSize = ERASER_SIZES[1];
             let drawingActive = false;
             let drawingHasContent = false;
             let drawingPos = null;
@@ -1371,6 +1481,17 @@
             function formatTimeValue(h, m){
                 return `${pad(h)}:${pad(m)}`;
             }
+            function snapTimeToQuarter(val){
+                const parsed = parseTimeValue(val);
+                const rounded = Math.round(parsed.m / 15) * 15;
+                let h = parsed.h;
+                let m = rounded;
+                if (m === 60) {
+                    m = 0;
+                    h = (h + 1) % 24;
+                }
+                return formatTimeValue(h, m);
+            }
             function updateWheelSelection(col, forcedIndex){
                 if (!col) return 0;
                 const list = col.querySelector('.time-wheel-list');
@@ -1418,6 +1539,115 @@
                     list.appendChild(btn);
                 }
             }
+            function buildTimeSelectOptions(){
+                if (!timeSelect) return;
+                timeSelect.innerHTML = '';
+                for (let h = 0; h < 24; h++) {
+                    for (let m = 0; m < 60; m += 15) {
+                        const val = formatTimeValue(h, m);
+                        const opt = document.createElement('option');
+                        opt.value = val;
+                        opt.textContent = val;
+                        timeSelect.appendChild(opt);
+                    }
+                }
+                syncCustomSelect(timeSelect);
+            }
+            function getChevronSvg(){
+                return `
+                    <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                `.trim();
+            }
+            function closeAllCustomSelects(exceptEl){
+                document.querySelectorAll('.cs.open').forEach((cs) => {
+                    if (exceptEl && cs === exceptEl) return;
+                    cs.classList.remove('open');
+                });
+            }
+            function syncCustomSelect(selectEl){
+                if (!selectEl) return;
+                const cs = selectEl.closest('.cs');
+                if (!cs) return;
+                const label = cs.querySelector('.cs-label');
+                const menu = cs.querySelector('.cs-menu');
+                const selected = selectEl.options[selectEl.selectedIndex];
+                if (label) label.textContent = (selected ? selected.textContent : '').trim();
+                if (menu) {
+                    const val = String(selectEl.value);
+                    menu.querySelectorAll('.cs-opt').forEach((btn) => {
+                        btn.setAttribute('aria-selected', String(btn.dataset.value) === val ? 'true' : 'false');
+                    });
+                }
+            }
+            function scrollCustomSelectToValue(selectEl){
+                if (!selectEl) return;
+                const cs = selectEl.closest('.cs');
+                if (!cs) return;
+                const menu = cs.querySelector('.cs-menu');
+                if (!menu) return;
+                const val = String(selectEl.value || '');
+                const target = menu.querySelector(`.cs-opt[data-value="${CSS.escape(val)}"]`);
+                if (!target) return;
+                const top = target.offsetTop - (menu.clientHeight / 2) + (target.offsetHeight / 2);
+                menu.scrollTop = Math.max(0, top);
+            }
+            function makeCustomSelect(selectEl){
+                if (!selectEl) return;
+                if (selectEl.closest('.cs')) {
+                    syncCustomSelect(selectEl);
+                    return;
+                }
+                const cs = document.createElement('div');
+                cs.className = 'cs';
+                selectEl.parentNode.insertBefore(cs, selectEl);
+                cs.appendChild(selectEl);
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'cs-btn';
+                btn.setAttribute('aria-haspopup', 'listbox');
+                btn.innerHTML = `
+                    <span class="cs-label"></span>
+                    ${getChevronSvg()}
+                `;
+                cs.appendChild(btn);
+
+                const menu = document.createElement('div');
+                menu.className = 'cs-menu';
+                menu.setAttribute('role', 'listbox');
+                Array.from(selectEl.options).forEach((opt) => {
+                    const item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'cs-opt';
+                    item.dataset.value = opt.value;
+                    item.setAttribute('role', 'option');
+                    item.textContent = opt.textContent;
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        selectEl.value = opt.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                        syncCustomSelect(selectEl);
+                        cs.classList.remove('open');
+                    });
+                    menu.appendChild(item);
+                });
+                cs.appendChild(menu);
+
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const willOpen = !cs.classList.contains('open');
+                    closeAllCustomSelects(cs);
+                    cs.classList.toggle('open', willOpen);
+                    syncCustomSelect(selectEl);
+                    if (willOpen) {
+                        scrollCustomSelectToValue(selectEl);
+                    }
+                });
+                selectEl.addEventListener('change', () => syncCustomSelect(selectEl));
+                syncCustomSelect(selectEl);
+            }
             function buildTimeWheel(){
                 if (!timeWheel) return;
                 const hourCol = timeWheel.querySelector('[data-part="hour"]');
@@ -1449,6 +1679,29 @@
                 }
                 timeValue = formatted;
                 if (timeInput) timeInput.value = formatted;
+                if (timeSelect) {
+                    timeSelect.value = formatted;
+                    syncCustomSelect(timeSelect);
+                }
+            }
+            function setTimeInputMode(mode){
+                timeInputMode = mode === 'list' ? 'list' : 'wheel';
+                if (timeModeToggle) {
+                    timeModeToggle.classList.toggle('toggle-on', timeInputMode === 'list');
+                }
+                if (timeModeLabel) {
+                    timeModeLabel.textContent = timeInputMode === 'list' ? 'Список' : 'Колесо';
+                }
+                if (timeWheelWrap) {
+                    timeWheelWrap.classList.toggle('hidden', timeInputMode === 'list');
+                }
+                if (timeSelectWrap) {
+                    timeSelectWrap.classList.toggle('hidden', timeInputMode !== 'list');
+                }
+                const current = (timeInput && timeInput.value) ? timeInput.value : (timeValue || defaultTime());
+                const next = timeInputMode === 'list' ? snapTimeToQuarter(current) : current;
+                setTime(next);
+                saveTimeInputMode(timeInputMode);
             }
             function syncDurationFromWheel(){
                 if (!durationWheel) return;
@@ -1730,6 +1983,13 @@
             }
             function saveViewMode(mode){
                 try { localStorage.setItem(VIEW_MODE_LS_KEY, mode); } catch(_) {}
+            }
+            function loadTimeInputMode(){
+                try { return localStorage.getItem(TIME_MODE_LS_KEY) === 'list' ? 'list' : 'wheel'; }
+                catch(_) { return 'wheel'; }
+            }
+            function saveTimeInputMode(mode){
+                try { localStorage.setItem(TIME_MODE_LS_KEY, mode); } catch(_) {}
             }
             function setAnonUI(){
                 if (!anonToggle) return;
@@ -2106,8 +2366,12 @@
                 const config = DRAWING_TOOLS[drawingTool] || DRAWING_TOOLS.pencil;
                 if (drawingCtx) {
                     drawingCtx.strokeStyle = drawingColor;
+                    drawingCtx.globalCompositeOperation = drawingTool === 'eraser' ? 'destination-out' : 'source-over';
                     if (drawingTool === 'fill') {
                         drawingCtx.lineWidth = 1;
+                        drawingCtx.globalAlpha = 1;
+                    } else if (drawingTool === 'eraser') {
+                        drawingCtx.lineWidth = eraserSize;
                         drawingCtx.globalAlpha = 1;
                     } else {
                         drawingCtx.lineWidth = config.width;
@@ -2120,11 +2384,30 @@
                     btn.classList.toggle('ring-amber-400', active);
                     btn.classList.toggle('bg-amber-500/10', active);
                 });
+                updateEraserPanel();
             }
 
             function setDrawingTool(tool){
                 drawingTool = DRAWING_TOOLS[tool] ? tool : 'pencil';
                 applyDrawingTool();
+            }
+
+            function updateEraserPanel(){
+                if (!eraserSizePanel) return;
+                eraserSizePanel.classList.toggle('hidden', drawingTool !== 'eraser');
+            }
+
+            function setEraserSize(size){
+                eraserSize = size;
+                if (eraserSizeButtons.length) {
+                    eraserSizeButtons.forEach(btn => {
+                        const active = Number(btn.dataset.eraserSize) === size;
+                        btn.classList.toggle('ring-2', active);
+                        btn.classList.toggle('ring-amber-400', active);
+                        btn.classList.toggle('bg-amber-500/10', active);
+                    });
+                }
+                if (drawingTool === 'eraser') applyDrawingTool();
             }
 
             function hexToRgba(hex){
@@ -2549,8 +2832,9 @@
                 const firstField = form.querySelector('input:not([type="hidden"]), textarea, select');
                 if (firstField) firstField.focus({ preventScroll: true });
                 const timeVal = withTime || defaultTime();
-                setTime(timeVal);
-                requestAnimationFrame(() => setTime(timeVal));
+                const normalizedTime = timeInputMode === 'list' ? snapTimeToQuarter(timeVal) : timeVal;
+                setTime(normalizedTime);
+                requestAnimationFrame(() => setTime(normalizedTime));
                 const durationVal = Number(durationSecondsInput?.value || 0);
                 setDurationSeconds(durationVal);
                 requestAnimationFrame(() => setDurationSeconds(durationVal));
@@ -2923,6 +3207,17 @@
                 const paperList = paperCol?.querySelector('.time-wheel-list');
                 if (paperList) paperList.addEventListener('scroll', () => onScroll(paperCol));
             }
+            if (timeModeToggle) {
+                timeModeToggle.addEventListener('click', () => {
+                    const next = timeInputMode === 'list' ? 'wheel' : 'list';
+                    setTimeInputMode(next);
+                });
+            }
+            if (timeSelect) {
+                timeSelect.addEventListener('change', () => {
+                    if (timeSelect.value) setTime(timeSelect.value);
+                });
+            }
             if (exportBtn) exportBtn.addEventListener('click', openExportModal);
             if (closeExportBtn) closeExportBtn.addEventListener('click', closeExportModal);
             if (cancelExportBtn) cancelExportBtn.addEventListener('click', closeExportModal);
@@ -3029,6 +3324,12 @@
                 btn.addEventListener('click', () => setDrawingColor(btn.dataset.color));
             });
             setDrawingColor(drawingColor);
+            if (eraserSizeButtons.length) {
+                eraserSizeButtons.forEach(btn => {
+                    btn.addEventListener('click', () => setEraserSize(Number(btn.dataset.eraserSize)));
+                });
+                setEraserSize(eraserSize);
+            }
             if (drawingToolButtons.length) {
                 drawingToolButtons.forEach(btn => {
                     btn.addEventListener('click', () => setDrawingTool(btn.dataset.drawingTool));
@@ -3053,6 +3354,9 @@
                 setAnonUI();
             }
             document.addEventListener('click', (e) => {
+                if (!e.target.closest('.cs')) {
+                    closeAllCustomSelects();
+                }
                 if (!authorDropdown.classList.contains('hidden') && !authorDropdown.contains(e.target) && !authorFilterBtn.contains(e.target)) {
                     closeAuthorDropdown();
                 }
@@ -3194,13 +3498,18 @@
             initDrawing();
             renderBristolOptions();
             buildTimeWheel();
+            buildTimeSelectOptions();
+            makeCustomSelect(timeSelect);
             buildDurationWheel();
             buildPaperWheel();
             highlightViewButtons();
-            setTime(defaultTime());
+            const initTime = defaultTime();
+            const normalizedInitTime = timeInputMode === 'list' ? snapTimeToQuarter(initTime) : initTime;
+            setTime(normalizedInitTime);
+            setTimeInputMode(timeInputMode);
             setDurationSeconds(0);
             setPaperValue(1);
-            requestAnimationFrame(() => setTime(defaultTime()));
+            requestAnimationFrame(() => setTime(normalizedInitTime));
             initFirebase();
             renderCalendar();
             renderEntries();
