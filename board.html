@@ -1670,6 +1670,7 @@
         const dragState = { active: false, card: null, startX: 0, startY: 0, originX: 0, originY: 0 };
         const resizeState = { active: false, card: null, startX: 0, startY: 0, startW: 0, startH: 0 };
         const panState = { active: false, startX: 0, startY: 0, originX: 0, originY: 0 };
+        const pinchState = { active: false, startDist: 0, startScale: 1, startX: 0, startY: 0 };
         let boardDb = null;
         let layoutSaveTimer = null;
         const VIEWPORT_LS_KEY = 'boardViewport';
@@ -2487,6 +2488,46 @@
             applyTransform();
         }
 
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
+                event.preventDefault();
+                pinchState.active = true;
+                pinchState.startDist = getTouchDistance(event.touches);
+                pinchState.startScale = boardState.scale;
+                const rect = board.getBoundingClientRect();
+                const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+                const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+                pinchState.startX = (cx - boardState.x) / boardState.scale;
+                pinchState.startY = (cy - boardState.y) / boardState.scale;
+            }
+        }
+
+        function handleTouchMove(event) {
+            if (!pinchState.active || event.touches.length !== 2) return;
+            event.preventDefault();
+            const dist = getTouchDistance(event.touches);
+            if (!dist || !pinchState.startDist) return;
+            const ratio = dist / pinchState.startDist;
+            const nextScale = clamp(pinchState.startScale * ratio, 0.3, 1.9);
+            const rect = board.getBoundingClientRect();
+            const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+            const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+            boardState.scale = nextScale;
+            boardState.x = cx - pinchState.startX * nextScale;
+            boardState.y = cy - pinchState.startY * nextScale;
+            applyTransform();
+        }
+
+        function handleTouchEnd() {
+            pinchState.active = false;
+        }
+
         document.addEventListener('keydown', (event) => {
             if (event.code === 'Space') {
                 keys.space = true;
@@ -2503,6 +2544,10 @@
         board.addEventListener('pointerup', endPointer);
         board.addEventListener('pointercancel', endPointer);
         board.addEventListener('wheel', handleWheel, { passive: false });
+        board.addEventListener('touchstart', handleTouchStart, { passive: false });
+        board.addEventListener('touchmove', handleTouchMove, { passive: false });
+        board.addEventListener('touchend', handleTouchEnd);
+        board.addEventListener('touchcancel', handleTouchEnd);
 
         const cardEntries = initCards();
         cardEntries.forEach(({ card }) => {
