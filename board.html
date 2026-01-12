@@ -1,0 +1,4471 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Киносреда — Доска</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <script>
+        (function () {
+            try {
+                const cu = localStorage.getItem('currentUser');
+                if (!cu) {
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+            } catch (e) {
+                location.replace('login.html');
+            }
+        })();
+        (function(){
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch(_) {}
+        })();
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
+
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+                ensureStylesheet(family);
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                window.__loadLogoFont = waitForFont;
+                waitForFont(fam);
+            } catch(_) {
+                window.__loadLogoFont = waitForFont;
+                markReady();
+            }
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        html:not(.authed) body { visibility: hidden; }
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
+        :root {
+            --logo-font: 'Rubik Wet Paint';
+            --accent: #f59e0b;
+            --accent-strong: #fcd34d;
+            --accent-soft: rgba(245, 158, 11, 0.2);
+            --bg-1: #0a0d12;
+            --bg-2: #121824;
+            --bg-3: #1a2231;
+            --grid-major: rgba(255, 255, 255, 0.12);
+            --grid-minor: rgba(255, 255, 255, 0.04);
+            --card-bg: rgba(18, 23, 33, 0.86);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --card-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+            --text: #e5e7eb;
+            --muted: rgba(229, 231, 235, 0.6);
+        }
+        html[data-theme="white"] {
+            --accent: #ffffff;
+            --accent-strong: #f3f4f6;
+            --accent-soft: rgba(255, 255, 255, 0.2);
+            --bg-1: #0c0f14;
+            --bg-2: #171c25;
+            --bg-3: #1f2733;
+            --grid-major: rgba(255, 255, 255, 0.14);
+            --grid-minor: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(22, 26, 35, 0.86);
+            --card-border: rgba(255, 255, 255, 0.16);
+            --text: #f8fafc;
+            --muted: rgba(248, 250, 252, 0.65);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Comfortaa', cursive;
+            color: var(--text);
+            background: radial-gradient(1200px 800px at 15% 20%, rgba(245, 158, 11, 0.12), transparent 60%),
+                        radial-gradient(900px 700px at 85% 10%, rgba(99, 102, 241, 0.08), transparent 60%),
+                        linear-gradient(140deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3));
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        button, input, select, textarea { font-family: inherit; }
+
+        .board {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            cursor: grab;
+            touch-action: none;
+        }
+        .board.is-panning { cursor: grabbing; }
+
+        .board-surface {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 5600px;
+            height: 3600px;
+            transform-origin: 0 0;
+        }
+
+        .grid-layer {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--grid-minor) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+                linear-gradient(var(--grid-major) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+            background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
+            background-position: 0 0, 0 0, 0 0, 0 0;
+            opacity: 0.9;
+        }
+
+        .cards-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .card {
+            position: absolute;
+            width: 280px;
+            min-height: 190px;
+            padding: 18px 18px 28px;
+            border-radius: 20px;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), transparent 60%), var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: grab;
+            user-select: none;
+            animation: card-fade 0.6s ease both;
+        }
+        .card.remote-moving {
+            transition: transform 0.08s linear, width 0.08s linear, height 0.08s linear;
+        }
+
+        .card:active { cursor: grabbing; }
+
+        .card-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: grab;
+        }
+        .card-head:active { cursor: grabbing; }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .card-desc {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--muted);
+        }
+
+        .card-preview {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .preview-frame {
+            display: block;
+            width: 100%;
+            height: 320px;
+            border: 0;
+            background: transparent;
+        }
+
+        .card-actions {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .card-resize-handle {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            width: 14px;
+            height: 14px;
+            border-right: 2px solid rgba(255, 255, 255, 0.4);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+            cursor: se-resize;
+            opacity: 0.7;
+        }
+        .card-resize-handle:hover { opacity: 1; }
+
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            color: var(--accent-strong);
+            font-weight: 600;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .card-link:hover {
+            transform: translateY(-1px);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-chip {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent-strong);
+            background: rgba(245, 158, 11, 0.15);
+            padding: 6px 10px;
+            border-radius: 999px;
+        }
+
+        .rating-card {
+            width: 420px;
+            min-height: 260px;
+        }
+        .poop-card {
+            width: 420px;
+            min-height: 320px;
+        }
+        .poop-list {
+            display: grid;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+        .poop-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: grid;
+            gap: 6px;
+        }
+        .poop-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .poop-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+        .poop-chip {
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .beer-info-card {
+            width: 360px;
+            min-height: 220px;
+        }
+        .beer-info-grid {
+            display: grid;
+            gap: 10px;
+            font-size: 12px;
+            color: #e5e7eb;
+        }
+        .beer-info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 6px 8px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .beer-info-label { color: var(--muted); }
+        .beer-info-close {
+            border: 0;
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            border-radius: 999px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .event-card {
+            width: 520px;
+            min-height: 520px;
+        }
+        .event-date-label {
+            font-size: 12px;
+            color: var(--muted);
+            margin: 2px 0 6px;
+        }
+        .event-calendar {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .event-calendar-week {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .event-day {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            color: #e2e8f0;
+            padding: 6px 4px;
+            display: grid;
+            gap: 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .event-day:hover { border-color: rgba(245, 158, 11, 0.5); transform: translateY(-1px); }
+        .event-day.is-active {
+            border-color: rgba(245, 158, 11, 0.7);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fde68a;
+        }
+        .event-day.is-center {
+            box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.5);
+        }
+        .event-day-title {
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .event-day-meta {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .event-section {
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 12px;
+            display: grid;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .event-section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-strong);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .event-input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(0, 0, 0, 0.4);
+            color: #e5e7eb;
+            font-size: 12px;
+        }
+        .event-btn {
+            border-radius: 10px;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            background: rgba(34, 197, 94, 0.18);
+            color: #bbf7d0;
+            font-weight: 600;
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+        .event-btn:hover { background: rgba(34, 197, 94, 0.28); }
+        .event-attendees {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .event-attendee {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+            font-size: 11px;
+            color: #bbf7d0;
+        }
+        .event-attendee button {
+            border: 0;
+            background: transparent;
+            color: #fca5a5;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .event-movie-inputs {
+            display: flex;
+            gap: 6px;
+        }
+        .event-movie-add {
+            border-radius: 10px;
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            background: rgba(168, 85, 247, 0.18);
+            color: #e9d5ff;
+            font-weight: 700;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .event-movie-list {
+            display: grid;
+            gap: 6px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .event-movie-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .event-movie-item.is-leader { border-color: rgba(245, 158, 11, 0.55); }
+        .event-movie-vote {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e5e7eb;
+            font-size: 11px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+        }
+        .event-movie-vote.is-voted {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: rgba(245, 158, 11, 0.6);
+            color: #fde68a;
+        }
+        .event-movie-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .event-movie-author {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .event-movie-remove {
+            border: 0;
+            background: transparent;
+            color: #f87171;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .event-total {
+            border-radius: 14px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fde68a;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px;
+            font-size: 13px;
+        }
+        .roulette-card {
+            width: 520px;
+            min-height: 520px;
+        }
+        .roulette-layout {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto auto 1fr;
+            min-height: 0;
+        }
+        .roulette-wheel-wrap {
+            position: relative;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .roulette-pointer {
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 16px solid rgba(255, 255, 255, 0.9);
+            filter: drop-shadow(0 6px 10px rgba(0,0,0,0.6));
+            z-index: 2;
+        }
+        .roulette-wheel {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.55);
+            overflow: hidden;
+            position: relative;
+            transform: rotate(0deg);
+            transition: transform 4.2s cubic-bezier(0.12, 0.78, 0.18, 1);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            will-change: transform;
+        }
+        .roulette-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .roulette-center {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            pointer-events: none;
+        }
+        .roulette-spin {
+            pointer-events: auto;
+            width: 96px;
+            height: 96px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.78);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.6);
+            color: #f8fafc;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.2s ease;
+        }
+        .roulette-spin:hover { transform: scale(1.03); border-color: rgba(245, 158, 11, 0.6); background: rgba(0,0,0,0.88); }
+        .roulette-spin[disabled] { opacity: 0.4; cursor: not-allowed; }
+        .roulette-result {
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .roulette-result strong { display: block; font-size: 14px; color: #f8fafc; margin-top: 2px; }
+        .roulette-actions {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .roulette-btn {
+            padding: 8px 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.06);
+            color: #e5e7eb;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .roulette-btn:hover { background: rgba(255, 255, 255, 0.12); }
+        .roulette-list {
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.25);
+            overflow: auto;
+            max-height: 100%;
+            min-height: 0;
+            padding-bottom: 4px;
+        }
+        .roulette-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .roulette-row:last-child { border-bottom: 0; }
+        .roulette-toggle {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fde68a;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .roulette-toggle.is-remove { color: #fca5a5; border-color: rgba(248, 113, 113, 0.4); }
+        .roulette-name {
+            font-size: 12px;
+            color: #f8fafc;
+            font-weight: 600;
+        }
+        .planning-card {
+            width: 520px;
+            min-height: 420px;
+        }
+        .planning-list {
+            display: grid;
+            gap: 10px;
+            overflow: auto;
+            max-height: none;
+            padding-right: 4px;
+        }
+        .planning-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.25);
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+        }
+        .planning-item:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+        }
+        .planning-item-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+        .planning-item-meta {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .planning-item-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .planning-action-btn {
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fcd34d;
+            border-radius: 10px;
+            padding: 6px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .planning-action-btn:hover { border-color: rgba(245, 158, 11, 0.5); }
+        .planning-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .planning-count {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .planning-add-btn {
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.15);
+            color: #fde68a;
+            border-radius: 12px;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .planning-empty {
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            padding: 12px 0;
+        }
+        .planning-participant-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .planning-participant-btn {
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+            color: #e5e7eb;
+            border-radius: 8px;
+            padding: 3px 6px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .planning-participant-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fde68a;
+        }
+        .planning-participant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.3);
+            margin-top: 10px;
+        }
+        .planning-participant-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.35);
+            font-size: 12px;
+            color: #e5e7eb;
+        }
+        .planning-participant-item span { flex: 1; }
+        .planning-participant-item:hover {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fcd34d;
+        }
+        .planning-participant-item input { accent-color: #f59e0b; }
+        .planning-participant-add {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .planning-participant-add button {
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.06);
+            color: #e5e7eb;
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .planning-participant-add button:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fde68a;
+        }
+        .planning-note {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+        .backlog-board {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            min-height: 320px;
+        }
+        .backlog-column {
+            min-width: 320px;
+            max-width: 320px;
+            background: rgba(18, 23, 33, 0.9);
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            flex-direction: column;
+            max-height: 520px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .backlog-column.drag-over {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 20px var(--glow-box-1);
+        }
+        .backlog-column.column-dragging { opacity: 0.6; }
+        .column-header {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab;
+        }
+        .column-header:active { cursor: grabbing; }
+        .column-title { white-space: nowrap; }
+        .column-cards {
+            padding: 8px;
+            flex: 1;
+            overflow-y: auto;
+            min-height: 100px;
+        }
+        .backlog-card {
+            background: rgba(30, 35, 50, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, transform 0.2s ease;
+        }
+        .backlog-card:hover {
+            border-color: var(--accent-border-50);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        .backlog-card.dragging { opacity: 0.5; cursor: grabbing; }
+        .backlog-drag-ghost {
+            position: fixed;
+            z-index: 60;
+            pointer-events: none;
+            opacity: 0.85;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+            will-change: transform;
+        }
+        .backlog-card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .backlog-card-desc {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        .backlog-card-ratings {
+            font-size: 11px;
+            color: #c7d2fe;
+        }
+        .backlog-card-author {
+            font-size: 11px;
+            color: #64748b;
+        }
+        body.backlog-touch-dragging { touch-action: none; }
+        .rating-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .rating-high { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+        .rating-medium { background: linear-gradient(135deg, #eab308, #ca8a04); color: #111; }
+        .rating-low { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+        .watch-count {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .review-count {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        .backlog-icon-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.25);
+            color: #e5e7eb;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .backlog-icon-btn:hover { border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; }
+        .add-column-btn {
+            min-width: 320px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .add-column-btn:hover {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 70;
+            padding: 16px;
+        }
+        .modal.flex { display: flex; }
+        .hidden { display: none !important; }
+        .modal-card {
+            width: min(92vw, 420px);
+            background: rgba(8, 8, 8, 0.95);
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            padding: 20px;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .modal-card-wide { width: min(640px, 94vw); }
+        .modal-section {
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            margin-bottom: 12px;
+            max-width: 100%;
+            box-sizing: border-box;
+            word-break: break-word;
+        }
+        .modal-section * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        .modal-card h3 {
+            margin: 0 0 12px;
+            color: var(--accent-strong);
+            font-size: 18px;
+        }
+        .modal-input, .modal-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(0, 0, 0, 0.5);
+            color: #e5e7eb;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .modal-textarea { min-height: 90px; resize: vertical; }
+        .modal-list {
+            font-size: 11px;
+            color: #e5e7eb;
+            overflow: auto;
+            display: grid;
+            gap: 6px;
+            word-break: break-word;
+            padding-right: 4px;
+        }
+        .modal-list-sm { max-height: 96px; }
+        .modal-list-md { max-height: 120px; }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e5e7eb;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-btn.primary {
+            background: rgba(245, 158, 11, 0.25);
+            border-color: rgba(245, 158, 11, 0.45);
+            color: #fff7ed;
+        }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .gap-1 { gap: 4px; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .flex-wrap { flex-wrap: wrap; }
+        .text-xs { font-size: 11px; }
+        .text-sm { font-size: 13px; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mb-1 { margin-bottom: 4px; }
+        .mb-2 { margin-bottom: 8px; }
+        .pr-7 { padding-right: 28px; }
+        .text-white { color: #f8fafc; }
+        .text-gray-300 { color: #d1d5db; }
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-500 { color: #6b7280; }
+        .text-gray-600 { color: #4b5563; }
+        .text-amber-400 { color: #f59e0b; }
+        .text-amber-300 { color: #fcd34d; }
+        .cursor-grab { cursor: grab; }
+        .poop-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .poop-day {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 6px;
+            font-size: 11px;
+            color: #e2e8f0;
+            display: grid;
+            gap: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .poop-day.is-active {
+            border-color: rgba(245, 158, 11, 0.6);
+            background: rgba(245, 158, 11, 0.15);
+            color: #fde68a;
+        }
+        .poop-day-count {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fcd34d;
+            justify-self: center;
+        }
+        .poop-entry {
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(0, 0, 0, 0.35);
+            padding: 12px;
+            display: grid;
+            gap: 10px;
+        }
+        .poop-entry-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .poop-entry-time {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent-strong);
+        }
+        .poop-entry-author {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .poop-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fde68a;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .poop-entry-grid {
+            display: grid;
+            gap: 6px;
+            font-size: 12px;
+            color: #e5e7eb;
+        }
+        .poop-entry-grid span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .poop-entry-comment {
+            font-size: 12px;
+            color: #e5e7eb;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .poop-drawing-toggle {
+            font-size: 12px;
+            color: #fde68a;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 12px;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+        .poop-drawing-panel {
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .poop-hidden { display: none; }
+        .bristol-icon { width: 38px; height: 22px; }
+        .bristol-icon path,
+        .bristol-icon rect,
+        .bristol-icon circle { stroke-linecap: round; stroke-linejoin: round; }
+        .scale-value { display: inline-block; min-width: 18px; text-align: right; }
+        .rating-list {
+            display: grid;
+            gap: 10px;
+        }
+        .rating-meta {
+            font-size: 12px;
+            color: var(--muted);
+        }
+        .rating-scroll {
+            max-height: none;
+            overflow: auto;
+            padding-right: 6px;
+            flex: 1;
+        }
+        .rating-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .rating-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+        }
+        .rating-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .rating-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 10px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .rating-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .rating-bar {
+            position: relative;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .rating-bar-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.4), rgba(245, 158, 11, 0.95));
+        }
+
+        .rating-tag {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-strong);
+        }
+
+        .rating-my {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+            display: block;
+        }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-backdrop.is-open { display: flex; }
+        .modal-backdrop .modal-card {
+            width: min(92vw, 420px);
+            background: #0f141b;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            padding: 18px;
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.45);
+        }
+        .modal-backdrop .modal-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            color: var(--accent-strong);
+        }
+        .modal-backdrop .modal-field {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(0, 0, 0, 0.35);
+            color: var(--text);
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+        .modal-backdrop .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-backdrop .modal-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-backdrop .modal-btn.primary {
+            background: linear-gradient(120deg, rgba(245, 158, 11, 0.8), rgba(245, 158, 11, 0.55));
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #fff7ed;
+        }
+
+        .card-nested {
+            margin-top: 8px;
+            padding: 12px;
+            border-radius: 16px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            display: grid;
+            gap: 8px;
+        }
+
+        .nested-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-strong);
+        }
+
+        .nested-link {
+            font-size: 12px;
+            color: var(--text);
+            text-decoration: none;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            width: fit-content;
+        }
+
+        .nested-link:hover { background: rgba(255, 255, 255, 0.14); }
+
+        .board-header {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 14px;
+            border-radius: 18px;
+            background: rgba(6, 8, 12, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(14px);
+            z-index: 20;
+        }
+
+        .board-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(255, 255, 255, 0.1));
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo-mark svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .logo-text {
+            font-family: var(--logo-font), 'Comfortaa', cursive;
+            font-size: 18px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .board-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 0;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.14); box-shadow: 0 14px 22px rgba(0, 0, 0, 0.3); }
+        .btn-danger { color: #fecaca; background: rgba(248, 113, 113, 0.16); }
+        .btn-danger:hover { background: rgba(248, 113, 113, 0.28); }
+
+        .avatar {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.2);
+            display: grid;
+            place-items: center;
+            font-size: 14px;
+        }
+
+        @keyframes card-fade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 900px) {
+            .board-header {
+                top: 12px;
+                right: 12px;
+                flex-wrap: wrap;
+                justify-content: center;
+                left: 12px;
+            }
+            .logo-text { font-size: 16px; }
+            .card { width: 250px; }
+            .rating-card { width: 300px; }
+            .poop-card { width: 300px; }
+            .event-card { width: 320px; }
+            .roulette-card { width: 320px; }
+            .planning-card { width: 320px; }
+            .preview-frame { height: 260px; }
+        }
+        .cursor-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+        .user-cursor {
+            position: absolute;
+            transform: translate(0, 0);
+            transition: transform 0.08s linear;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #f8fafc;
+            font-size: 11px;
+            font-weight: 600;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        }
+        .cursor-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.85);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+        }
+        .cursor-label {
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <header class="board-header">
+        <a class="board-logo" href="index.html" aria-label="Киносреда">
+            <span class="logo-text">Киносреда</span>
+        </a>
+        <div class="board-actions">
+            <a href="profile.html" class="btn" title="Профиль">
+                <span class="avatar">👤</span>
+                <span id="profileName">Профиль</span>
+            </a>
+            <button type="button" class="btn btn-danger" onclick="logout()">Выйти</button>
+        </div>
+    </header>
+
+    <main class="board" id="board">
+        <div class="board-surface" id="surface">
+            <div class="grid-layer"></div>
+            <div class="cursor-layer" id="cursorLayer"></div>
+            <div class="cards-layer" id="cards"></div>
+        </div>
+    </main>
+    <div class="modal-backdrop" id="addBeerModal" aria-hidden="true">
+        <div class="modal-card">
+            <h3>Добавить пиво</h3>
+            <input type="text" id="beerNameInput" class="modal-field" placeholder="Название...">
+            <select id="beerTypeInput" class="modal-field">
+                <option value="Светлое">Светлое</option>
+                <option value="Тёмное">Тёмное</option>
+            </select>
+            <select id="beerStyleInput" class="modal-field">
+                <option value="Lager">Lager</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Pilsner">Pilsner</option>
+                <option value="Cider">Cider</option>
+                <option value="Bock">Bock</option>
+                <option value="Marzen">Marzen</option>
+                <option value="Ale">Ale</option>
+                <option value="Porter">Porter</option>
+                <option value="Stout">Stout</option>
+                <option value="Dunkel">Dunkel</option>
+                <option value="Weizen">Weizen</option>
+                <option value="Hell">Hell</option>
+                <option value="IPA">IPA</option>
+                <option value="APA">APA</option>
+                <option value="Kellerbier">Kellerbier</option>
+                <option value="Dubbel">Dubbel</option>
+                <option value="Tripel">Tripel</option>
+            </select>
+            <select id="beerFilteredInput" class="modal-field">
+                <option value="Фильтрованное">Фильтрованное</option>
+                <option value="Нефильтрованное">Нефильтрованное</option>
+            </select>
+            <select id="beerCountryInput" class="modal-field">
+                <option value="Бельгия">🇧🇪 Бельгия</option>
+                <option value="Великобритания">🇬🇧 Великобритания</option>
+                <option value="Германия">🇩🇪 Германия</option>
+                <option value="Китай">🇨🇳 Китай</option>
+                <option value="Нидерланды">🇳🇱 Нидерланды</option>
+                <option value="Россия">🇷🇺 Россия</option>
+                <option value="Чехия">🇨🇿 Чехия</option>
+                <option value="Австрия">🇦🇹 Австрия</option>
+                <option value="Сербия">🇷🇸 Сербия</option>
+                <option value="Франция">🇫🇷 Франция</option>
+                <option value="Испания">🇪🇸 Испания</option>
+                <option value="Литва">🇱🇹 Литва</option>
+                <option value="Южная Корея">🇰🇷 Южная Корея</option>
+                <option value="Вьетнам">🇻🇳 Вьетнам</option>
+                <option value="США">🇺🇸 США</option>
+                <option value="Мексика">🇲🇽 Мексика</option>
+            </select>
+            <select id="beerVolumeInput" class="modal-field">
+                <option value="0.33">0.33 л</option>
+                <option value="0.45">0.45 л</option>
+                <option value="0.5">0.5 л</option>
+                <option value="0.75">0.75 л</option>
+                <option value="1">1 л</option>
+                <option value="5">5 л</option>
+            </select>
+            <input type="number" id="beerAlcoholInput" class="modal-field" placeholder="Крепость (%)" min="0" max="100" step="0.1">
+            <input type="number" id="beerCaloriesInput" class="modal-field" placeholder="Калорийность (ккал)" min="0" max="2000" step="1">
+            <div class="modal-actions">
+                <button class="modal-btn primary" type="button" onclick="addBeer()">Добавить</button>
+                <button class="modal-btn" type="button" onclick="closeAddBeerModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <div id="addColumnModal" class="modal hidden">
+        <div class="modal-card">
+            <h3>Добавить колонку</h3>
+            <input type="text" id="columnNameInput" class="modal-input" placeholder="Название колонки...">
+            <div class="modal-actions">
+                <button class="modal-btn primary" onclick="createColumn()">Создать</button>
+                <button class="modal-btn" onclick="closeAddColumnModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <div id="editColumnModal" class="modal hidden">
+        <div class="modal-card">
+            <h3>Редактировать колонку</h3>
+            <input type="text" id="editColumnNameInput" class="modal-input" placeholder="Название колонки...">
+            <div class="modal-actions" style="margin-bottom:10px;">
+                <button class="modal-btn primary" onclick="saveColumnEdit()">Сохранить</button>
+                <button class="modal-btn" onclick="closeEditColumnModal()">Отмена</button>
+            </div>
+            <button class="modal-btn" onclick="deleteColumn()" style="width:100%; background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5); color:#fecaca;">Удалить колонку</button>
+        </div>
+    </div>
+    <div id="addCardModal" class="modal hidden">
+        <div class="modal-card">
+            <h3>Добавить фильм</h3>
+            <input type="text" id="cardTitleInput" class="modal-input" placeholder="Название фильма...">
+            <textarea id="cardDescInput" class="modal-textarea" placeholder="Описание (опционально)..."></textarea>
+            <input type="number" id="cardRatingInput" class="modal-input" placeholder="Моя оценка (0-10)" min="0" max="10" step="0.1">
+            <div class="modal-actions">
+                <button class="modal-btn primary" onclick="createCard()">Добавить</button>
+                <button class="modal-btn" onclick="closeAddCardModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <div id="editCardModal" class="modal hidden">
+        <div class="modal-card modal-card-wide">
+            <h3>Редактировать фильм</h3>
+            <input type="text" id="editCardTitleInput" class="modal-input" placeholder="Название фильма...">
+            <textarea id="editCardDescInput" class="modal-textarea" placeholder="Описание..."></textarea>
+            <input type="number" id="editCardRatingInput" class="modal-input" placeholder="Моя оценка (0-10)" min="0" max="10" step="0.1">
+            <div id="watchHistorySection" class="modal-section" style="display:none;">
+                <h4 style="margin:0 0 8px; color:#86efac; font-size:14px;">👁 История просмотров</h4>
+                <div id="watchHistoryList" class="modal-list modal-list-sm"></div>
+            </div>
+            <div id="cardRatingsSection" class="modal-section">
+                <h4 style="margin:0 0 8px; color:#fcd34d; font-size:14px;">⭐ Оценки</h4>
+                <div style="font-size:11px; color:rgba(255,255,255,0.6); margin-bottom:6px;">
+                    Средняя: <span id="cardAvgRating" style="color:#fcd34d; font-weight:700;">—</span> • Оценок: <span id="cardRatingsCount" style="color:#e5e7eb;">0</span>
+                </div>
+                <div id="cardRatingsList" class="modal-list modal-list-sm"></div>
+            </div>
+            <div id="cardReviewsSection" class="modal-section">
+                <h4 style="margin:0 0 8px; color:#93c5fd; font-size:14px;">💬 Отзывы</h4>
+                <div id="cardReviewsList" class="modal-list modal-list-md"></div>
+                <div id="reviewInputSection" style="margin-top:8px;">
+                    <textarea id="cardReviewInput" class="modal-textarea" placeholder="Напишите ваш отзыв..."></textarea>
+                    <div class="modal-actions">
+                        <button class="modal-btn primary" onclick="saveCardReview()">Сохранить отзыв</button>
+                        <button class="modal-btn" id="deleteReviewBtn" onclick="deleteCardReview()">Удалить</button>
+                    </div>
+                </div>
+                <button id="deleteReviewBtnOutside" class="modal-btn" style="width:100%; margin-top:6px; display:none;" onclick="deleteCardReview()">Удалить мой отзыв</button>
+            </div>
+            <div class="modal-actions" style="margin-bottom:10px;">
+                <button class="modal-btn primary" onclick="saveCardEdit()">Сохранить</button>
+                <button class="modal-btn" onclick="closeEditCardModal()">Отмена</button>
+            </div>
+            <button class="modal-btn" onclick="deleteCard()" style="width:100%; background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.5); color:#fecaca;">Удалить фильм</button>
+        </div>
+    </div>
+    <div id="planningModal" class="modal hidden">
+        <div class="modal-card">
+            <h3 id="planningModalTitle">Новое мероприятие</h3>
+            <p class="text-xs text-gray-400">Введите название события.</p>
+            <input id="planningNameInput" class="modal-input" type="text" placeholder="Название мероприятия">
+            <div>
+                <div class="text-xs text-gray-400 mb-2">Участники</div>
+                <div class="planning-participant-actions">
+                    <button type="button" class="planning-participant-btn" data-planning-action="all">Выбрать всех</button>
+                    <button type="button" class="planning-participant-btn" data-planning-action="clear">Сбросить</button>
+                </div>
+                <div id="planningParticipantsList" class="planning-participant-list"></div>
+                <div class="planning-participant-add">
+                    <input id="planningParticipantInput" class="modal-input" type="text" placeholder="Добавить участника вручную">
+                    <button type="button" id="planningParticipantAddBtn">Добавить</button>
+                </div>
+                <div class="planning-note">Если никого не выбрать — участвуют все пользователи сайта.</div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn" type="button" onclick="closePlanningModal()">Отмена</button>
+                <button class="modal-btn primary" type="button" onclick="savePlanningEvent()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pages = [
+            { kind: 'event', label: 'Подтверждение участия', file: 'index.html' },
+            { kind: 'beer', label: 'Рейтинг пива', file: 'index.html' },
+            { kind: 'poop', label: 'Покаки', file: 'pokaki.html' },
+            { kind: 'roulette', label: 'Пивная рулетка', file: 'roulette.html' },
+            { kind: 'planning', label: 'Планирование', file: 'planning.html' },
+            { kind: 'backlog', label: 'Бэклог фильмов', file: 'index.html' }
+        ];
+
+        const cardsLayer = document.getElementById('cards');
+        const surface = document.getElementById('surface');
+        const board = document.getElementById('board');
+        const boardState = { x: 0, y: 0, scale: 1 };
+        const dragState = { active: false, card: null, startX: 0, startY: 0, originX: 0, originY: 0 };
+        const resizeState = { active: false, card: null, startX: 0, startY: 0, startW: 0, startH: 0 };
+        const panState = { active: false, startX: 0, startY: 0, originX: 0, originY: 0 };
+        const pinchState = { active: false, startDist: 0, startScale: 1, startX: 0, startY: 0 };
+        let boardDb = null;
+        let layoutSaveTimer = null;
+        const VIEWPORT_LS_KEY = 'boardViewport';
+        let viewportSaveTimer = null;
+        let viewportRestored = false;
+        const keys = { space: false };
+        const eventData = { events: {} };
+        let selectedEventDateKey = null;
+        let topCardZ = 2;
+        let rouletteItems = [];
+        let rouletteSpinning = false;
+        let rouletteRotation = 0;
+        let rouletteResizeObserver = null;
+        let beerDataCache = [];
+        let planningDb = null;
+        let planningEventsCache = [];
+        let planningUsersList = [];
+        let planningCustomParticipants = [];
+        let planningEditingEventId = null;
+        let liveCardTimer = null;
+        let pendingLiveCard = null;
+        const CURSOR_LS_KEY = 'boardClientId';
+        const cursorMap = new Map();
+        let collabReady = false;
+        let beerInfoLiveTimer = null;
+        let pendingBeerInfo = null;
+        const LIVE_UPDATE_MS = 120;
+        const LIVE_MIN_DELTA = 2;
+        const lastLiveCardSent = new Map();
+        const lastBeerInfoSent = new Map();
+
+        function applyTransform() {
+            surface.style.transform = `translate(${boardState.x}px, ${boardState.y}px) scale(${boardState.scale})`;
+            queueViewportSave();
+        }
+
+        function setCardPosition(card, x, y) {
+            card.dataset.x = x;
+            card.dataset.y = y;
+            card.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function setCardSize(card, w, h) {
+            if (!w || !h) return;
+            card.dataset.w = w;
+            card.dataset.h = h;
+            card.style.width = `${w}px`;
+            card.style.height = `${h}px`;
+        }
+
+        function addResizeHandle(card) {
+            const handle = document.createElement('div');
+            handle.className = 'card-resize-handle';
+            handle.addEventListener('pointerdown', (event) => startResize(event, card));
+            card.appendChild(handle);
+        }
+
+        function getClientId() {
+            try {
+                const stored = localStorage.getItem(CURSOR_LS_KEY);
+                if (stored) return stored;
+                const next = `c_${Math.random().toString(36).slice(2, 10)}`;
+                localStorage.setItem(CURSOR_LS_KEY, next);
+                return next;
+            } catch (_) {
+                return `c_${Math.random().toString(36).slice(2, 10)}`;
+            }
+        }
+
+        function updateEventCardMinHeight(card) {
+            if (!card) return;
+            const total = card.querySelector('.event-total');
+            if (!total) return;
+            const totalBottom = total.offsetTop + total.offsetHeight;
+            const padding = 18;
+            const minHeight = Math.ceil(totalBottom + padding);
+            card.dataset.minH = String(minHeight);
+        }
+
+        function updateRouletteCardMinHeight(card) {
+            if (!card) return;
+            const list = card.querySelector('.roulette-list');
+            if (!list) return;
+            const row = list.querySelector('.roulette-row');
+            const rowHeight = row ? row.offsetHeight : 40;
+            const listPadding = 12;
+            const listBottom = list.offsetTop + (rowHeight * 5) + listPadding;
+            const padding = 18;
+            const minHeight = Math.ceil(listBottom + padding);
+            card.dataset.minH = String(minHeight);
+        }
+
+        function getCardMinSize(card) {
+            let minW = 280;
+            let minH = 220;
+            if (!card) return { minW, minH };
+            if (card.dataset.cardId === 'event') {
+                const stored = parseFloat(card.dataset.minH || '0');
+                if (stored > minH) minH = stored;
+            }
+            if (card.dataset.cardId === 'roulette') {
+                const stored = parseFloat(card.dataset.minH || '0');
+                if (stored > minH) minH = stored;
+            }
+            return { minW, minH };
+        }
+
+        function bringCardToFront(card) {
+            if (!card) return;
+            topCardZ += 1;
+            card.style.zIndex = String(topCardZ);
+        }
+
+        function queueLiveCardUpdate(card) {
+            if (!boardDb || !card || card.dataset.temp === 'true') return;
+            const id = card.dataset.cardId;
+            if (!id) return;
+            const next = {
+                id,
+                x: parseFloat(card.dataset.x || '0'),
+                y: parseFloat(card.dataset.y || '0'),
+                w: Math.round(card.offsetWidth),
+                h: Math.round(card.offsetHeight)
+            };
+            const last = lastLiveCardSent.get(id);
+            if (last) {
+                const dx = Math.abs(next.x - last.x);
+                const dy = Math.abs(next.y - last.y);
+                const dw = Math.abs(next.w - last.w);
+                const dh = Math.abs(next.h - last.h);
+                if (dx < LIVE_MIN_DELTA && dy < LIVE_MIN_DELTA && dw === 0 && dh === 0) return;
+            }
+            pendingLiveCard = next;
+            if (liveCardTimer) return;
+            liveCardTimer = window.setTimeout(() => {
+                if (pendingLiveCard) {
+                    const payload = {
+                        x: pendingLiveCard.x,
+                        y: pendingLiveCard.y,
+                        w: pendingLiveCard.w,
+                        h: pendingLiveCard.h,
+                        by: getClientId(),
+                        ts: Date.now()
+                    };
+                    boardDb.ref(`boardLive/cards/${pendingLiveCard.id}`).set(payload);
+                    lastLiveCardSent.set(pendingLiveCard.id, pendingLiveCard);
+                }
+                liveCardTimer = null;
+            }, LIVE_UPDATE_MS);
+        }
+
+        function clearLiveCard(card) {
+            if (!boardDb || !card || card.dataset.temp === 'true') return;
+            const id = card.dataset.cardId;
+            if (!id) return;
+            boardDb.ref(`boardLive/cards/${id}`).remove();
+        }
+
+        function queueBeerInfoUpdate(card) {
+            if (!boardDb || !card || !card.dataset.beerInfo) return;
+            const id = String(card.dataset.beerInfo);
+            const next = {
+                id,
+                x: parseFloat(card.dataset.x || '0'),
+                y: parseFloat(card.dataset.y || '0'),
+                w: Math.round(card.offsetWidth),
+                h: Math.round(card.offsetHeight)
+            };
+            const last = lastBeerInfoSent.get(id);
+            if (last) {
+                const dx = Math.abs(next.x - last.x);
+                const dy = Math.abs(next.y - last.y);
+                const dw = Math.abs(next.w - last.w);
+                const dh = Math.abs(next.h - last.h);
+                if (dx < LIVE_MIN_DELTA && dy < LIVE_MIN_DELTA && dw === 0 && dh === 0) return;
+            }
+            pendingBeerInfo = next;
+            if (beerInfoLiveTimer) return;
+            beerInfoLiveTimer = window.setTimeout(() => {
+                if (pendingBeerInfo) {
+                    const beer = beerDataCache.find((b) => String(b.id) === String(pendingBeerInfo.id));
+                    const payload = {
+                        beerId: pendingBeerInfo.id,
+                        name: beer ? beer.name : '',
+                        x: pendingBeerInfo.x,
+                        y: pendingBeerInfo.y,
+                        w: pendingBeerInfo.w,
+                        h: pendingBeerInfo.h,
+                        by: getClientId(),
+                        ts: Date.now()
+                    };
+                    boardDb.ref(`boardLive/beerInfo/${pendingBeerInfo.id}`).set(payload);
+                    lastBeerInfoSent.set(pendingBeerInfo.id, pendingBeerInfo);
+                }
+                beerInfoLiveTimer = null;
+            }, LIVE_UPDATE_MS);
+        }
+
+        function removeBeerInfoLive(beerId) {
+            if (!boardDb) return;
+            boardDb.ref(`boardLive/beerInfo/${beerId}`).remove();
+        }
+
+        function buildBeerCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card rating-card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'beer';
+            card.dataset.cardId = 'beer';
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Рейтинг пива';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const list = document.createElement('div');
+            list.className = 'rating-list rating-scroll';
+            list.id = 'beerTopList';
+
+            const actions = document.createElement('div');
+            actions.className = 'card-actions';
+
+            const link = document.createElement('a');
+            link.className = 'card-link';
+            link.href = 'index.html#beerSection';
+            link.textContent = 'Открыть рейтинг';
+            link.addEventListener('click', (event) => event.stopPropagation());
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'card-link';
+            addBtn.textContent = 'Добавить пиво';
+            addBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                openAddBeerModal();
+            });
+
+            actions.appendChild(addBtn);
+            actions.appendChild(link);
+
+            card.appendChild(head);
+            card.appendChild(list);
+            card.appendChild(actions);
+            addResizeHandle(card);
+
+            cardsLayer.appendChild(card);
+
+            return { card };
+        }
+
+        function buildEventCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card event-card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'event';
+            card.dataset.cardId = 'event';
+            setCardSize(card, 520, 560);
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Подтверждение участия';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const dateLabel = document.createElement('div');
+            dateLabel.className = 'event-date-label';
+            dateLabel.id = 'eventDateLabel';
+
+            const calendar = document.createElement('div');
+            calendar.className = 'event-calendar';
+
+            const week = document.createElement('div');
+            week.className = 'event-calendar-week';
+            week.id = 'eventCalendarWeek';
+
+            calendar.appendChild(week);
+
+            const attend = document.createElement('div');
+            attend.className = 'event-section';
+            attend.innerHTML = `
+                <div class="event-section-title">✋ Подтвердить участие</div>
+                <label class="text-xs text-gray-400">Во сколько придете?</label>
+                <input type="time" id="eventArrivalTime" class="event-input">
+                <label class="text-xs text-gray-400">Сколько пива принесете?</label>
+                <input type="number" id="eventBeerCount" class="event-input" min="0" max="99" value="2">
+                <button type="button" class="event-btn" onclick="confirmAttendance()">Я приду! 🎉</button>
+                <div class="text-xs text-gray-400">Кто придет:</div>
+                <div id="eventAttendeesList" class="event-attendees"></div>
+            `;
+
+            const movies = document.createElement('div');
+            movies.className = 'event-section';
+            movies.innerHTML = `
+                <div class="event-section-title">🎬 Предложить фильм</div>
+                <div class="event-movie-inputs">
+                    <input type="text" id="eventMovieInput" class="event-input" placeholder="Название фильма...">
+                    <button type="button" class="event-movie-add" onclick="addMovie()">+</button>
+                </div>
+                <div id="eventMoviesList" class="event-movie-list"></div>
+            `;
+
+            const total = document.createElement('div');
+            total.className = 'event-total';
+            total.innerHTML = 'Всего пива: <span id="eventTotalBeer">0</span> шт.';
+
+            card.appendChild(head);
+            card.appendChild(dateLabel);
+            card.appendChild(calendar);
+            card.appendChild(attend);
+            card.appendChild(movies);
+            card.appendChild(total);
+            addResizeHandle(card);
+
+            cardsLayer.appendChild(card);
+            const movieInput = card.querySelector('#eventMovieInput');
+            if (movieInput) {
+                movieInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') addMovie();
+                });
+            }
+            updateEventCardMinHeight(card);
+            return { card };
+        }
+
+        function buildRouletteCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card roulette-card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'roulette';
+            card.dataset.cardId = 'roulette';
+            setCardSize(card, 520, 560);
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Пивная рулетка';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const layout = document.createElement('div');
+            layout.className = 'roulette-layout';
+            layout.innerHTML = `
+                <div class="roulette-wheel-wrap">
+                    <div class="roulette-pointer" aria-hidden="true"></div>
+                    <div class="roulette-wheel" id="rouletteWheel" aria-label="Рулетка">
+                        <canvas id="rouletteCanvas" class="roulette-canvas"></canvas>
+                        <div class="roulette-center">
+                            <button id="rouletteSpinBtn" class="roulette-spin" type="button" onclick="spinRoulette()">Крутить</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="roulette-result">Результат:<strong id="rouletteResult">—</strong></div>
+                <div class="roulette-actions">
+                    <button type="button" class="roulette-btn" onclick="clearRoulette()">Очистить</button>
+                    <button type="button" class="roulette-btn" onclick="addRandomToRoulette()">Добавить случайное</button>
+                </div>
+                <div class="roulette-list" id="rouletteList"></div>
+            `;
+
+            card.appendChild(head);
+            card.appendChild(layout);
+            addResizeHandle(card);
+            cardsLayer.appendChild(card);
+
+            setupRouletteResizeObserver();
+            renderRouletteList();
+            renderRouletteWheel();
+            updateRouletteCardMinHeight(card);
+            return { card };
+        }
+
+        function buildPlanningCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card planning-card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'planning';
+            card.dataset.cardId = 'planning';
+            setCardSize(card, 520, 520);
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Планирование';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const header = document.createElement('div');
+            header.className = 'planning-header';
+            header.innerHTML = `
+                <span id="planningCount" class="planning-count">0 мероприятий</span>
+                <button type="button" class="planning-add-btn" onclick="openPlanningModal()">+ Добавить</button>
+            `;
+
+            const list = document.createElement('div');
+            list.className = 'planning-list';
+            list.id = 'planningList';
+
+            card.appendChild(head);
+            card.appendChild(header);
+            card.appendChild(list);
+            addResizeHandle(card);
+
+            cardsLayer.appendChild(card);
+            return { card };
+        }
+
+        function buildPoopCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card poop-card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'poop';
+            card.dataset.cardId = 'poop';
+            setCardSize(card, 420, 520);
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Покаки';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const calendar = document.createElement('div');
+            calendar.className = 'poop-calendar';
+            calendar.id = 'poopWeekCalendar';
+
+            const list = document.createElement('div');
+            list.className = 'poop-list rating-scroll';
+            list.id = 'poopList';
+
+            const actions = document.createElement('div');
+            actions.className = 'card-actions';
+
+            const addLink = document.createElement('a');
+            addLink.className = 'card-link';
+            addLink.href = 'pokaki.html#add-poop';
+            addLink.textContent = 'Добавить покак';
+            addLink.addEventListener('click', (event) => event.stopPropagation());
+
+            const link = document.createElement('a');
+            link.className = 'card-link';
+            link.href = 'pokaki.html';
+            link.textContent = 'Открыть график';
+            link.addEventListener('click', (event) => event.stopPropagation());
+
+            actions.appendChild(addLink);
+            actions.appendChild(link);
+
+            card.appendChild(head);
+            card.appendChild(calendar);
+            card.appendChild(list);
+            card.appendChild(actions);
+            addResizeHandle(card);
+
+            cardsLayer.appendChild(card);
+
+            return { card };
+        }
+
+        function buildBacklogCard(index) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.kind = 'backlog';
+            card.dataset.cardId = 'backlog';
+            setCardSize(card, 900, 520);
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = 'Бэклог фильмов';
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+
+            const boardWrap = document.createElement('div');
+            boardWrap.className = 'backlog-board';
+            boardWrap.id = 'backlogBoard';
+
+            card.appendChild(head);
+            card.appendChild(boardWrap);
+            addResizeHandle(card);
+
+            cardsLayer.appendChild(card);
+            return { card };
+        }
+
+        function buildCard(page, index) {
+            if (page.kind === 'event') {
+                return buildEventCard(index);
+            }
+            if (page.kind === 'roulette') {
+                return buildRouletteCard(index);
+            }
+            if (page.kind === 'planning') {
+                return buildPlanningCard(index);
+            }
+            if (page.kind === 'beer') {
+                return buildBeerCard(index);
+            }
+            if (page.kind === 'poop') {
+                return buildPoopCard(index);
+            }
+            if (page.kind === 'backlog') {
+                return buildBacklogCard(index);
+            }
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.animationDelay = `${index * 0.06}s`;
+            card.dataset.file = page.file;
+
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = page.label || page.file;
+            title.dataset.fallback = title.textContent;
+
+            const meta = document.createElement('div');
+            meta.className = 'card-meta';
+            meta.textContent = page.file;
+
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            head.appendChild(title);
+            head.appendChild(meta);
+
+            const desc = document.createElement('p');
+            desc.className = 'card-desc';
+            desc.textContent = 'Загрузка информации о странице...';
+
+            const actions = document.createElement('div');
+            actions.className = 'card-actions';
+
+            const chip = document.createElement('span');
+            chip.className = 'card-chip';
+            chip.textContent = 'HTML';
+
+            const link = document.createElement('a');
+            link.className = 'card-link';
+            link.href = page.file;
+            link.textContent = 'Открыть';
+            link.addEventListener('click', (event) => event.stopPropagation());
+
+            actions.appendChild(chip);
+            actions.appendChild(link);
+
+            const preview = document.createElement('div');
+            preview.className = 'card-preview';
+
+            const frame = document.createElement('iframe');
+            frame.className = 'preview-frame';
+            frame.setAttribute('title', `preview-${page.file}`);
+            frame.setAttribute('loading', 'lazy');
+            frame.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
+
+            preview.appendChild(frame);
+
+            card.appendChild(head);
+            card.appendChild(desc);
+            card.appendChild(preview);
+
+            if (page.children && page.children.length) {
+                const nested = document.createElement('div');
+                nested.className = 'card-nested';
+                nested.dataset.noDrag = 'true';
+
+                const nestedTitle = document.createElement('div');
+                nestedTitle.className = 'nested-title';
+                nestedTitle.textContent = 'Внутри';
+
+                nested.appendChild(nestedTitle);
+
+                page.children.forEach((child) => {
+                    const nestedLabel = document.createElement('div');
+                    nestedLabel.className = 'card-meta';
+                    nestedLabel.textContent = child.label || child.file;
+
+                    const nestedLink = document.createElement('a');
+                    nestedLink.className = 'nested-link';
+                    nestedLink.href = child.file;
+                    nestedLink.textContent = 'Открыть страницу';
+                    nestedLink.addEventListener('click', (event) => event.stopPropagation());
+
+                    nested.appendChild(nestedLabel);
+                    nested.appendChild(nestedLink);
+                });
+
+                card.appendChild(nested);
+            }
+
+            card.appendChild(actions);
+
+            cardsLayer.appendChild(card);
+
+            return { card, title, desc, frame, file: page.file };
+        }
+
+        function layoutCards(cardEntries) {
+            const surfaceWidth = surface.offsetWidth || 5600;
+            const surfaceHeight = surface.offsetHeight || 3600;
+            const gapX = 320;
+            const gapY = 250;
+            const cols = 3;
+            const rows = Math.ceil(cardEntries.length / cols);
+            const startX = (surfaceWidth / 2) - (gapX * (cols - 1) / 2);
+            const startY = (surfaceHeight / 2) - (gapY * (rows - 1) / 2);
+            cardEntries.forEach((entry, i) => {
+                const col = i % 3;
+                const row = Math.floor(i / 3);
+                const x = startX + col * gapX;
+                const y = startY + row * gapY;
+                setCardPosition(entry.card, x, y);
+            });
+        }
+
+        function buildPreviewDoc(text, pageFile) {
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+            if (!doc) return text;
+            const base = doc.createElement('base');
+            try {
+                base.href = new URL(pageFile, location.href).href;
+            } catch (_) {
+                base.href = pageFile;
+            }
+            if (doc.head) doc.head.prepend(base);
+
+            doc.querySelectorAll('header, nav, footer, .nav, .navbar, .site-header').forEach((el) => el.remove());
+            doc.querySelectorAll('script[src*=\"firebase\"], script[src*=\"tailwind\"], script[src*=\"firebasejs\"]').forEach((el) => el.remove());
+
+            const style = doc.createElement('style');
+            style.textContent = `
+                :root { color-scheme: dark; }
+                html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    background: transparent !important;
+                    color: #e5e7eb !important;
+                    font-family: 'Comfortaa', cursive !important;
+                    font-size: 12px !important;
+                    line-height: 1.45 !important;
+                }
+                * {
+                    background: transparent !important;
+                    box-shadow: none !important;
+                    text-shadow: none !important;
+                }
+                img, video {
+                    max-width: 100% !important;
+                    height: auto !important;
+                    border-radius: 12px !important;
+                }
+                h1 { font-size: 16px !important; margin: 10px 0 !important; }
+                h2 { font-size: 14px !important; margin: 8px 0 !important; }
+                h3 { font-size: 13px !important; margin: 6px 0 !important; }
+                p, li { margin: 6px 0 !important; }
+                section, main, article { padding: 8px 0 !important; }
+                table { width: 100% !important; font-size: 11px !important; border-collapse: collapse !important; }
+                th, td { padding: 4px 6px !important; border-bottom: 1px solid rgba(255,255,255,0.12) !important; }
+                a { color: #fcd34d !important; text-decoration: none !important; }
+                button, input, select, textarea { font-size: 11px !important; padding: 4px 6px !important; }
+            `;
+            if (doc.head) doc.head.appendChild(style);
+            return '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+        }
+
+        async function loadMeta(entry) {
+            if (!entry || !entry.title || !entry.desc) return;
+            try {
+                const response = await fetch(entry.card.dataset.file, { cache: 'no-store' });
+                if (!response.ok) throw new Error('fetch failed');
+                const text = await response.text();
+                const doc = new DOMParser().parseFromString(text, 'text/html');
+                const title = doc.querySelector('title')?.textContent?.trim();
+                const desc = doc.querySelector('meta[name="description"]')?.content?.trim();
+                const h1 = doc.querySelector('h1')?.textContent?.trim();
+                entry.title.textContent = title || entry.title.dataset.fallback || entry.card.dataset.file;
+                entry.desc.textContent = desc || h1 || 'Перейдите на страницу, чтобы увидеть её контент.';
+                if (entry.frame) {
+                    entry.frame.srcdoc = buildPreviewDoc(text, entry.file);
+                }
+            } catch (err) {
+                entry.desc.textContent = 'Не удалось загрузить данные, но ссылка работает.';
+            }
+        }
+
+        function initCards() {
+            const entries = pages.map(buildCard);
+            layoutCards(entries);
+            entries.forEach(loadMeta);
+            renderEventCalendar();
+            renderEventPanel();
+            return entries;
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(max, Math.max(min, value));
+        }
+
+        function startCardDrag(event, card) {
+            if (event.button !== 0) return;
+            if (event.target.closest('button, a, input, select, textarea')) return;
+            if (!event.target.closest('.card-handle')) return;
+            bringCardToFront(card);
+            dragState.active = true;
+            dragState.card = card;
+            dragState.startX = event.clientX;
+            dragState.startY = event.clientY;
+            dragState.originX = parseFloat(card.dataset.x || '0');
+            dragState.originY = parseFloat(card.dataset.y || '0');
+            card.setPointerCapture(event.pointerId);
+        }
+
+        function startResize(event, card) {
+            if (event.button !== 0) return;
+            event.stopPropagation();
+            bringCardToFront(card);
+            resizeState.active = true;
+            resizeState.card = card;
+            resizeState.startX = event.clientX;
+            resizeState.startY = event.clientY;
+            resizeState.startW = card.offsetWidth;
+            resizeState.startH = card.offsetHeight;
+            card.setPointerCapture(event.pointerId);
+        }
+
+        function handlePointerMove(event) {
+            if (dragState.active && dragState.card) {
+                const dx = (event.clientX - dragState.startX) / boardState.scale;
+                const dy = (event.clientY - dragState.startY) / boardState.scale;
+                setCardPosition(dragState.card, dragState.originX + dx, dragState.originY + dy);
+                queueLiveCardUpdate(dragState.card);
+                if (dragState.card.dataset.beerInfo) queueBeerInfoUpdate(dragState.card);
+                return;
+            }
+            if (resizeState.active && resizeState.card) {
+                const dx = (event.clientX - resizeState.startX) / boardState.scale;
+                const dy = (event.clientY - resizeState.startY) / boardState.scale;
+                const { minW, minH } = getCardMinSize(resizeState.card);
+                const nextW = Math.max(minW, resizeState.startW + dx);
+                const nextH = Math.max(minH, resizeState.startH + dy);
+                setCardSize(resizeState.card, Math.round(nextW), Math.round(nextH));
+                queueLiveCardUpdate(resizeState.card);
+                if (resizeState.card.dataset.beerInfo) queueBeerInfoUpdate(resizeState.card);
+                return;
+            }
+            if (panState.active) {
+                const dx = event.clientX - panState.startX;
+                const dy = event.clientY - panState.startY;
+                boardState.x = panState.originX + dx;
+                boardState.y = panState.originY + dy;
+                applyTransform();
+            }
+        }
+
+        function endPointer(event) {
+            const didDrag = dragState.active;
+            const didResize = resizeState.active;
+            const activeCard = dragState.card || resizeState.card;
+            if (dragState.active && dragState.card) {
+                dragState.card.releasePointerCapture(event.pointerId);
+            }
+            dragState.active = false;
+            dragState.card = null;
+            if (resizeState.active && resizeState.card) {
+                resizeState.card.releasePointerCapture(event.pointerId);
+            }
+            resizeState.active = false;
+            resizeState.card = null;
+            panState.active = false;
+            board.classList.remove('is-panning');
+            if (didDrag || didResize) {
+                queueLayoutSave();
+                if (activeCard) {
+                    clearLiveCard(activeCard);
+                    if (activeCard.dataset && activeCard.dataset.beerInfo) {
+                        queueBeerInfoUpdate(activeCard);
+                    }
+                }
+            }
+        }
+
+        function startPan(event) {
+            const isLeft = event.button === 0;
+            const isMiddle = event.button === 1;
+            if (!isMiddle && !keys.space && !isLeft) return;
+            if (event.target.closest('.board-header') || event.target.closest('.card-resize-handle')) return;
+            if (event.target.closest('button, a, input, select, textarea')) return;
+            panState.active = true;
+            panState.startX = event.clientX;
+            panState.startY = event.clientY;
+            panState.originX = boardState.x;
+            panState.originY = boardState.y;
+            board.classList.add('is-panning');
+        }
+
+        function handleWheel(event) {
+            if (!event.ctrlKey && !event.metaKey) return;
+            event.preventDefault();
+            const delta = -event.deltaY * 0.0045;
+            const nextScale = clamp(boardState.scale * (1 + delta), 0.3, 1.9);
+            const rect = board.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            const worldX = (mouseX - boardState.x) / boardState.scale;
+            const worldY = (mouseY - boardState.y) / boardState.scale;
+            boardState.scale = nextScale;
+            boardState.x = mouseX - worldX * nextScale;
+            boardState.y = mouseY - worldY * nextScale;
+            applyTransform();
+        }
+
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+
+        function handleTouchStart(event) {
+            if (event.touches.length === 2) {
+                event.preventDefault();
+                pinchState.active = true;
+                pinchState.startDist = getTouchDistance(event.touches);
+                pinchState.startScale = boardState.scale;
+                const rect = board.getBoundingClientRect();
+                const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+                const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+                pinchState.startX = (cx - boardState.x) / boardState.scale;
+                pinchState.startY = (cy - boardState.y) / boardState.scale;
+            }
+        }
+
+        function handleTouchMove(event) {
+            if (!pinchState.active || event.touches.length !== 2) return;
+            event.preventDefault();
+            const dist = getTouchDistance(event.touches);
+            if (!dist || !pinchState.startDist) return;
+            const ratio = dist / pinchState.startDist;
+            const nextScale = clamp(pinchState.startScale * ratio, 0.3, 1.9);
+            const rect = board.getBoundingClientRect();
+            const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+            const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+            boardState.scale = nextScale;
+            boardState.x = cx - pinchState.startX * nextScale;
+            boardState.y = cy - pinchState.startY * nextScale;
+            applyTransform();
+        }
+
+        function handleTouchEnd() {
+            pinchState.active = false;
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                keys.space = true;
+            }
+        });
+        document.addEventListener('keyup', (event) => {
+            if (event.code === 'Space') {
+                keys.space = false;
+            }
+        });
+
+        board.addEventListener('pointerdown', startPan);
+        board.addEventListener('pointermove', handlePointerMove);
+        board.addEventListener('pointerup', endPointer);
+        board.addEventListener('pointercancel', endPointer);
+        board.addEventListener('wheel', handleWheel, { passive: false });
+        board.addEventListener('touchstart', handleTouchStart, { passive: false });
+        board.addEventListener('touchmove', handleTouchMove, { passive: false });
+        board.addEventListener('touchend', handleTouchEnd);
+        board.addEventListener('touchcancel', handleTouchEnd);
+
+        const cardEntries = initCards();
+        cardEntries.forEach(({ card }) => {
+            card.addEventListener('pointerdown', (event) => {
+                bringCardToFront(card);
+                startCardDrag(event, card);
+            });
+            card.addEventListener('pointerup', endPointer);
+            card.addEventListener('pointercancel', endPointer);
+        });
+
+        const planningList = document.getElementById('planningList');
+        if (planningList) {
+            planningList.addEventListener('click', (event) => {
+                const editBtn = event.target.closest('[data-edit-event]');
+                if (editBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const planningEvent = planningEventsCache.find(item => item.id === editBtn.dataset.editEvent);
+                    if (planningEvent) openPlanningModal(planningEvent);
+                }
+            });
+        }
+
+        const planningModal = document.getElementById('planningModal');
+        if (planningModal) {
+            planningModal.addEventListener('click', (event) => {
+                const actionBtn = event.target.closest('[data-planning-action]');
+                if (!actionBtn) return;
+                const action = actionBtn.dataset.planningAction;
+                if (action === 'all') {
+                    renderPlanningParticipantsList(planningUsersList.slice());
+                    planningModal.querySelectorAll('input[data-planning-participant]').forEach(input => { input.checked = true; });
+                }
+                if (action === 'clear') {
+                    planningModal.querySelectorAll('input[data-planning-participant]').forEach(input => { input.checked = false; });
+                }
+            });
+        }
+
+        const planningAddBtn = document.getElementById('planningParticipantAddBtn');
+        if (planningAddBtn) {
+            planningAddBtn.addEventListener('click', addPlanningParticipant);
+        }
+        const planningInput = document.getElementById('planningParticipantInput');
+        if (planningInput) {
+            planningInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') addPlanningParticipant();
+            });
+        }
+
+        function centerBoardToCards() {
+            if (viewportRestored) return;
+            const rect = board.getBoundingClientRect();
+            const cards = Array.from(cardsLayer.querySelectorAll('.card'));
+            if (!cards.length) return;
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+            cards.forEach((card) => {
+                const x = parseFloat(card.dataset.x || '0');
+                const y = parseFloat(card.dataset.y || '0');
+                const w = card.offsetWidth || 280;
+                const h = card.offsetHeight || 190;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + w);
+                maxY = Math.max(maxY, y + h);
+            });
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            boardState.x = (rect.width / 2) - centerX * boardState.scale;
+            boardState.y = (rect.height / 2) - centerY * boardState.scale;
+            applyTransform();
+        }
+
+        function loadViewport() {
+            try {
+                const raw = localStorage.getItem(VIEWPORT_LS_KEY);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                if (typeof data.x !== 'number' || typeof data.y !== 'number' || typeof data.scale !== 'number') return;
+                boardState.x = data.x;
+                boardState.y = data.y;
+                boardState.scale = clamp(data.scale, 0.3, 1.9);
+                viewportRestored = true;
+                applyTransform();
+            } catch (_) {}
+        }
+
+        function queueViewportSave() {
+            if (viewportSaveTimer) window.clearTimeout(viewportSaveTimer);
+            viewportSaveTimer = window.setTimeout(() => {
+                try {
+                    const payload = { x: boardState.x, y: boardState.y, scale: boardState.scale };
+                    localStorage.setItem(VIEWPORT_LS_KEY, JSON.stringify(payload));
+                } catch (_) {}
+            }, 200);
+        }
+
+        function getLayoutSnapshot() {
+            const cards = {};
+            cardsLayer.querySelectorAll('.card').forEach((card) => {
+                const id = card.dataset.cardId;
+                if (card.dataset.temp === 'true') return;
+                if (!id) return;
+                cards[id] = {
+                    x: parseFloat(card.dataset.x || '0'),
+                    y: parseFloat(card.dataset.y || '0'),
+                    w: Math.round(card.offsetWidth),
+                    h: Math.round(card.offsetHeight)
+                };
+            });
+            return { cards, updatedAt: new Date().toISOString() };
+        }
+
+        function applyLayout(layout) {
+            if (!layout || !layout.cards) return;
+            if (dragState.active || resizeState.active) return;
+            Object.entries(layout.cards).forEach(([id, data]) => {
+                const card = cardsLayer.querySelector(`.card[data-card-id="${id}"]`);
+                if (!card || !data) return;
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    setCardPosition(card, data.x, data.y);
+                }
+                if (data.w && data.h) {
+                    setCardSize(card, data.w, data.h);
+                }
+            });
+        }
+
+        function queueLayoutSave() {
+            if (!boardDb) return;
+            if (layoutSaveTimer) window.clearTimeout(layoutSaveTimer);
+            layoutSaveTimer = window.setTimeout(() => {
+                const layout = getLayoutSnapshot();
+                boardDb.ref('boardLayout').set(layout);
+            }, 400);
+        }
+
+        function initBoardLayout() {
+            if (!boardDb) return;
+            boardDb.ref('boardLayout').on('value', (snapshot) => {
+                const layout = snapshot.val();
+                if (!layout || !layout.cards) return;
+                applyLayout(layout);
+            });
+        }
+
+        window.addEventListener('resize', centerBoardToCards);
+        loadViewport();
+        centerBoardToCards();
+
+        function logout() {
+            try {
+                localStorage.removeItem('currentUser');
+            } catch (_) {}
+            location.replace('login.html');
+        }
+
+        (function hydrateProfile() {
+            try {
+                const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (user && user.name) {
+                    document.getElementById('profileName').textContent = user.name;
+                }
+            } catch (_) {}
+        })();
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJ7xgIuM1iW4Z5j2U2C3oEqJ-f0_uxEw0",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "267996037512",
+            appId: "1:267996037512:web:bb0d9d606a1d599600f5c1"
+        };
+
+        function getCurrentUser() {
+            try {
+                return JSON.parse(localStorage.getItem('currentUser') || 'null');
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function getUserName() {
+            const user = getCurrentUser();
+            return user && user.name ? user.name : '';
+        }
+
+        function renderBeerRating(list) {
+            const ratings = Array.isArray(list) ? list : [];
+            const scored = ratings.map((beer) => {
+                const vals = Object.values(beer.ratings || {}).map((v) => parseFloat(v) || 0).filter((v) => v > 0);
+                const avg = vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
+                return { ...beer, avg, count: vals.length };
+            });
+            const top = scored
+                .sort((a, b) => b.avg - a.avg || b.count - a.count);
+
+            const listEl = document.getElementById('beerTopList');
+            if (!listEl) return;
+            if (!top.length) {
+                listEl.innerHTML = '<div class="rating-meta">Пока нет оценок. Добавьте первое пиво!</div>';
+                return;
+            }
+
+            listEl.innerHTML = top.map((beer) => {
+                const pct = Math.min(100, Math.round((beer.avg / 10) * 100));
+                return `
+                    <div class="rating-item" data-beer-id="${beer.id || ''}">
+                        <div>
+                            <div class="rating-name">${beer.name || 'Без названия'}</div>
+                            <div class="rating-bar">
+                                <div class="rating-bar-fill" style="width:${pct}%"></div>
+                            </div>
+                            <div class="rating-my">Оценок: ${beer.count || 0}</div>
+                        </div>
+                        <div class="rating-tag">${beer.avg.toFixed(1)}</div>
+                    </div>
+                `;
+            }).join('');
+            listEl.querySelectorAll('.rating-item').forEach((item) => {
+                item.addEventListener('click', () => {
+                    const id = item.getAttribute('data-beer-id');
+                    const beer = scored.find((b) => String(b.id) === String(id));
+                    if (beer) openBeerInfoCard(beer);
+                });
+            });
+        }
+
+        function getEvent(dateKey) {
+            return eventData.events[dateKey] || { attendees: {}, movies: {} };
+        }
+
+        function setEvent(dateKey, event) {
+            eventData.events[dateKey] = event;
+            if (boardDb) boardDb.ref('events').set(eventData.events);
+        }
+
+        function getNearestWednesday(baseDate) {
+            const date = new Date(baseDate);
+            date.setHours(0, 0, 0, 0);
+            const day = date.getDay();
+            const delta = (3 - day + 7) % 7;
+            date.setDate(date.getDate() + delta);
+            return date;
+        }
+
+        function getWednesdayRange() {
+            const center = getNearestWednesday(new Date());
+            const list = [];
+            for (let i = -3; i <= 3; i += 1) {
+                const d = new Date(center);
+                d.setDate(center.getDate() + i * 7);
+                list.push(d);
+            }
+            return { list, centerKey: formatDateKey(center) };
+        }
+
+        function getEventCounts(event) {
+            const attendees = event.attendees || {};
+            const attendeeCount = Object.keys(attendees).length;
+            const totalBeer = Object.values(attendees).reduce((sum, a) => sum + (parseInt(a.beer, 10) || 0), 0);
+            return { attendeeCount, totalBeer };
+        }
+
+        function formatEventDateLabel(dateKey) {
+            if (!dateKey) return '';
+            const [year, month, day] = dateKey.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+
+        function renderEventCalendar() {
+            const week = document.getElementById('eventCalendarWeek');
+            const label = document.getElementById('eventDateLabel');
+            if (!week) return;
+
+            const { list, centerKey } = getWednesdayRange();
+            const dateKeys = list.map((d) => formatDateKey(d));
+            if (!selectedEventDateKey || !dateKeys.includes(selectedEventDateKey)) {
+                selectedEventDateKey = centerKey;
+            }
+
+            const buildDay = (date, isCenter) => {
+                const key = formatDateKey(date);
+                const event = getEvent(key);
+                const { attendeeCount, totalBeer } = getEventCounts(event);
+                const weekdayLabel = date.toLocaleDateString('ru-RU', { weekday: 'short' }).replace('.', '');
+                const dateLabel = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                const meta = attendeeCount ? `👥${attendeeCount} 🍺${totalBeer}` : '—';
+                return `
+                    <button type="button" class="event-day${key === selectedEventDateKey ? ' is-active' : ''}${isCenter ? ' is-center' : ''}" data-date="${key}">
+                        <span class="event-day-title">${weekdayLabel}</span>
+                        <span class="event-day-meta">${dateLabel}</span>
+                        <span class="event-day-meta">${meta}</span>
+                    </button>
+                `;
+            };
+
+            week.innerHTML = list.map((date, idx) => buildDay(date, idx === 3)).join('');
+
+            week.querySelectorAll('.event-day').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    selectedEventDateKey = btn.dataset.date;
+                    renderEventCalendar();
+                    renderEventPanel();
+                });
+            });
+
+            if (label) {
+                label.textContent = selectedEventDateKey
+                    ? `Выбрана дата: ${formatEventDateLabel(selectedEventDateKey)}`
+                    : '';
+            }
+        }
+
+        function renderEventPanel() {
+            const attendeesEl = document.getElementById('eventAttendeesList');
+            const moviesEl = document.getElementById('eventMoviesList');
+            const totalBeerEl = document.getElementById('eventTotalBeer');
+            const arrivalInput = document.getElementById('eventArrivalTime');
+            const beerInput = document.getElementById('eventBeerCount');
+            if (!selectedEventDateKey) return;
+
+            const event = getEvent(selectedEventDateKey);
+            const attendees = event.attendees || {};
+            const userName = getUserName();
+
+            if (attendeesEl) {
+                if (!Object.keys(attendees).length) {
+                    attendeesEl.innerHTML = '<span class="text-gray-500 text-xs italic">Пока никто не подтвердил...</span>';
+                } else {
+                    attendeesEl.innerHTML = Object.entries(attendees).map(([name, info]) => `
+                        <div class="event-attendee">
+                            <span>${escapeHtml(name)}</span>
+                            <span>🍺${escapeHtml(info.beer || 0)}</span>
+                            ${info.arrivalTime ? `<span>🕒 ${escapeHtml(info.arrivalTime)}</span>` : ''}
+                            ${name === userName ? `<button type="button" onclick="removeAttendance('${encodeURIComponent(name)}')">✕</button>` : ''}
+                        </div>
+                    `).join('');
+                }
+            }
+
+            if (arrivalInput && attendees[userName]) {
+                arrivalInput.value = attendees[userName].arrivalTime || '';
+            }
+            if (beerInput && attendees[userName]) {
+                beerInput.value = attendees[userName].beer || 0;
+            }
+
+            const { totalBeer } = getEventCounts(event);
+            if (totalBeerEl) totalBeerEl.textContent = totalBeer;
+
+            if (moviesEl) {
+                const movies = event.movies || {};
+                if (!Object.keys(movies).length) {
+                    moviesEl.innerHTML = '<div class="text-gray-500 text-xs italic text-center">Пока нет предложений...</div>';
+                } else {
+                    const sorted = Object.entries(movies).sort((a, b) => {
+                        const aVotes = Object.keys(a[1].votes || {}).length;
+                        const bVotes = Object.keys(b[1].votes || {}).length;
+                        return bVotes - aVotes;
+                    });
+                    moviesEl.innerHTML = sorted.map(([id, movie], index) => {
+                        const votes = Object.keys(movie.votes || {});
+                        const hasVoted = votes.includes(userName);
+                        const isLeader = index === 0 && votes.length > 0;
+                        const isAuthor = movie.author === userName;
+                        return `
+                            <div class="event-movie-item${isLeader ? ' is-leader' : ''}">
+                                <button type="button" class="event-movie-vote${hasVoted ? ' is-voted' : ''}" onclick="voteMovie('${id}')">
+                                    ${hasVoted ? '👍' : '👆'} ${votes.length}
+                                </button>
+                                <div>
+                                    <div class="event-movie-title">${isLeader ? '👑 ' : ''}${escapeHtml(movie.title || '')}</div>
+                                    <div class="event-movie-author">${escapeHtml(movie.author || '')}</div>
+                                </div>
+                                ${isAuthor ? `<button type="button" class="event-movie-remove" onclick="removeMovie('${id}')">🗑️</button>` : '<span></span>'}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+            autoSizeEventCard();
+        }
+
+        function autoSizeEventCard() {
+            const card = document.querySelector('.card[data-card-id="event"]');
+            if (!card) return;
+            const needed = Math.ceil(card.scrollHeight + 8);
+            const current = card.offsetHeight || 0;
+            if (needed > current) {
+                setCardSize(card, card.offsetWidth, needed);
+            }
+            updateEventCardMinHeight(card);
+        }
+
+        function confirmAttendance() {
+            if (!selectedEventDateKey) return;
+            const userName = getUserName();
+            if (!userName) return;
+            const beerCount = parseInt(document.getElementById('eventBeerCount').value, 10) || 0;
+            const arrivalTime = document.getElementById('eventArrivalTime').value || '';
+            const event = getEvent(selectedEventDateKey);
+            if (!event.attendees) event.attendees = {};
+            event.attendees[userName] = { beer: beerCount, arrivalTime, timestamp: Date.now() };
+            setEvent(selectedEventDateKey, event);
+            renderEventCalendar();
+            renderEventPanel();
+        }
+
+        function removeAttendance(name) {
+            if (!selectedEventDateKey) return;
+            const decoded = decodeURIComponent(name);
+            const event = getEvent(selectedEventDateKey);
+            if (event.attendees && event.attendees[decoded]) {
+                delete event.attendees[decoded];
+                setEvent(selectedEventDateKey, event);
+                renderEventCalendar();
+                renderEventPanel();
+            }
+        }
+
+        function addMovie() {
+            if (!selectedEventDateKey) return;
+            const input = document.getElementById('eventMovieInput');
+            const title = input.value.trim();
+            if (!title) return;
+            const event = getEvent(selectedEventDateKey);
+            if (!event.movies) event.movies = {};
+            const exists = Object.values(event.movies).some((m) => (m.title || '').toLowerCase() === title.toLowerCase());
+            if (exists) {
+                input.value = '';
+                return;
+            }
+            const id = Date.now().toString();
+            event.movies[id] = { title, author: getUserName(), votes: {} };
+            setEvent(selectedEventDateKey, event);
+            input.value = '';
+            renderEventPanel();
+        }
+
+        function voteMovie(movieId) {
+            if (!selectedEventDateKey) return;
+            const event = getEvent(selectedEventDateKey);
+            if (!event.movies || !event.movies[movieId]) return;
+            const userName = getUserName();
+            if (!userName) return;
+            if (!event.movies[movieId].votes) event.movies[movieId].votes = {};
+            if (event.movies[movieId].votes[userName]) {
+                delete event.movies[movieId].votes[userName];
+            } else {
+                event.movies[movieId].votes[userName] = true;
+            }
+            setEvent(selectedEventDateKey, event);
+            renderEventPanel();
+        }
+
+        function removeMovie(movieId) {
+            if (!selectedEventDateKey) return;
+            const event = getEvent(selectedEventDateKey);
+            if (event.movies && event.movies[movieId]) {
+                delete event.movies[movieId];
+                setEvent(selectedEventDateKey, event);
+                renderEventPanel();
+            }
+        }
+
+        function roulettePalette(index) {
+            const hues = [28, 48, 210, 190, 275, 330, 150, 10, 235, 90, 200, 310];
+            const hue = hues[index % hues.length];
+            return `hsl(${hue} 85% 55%)`;
+        }
+
+        function normalizeBeerList(raw) {
+            const arr = Array.isArray(raw) ? raw : Object.values(raw || {});
+            return arr
+                .filter((b) => b && (b.name || '').trim())
+                .map((b) => ({ id: String(b.id || ''), name: String(b.name || '').trim() }));
+        }
+
+        function updateRouletteSpinState() {
+            const btn = document.getElementById('rouletteSpinBtn');
+            if (!btn) return;
+            btn.disabled = rouletteSpinning || rouletteItems.length === 0;
+        }
+
+        function renderRouletteList() {
+            const list = document.getElementById('rouletteList');
+            if (!list) return;
+            const beers = normalizeBeerList(beerDataCache);
+            if (!beers.length) {
+                list.innerHTML = '<div class="roulette-row"><div class="roulette-name">Пока нет пива в рейтинге.</div></div>';
+                const card = document.querySelector('.card[data-card-id="roulette"]');
+                updateRouletteCardMinHeight(card);
+                return;
+            }
+            list.innerHTML = beers.map((beer) => {
+                const isAdded = rouletteItems.some((item) => item.toLowerCase() === beer.name.toLowerCase());
+                return `
+                    <div class="roulette-row">
+                        <button type="button" class="roulette-toggle${isAdded ? ' is-remove' : ''}" onclick="${isAdded ? `removeFromRoulette('${encodeURIComponent(beer.name)}')` : `addToRoulette('${encodeURIComponent(beer.name)}')`}">
+                            ${isAdded ? '−' : '+'}
+                        </button>
+                        <div class="roulette-name" title="${escapeHtml(beer.name)}">${escapeHtml(beer.name)}</div>
+                    </div>
+                `;
+            }).join('');
+            const card = document.querySelector('.card[data-card-id="roulette"]');
+            updateRouletteCardMinHeight(card);
+        }
+
+        function addToRoulette(encodedName) {
+            if (rouletteSpinning) return;
+            const name = decodeURIComponent(encodedName);
+            if (!name) return;
+            if (rouletteItems.some((item) => item.toLowerCase() === name.toLowerCase())) return;
+            rouletteItems.push(name);
+            renderRouletteWheel();
+            renderRouletteList();
+            const result = document.getElementById('rouletteResult');
+            if (result) result.textContent = '—';
+        }
+
+        function removeFromRoulette(encodedName) {
+            if (rouletteSpinning) return;
+            const name = decodeURIComponent(encodedName);
+            rouletteItems = rouletteItems.filter((item) => item.toLowerCase() !== name.toLowerCase());
+            renderRouletteWheel();
+            renderRouletteList();
+            const result = document.getElementById('rouletteResult');
+            if (result) result.textContent = '—';
+        }
+
+        function clearRoulette() {
+            if (rouletteSpinning) return;
+            rouletteItems = [];
+            rouletteRotation = 0;
+            snapRouletteWheel(0);
+            renderRouletteWheel();
+            renderRouletteList();
+            const result = document.getElementById('rouletteResult');
+            if (result) result.textContent = '—';
+        }
+
+        function addRandomToRoulette() {
+            const beers = normalizeBeerList(beerDataCache).map((b) => b.name);
+            const candidates = beers.filter((name) => !rouletteItems.some((item) => item.toLowerCase() === name.toLowerCase()));
+            if (!candidates.length) return;
+            const pick = candidates[Math.floor(Math.random() * candidates.length)];
+            rouletteItems.push(pick);
+            renderRouletteWheel();
+            renderRouletteList();
+        }
+
+        function snapRouletteWheel(deg) {
+            const wheel = document.getElementById('rouletteWheel');
+            if (!wheel) return;
+            wheel.style.transitionProperty = 'none';
+            wheel.style.transitionDuration = '0s';
+            wheel.style.transitionTimingFunction = 'linear';
+            wheel.style.transform = `rotate(${deg}deg)`;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    wheel.style.transitionProperty = 'transform';
+                    wheel.style.transitionDuration = '4.2s';
+                    wheel.style.transitionTimingFunction = 'cubic-bezier(0.12, 0.78, 0.18, 1)';
+                });
+            });
+        }
+
+        function getRouletteCanvas() {
+            const canvas = document.getElementById('rouletteCanvas');
+            const wheel = document.getElementById('rouletteWheel');
+            if (!canvas || !wheel) return null;
+            const rect = wheel.getBoundingClientRect();
+            const size = Math.max(1, Math.floor(rect.width));
+            const dpr = window.devicePixelRatio || 1;
+            const w = Math.round(size * dpr);
+            const h = Math.round(size * dpr);
+            if (canvas.width !== w || canvas.height !== h) {
+                canvas.width = w;
+                canvas.height = h;
+            }
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return { ctx, size };
+        }
+
+        function fitWheelText(ctx, text, maxWidth) {
+            if (!text) return '';
+            const t = String(text);
+            if (ctx.measureText(t).width <= maxWidth) return t;
+            let s = t;
+            while (s.length > 0 && ctx.measureText(s + '…').width > maxWidth) s = s.slice(0, -1);
+            return s.length ? `${s}…` : '';
+        }
+
+        function renderRouletteWheel() {
+            const wheel = document.getElementById('rouletteWheel');
+            if (!wheel) return;
+            const res = getRouletteCanvas();
+            if (!res) return;
+            const { ctx, size } = res;
+            ctx.clearRect(0, 0, size, size);
+            const center = size / 2;
+            const radius = center - 6;
+            const count = rouletteItems.length;
+            if (!count) {
+                ctx.beginPath();
+                ctx.arc(center, center, radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                ctx.fill();
+                updateRouletteSpinState();
+                return;
+            }
+            const step = (Math.PI * 2) / count;
+            const start0 = -Math.PI / 2;
+            for (let i = 0; i < count; i += 1) {
+                const start = start0 + i * step;
+                const end = start + step;
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, start, end);
+                ctx.closePath();
+                ctx.fillStyle = roulettePalette(i);
+                ctx.fill();
+
+                ctx.save();
+                ctx.translate(center, center);
+                const angle = start + step / 2;
+                ctx.rotate(angle);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'rgba(0,0,0,0.85)';
+                ctx.font = '600 11px Comfortaa, cursive';
+                const label = fitWheelText(ctx, rouletteItems[i], radius - 26);
+                ctx.fillText(label, radius - 10, 0);
+                ctx.restore();
+            }
+            updateRouletteSpinState();
+        }
+
+        function pickRouletteResult() {
+            const count = rouletteItems.length;
+            if (!count) return null;
+            const step = 360 / count;
+            const pointerAngle = (360 - (rouletteRotation % 360) + 360) % 360;
+            const idx = Math.floor(pointerAngle / step) % count;
+            return rouletteItems[idx];
+        }
+
+        function spinRoulette() {
+            if (rouletteItems.length === 0 || rouletteSpinning) return;
+            const wheel = document.getElementById('rouletteWheel');
+            if (!wheel) return;
+            rouletteSpinning = true;
+            updateRouletteSpinState();
+            const spinTurns = 6 + Math.floor(Math.random() * 4);
+            const extra = Math.random() * 360;
+            rouletteRotation = rouletteRotation + spinTurns * 360 + extra;
+            wheel.style.transitionProperty = 'transform';
+            wheel.style.transitionDuration = '4.2s';
+            wheel.style.transitionTimingFunction = 'cubic-bezier(0.12, 0.78, 0.18, 1)';
+            wheel.style.transform = `rotate(${rouletteRotation}deg)`;
+            setTimeout(() => {
+                rouletteSpinning = false;
+                const result = pickRouletteResult();
+                const resultEl = document.getElementById('rouletteResult');
+                if (resultEl) resultEl.textContent = result ? `✅ ${result}` : '—';
+                updateRouletteSpinState();
+            }, 4200);
+        }
+
+        function setupRouletteResizeObserver() {
+            if (rouletteResizeObserver || !('ResizeObserver' in window)) return;
+            const wheel = document.getElementById('rouletteWheel');
+            if (!wheel) return;
+            rouletteResizeObserver = new ResizeObserver(() => {
+                renderRouletteWheel();
+            });
+            rouletteResizeObserver.observe(wheel);
+        }
+
+        function initPlanningFeed() {
+            if (planningDb) return;
+            if (!window.firebase) return;
+            try {
+                if (boardDb) {
+                    planningDb = boardDb;
+                } else {
+                    const appName = 'planningApp';
+                    let app = null;
+                    try {
+                        app = firebase.app(appName);
+                    } catch (_) {
+                        app = firebase.initializeApp(planningFirebaseConfig, appName);
+                    }
+                    planningDb = app.database();
+                }
+                planningDb.ref('planning/events').on('value', (snapshot) => {
+                    const val = snapshot.val() || {};
+                    let events = [];
+                    if (Array.isArray(val)) {
+                        events = val.filter(Boolean).map((ev, idx) => ({ ...ev, id: ev.id || String(idx) }));
+                    } else {
+                        events = Object.entries(val).map(([id, ev]) => ({ id, ...ev }));
+                    }
+                    events.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                    planningEventsCache = events;
+                    renderPlanningList();
+                });
+                planningDb.ref('users').on('value', (snapshot) => {
+                    const val = snapshot.val() || {};
+                    planningUsersList = Object.values(val).map(user => user && user.name).filter(Boolean);
+                    planningUsersList.sort((a, b) => a.localeCompare(b, 'ru'));
+                    const modal = document.getElementById('planningModal');
+                    const selected = modal && modal.classList.contains('flex')
+                        ? getSelectedPlanningParticipants()
+                        : null;
+                    renderPlanningParticipantsList(selected);
+                });
+            } catch (_) {}
+        }
+
+        function formatPlanningDate(ts) {
+            try {
+                const d = new Date(ts);
+                return d.toLocaleDateString('ru-RU');
+            } catch (_) {
+                return '—';
+            }
+        }
+
+        function renderPlanningList() {
+            const list = document.getElementById('planningList');
+            const count = document.getElementById('planningCount');
+            if (!list || !count) return;
+            count.textContent = `Мероприятий: ${planningEventsCache.length}`;
+            if (!planningEventsCache.length) {
+                list.innerHTML = '<div class="planning-empty">Пока нет мероприятий. Добавьте первое событие.</div>';
+                return;
+            }
+            list.innerHTML = planningEventsCache.map((event) => `
+                <a class="planning-item" href="planning-event.html?id=${encodeURIComponent(event.id)}">
+                    <div>
+                        <div class="planning-item-title">${escapeHtml(event.name || 'Без названия')}</div>
+                        <div class="planning-item-meta">Создано: ${formatPlanningDate(event.createdAt)}</div>
+                    </div>
+                    <div class="planning-item-actions">
+                        <button type="button" class="planning-action-btn" data-edit-event="${escapeHtml(event.id)}">✎</button>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        function openPlanningModal(event = null) {
+            const modal = document.getElementById('planningModal');
+            const title = document.getElementById('planningModalTitle');
+            const input = document.getElementById('planningNameInput');
+            if (!modal || !title || !input) return;
+            planningEditingEventId = event ? event.id : null;
+            title.textContent = event ? 'Редактировать мероприятие' : 'Новое мероприятие';
+            input.value = event ? (event.name || '') : '';
+            const storedCustom = event && Array.isArray(event.participantsCustom) ? event.participantsCustom : [];
+            const storedParticipants = event && Array.isArray(event.participants) ? event.participants : [];
+            const inferredCustom = storedParticipants.filter(name => !planningUsersList.includes(name));
+            planningCustomParticipants = Array.from(new Set(storedCustom.concat(inferredCustom)));
+            renderPlanningParticipantsList(storedParticipants);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            input.focus();
+        }
+
+        function closePlanningModal() {
+            const modal = document.getElementById('planningModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            planningEditingEventId = null;
+            planningCustomParticipants = [];
+        }
+
+        function renderPlanningParticipantsList(selected = null) {
+            const list = document.getElementById('planningParticipantsList');
+            if (!list) return;
+            const baseList = Array.isArray(planningUsersList) ? planningUsersList : [];
+            const extra = planningCustomParticipants.filter(name => !baseList.includes(name));
+            const all = baseList.concat(extra);
+            if (!all.length) {
+                list.innerHTML = '<div class="planning-empty">Пока нет списка участников.</div>';
+                return;
+            }
+            list.innerHTML = all.map((name) => {
+                const checked = Array.isArray(selected) ? selected.includes(name) : false;
+                return `
+                    <label class="planning-participant-item">
+                        <span>${escapeHtml(name)}</span>
+                        <input type="checkbox" data-planning-participant="${escapeHtml(name)}" ${checked ? 'checked' : ''}>
+                    </label>
+                `;
+            }).join('');
+        }
+
+        function getSelectedPlanningParticipants() {
+            const list = document.getElementById('planningParticipantsList');
+            if (!list) return [];
+            return Array.from(list.querySelectorAll('input[data-planning-participant]'))
+                .filter(input => input.checked)
+                .map(input => input.dataset.planningParticipant);
+        }
+
+        function addPlanningParticipant() {
+            const input = document.getElementById('planningParticipantInput');
+            if (!input) return;
+            const raw = input.value.trim();
+            if (!raw) return;
+            const normalized = raw.toLowerCase();
+            const existsInBase = planningUsersList.some(name => name.toLowerCase() === normalized);
+            const existsInCustom = planningCustomParticipants.some(name => name.toLowerCase() === normalized);
+            if (!existsInBase && !existsInCustom) {
+                planningCustomParticipants.push(raw);
+            }
+            input.value = '';
+            renderPlanningParticipantsList(getSelectedPlanningParticipants());
+        }
+
+        function savePlanningEvent() {
+            const input = document.getElementById('planningNameInput');
+            if (!input || !planningDb) return;
+            const name = input.value.trim();
+            if (!name) return;
+            const selected = getSelectedPlanningParticipants();
+            const hasCustom = selected.some(name => !planningUsersList.includes(name));
+            const customParticipants = selected.filter(name => !planningUsersList.includes(name));
+            if (planningEditingEventId) {
+                const update = { name, updatedAt: Date.now() };
+                if (selected.length && (hasCustom || selected.length < planningUsersList.length)) {
+                    update.participants = selected;
+                } else {
+                    update.participants = null;
+                }
+                if (customParticipants.length) {
+                    update.participantsCustom = customParticipants;
+                } else {
+                    update.participantsCustom = null;
+                }
+                planningDb.ref(`planning/events/${planningEditingEventId}`).update(update);
+            } else {
+                const payload = {
+                    name,
+                    createdAt: Date.now(),
+                    createdBy: getUserName() || ''
+                };
+                if (selected.length && (hasCustom || selected.length < planningUsersList.length)) {
+                    payload.participants = selected;
+                }
+                if (customParticipants.length) {
+                    payload.participantsCustom = customParticipants;
+                }
+                const ref = planningDb.ref('planning/events').push(payload);
+                planningDb.ref(`planning/data/${ref.key}`).set({ sections: [] });
+            }
+            closePlanningModal();
+        }
+
+        function openAddBeerModal() {
+            const modal = document.getElementById('addBeerModal');
+            if (!modal) return;
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function openBeerInfoCard(beer, opts = null) {
+            const existing = cardsLayer.querySelector(`.card[data-beer-info="${beer.id}"]`);
+            if (existing) {
+                bringCardToFront(existing);
+                return;
+            }
+            const card = document.createElement('div');
+            card.className = 'card beer-info-card';
+            card.dataset.temp = 'true';
+            card.dataset.beerInfo = beer.id;
+            const head = document.createElement('div');
+            head.className = 'card-head card-handle';
+            const title = document.createElement('div');
+            title.className = 'card-title';
+            title.textContent = beer.name || 'Пиво';
+            const close = document.createElement('button');
+            close.className = 'beer-info-close';
+            close.type = 'button';
+            close.setAttribute('aria-label', 'Закрыть');
+            close.textContent = '×';
+            close.addEventListener('click', (event) => {
+                event.stopPropagation();
+                removeBeerInfoLive(beer.id);
+                card.remove();
+            });
+            head.appendChild(title);
+            head.appendChild(close);
+
+            const grid = document.createElement('div');
+            grid.className = 'beer-info-grid';
+            const ratingsList = Object.entries(beer.ratings || {}).map(([name, rating]) => `${name}: ${rating}`).join(', ');
+            grid.innerHTML = `
+                <div class="beer-info-row"><span class="beer-info-label">Тип</span><span>${beer.type || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Стиль</span><span>${beer.style || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Фильтрация</span><span>${beer.filtered || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Страна</span><span>${beer.country || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Объем</span><span>${beer.volume || '—'} л</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Крепость</span><span>${beer.alcohol || '—'}%</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Калории</span><span>${beer.calories || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Рейтинг</span><span>${beer.avg ? beer.avg.toFixed(1) : '—'} (${beer.count || 0})</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Оценки</span><span>${ratingsList || '—'}</span></div>
+                <div class="beer-info-row"><span class="beer-info-label">Автор</span><span>${beer.author || '—'}</span></div>
+            `;
+
+            card.appendChild(head);
+            card.appendChild(grid);
+            addResizeHandle(card);
+            cardsLayer.appendChild(card);
+            bringCardToFront(card);
+
+            const rect = board.getBoundingClientRect();
+            const worldX = (rect.width / 2 - boardState.x) / boardState.scale;
+            const worldY = (rect.height / 2 - boardState.y) / boardState.scale;
+            const x = worldX - card.offsetWidth / 2;
+            const y = worldY - card.offsetHeight / 2;
+            if (opts && typeof opts.w === 'number' && typeof opts.h === 'number') {
+                setCardSize(card, opts.w, opts.h);
+            }
+            if (opts && typeof opts.x === 'number' && typeof opts.y === 'number') {
+                setCardPosition(card, opts.x, opts.y);
+            } else {
+                setCardPosition(card, x, y);
+            }
+            card.addEventListener('pointerdown', (event) => {
+                bringCardToFront(card);
+                startCardDrag(event, card);
+            });
+            if (!opts || !opts.silent) {
+                queueBeerInfoUpdate(card);
+            }
+        }
+
+        function closeAddBeerModal() {
+            const modal = document.getElementById('addBeerModal');
+            if (!modal) return;
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function initCollaboration() {
+            if (!boardDb || collabReady) return;
+            collabReady = true;
+            const clientId = getClientId();
+            const cursorLayer = document.getElementById('cursorLayer');
+            const cursorRef = boardDb.ref('boardPresence/cursors');
+            const liveRef = boardDb.ref('boardLive/cards');
+            const beerInfoRef = boardDb.ref('boardLive/beerInfo');
+            const userName = getUserName() || 'Гость';
+
+            const myRef = cursorRef.child(clientId);
+            myRef.onDisconnect().remove();
+            window.addEventListener('beforeunload', () => {
+                try { myRef.remove(); } catch (_) {}
+            });
+
+            let lastCursorSent = 0;
+            let lastCursorX = null;
+            let lastCursorY = null;
+            const sendCursor = (x, y) => {
+                const now = Date.now();
+                if (now - lastCursorSent < LIVE_UPDATE_MS) return;
+                if (lastCursorX != null && lastCursorY != null) {
+                    const dx = Math.abs(x - lastCursorX);
+                    const dy = Math.abs(y - lastCursorY);
+                    if (dx < LIVE_MIN_DELTA && dy < LIVE_MIN_DELTA) return;
+                }
+                lastCursorSent = now;
+                lastCursorX = x;
+                lastCursorY = y;
+                myRef.set({ x, y, name: userName, ts: now });
+            };
+
+            board.addEventListener('pointermove', (event) => {
+                if (!cursorLayer) return;
+                if (event.pointerType === 'touch') return;
+                const rect = board.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+                const worldX = (mouseX - boardState.x) / boardState.scale;
+                const worldY = (mouseY - boardState.y) / boardState.scale;
+                sendCursor(worldX, worldY);
+            });
+
+            cursorRef.on('child_added', (snapshot) => {
+                if (snapshot.key === clientId || !cursorLayer) return;
+                const data = snapshot.val();
+                const cursor = document.createElement('div');
+                cursor.className = 'user-cursor';
+                cursor.dataset.cursorId = snapshot.key;
+                cursor.innerHTML = `<span class="cursor-dot"></span><span class="cursor-label">${escapeHtml(data?.name || 'Гость')}</span>`;
+                cursorLayer.appendChild(cursor);
+                cursorMap.set(snapshot.key, cursor);
+                if (data && typeof data.x === 'number' && typeof data.y === 'number') {
+                    cursor.style.transform = `translate(${data.x}px, ${data.y}px)`;
+                }
+            });
+
+            cursorRef.on('child_changed', (snapshot) => {
+                if (snapshot.key === clientId) return;
+                const cursor = cursorMap.get(snapshot.key);
+                const data = snapshot.val();
+                if (!cursor || !data) return;
+                cursor.querySelector('.cursor-label').textContent = data.name || 'Гость';
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    cursor.style.transform = `translate(${data.x}px, ${data.y}px)`;
+                }
+            });
+
+            cursorRef.on('child_removed', (snapshot) => {
+                const cursor = cursorMap.get(snapshot.key);
+                if (cursor) cursor.remove();
+                cursorMap.delete(snapshot.key);
+            });
+
+            liveRef.on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || data.by === clientId) return;
+                const card = cardsLayer.querySelector(`.card[data-card-id="${snapshot.key}"]`);
+                if (!card || dragState.active || resizeState.active) return;
+                card.classList.add('remote-moving');
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    setCardPosition(card, data.x, data.y);
+                }
+                if (typeof data.w === 'number' && typeof data.h === 'number') {
+                    setCardSize(card, data.w, data.h);
+                }
+                setTimeout(() => card.classList.remove('remote-moving'), 120);
+            });
+
+            liveRef.on('child_changed', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || data.by === clientId) return;
+                const card = cardsLayer.querySelector(`.card[data-card-id="${snapshot.key}"]`);
+                if (!card || dragState.active || resizeState.active) return;
+                card.classList.add('remote-moving');
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    setCardPosition(card, data.x, data.y);
+                }
+                if (typeof data.w === 'number' && typeof data.h === 'number') {
+                    setCardSize(card, data.w, data.h);
+                }
+                setTimeout(() => card.classList.remove('remote-moving'), 120);
+            });
+
+            beerInfoRef.on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || data.by === clientId) return;
+                const beer = beerDataCache.find((b) => String(b.id) === String(snapshot.key));
+                const fallback = { id: snapshot.key, name: data.name || 'Пиво', ratings: {} };
+                const target = beer || fallback;
+                openBeerInfoCard(target, { ...data, silent: true });
+            });
+
+            beerInfoRef.on('child_changed', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || data.by === clientId) return;
+                const card = cardsLayer.querySelector(`.card[data-beer-info="${snapshot.key}"]`);
+                if (!card) return;
+                card.classList.add('remote-moving');
+                if (typeof data.x === 'number' && typeof data.y === 'number') {
+                    setCardPosition(card, data.x, data.y);
+                }
+                if (typeof data.w === 'number' && typeof data.h === 'number') {
+                    setCardSize(card, data.w, data.h);
+                }
+                setTimeout(() => card.classList.remove('remote-moving'), 120);
+            });
+
+            beerInfoRef.on('child_removed', (snapshot) => {
+                const card = cardsLayer.querySelector(`.card[data-beer-info="${snapshot.key}"]`);
+                if (card) card.remove();
+            });
+        }
+
+        function resetAddBeerForm() {
+            document.getElementById('beerNameInput').value = '';
+            document.getElementById('beerAlcoholInput').value = '';
+            document.getElementById('beerCaloriesInput').value = '';
+            document.getElementById('beerTypeInput').value = 'Светлое';
+            document.getElementById('beerStyleInput').value = 'Lager';
+            document.getElementById('beerFilteredInput').value = 'Фильтрованное';
+            document.getElementById('beerCountryInput').value = 'Россия';
+            document.getElementById('beerVolumeInput').value = '0.5';
+        }
+
+        function initBeerFeed() {
+            if (!window.firebase || !firebaseConfig.databaseURL) return;
+            try {
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                boardDb = firebase.database();
+                boardDb.ref('beerRating').on('value', (snapshot) => {
+                    const value = snapshot.val() || [];
+                    const list = Array.isArray(value) ? value : Object.values(value);
+                    beerDataCache = list;
+                    renderBeerRating(list);
+                    renderRouletteList();
+                    renderRouletteWheel();
+                });
+                boardDb.ref('events').on('value', (snapshot) => {
+                    const value = snapshot.val() || {};
+                    eventData.events = value && typeof value === 'object' ? value : {};
+                    renderEventCalendar();
+                    renderEventPanel();
+                });
+                initBacklogFeed();
+                initPlanningFeed();
+                initCollaboration();
+            } catch (err) {
+                renderBeerRating([]);
+            }
+        }
+
+        initBeerFeed();
+        initBoardLayout();
+
+        const NEW_COLUMN_NAME = 'Новые';
+        const BACKLOG_COLUMN_NAME = 'Бэклог';
+        const WATCHED_COLUMN_NAME = 'Просмотренные';
+        const collator = new Intl.Collator('ru', { sensitivity: 'base' });
+        const backlogData = { columns: [], cards: [] };
+        const columnSortState = {};
+        let currentColumnId = null;
+        let editingColumnId = null;
+        let editingCardId = null;
+
+        function saveBacklog() {
+            if (!boardDb) return;
+            boardDb.ref('backlog').set(backlogData);
+        }
+
+        function getCardAvgRating(card) {
+            const ratings = Object.values(card.ratings || {}).map(r => parseFloat(r) || 0).filter(v => v > 0);
+            if (ratings.length === 0) return parseFloat(card.rating) || 0;
+            return ratings.reduce((s, v) => s + v, 0) / ratings.length;
+        }
+
+        function getCardRatingsCount(card) {
+            return Object.values(card.ratings || {}).filter(v => parseFloat(v) > 0).length;
+        }
+
+        function buildCardRatingsLine(card, limit = 2) {
+            const entries = Object.entries(card.ratings || {})
+                .map(([n, r]) => [n, parseFloat(r) || 0])
+                .filter(([, r]) => r > 0);
+            entries.sort((a, b) => collator.compare(a[0], b[0]));
+            const full = entries.map(([n, r]) => `${n}: ${String(Math.round(r * 10) / 10).replace(/\\.0$/, '')}`).join(', ');
+            const short = entries.slice(0, limit).map(([n, r]) => `${n}: ${String(Math.round(r * 10) / 10).replace(/\\.0$/, '')}`).join(', ') + (entries.length > limit ? '…' : '');
+            return { full, short };
+        }
+
+        function toggleColumnSort(columnId) {
+            columnSortState[columnId] = columnSortState[columnId] === 'asc' ? 'desc' : columnSortState[columnId] === 'desc' ? null : 'asc';
+            renderBacklog();
+        }
+
+        function resetColumnSort(columnId) {
+            columnSortState[columnId] = null;
+            renderBacklog();
+        }
+
+        function renderBacklog() {
+            const boardEl = document.getElementById('backlogBoard');
+            if (!boardEl) return;
+            const columns = backlogData.columns || [];
+            const cards = backlogData.cards || [];
+
+            if (columns.length === 0) {
+                columns.push(
+                    { id: Date.now().toString(), name: NEW_COLUMN_NAME },
+                    { id: (Date.now() + 1).toString(), name: BACKLOG_COLUMN_NAME },
+                    { id: (Date.now() + 2).toString(), name: WATCHED_COLUMN_NAME }
+                );
+                backlogData.columns = columns;
+                saveBacklog();
+            }
+
+            boardEl.innerHTML = columns.map(column => {
+                let columnCards = cards.filter(card => card.columnId === column.id);
+                const sortState = columnSortState[column.id];
+                columnCards.sort((a, b) => {
+                    if (sortState === 'asc' || sortState === 'desc') {
+                        const aRating = getCardAvgRating(a);
+                        const bRating = getCardAvgRating(b);
+                        return sortState === 'asc' ? aRating - bRating : bRating - aRating;
+                    }
+                    const aLastWatch = a.watchHistory && a.watchHistory.length > 0 ? a.watchHistory[a.watchHistory.length - 1] : 0;
+                    const bLastWatch = b.watchHistory && b.watchHistory.length > 0 ? b.watchHistory[b.watchHistory.length - 1] : 0;
+                    if (aLastWatch === 0 && bLastWatch !== 0) return -1;
+                    if (aLastWatch !== 0 && bLastWatch === 0) return 1;
+                    if (aLastWatch !== 0 && bLastWatch !== 0 && aLastWatch !== bLastWatch) return aLastWatch - bLastWatch;
+                    return getCardAvgRating(b) - getCardAvgRating(a);
+                });
+
+                return `
+                    <div class="backlog-column" data-column-id="${column.id}" draggable="true">
+                        <div class="column-header">
+                            <div class="flex items-center gap-2">
+                                <span class="text-gray-400 cursor-grab">⠿</span>
+                                <span class="text-white font-semibold text-sm column-title">${column.name}</span>
+                                <span class="text-gray-500 text-xs">${columnCards.length}</span>
+                            </div>
+                            <div class="flex gap-2 items-center">
+                                <button onclick="event.stopPropagation(); toggleColumnSort('${column.id}')" class="backlog-icon-btn" title="Сортировка по рейтингу">
+                                    ⭐${columnSortState[column.id] === 'asc' ? '↑' : columnSortState[column.id] === 'desc' ? '↓' : '↕'}
+                                </button>
+                                ${columnSortState[column.id] ? `<button onclick="event.stopPropagation(); resetColumnSort('${column.id}')" class="backlog-icon-btn" title="Сбросить сортировку">✕</button>` : ''}
+                                <button onclick="event.stopPropagation(); openAddCardModal('${column.id}')" class="backlog-icon-btn" title="Добавить фильм">➕</button>
+                                <button onclick="event.stopPropagation(); openEditColumnModal('${column.id}')" class="backlog-icon-btn" title="Настроить колонку">⋮</button>
+                            </div>
+                        </div>
+                        <div class="column-cards" data-column-id="${column.id}">
+                            ${columnCards.map(card => {
+                                const avg = getCardAvgRating(card);
+                                const ratingsCount = getCardRatingsCount(card);
+                                const ratingClass = avg >= 7 ? 'rating-high' : avg >= 5 ? 'rating-medium' : 'rating-low';
+                                const ratingsLine = buildCardRatingsLine(card, 2);
+                                const avgText = avg ? String(Math.round(avg * 10) / 10).replace(/\\.0$/, '') : '';
+                                return `
+                                    <div class="backlog-card relative" data-card-id="${card.id}" draggable="true" onclick="openEditCardModal('${card.id}')">
+                                        <div class="backlog-card-title mb-1">${card.title}</div>
+                                        ${card.description ? `<div class="backlog-card-desc mb-2">${card.description}</div>` : ''}
+                                        ${ratingsCount > 0 ? `
+                                            <div class="backlog-card-ratings mb-2 truncate" title="${ratingsLine.full}">
+                                                ${ratingsLine.short}
+                                            </div>
+                                        ` : ''}
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <div class="backlog-card-author">${card.author || ''}</div>
+                                            ${ratingsCount > 0 ? `<span class="rating-badge ${ratingClass}">⭐ ${avgText}${ratingsCount > 1 ? ` (${ratingsCount})` : ''}</span>` : ''}
+                                            ${card.watchCount > 0 ? `<span class="watch-count">👁 ${card.watchCount}</span>` : ''}
+                                            ${Object.keys(card.reviews || {}).length > 0 ? `<span class="review-count">💬 ${Object.keys(card.reviews || {}).length}</span>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('') || '<div class="text-gray-600 text-xs text-center py-4">Пусто</div>'}
+                        </div>
+                    </div>
+                `;
+            }).join('') + `
+                <div class="add-column-btn" onclick="openAddColumnModal()">
+                    <span class="text-xl">+</span>
+                    <span>Добавить колонку</span>
+                </div>
+            `;
+
+            setupBacklogDragDrop();
+        }
+
+        function setupBacklogDragDrop() {
+            let draggedCard = null;
+            let draggedColumn = null;
+
+            const handleCardMove = (cardId, newColumnId) => {
+                const card = backlogData.cards.find(c => c.id === cardId);
+                if (!card) return;
+                const oldColumnId = card.columnId;
+                card.columnId = newColumnId;
+                const watchedColumn = backlogData.columns.find(col => col.name === WATCHED_COLUMN_NAME);
+                if (watchedColumn && newColumnId === watchedColumn.id && oldColumnId !== watchedColumn.id) {
+                    card.watchCount = (card.watchCount || 0) + 1;
+                    if (!card.watchHistory) card.watchHistory = [];
+                    card.watchHistory.push(Date.now());
+                }
+                saveBacklog();
+            };
+
+            document.querySelectorAll('.backlog-card').forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedCard = card;
+                    card.classList.add('dragging');
+                    e.stopPropagation();
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('dragging');
+                    draggedCard = null;
+                });
+            });
+
+            document.querySelectorAll('.backlog-column').forEach(column => {
+                column.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    column.classList.add('drag-over');
+                });
+                column.addEventListener('dragleave', () => column.classList.remove('drag-over'));
+                column.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    column.classList.remove('drag-over');
+                    if (draggedCard) {
+                        const newColumnId = column.dataset.columnId;
+                        handleCardMove(draggedCard.dataset.cardId, newColumnId);
+                    }
+                });
+                column.addEventListener('dragstart', (e) => {
+                    draggedColumn = column;
+                    column.classList.add('column-dragging');
+                    const rect = column.getBoundingClientRect();
+                    const ghost = column.cloneNode(true);
+                    ghost.style.position = 'absolute';
+                    ghost.style.top = '-9999px';
+                    ghost.style.left = '-9999px';
+                    ghost.style.width = `${rect.width}px`;
+                    ghost.style.height = `${rect.height}px`;
+                    ghost.style.minWidth = `${rect.width}px`;
+                    ghost.style.maxWidth = `${rect.width}px`;
+                    ghost.style.minHeight = `${rect.height}px`;
+                    ghost.style.maxHeight = `${rect.height}px`;
+                    ghost.style.transform = 'none';
+                    ghost.classList.add('backlog-drag-ghost');
+                    document.body.appendChild(ghost);
+                    if (e.dataTransfer && e.dataTransfer.setDragImage) {
+                        e.dataTransfer.setDragImage(ghost, rect.width / 2, 20);
+                    }
+                    setTimeout(() => ghost.remove(), 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                column.addEventListener('dragend', () => {
+                    if (draggedColumn) draggedColumn.classList.remove('column-dragging');
+                    draggedColumn = null;
+                });
+                column.addEventListener('drop', (e) => {
+                    if (!draggedColumn || draggedColumn === column) return;
+                    const board = document.getElementById('backlogBoard');
+                    const columns = Array.from(board.querySelectorAll('.backlog-column'));
+                    const fromIndex = columns.indexOf(draggedColumn);
+                    const toIndex = columns.indexOf(column);
+                    if (fromIndex < toIndex) {
+                        board.insertBefore(draggedColumn, column.nextSibling);
+                    } else {
+                        board.insertBefore(draggedColumn, column);
+                    }
+                    const newOrder = Array.from(board.querySelectorAll('.backlog-column')).map(col => col.dataset.columnId);
+                    backlogData.columns = newOrder.map(id => backlogData.columns.find(c => c.id === id));
+                    saveBacklog();
+                });
+            });
+        }
+
+        function openAddColumnModal() {
+            const modal = document.getElementById('addColumnModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('columnNameInput').value = '';
+            document.getElementById('columnNameInput').focus();
+        }
+
+        function closeAddColumnModal() {
+            document.getElementById('addColumnModal').classList.add('hidden');
+            document.getElementById('addColumnModal').classList.remove('flex');
+        }
+
+        function createColumn() {
+            const name = document.getElementById('columnNameInput').value.trim();
+            if (!name) return;
+            backlogData.columns.push({ id: Date.now().toString(), name });
+            saveBacklog();
+            closeAddColumnModal();
+        }
+
+        function openEditColumnModal(columnId) {
+            editingColumnId = columnId;
+            const column = backlogData.columns.find(c => c.id === columnId);
+            if (column) {
+                document.getElementById('editColumnNameInput').value = column.name;
+                const modal = document.getElementById('editColumnModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.getElementById('editColumnNameInput').focus();
+            }
+        }
+
+        function closeEditColumnModal() {
+            document.getElementById('editColumnModal').classList.add('hidden');
+            document.getElementById('editColumnModal').classList.remove('flex');
+            editingColumnId = null;
+        }
+
+        function saveColumnEdit() {
+            const name = document.getElementById('editColumnNameInput').value.trim();
+            if (!name || !editingColumnId) return;
+            const column = backlogData.columns.find(c => c.id === editingColumnId);
+            if (column) {
+                column.name = name;
+                saveBacklog();
+                closeEditColumnModal();
+            }
+        }
+
+        function deleteColumn() {
+            if (!editingColumnId) return;
+            const cardsInColumn = backlogData.cards.filter(c => c.columnId === editingColumnId);
+            if (cardsInColumn.length > 0 && !confirm(`В колонке ${cardsInColumn.length} карточек. Удалить колонку вместе с карточками?`)) {
+                return;
+            }
+            backlogData.columns = backlogData.columns.filter(c => c.id !== editingColumnId);
+            backlogData.cards = backlogData.cards.filter(c => c.columnId !== editingColumnId);
+            saveBacklog();
+            closeEditColumnModal();
+        }
+
+        function openAddCardModal(columnId) {
+            currentColumnId = columnId;
+            document.getElementById('cardTitleInput').value = '';
+            document.getElementById('cardDescInput').value = '';
+            document.getElementById('cardRatingInput').value = '';
+            const modal = document.getElementById('addCardModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('cardTitleInput').focus();
+        }
+
+        function closeAddCardModal() {
+            document.getElementById('addCardModal').classList.add('hidden');
+            document.getElementById('addCardModal').classList.remove('flex');
+            currentColumnId = null;
+        }
+
+        function createCard() {
+            const title = document.getElementById('cardTitleInput').value.trim();
+            const description = document.getElementById('cardDescInput').value.trim();
+            const rating = parseFloat(document.getElementById('cardRatingInput').value) || 0;
+            const userName = getUserName();
+            if (!title) return alert('Введите название фильма!');
+            const existingCard = backlogData.cards.find(card => card.title.toLowerCase() === title.toLowerCase());
+            if (existingCard) {
+                const watchedColumn = backlogData.columns.find(col => col.name === WATCHED_COLUMN_NAME);
+                const newColumn = backlogData.columns.find(col => col.name === NEW_COLUMN_NAME);
+                if (watchedColumn && existingCard.columnId === watchedColumn.id && newColumn) {
+                    existingCard.columnId = newColumn.id;
+                    saveBacklog();
+                    closeAddCardModal();
+                    return;
+                }
+            }
+            const card = {
+                id: Date.now().toString(),
+                columnId: currentColumnId,
+                title,
+                description,
+                ratings: rating > 0 ? { [userName]: rating } : {},
+                rating: rating > 0 ? rating : 0,
+                author: userName,
+                watchCount: 0,
+                timestamp: Date.now()
+            };
+            backlogData.cards.push(card);
+            saveBacklog();
+            closeAddCardModal();
+        }
+
+        function openEditCardModal(cardId) {
+            editingCardId = cardId;
+            const card = backlogData.cards.find(c => c.id === cardId);
+            if (!card) return;
+            const userName = getUserName();
+            const myRating = (card.ratings && card.ratings[userName] != null)
+                ? card.ratings[userName]
+                : ((card.author === userName) ? (parseFloat(card.rating) || '') : '');
+            document.getElementById('editCardTitleInput').value = card.title;
+            document.getElementById('editCardDescInput').value = card.description || '';
+            document.getElementById('editCardRatingInput').value = (myRating === 0 ? '' : (myRating ?? ''));
+            renderWatchHistory(card);
+            renderCardRatings(card);
+            renderCardReviews(card);
+            const modal = document.getElementById('editCardModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditCardModal() {
+            document.getElementById('editCardModal').classList.add('hidden');
+            document.getElementById('editCardModal').classList.remove('flex');
+            editingCardId = null;
+        }
+
+        function renderCardRatings(card) {
+            const avgEl = document.getElementById('cardAvgRating');
+            const cntEl = document.getElementById('cardRatingsCount');
+            const listEl = document.getElementById('cardRatingsList');
+            if (!avgEl || !cntEl || !listEl) return;
+            if (!card.ratings || typeof card.ratings !== 'object') card.ratings = {};
+            const legacy = parseFloat(card.rating) || 0;
+            if (legacy > 0 && card.author && card.ratings[card.author] == null) {
+                card.ratings[card.author] = legacy;
+            }
+            const entries = Object.entries(card.ratings || {})
+                .map(([n, r]) => [n, parseFloat(r) || 0])
+                .filter(([, r]) => r > 0);
+            entries.sort((a, b) => collator.compare(a[0], b[0]));
+            const avg = entries.length ? (entries.reduce((s, [, r]) => s + r, 0) / entries.length) : 0;
+            avgEl.textContent = avg ? String(Math.round(avg * 10) / 10).replace(/\\.0$/, '') : '—';
+            cntEl.textContent = String(entries.length);
+            listEl.innerHTML = entries.length
+                ? entries.map(([name, rating]) => `<div class="flex items-center justify-between gap-2"><span class="text-gray-300 truncate">${name}</span><span class="text-amber-300 font-bold">${String(Math.round(rating * 10) / 10).replace(/\\.0$/, '')}</span></div>`).join('')
+                : '<div class="text-gray-500 italic">Пока нет оценок…</div>';
+        }
+
+        function renderWatchHistory(card) {
+            const watchHistory = card.watchHistory || [];
+            const section = document.getElementById('watchHistorySection');
+            const list = document.getElementById('watchHistoryList');
+            if (!section || !list) return;
+            if (watchHistory.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            list.innerHTML = watchHistory.map((timestamp, index) => {
+                const date = new Date(timestamp);
+                return `
+                    <div style="display:flex; gap:6px; font-size:11px; margin-bottom:4px;">
+                        <span style="color:#86efac; font-weight:700;">${index + 1}.</span>
+                        <span style="color:#e5e7eb;">${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCardReviews(card) {
+            const userName = getUserName();
+            const reviews = card.reviews || {};
+            const reviewsList = document.getElementById('cardReviewsList');
+            const reviewInputSection = document.getElementById('reviewInputSection');
+            const reviewInput = document.getElementById('cardReviewInput');
+            const deleteReviewBtn = document.getElementById('deleteReviewBtn');
+            const deleteReviewBtnOutside = document.getElementById('deleteReviewBtnOutside');
+            const userHasReview = reviews[userName] !== undefined;
+            if (!reviewsList) return;
+            reviewsList.innerHTML = Object.keys(reviews).length === 0
+                ? '<p class="text-gray-500 text-xs italic">Пока нет отзывов...</p>'
+                : Object.entries(reviews).map(([author, review]) => `
+                    <div style="background: rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="color:#93c5fd; font-size:11px; font-weight:600;">${author}</span>
+                            <span style="color:#6b7280; font-size:10px;">${new Date(review.timestamp).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        <div style="font-size:11px; color:#e5e7eb;">${review.text}</div>
+                    </div>
+                `).join('');
+            if (userHasReview) {
+                reviewInputSection.style.display = 'none';
+                deleteReviewBtn.style.display = 'none';
+                deleteReviewBtnOutside.style.display = 'block';
+            } else {
+                reviewInputSection.style.display = 'block';
+                deleteReviewBtn.style.display = 'none';
+                deleteReviewBtnOutside.style.display = 'none';
+            }
+            reviewInput.value = '';
+        }
+
+        function saveCardReview() {
+            if (!editingCardId) return;
+            const userName = getUserName();
+            const reviewInput = document.getElementById('cardReviewInput');
+            const reviewText = reviewInput.value.trim();
+            if (!reviewText) return alert('Введите текст отзыва!');
+            const card = backlogData.cards.find(c => c.id === editingCardId);
+            if (card) {
+                if (!card.reviews) card.reviews = {};
+                card.reviews[userName] = { text: reviewText, timestamp: Date.now() };
+                saveBacklog();
+                renderCardReviews(card);
+            }
+        }
+
+        function deleteCardReview() {
+            if (!editingCardId) return;
+            const userName = getUserName();
+            if (!confirm('Удалить ваш отзыв?')) return;
+            const card = backlogData.cards.find(c => c.id === editingCardId);
+            if (card && card.reviews && card.reviews[userName]) {
+                delete card.reviews[userName];
+                saveBacklog();
+                renderCardReviews(card);
+            }
+        }
+
+        function saveCardEdit() {
+            const title = document.getElementById('editCardTitleInput').value.trim();
+            const description = document.getElementById('editCardDescInput').value.trim();
+            const myRating = parseFloat(document.getElementById('editCardRatingInput').value) || 0;
+            const userName = getUserName();
+            if (!title || !editingCardId) return;
+            const card = backlogData.cards.find(c => c.id === editingCardId);
+            if (card) {
+                card.title = title;
+                card.description = description;
+                if (!card.ratings || typeof card.ratings !== 'object') card.ratings = {};
+                const legacy = parseFloat(card.rating) || 0;
+                if (legacy > 0 && card.author && card.ratings[card.author] == null) {
+                    card.ratings[card.author] = legacy;
+                }
+                if (myRating > 0) {
+                    card.ratings[userName] = myRating;
+                } else {
+                    delete card.ratings[userName];
+                }
+                const vals = Object.values(card.ratings || {}).map(v => parseFloat(v) || 0).filter(v => v > 0);
+                const avg = vals.length ? (vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
+                card.rating = avg ? Math.round(avg * 10) / 10 : 0;
+                saveBacklog();
+                closeEditCardModal();
+            }
+        }
+
+        function deleteCard() {
+            if (!editingCardId) return;
+            if (confirm('Удалить этот фильм?')) {
+                backlogData.cards = backlogData.cards.filter(c => c.id !== editingCardId);
+                saveBacklog();
+                closeEditCardModal();
+            }
+        }
+
+        function initBacklogFeed() {
+            if (!boardDb) return;
+            boardDb.ref('backlog').on('value', (snapshot) => {
+                const backlog = snapshot.val() || { columns: [], cards: [] };
+                backlogData.columns = Array.isArray(backlog.columns) ? backlog.columns : Object.values(backlog.columns || {});
+                backlogData.cards = Array.isArray(backlog.cards) ? backlog.cards : Object.values(backlog.cards || {});
+                renderBacklog();
+            });
+        }
+
+        const planningFirebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        const poopFirebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        let poopDb = null;
+        let poopCache = [];
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function isDrawingData(value) {
+            return typeof value === 'string' && value.startsWith('data:image/');
+        }
+
+        function formatDateKey(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+        }
+
+        function formatDuration(entry) {
+            const mins = parseInt(entry.duration, 10) || 0;
+            const secs = parseInt(entry.durationSeconds, 10) % 60 || 0;
+            if (!mins && !secs) return '0 мин';
+            if (mins && secs) return `${mins}м ${secs}с`;
+            return mins ? `${mins}м` : `${secs}с`;
+        }
+
+        function bristolIcon(type) {
+            const base = 'stroke="rgba(245,158,11,0.7)" fill="rgba(245,158,11,0.35)" stroke-width="1.5"';
+            switch (String(type)) {
+                case '1': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="12" cy="16" r="6" ${base}/><circle cx="23" cy="12" r="5.5" ${base}/><circle cx="32" cy="17" r="5.5" ${base}/></svg>`;
+                case '2': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="10" y="9" width="28" height="12" rx="6" ${base}/><path d="M16 11c2 2 0 5 3 6" ${base}/><path d="M30 12c-1 2 2 4 0 6" ${base}/></svg>`;
+                case '3': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="8" y="9" width="32" height="12" rx="6" ${base}/><path d="M16 11l3 5M26 10l-2 7M34 12l-1 6" ${base}/></svg>`;
+                case '4': return `<svg class="bristol-icon" viewBox="0 0 48 28"><rect x="8" y="8" width="32" height="12" rx="6" ${base.replace('0.35','0.45')}/></svg>`;
+                case '5': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="15" cy="14" r="6" ${base}/><circle cx="25" cy="12" r="5" ${base}/><circle cx="32" cy="15" r="5.5" ${base}/></svg>`;
+                case '6': return `<svg class="bristol-icon" viewBox="0 0 48 28"><circle cx="8" cy="16" r="3" ${base}/><circle cx="14" cy="12" r="2.5" ${base}/><circle cx="20" cy="16" r="3" ${base}/><circle cx="26" cy="11" r="2.5" ${base}/><circle cx="30" cy="16" r="3" ${base}/><circle cx="36" cy="12" r="2.5" ${base}/><circle cx="40" cy="17" r="2.5" ${base}/><circle cx="23" cy="20" r="2.5" ${base}/></svg>`;
+                case '7': return `<svg class="bristol-icon" viewBox="0 0 48 28"><path d="M8 15c4-5 10 1 14-1s7-5 12-2 6 7 1 8-9-4-14-2-10 4-13-3z" ${base.replace('0.35','0.25')}/></svg>`;
+                default: return '';
+            }
+        }
+
+        const BRISTOL = {
+            1: { title: 'Отдельные твёрдые комочки', icon: bristolIcon('1') },
+            2: { title: 'Комковатая колбаска', icon: bristolIcon('2') },
+            3: { title: 'Колбаска с трещинами', icon: bristolIcon('3') },
+            4: { title: 'Гладкая колбаска', icon: bristolIcon('4') },
+            5: { title: 'Мягкие комки', icon: bristolIcon('5') },
+            6: { title: 'Кашицеобразный стул', icon: bristolIcon('6') },
+            7: { title: 'Водянистый без твёрдых частиц', icon: bristolIcon('7') }
+        };
+
+        function renderPoopList(list) {
+            const listEl = document.getElementById('poopList');
+            if (!listEl) return;
+            if (!list.length) {
+                listEl.innerHTML = '<div class="rating-meta">Сегодня еще никто не добавлял покак.</div>';
+                return;
+            }
+            listEl.innerHTML = list.map((entry) => {
+                const meta = BRISTOL[entry.bristol] || {};
+                const time = entry.time || '—';
+                const author = entry.authorName || entry.author || 'Аноним';
+                const created = entry.createdAt ? new Date(entry.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+                const duration = formatDuration(entry);
+                const size = entry.size ? `Размер: ${entry.size}/10` : 'Размер —';
+                const bristol = entry.bristol ? `Тип ${entry.bristol}` : 'Бристоль —';
+                const drawingMarkup = isDrawingData(entry.drawing) ? `
+                    <div>
+                        <button type="button" class="poop-drawing-toggle" data-action="toggle-drawing">Показать кал</button>
+                        <div class="poop-hidden poop-drawing-panel" data-drawing-panel>
+                            <div style="aspect-ratio: 504 / 308; position: relative;">
+                                <img src="${entry.drawing}" alt="Рисунок покака ${escapeHtml(time)}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#000;">
+                            </div>
+                        </div>
+                    </div>
+                ` : '';
+                return `
+                    <div class="poop-entry" data-id="${entry.id}">
+                        <div class="poop-entry-header">
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+                                <span class="poop-entry-time">${escapeHtml(time)}</span>
+                                <span class="poop-chip">${meta.icon || ''}${meta.title || bristol}</span>
+                                ${entry.size ? `<span class="poop-chip">📏 ${size}</span>` : ''}
+                            </div>
+                            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+                                <span class="poop-entry-author">${escapeHtml(author)}</span>
+                                <span class="poop-entry-author">${escapeHtml(created)}</span>
+                            </div>
+                        </div>
+                        <div class="poop-entry-grid">
+                            <span>⏱ ${escapeHtml(duration)}</span>
+                            <span>🧻 ${entry.paper || 0} шт</span>
+                            <span>✨ Лёгкость: ${entry.ease || '—'}/10</span>
+                            <span>🤝 Удовлетворённость: ${entry.satisfaction || '—'}/10</span>
+                        </div>
+                        ${drawingMarkup}
+                        ${entry.comment ? `<div class="poop-entry-comment">💬 ${escapeHtml(entry.comment)}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            listEl.querySelectorAll('.poop-entry').forEach((item) => {
+                item.addEventListener('click', () => {
+                    const id = item.getAttribute('data-id');
+                    const entry = list.find((e) => String(e.id) === String(id));
+                    if (!entry) return;
+                });
+            });
+            listEl.querySelectorAll('[data-action="toggle-drawing"]').forEach((btn) => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const panel = btn.parentElement?.querySelector('[data-drawing-panel]');
+                    if (!panel) return;
+                    panel.classList.toggle('poop-hidden');
+                    btn.textContent = panel.classList.contains('poop-hidden') ? 'Показать кал' : 'Скрыть кал';
+                });
+            });
+        }
+
+        function initPoopFeed() {
+            if (poopDb || !window.firebase) return;
+            try {
+                if (boardDb) {
+                    poopDb = boardDb;
+                } else {
+                    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                    poopDb = firebase.database();
+                }
+                attachPoopListener(poopDateKey);
+                loadWeekCounts();
+            } catch (_) {
+                renderPoopList([]);
+            }
+        }
+
+        let poopDateKey = formatDateKey(new Date());
+        let poopRef = null;
+        let poopWeekCounts = {};
+
+        function getLastWeekDates() {
+            const days = [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            for (let i = 6; i >= 0; i -= 1) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                days.push(d);
+            }
+            return days;
+        }
+
+        function updateWeekCalendar() {
+            const wrap = document.getElementById('poopWeekCalendar');
+            if (!wrap) return;
+            const days = getLastWeekDates();
+            const dayNames = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+            wrap.innerHTML = days.map((d) => {
+                const key = formatDateKey(d);
+                const count = poopWeekCounts[key] || 0;
+                const isActive = key === poopDateKey;
+                return `
+                    <button type="button" class="poop-day${isActive ? ' is-active' : ''}" data-date="${key}">
+                        <span>${dayNames[d.getDay()]}</span>
+                        <span>${d.getDate()}</span>
+                        <span class="poop-day-count">${count}</span>
+                    </button>
+                `;
+            }).join('');
+            wrap.querySelectorAll('.poop-day').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const key = btn.dataset.date;
+                    if (!key) return;
+                    poopDateKey = key;
+                    const input = document.getElementById('poopDateInput');
+                    if (input) input.value = key;
+                    attachPoopListener(key);
+                    updateWeekCalendar();
+                });
+            });
+        }
+
+        async function loadWeekCounts() {
+            if (!poopDb) return;
+            const days = getLastWeekDates();
+            const tasks = days.map((d) => {
+                const key = formatDateKey(d);
+                return poopDb.ref(`poopSchedule/${key}`).once('value').then((snapshot) => {
+                    const value = snapshot.val() || {};
+                    poopWeekCounts[key] = Object.keys(value).length;
+                }).catch(() => {});
+            });
+            await Promise.all(tasks);
+            updateWeekCalendar();
+        }
+
+        function attachPoopListener(dateKey) {
+            if (!poopDb) return;
+            if (poopRef) poopRef.off();
+            poopRef = poopDb.ref(`poopSchedule/${dateKey}`);
+            poopRef.on('value', (snapshot) => {
+                const value = snapshot.val() || {};
+                const list = Object.entries(value).map(([id, entry]) => ({ id, ...entry }));
+                list.sort((a, b) => String(a.time || '').localeCompare(String(b.time || '')));
+                poopCache = list;
+                poopWeekCounts[dateKey] = list.length;
+                renderPoopList(list);
+                updateWeekCalendar();
+            });
+        }
+
+        initPoopFeed();
+
+        async function addBeer() {
+            if (!window.firebase) return;
+            const name = document.getElementById('beerNameInput').value.trim();
+            const type = document.getElementById('beerTypeInput').value;
+            const style = document.getElementById('beerStyleInput').value;
+            const filtered = document.getElementById('beerFilteredInput').value;
+            const country = document.getElementById('beerCountryInput').value;
+            const volume = document.getElementById('beerVolumeInput').value;
+            const alcohol = document.getElementById('beerAlcoholInput').value.trim();
+            const calories = document.getElementById('beerCaloriesInput').value.trim();
+            if (!name) return;
+            const author = getUserName();
+            const beer = {
+                id: Date.now(),
+                name,
+                type,
+                style,
+                filtered,
+                country,
+                volume,
+                alcohol,
+                calories,
+                ratings: {},
+                author
+            };
+            const next = Array.isArray(beerDataCache) ? [...beerDataCache, beer] : [beer];
+            try {
+                const db = firebase.database();
+                await db.ref('beerRating').set(next);
+                beerDataCache = next;
+                resetAddBeerForm();
+                closeAddBeerModal();
+            } catch (_) {
+                closeAddBeerModal();
+            }
+        }
+
+        document.getElementById('addBeerModal').addEventListener('click', (event) => {
+            if (event.target.id === 'addBeerModal') closeAddBeerModal();
+        });
+    </script>
+</body>
+</html>
