@@ -1670,7 +1670,7 @@
         const dragState = { active: false, card: null, startX: 0, startY: 0, originX: 0, originY: 0 };
         const resizeState = { active: false, card: null, startX: 0, startY: 0, startW: 0, startH: 0 };
         const panState = { active: false, startX: 0, startY: 0, originX: 0, originY: 0 };
-        const pinchState = { active: false, startDist: 0, startScale: 1, startX: 0, startY: 0 };
+        const pinchState = { active: false, startDist: 0, startScale: 1, startX: 0, startY: 0, raf: 0, lastScale: 1, lastX: 0, lastY: 0 };
         let boardDb = null;
         let layoutSaveTimer = null;
         const VIEWPORT_LS_KEY = 'boardViewport';
@@ -1685,6 +1685,8 @@
         let rouletteRotation = 0;
         let rouletteResizeObserver = null;
         let beerDataCache = [];
+        let rouletteApplyRemote = false;
+        let rouletteLastPublished = 0;
         let planningDb = null;
         let planningEventsCache = [];
         let planningUsersList = [];
@@ -2495,37 +2497,50 @@
         }
 
         function handleTouchStart(event) {
-            if (event.touches.length === 2) {
-                event.preventDefault();
-                pinchState.active = true;
-                pinchState.startDist = getTouchDistance(event.touches);
-                pinchState.startScale = boardState.scale;
-                const rect = board.getBoundingClientRect();
-                const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
-                const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
-                pinchState.startX = (cx - boardState.x) / boardState.scale;
-                pinchState.startY = (cy - boardState.y) / boardState.scale;
-            }
+            if (event.touches.length !== 2) return;
+            if (event.cancelable) event.preventDefault();
+            pinchState.active = true;
+            pinchState.startDist = getTouchDistance(event.touches);
+            pinchState.startScale = boardState.scale;
+            const rect = board.getBoundingClientRect();
+            const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+            const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+            pinchState.startX = (cx - boardState.x) / boardState.scale;
+            pinchState.startY = (cy - boardState.y) / boardState.scale;
         }
 
         function handleTouchMove(event) {
             if (!pinchState.active || event.touches.length !== 2) return;
-            event.preventDefault();
-            const dist = getTouchDistance(event.touches);
-            if (!dist || !pinchState.startDist) return;
-            const ratio = dist / pinchState.startDist;
-            const nextScale = clamp(pinchState.startScale * ratio, 0.3, 1.9);
-            const rect = board.getBoundingClientRect();
-            const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
-            const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
-            boardState.scale = nextScale;
-            boardState.x = cx - pinchState.startX * nextScale;
-            boardState.y = cy - pinchState.startY * nextScale;
-            applyTransform();
+            if (event.cancelable) event.preventDefault();
+            try {
+                const dist = getTouchDistance(event.touches);
+                if (!dist || !pinchState.startDist) return;
+                const ratio = dist / pinchState.startDist;
+                const nextScale = clamp(pinchState.startScale * ratio, 0.3, 1.9);
+                const rect = board.getBoundingClientRect();
+                const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+                const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+                pinchState.lastScale = nextScale;
+                pinchState.lastX = cx - pinchState.startX * nextScale;
+                pinchState.lastY = cy - pinchState.startY * nextScale;
+                if (!pinchState.raf) {
+                    pinchState.raf = requestAnimationFrame(() => {
+                        boardState.scale = pinchState.lastScale;
+                        boardState.x = pinchState.lastX;
+                        boardState.y = pinchState.lastY;
+                        applyTransform();
+                        pinchState.raf = 0;
+                    });
+                }
+            } catch (_) {}
         }
 
         function handleTouchEnd() {
             pinchState.active = false;
+            if (pinchState.raf) {
+                cancelAnimationFrame(pinchState.raf);
+                pinchState.raf = 0;
+            }
         }
 
         document.addEventListener('keydown', (event) => {
@@ -3040,6 +3055,34 @@
             btn.disabled = rouletteSpinning || rouletteItems.length === 0;
         }
 
+        function publishRouletteState(extra = {}) {
+            if (!boardDb || rouletteApplyRemote) return;
+            const payload = {
+                items: rouletteItems.slice(),
+                rotation: rouletteRotation,
+                result: extra.result || '',
+                spin: !!extra.spin,
+                duration: extra.duration || 0,
+                by: getClientId(),
+                ts: Date.now()
+            };
+            rouletteLastPublished = payload.ts;
+            boardDb.ref('boardLive/roulette').set(payload);
+        }
+
+        function setRouletteRotation(next, animate) {
+            const wheel = document.getElementById('rouletteWheel');
+            if (!wheel) return;
+            if (animate) {
+                wheel.style.transitionProperty = 'transform';
+                wheel.style.transitionDuration = '4.2s';
+                wheel.style.transitionTimingFunction = 'cubic-bezier(0.12, 0.78, 0.18, 1)';
+                wheel.style.transform = `rotate(${next}deg)`;
+            } else {
+                snapRouletteWheel(next);
+            }
+        }
+
         function renderRouletteList() {
             const list = document.getElementById('rouletteList');
             if (!list) return;
@@ -3075,6 +3118,7 @@
             renderRouletteList();
             const result = document.getElementById('rouletteResult');
             if (result) result.textContent = '—';
+            publishRouletteState();
         }
 
         function removeFromRoulette(encodedName) {
@@ -3085,6 +3129,7 @@
             renderRouletteList();
             const result = document.getElementById('rouletteResult');
             if (result) result.textContent = '—';
+            publishRouletteState();
         }
 
         function clearRoulette() {
@@ -3096,6 +3141,11 @@
             renderRouletteList();
             const result = document.getElementById('rouletteResult');
             if (result) result.textContent = '—';
+            if (boardDb && !rouletteApplyRemote) {
+                boardDb.ref('boardLive/roulette').remove();
+            } else {
+                publishRouletteState();
+            }
         }
 
         function addRandomToRoulette() {
@@ -3106,6 +3156,7 @@
             rouletteItems.push(pick);
             renderRouletteWheel();
             renderRouletteList();
+            publishRouletteState();
         }
 
         function snapRouletteWheel(deg) {
@@ -3214,16 +3265,15 @@
             const spinTurns = 6 + Math.floor(Math.random() * 4);
             const extra = Math.random() * 360;
             rouletteRotation = rouletteRotation + spinTurns * 360 + extra;
-            wheel.style.transitionProperty = 'transform';
-            wheel.style.transitionDuration = '4.2s';
-            wheel.style.transitionTimingFunction = 'cubic-bezier(0.12, 0.78, 0.18, 1)';
-            wheel.style.transform = `rotate(${rouletteRotation}deg)`;
+            setRouletteRotation(rouletteRotation, true);
+            publishRouletteState({ spin: true, duration: 4200 });
             setTimeout(() => {
                 rouletteSpinning = false;
                 const result = pickRouletteResult();
                 const resultEl = document.getElementById('rouletteResult');
                 if (resultEl) resultEl.textContent = result ? `✅ ${result}` : '—';
                 updateRouletteSpinState();
+                publishRouletteState({ result: result ? `✅ ${result}` : '—' });
             }, 4200);
         }
 
@@ -3513,6 +3563,7 @@
             const cursorRef = boardDb.ref('boardPresence/cursors');
             const liveRef = boardDb.ref('boardLive/cards');
             const beerInfoRef = boardDb.ref('boardLive/beerInfo');
+            const rouletteRef = boardDb.ref('boardLive/roulette');
             const userName = getUserName() || 'Гость';
 
             const myRef = cursorRef.child(clientId);
@@ -3608,6 +3659,47 @@
                     setCardSize(card, data.w, data.h);
                 }
                 setTimeout(() => card.classList.remove('remote-moving'), 120);
+            });
+
+            rouletteRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    rouletteApplyRemote = true;
+                    rouletteItems = [];
+                    rouletteRotation = 0;
+                    renderRouletteWheel();
+                    renderRouletteList();
+                    const resultEl = document.getElementById('rouletteResult');
+                    if (resultEl) resultEl.textContent = '—';
+                    setRouletteRotation(0, false);
+                    rouletteSpinning = false;
+                    updateRouletteSpinState();
+                    rouletteApplyRemote = false;
+                    return;
+                }
+                if (!Array.isArray(data.items)) return;
+                if (data.by === clientId && data.ts === rouletteLastPublished) return;
+                rouletteApplyRemote = true;
+                rouletteItems = data.items.slice();
+                rouletteRotation = typeof data.rotation === 'number' ? data.rotation : rouletteRotation;
+                renderRouletteWheel();
+                renderRouletteList();
+                const resultEl = document.getElementById('rouletteResult');
+                if (resultEl && data.result) resultEl.textContent = data.result;
+                if (data.spin && data.duration) {
+                    rouletteSpinning = true;
+                    updateRouletteSpinState();
+                    setRouletteRotation(rouletteRotation, true);
+                    setTimeout(() => {
+                        rouletteSpinning = false;
+                        updateRouletteSpinState();
+                    }, data.duration);
+                } else {
+                    setRouletteRotation(rouletteRotation, false);
+                    rouletteSpinning = false;
+                    updateRouletteSpinState();
+                }
+                rouletteApplyRemote = false;
             });
 
             beerInfoRef.on('child_added', (snapshot) => {
