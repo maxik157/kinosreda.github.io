@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Киносреда</title>
     <script>
         // Auth gate: prevent UI flash before redirecting to login
@@ -28,9 +28,27 @@
         })();
     </script>
     <style>
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
         /* Hide body until we know the user is authenticated (prevents flicker) */
         html:not(.authed) body { visibility: hidden; }
-    </style>
+    
+        @media (max-width: 520px) {
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+</style>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -911,6 +929,11 @@
             line-height: 1.15;
         }
         .nav-label { white-space: nowrap; }
+        .nav-label--short { display: none; }
+        @media (max-width: 420px) {
+            .nav-label--full { display: none; }
+            .nav-label--short { display: inline; }
+        }
         .nav-sub {
             font-size: 10px;
             color: rgba(148, 163, 184, 0.9);
@@ -989,7 +1012,7 @@
         .snowflake {
             position: absolute;
             top: -32px;
-            font-size: 16px;
+            font-size: 16px !important;
             line-height: 1;
             color: rgba(255,255,255,0.9);
             text-shadow: 0 0 10px rgba(255,255,255,0.15);
@@ -1217,11 +1240,44 @@
         }
         .reaction-pill:hover { background: rgba(36, 161, 222, 0.32); }
         html[data-theme="white"] .reaction-pill { color: rgba(17,24,39,0.95); }
+
+        /* Full-screen condemnation overlay for zero beer input */
+        .condemn-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            pointer-events: none;
+            background: rgba(0,0,0,0.55);
+        }
+        .condemn-overlay.is-active { display: flex; }
+        .condemn-text {
+            font-family: 'Egyptian Bold Extended', 'Comfortaa', cursive;
+            font-weight: 700;
+            font-size: clamp(48px, 12vw, 180px);
+            letter-spacing: 0.12em;
+            color: #ef4444;
+            text-shadow: 0 12px 30px rgba(0,0,0,0.6);
+            transform: translateY(-120%);
+        }
+        .condemn-text.condemn-run {
+            animation: condemnSlide 2.6s ease-in forwards;
+        }
+        @keyframes condemnSlide {
+            0% { transform: translateY(-120%); opacity: 0; }
+            12% { opacity: 1; }
+            100% { transform: translateY(120vh); opacity: 1; }
+        }
     </style>
 </head>
 <body class="bg-dark min-h-screen text-white">
     <div class="particles" id="particles"></div>
     <div class="snow hidden" id="snow"></div>
+    <div id="condemnOverlay" class="condemn-overlay" aria-hidden="true">
+        <div id="condemnText" class="condemn-text">ОСУЖДАЮ</div>
+    </div>
 
     <!-- Header with Logo and Navigation -->
     <header class="py-3 md:py-4 relative z-50 sticky top-0 header-shell backdrop-blur-sm">
@@ -1301,7 +1357,10 @@
                         </button>
                         <button type="button" onclick="scrollToSection('backlogSection')" class="nav-pill">
                             <span>🎥</span>
-                            <span class="nav-text"><span class="nav-label">Бэклог фильмов</span></span>
+                            <span class="nav-text">
+                                <span class="nav-label nav-label--full">Бэклог фильмов</span>
+                                <span class="nav-label nav-label--short">Бэклог</span>
+                            </span>
                         </button>
                         <button type="button" onclick="scrollToSection('beerSection')" class="nav-pill">
                             <span>🍺</span>
@@ -2700,6 +2759,14 @@
 
             initTimePickers();
 
+            const condemnText = document.getElementById('condemnText');
+            if (condemnText) {
+                condemnText.addEventListener('animationend', () => {
+                    const overlay = document.getElementById('condemnOverlay');
+                    if (overlay) overlay.classList.remove('is-active');
+                });
+            }
+
             window.addEventListener('storage', (e) => {
                 if (e.key === LOGO_FONT_LS_KEY) {
                     // Seamless: load font first, then apply preset
@@ -3775,6 +3842,25 @@
         }
 
         // Event Actions
+        function triggerCondemnationOverlay() {
+            const overlay = document.getElementById('condemnOverlay');
+            const text = document.getElementById('condemnText');
+            if (!overlay || !text) return;
+            overlay.classList.add('is-active');
+            text.classList.remove('condemn-run');
+            // Force reflow so the animation restarts on each trigger.
+            void text.offsetWidth;
+            text.classList.add('condemn-run');
+        }
+
+        function hideCondemnationOverlay() {
+            const overlay = document.getElementById('condemnOverlay');
+            const text = document.getElementById('condemnText');
+            if (!overlay || !text) return;
+            overlay.classList.remove('is-active');
+            text.classList.remove('condemn-run');
+        }
+
         function confirmAttendance() {
             const userName = getUserName();
             const beerCount = parseInt(document.getElementById('beerCount').value) || 0;
@@ -3791,6 +3877,11 @@
             setEvent(selectedDate, event);
             
             if (!useFirebase) renderPanelContent();
+            if (beerCount === 0) {
+                triggerCondemnationOverlay();
+            } else {
+                hideCondemnationOverlay();
+            }
         }
 
         function removeAttendance(name) {

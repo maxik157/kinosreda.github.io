@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Киносреда — График покаков</title>
     <script>
         // Auth gate: keep page hidden until we know the user is logged in
@@ -26,8 +26,26 @@
         })();
     </script>
     <style>
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
         html:not(.authed) body { visibility: hidden; }
-    </style>
+    
+        @media (max-width: 520px) {
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+</style>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -400,6 +418,21 @@
             transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease, background 0.15s ease;
         }
         .emoji-dot--feather { filter: grayscale(1) brightness(1.8); }
+        @media (max-width: 420px) {
+            .header-action-label { display: none; }
+            .header-actions { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+            .header-actions > * { flex: 0 0 auto; }
+        }
+        @media (max-width: 520px) {
+            .flex, .grid { min-width: 0; max-width: 100%; }
+            .card, .container { max-width: 100%; }
+            .calendar-controls { flex-wrap: wrap; justify-content: flex-start; }
+            .calendar-controls > * { min-width: 0; }
+            .author-filter { min-width: 0; max-width: 100%; }
+        }
+        @media (max-width: 520px) {
+            .container { padding-left: 16px !important; padding-right: 16px !important; max-width: 100%; box-sizing: border-box; }
+        }
         .emoji-seg.is-active .emoji-dot,
         .emoji-seg.is-hover .emoji-dot {
             opacity: 1;
@@ -422,7 +455,7 @@
         .emoji-scale .emoji-seg:nth-child(2) .emoji-dot { font-size: 13px; }
         .emoji-scale .emoji-seg:nth-child(3) .emoji-dot { font-size: 14px; }
         .emoji-scale .emoji-seg:nth-child(4) .emoji-dot { font-size: 15px; }
-        .emoji-scale .emoji-seg:nth-child(5) .emoji-dot { font-size: 16px; }
+        .emoji-scale .emoji-seg:nth-child(5) .emoji-dot { font-size: 16px !important; }
         .emoji-scale .emoji-seg:nth-child(6) .emoji-dot { font-size: 17px; }
         .emoji-scale .emoji-seg:nth-child(7) .emoji-dot { font-size: 18px; }
         .emoji-scale .emoji-seg:nth-child(8) .emoji-dot { font-size: 19px; }
@@ -448,14 +481,14 @@
                         <h1 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">График покаков</h1>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 header-actions">
                     <button id="poopExportBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-sm">
                         <span class="text-base">📤</span>
-                        <span class="font-semibold">Выгрузка</span>
+                        <span class="font-semibold header-action-label">Выгрузка</span>
                     </button>
                     <button id="poopGameBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-sm">
                         <span class="text-base">🕹️</span>
-                        <span class="font-semibold">Говноид</span>
+                        <span class="font-semibold header-action-label">Говноид</span>
                     </button>
                     <span class="text-xs text-gray-400">Анонимность</span>
                     <button id="anonToggle" type="button" class="relative inline-flex items-center w-14 h-8 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none">
@@ -473,7 +506,7 @@
                             <p class="text-sm text-gray-400">Выбери день, чтобы посмотреть историю</p>
                             <h2 class="text-xl font-bold text-amber-400 mt-1" id="rangeTitle"></h2>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 calendar-controls">
                             <div class="inline-flex rounded-xl border border-amber-500/30 bg-black/50 p-1">
                                 <button id="weekModeBtn" class="px-3 py-2 rounded-lg text-amber-300 hover:text-white hover:bg-amber-500/10 transition font-semibold">Неделя</button>
                                 <button id="monthModeBtn" class="px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-amber-500/10 transition">Месяц</button>
@@ -497,7 +530,7 @@
                         <div class="flex flex-col gap-1 relative">
                             <span class="text-xs text-gray-400">Автор покака</span>
                             <div class="relative">
-                                <button id="authorFilterBtn" type="button" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/30 bg-black/60 text-sm text-amber-200 hover:border-amber-500/50 transition min-w-[160px] relative pr-9">
+                                <button id="authorFilterBtn" type="button" class="author-filter flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/30 bg-black/60 text-sm text-amber-200 hover:border-amber-500/50 transition min-w-[160px] relative pr-9">
                                     <span id="authorFilterLabel">Все</span>
                                     <svg class="w-4 h-4 text-amber-300 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -1760,6 +1793,42 @@
                 const s = total % 60;
                 return `${m}:${pad(s)}`;
             }
+            function isSmallScreen(){
+                return window.matchMedia && window.matchMedia('(max-width: 520px)').matches;
+            }
+            function safeFocus(el, options){
+                if (!el || isSmallScreen()) return;
+                try {
+                    if (options) {
+                        el.focus(options);
+                    } else {
+                        el.focus();
+                    }
+                } catch (_) {}
+            }
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            const viewportDefault = viewportMeta ? viewportMeta.getAttribute('content') || '' : '';
+            const viewportNoZoom = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+            function lockViewportScale(){
+                if (!viewportMeta) return;
+                if (viewportMeta.getAttribute('content') !== viewportNoZoom) {
+                    viewportMeta.setAttribute('content', viewportNoZoom);
+                }
+            }
+            function resetViewportScale(){
+                if (!viewportMeta || !viewportDefault) return;
+                if (isSmallScreen()) return;
+                if (viewportMeta.getAttribute('content') !== viewportDefault) {
+                    viewportMeta.setAttribute('content', viewportDefault);
+                }
+            }
+            function normalizeViewportScale(){
+                if (!viewportMeta || !window.visualViewport || !isSmallScreen()) return;
+                if (window.visualViewport.scale > 1.01) {
+                    lockViewportScale();
+                    setTimeout(() => resetViewportScale(), 300);
+                }
+            }
             function syncPaperFromWheel(){
                 if (!paperWheel) return;
                 const paperCol = paperWheel.querySelector('[data-part="paper"]');
@@ -2184,7 +2253,7 @@
                         if (actions) actions.classList.add('hidden');
                         card.appendChild(editor);
                         const ta = editor.querySelector('textarea');
-                        if (ta) ta.focus();
+                        safeFocus(ta);
                         const saveBtn = editor.querySelector('[data-action="save-edit"]');
                         const cancelBtn = editor.querySelector('[data-action="cancel-edit"]');
                         const cleanup = () => {
@@ -2213,7 +2282,7 @@
                                 if (!val) {
                                     ta.classList.add('border-red-500/50');
                                     if (errorEl) errorEl.classList.remove('hidden');
-                                    ta.focus();
+                                    safeFocus(ta);
                                     return;
                                 }
                                 db.ref(`poopSchedule/${dateKey}/${entryId}/comments/${commentId}/text`).set(val);
@@ -2734,7 +2803,7 @@
                                 if (ta) ta.value = '';
                             } else {
                                 commentForm.classList.remove('hidden');
-                                if (ta) ta.focus();
+                                safeFocus(ta);
                             }
                         });
                         const sendBtn = commentForm.querySelector('[data-action="send-comment"]');
@@ -2829,8 +2898,8 @@
                     clearDrawingCanvas();
                     if (drawingInput) drawingInput.value = '';
                 }
-                const firstField = form.querySelector('input:not([type="hidden"]), textarea, select');
-                if (firstField) firstField.focus({ preventScroll: true });
+                const firstField = form.querySelector('input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]), textarea');
+                safeFocus(firstField, { preventScroll: true });
                 const timeVal = withTime || defaultTime();
                 const normalizedTime = timeInputMode === 'list' ? snapTimeToQuarter(timeVal) : timeVal;
                 setTime(normalizedTime);
@@ -3395,6 +3464,26 @@
                     closeGameModal();
                 }
             });
+            document.addEventListener('focusin', (e) => {
+                if (!isSmallScreen()) return;
+                const target = e.target;
+                if (!(target instanceof Element)) return;
+                if (target.matches('input, select, textarea')) {
+                    lockViewportScale();
+                }
+            });
+            document.addEventListener('focusout', (e) => {
+                if (!isSmallScreen()) return;
+                const target = e.target;
+                if (!(target instanceof Element)) return;
+                if (!target.matches('input, select, textarea')) return;
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    if (!(active instanceof Element) || !active.matches('input, select, textarea')) {
+                        resetViewportScale();
+                    }
+                }, 50);
+            });
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     if (!modal.classList.contains('hidden')) closeModal();
@@ -3525,6 +3614,15 @@
                     setupGameCanvas();
                 }
             });
+            window.addEventListener('load', () => {
+                if (isSmallScreen()) {
+                    lockViewportScale();
+                }
+                setTimeout(normalizeViewportScale, 0);
+            });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', normalizeViewportScale);
+            }
         })();
     </script>
 </body>
