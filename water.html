@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Трекер воды — Киносреда</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+    <script>
+        // Auth gate
+        (function () {
+            try {
+                const cu = localStorage.getItem('currentUser');
+                if (!cu) {
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+            } catch (e) {
+                location.replace('login.html');
+            }
+        })();
+        // Theme gate
+        (function(){
+            try { document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer'; } catch(_) {}
+        })();
+    </script>
+    <style>
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+        html:not(.authed) body { visibility: hidden; }
+        html.authed:not(.settings-ready) body { visibility: hidden; }
+    
+        @media (max-width: 520px) {
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
+
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                waitForFont(fam);
+            } catch(_) {
+                markReady();
+            }
+        })();
+    </script>
+
+    <style>
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
+        html, body {
+            background: #000;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+        body {
+            font-family: 'Comfortaa', cursive;
+            color: #fff;
+            min-height: 100vh;
+        }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root {
+            --logo-font: 'Rubik Wet Paint';
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --logo-glow-1: rgba(245,158,11,0.50);
+            --logo-glow-2: rgba(245,158,11,0.80);
+            --logo-glow-3: rgba(245,158,11,0.40);
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.12);
+            --water-color: #38bdf8;
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #e5e7eb;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --logo-glow-1: rgba(255,255,255,0.45);
+            --logo-glow-2: rgba(255,255,255,0.75);
+            --logo-glow-3: rgba(255,255,255,0.35);
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\:bg-amber-500\/10:hover { background-color: var(--accent-soft) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+
+        .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 5px var(--logo-glow-1)); }
+            50% { filter: drop-shadow(0 0 15px var(--logo-glow-2)) drop-shadow(0 0 30px var(--logo-glow-3)); }
+        }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        .bg-dark { background: #000; position: relative; }
+        .bg-dark::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 12% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 55%),
+                radial-gradient(ellipse at 88% 100%, rgba(56, 189, 248, 0.12) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow {
+            box-shadow: 0 0 0 1px rgba(59,130,246,0.12), 0 18px 50px rgba(59,130,246,0.12);
+        }
+        .card {
+            background: rgba(8, 8, 8, 0.75);
+            border: 1px solid var(--accent-border-20);
+            border-radius: 18px;
+            backdrop-filter: blur(8px);
+            position: relative;
+            z-index: 1;
+        }
+        .card.calendar-open { z-index: 80; }
+        .card.select-open { z-index: 70; }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+        }
+        .input-field,
+        .select-field {
+            background: #0c0c0c;
+            border: 1px solid var(--accent-border-30);
+            color: #fff;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        .input-field::placeholder { color: #6b7280; }
+        .input-field:focus,
+        .select-field:focus {
+            outline: none;
+            border-color: var(--accent-400);
+            box-shadow: 0 0 0 1px var(--accent-400);
+        }
+        .btn-amber {
+            background: linear-gradient(90deg, rgba(59,130,246,0.25), rgba(56,189,248,0.45));
+            border: 1px solid rgba(56,189,248,0.35);
+            color: #e0f2fe;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-amber:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(56,189,248,0.2);
+        }
+        .btn-muted {
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #cbd5f5;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+        .table-wrap {
+            border: 1px solid var(--accent-border-20);
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(6, 6, 6, 0.65);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th {
+            background: rgba(255,255,255,0.04);
+            color: #cbd5f5;
+            font-weight: 600;
+        }
+        tbody tr {
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+        .row-remove {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(239,68,68,0.35);
+            color: #fca5a5;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s ease;
+        }
+        .row-remove:hover { background: rgba(239,68,68,0.15); }
+
+        .tabs {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--accent-border-20);
+            border-radius: 999px;
+            padding: 6px;
+        }
+        .tab-btn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            color: #cbd5f5;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(90deg, rgba(59,130,246,0.25), rgba(56,189,248,0.45));
+            color: #fff;
+            box-shadow: 0 8px 14px rgba(56,189,248,0.18);
+        }
+
+        .calendar-panel {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            background: rgba(8,8,8,0.98);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 16px;
+            padding: 14px;
+            width: min(380px, 94vw);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+            z-index: 60;
+        }
+        .calendar-panel.hidden { display: none; }
+        .calendar-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .calendar-weekday {
+            text-align: center;
+            font-size: 0.65rem;
+            color: #6b7280;
+        }
+        .calendar-day {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: stretch;
+            justify-content: stretch;
+            color: #cbd5f5;
+            font-size: 0.9rem;
+        }
+        .calendar-day.is-today { border-color: var(--accent-border-50); color: var(--accent-200); }
+        .calendar-day.is-active { background: rgba(59,130,246,0.25); color: #fff; }
+        .calendar-day button {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            padding: 6px 7px;
+            font-weight: 600;
+        }
+        .calendar-day .day-count {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(56,189,248,0.25);
+            color: #bae6fd;
+            border: 1px solid rgba(56,189,248,0.35);
+            font-size: 0.55rem;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(59,130,246,0.7), rgba(56,189,248,0.9));
+            transition: width 0.3s ease;
+        }
+        .goal-line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .goal-box {
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+            padding: 10px 12px;
+        }
+        .goal-liters {
+            font-size: 0.8rem;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        .jug-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .jug-row {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .jug {
+            position: relative;
+            width: 220px;
+            height: 300px;
+        }
+        .jug-scale {
+            height: 100%;
+            position: relative;
+            padding: 0;
+            min-width: 46px;
+            color: #94a3b8;
+            font-size: 0.65rem;
+        }
+        .jug-scale-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transform: translateY(-50%);
+        }
+        .jug-scale-line[data-align="top"] { transform: translateY(0); }
+        .jug-scale-line[data-align="bottom"] { transform: translateY(-100%); }
+        .jug-scale-tick {
+            flex: 1;
+            height: 1px;
+            background: rgba(148,163,184,0.45);
+        }
+        .jug-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 14px 18px rgba(0,0,0,0.35));
+        }
+        .jug-fill {
+            fill: var(--water-color);
+            opacity: 0.9;
+        }
+        .jug-outline,
+        .jug-highlight {
+            fill: #fff;
+        }
+        .jug-caption {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #cbd5f5;
+        }
+        .color-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        .color-picker-main {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            border: 1px solid var(--accent-border-20);
+            background: linear-gradient(135deg, rgba(56,189,248,0.14), rgba(14,116,144,0.08));
+            overflow: hidden;
+        }
+        .color-picker-main::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+        .color-picker-main:focus-within {
+            box-shadow: 0 0 0 2px rgba(56,189,248,0.35);
+        }
+        .color-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .color-chip {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.18);
+            background: var(--water-color);
+            box-shadow: inset 0 0 0 2px rgba(0,0,0,0.12);
+        }
+        .color-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            z-index: 1;
+        }
+        .color-title {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .color-hint {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .color-cta {
+            margin-left: auto;
+            font-size: 0.7rem;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(56,189,248,0.4);
+            color: #bae6fd;
+            background: rgba(56,189,248,0.12);
+            z-index: 1;
+        }
+        .select-wrap {
+            position: relative;
+        }
+        .select-wrap::after {
+            content: '';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #94a3b8;
+            border-bottom: 2px solid #94a3b8;
+            transform: translateY(-60%) rotate(45deg);
+            pointer-events: none;
+        }
+        .select-wrap .select-field {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 36px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+        }
+        .select-custom {
+            position: relative;
+        }
+        .select-trigger {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            background: #0c0c0c;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .select-trigger:focus-visible {
+            outline: none;
+            border-color: var(--accent-400);
+            box-shadow: 0 0 0 1px var(--accent-400);
+        }
+        .select-trigger::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid #94a3b8;
+            border-bottom: 2px solid #94a3b8;
+            transform: translateY(-2px) rotate(45deg);
+            transition: transform 0.15s ease;
+        }
+        .select-custom.open .select-trigger::after {
+            transform: translateY(2px) rotate(-135deg);
+        }
+        .select-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: rgba(8,8,8,0.98);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+            display: none;
+            z-index: 30;
+        }
+        .select-custom.open .select-menu {
+            display: grid;
+            gap: 4px;
+        }
+        .select-option {
+            text-align: left;
+            padding: 8px 10px;
+            border-radius: 10px;
+            color: #cbd5f5;
+            background: transparent;
+            border: 1px solid transparent;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .select-option:hover {
+            background: rgba(56,189,248,0.12);
+            border-color: rgba(56,189,248,0.35);
+            color: #e0f2fe;
+        }
+        .select-option.is-active {
+            background: rgba(56,189,248,0.2);
+            border-color: rgba(56,189,248,0.45);
+            color: #fff;
+        }
+        .select-native {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            width: 0;
+        }
+        .rating-date-field {
+            position: relative;
+        }
+        .rating-date-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-20);
+            background: #0c0c0c;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .rating-date-btn:hover {
+            border-color: var(--accent-border-30);
+        }
+        .rating-date-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(56,189,248,0.35);
+        }
+        .rating-date-value {
+            font-weight: 600;
+        }
+        .rating-date-icon {
+            opacity: 0.6;
+        }
+        .rating-date-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .rating-calendar {
+            position: absolute;
+            top: calc(100% + 2px);
+            left: 0;
+            right: auto;
+            z-index: 90;
+        }
+
+        .rating-chart {
+            display: grid;
+            grid-template-columns: 64px 1fr;
+            gap: 12px;
+            align-items: start;
+        }
+        .rating-y-axis {
+            height: 260px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: right;
+            padding-right: 6px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+        .rating-plot-area {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .rating-plot {
+            position: relative;
+            height: 260px;
+            border-left: 1px solid rgba(255,255,255,0.18);
+            border-bottom: 1px solid rgba(255,255,255,0.18);
+        }
+        .rating-grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+        .rating-bars {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(44px, 1fr);
+            align-items: end;
+            gap: 12px;
+            padding: 6px 12px 0;
+        }
+        .rating-bar-vert {
+            position: relative;
+            width: 100%;
+            min-height: 6px;
+            border-radius: 10px 10px 6px 6px;
+            background: linear-gradient(180deg, var(--bar-color-dark, #0ea5e9) 0%, var(--bar-color, #38bdf8) 65%);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+        }
+        .rating-bar-value {
+            position: absolute;
+            top: -18px;
+            font-size: 0.7rem;
+            color: #bae6fd;
+            white-space: nowrap;
+        }
+        .rating-x-axis {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(44px, 1fr);
+            gap: 12px;
+            padding: 0 12px;
+        }
+        .rating-x-label {
+            font-size: 0.75rem;
+            color: #cbd5f5;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .rating-axis-note {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+        .range-btn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            font-size: 0.8rem;
+            color: #cbd5f5;
+            transition: all 0.2s ease;
+        }
+        .range-btn.active {
+            background: rgba(56,189,248,0.2);
+            border-color: rgba(56,189,248,0.45);
+            color: #fff;
+        }
+        @media (max-width: 1024px) {
+            .rating-chart { grid-template-columns: 48px 1fr; }
+        }
+    </style>
+</head>
+<body class="bg-dark">
+    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
+        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
+            <div class="flex items-center gap-3 pl-2">
+                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
+                    <defs>
+                        <linearGradient id="beerGradWater" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#fcd34d"/>
+                            <stop offset="50%" style="stop-color:#fbbf24"/>
+                            <stop offset="100%" style="stop-color:#d97706"/>
+                        </linearGradient>
+                        <linearGradient id="foamGradWater" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffffff"/>
+                            <stop offset="100%" style="stop-color:#fef3c7"/>
+                        </linearGradient>
+                        <clipPath id="mugClipWater"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
+                        <filter id="glowWater">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
+                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowWater)">КИНОСРЕДА</text>
+                    </a>
+
+                    <g id="logoMug" transform="translate(438, 2)">
+                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" stroke-width="3"/>
+                        <g clip-path="url(#mugClipWater)" transform="translate(0, 30)">
+                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradWater)">
+                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
+                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
+                            </rect>
+                        </g>
+                        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
+                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradWater)"/>
+                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
+                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
+                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
+                        </g>
+                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
+                    </g>
+                </svg>
+            </div>
+
+            <div class="flex items-center gap-1 md:gap-3 flex-nowrap whitespace-nowrap justify-center">
+                <a href="index.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
+                    <span>←</span> <span class="hidden sm:inline">На главную</span>
+                </a>
+                <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Планирование">
+                    <span>🌴</span>
+                </a>
+                <a href="snacks.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Перекусы">
+                    <span>🥨</span>
+                </a>
+                <span class="text-amber-400 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Трекер воды">
+                    <span>💧</span>
+                </span>
+                <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Профиль">
+                    <span>👤</span> <span id="profileName" class="hidden sm:inline"></span>
+                </a>
+                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
+                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative z-10">
+        <section class="container mx-auto px-3 md:px-4 max-w-7xl pt-6 pb-12">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-amber-200 m-0">Трекер воды</h1>
+                </div>
+                <div class="tabs" role="tablist" aria-label="Переключатель вкладок">
+                    <button type="button" class="tab-btn active" data-tab="tracker">Трекер</button>
+                    <button type="button" class="tab-btn" data-tab="rating">Рейтинг водохлебов</button>
+                </div>
+            </div>
+
+            <div id="tab-tracker" class="tab-panel">
+                <div class="grid lg:grid-cols-[1.2fr_0.8fr] gap-6">
+                    <div class="card glow p-5">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="section-title">Норма воды</div>
+                            <div class="text-xs text-gray-400">Формула: вес × 30 мл + активность + жара</div>
+                        </div>
+                        <div class="mt-4 grid sm:grid-cols-2 gap-4">
+                            <label class="text-sm text-gray-300">
+                                Вес (кг)
+                                <input id="weightInput" type="number" min="30" max="200" step="1" class="input-field mt-2" placeholder="Например, 72" />
+                            </label>
+                            <label class="text-sm text-gray-300">
+                                Активность
+                                <div class="select-custom mt-2" data-select="activity">
+                                    <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                                        <span class="select-value">Выберите</span>
+                                    </button>
+                                    <div class="select-menu" role="listbox">
+                                        <button type="button" class="select-option" data-value="low" role="option">Спокойный день (+0 мл)</button>
+                                        <button type="button" class="select-option" data-value="medium" role="option">30-60 мин активности (+300 мл)</button>
+                                        <button type="button" class="select-option" data-value="high" role="option">Спорт 60+ мин (+600 мл)</button>
+                                    </div>
+                                    <select id="activityInput" class="select-native" aria-hidden="true" tabindex="-1">
+                                        <option value="low">Спокойный день (+0 мл)</option>
+                                        <option value="medium">30-60 мин активности (+300 мл)</option>
+                                        <option value="high">Спорт 60+ мин (+600 мл)</option>
+                                    </select>
+                                </div>
+                            </label>
+                            <label class="text-sm text-gray-300">
+                                Погода/жара
+                                <div class="select-custom mt-2" data-select="climate">
+                                    <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                                        <span class="select-value">Выберите</span>
+                                    </button>
+                                    <div class="select-menu" role="listbox">
+                                        <button type="button" class="select-option" data-value="normal" role="option">Обычная (+0 мл)</button>
+                                        <button type="button" class="select-option" data-value="hot" role="option">Жарко (+400 мл)</button>
+                                    </div>
+                                    <select id="climateInput" class="select-native" aria-hidden="true" tabindex="-1">
+                                        <option value="normal">Обычная (+0 мл)</option>
+                                        <option value="hot">Жарко (+400 мл)</option>
+                                    </select>
+                                </div>
+                            </label>
+                            <div class="text-sm text-gray-300">
+                                Норма на день
+                                <div class="goal-box mt-2 rounded-xl border border-amber-500/20 bg-amber-500/10">
+                                    <div class="goal-line text-lg font-bold text-amber-200">
+                                        <span><span id="goalValue">0</span> мл</span>
+                                        <span class="goal-liters">≈ <span id="goalLiters">0.0</span> л</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card glow p-5 relative">
+                        <div class="section-title">Календарь воды</div>
+                        <div class="flex items-center gap-2 mt-4 relative">
+                            <button id="prevDateBtn" type="button" class="btn-muted" aria-label="Предыдущий день">←</button>
+                            <input id="waterDate" type="date" class="input-field" />
+                            <button id="nextDateBtn" type="button" class="btn-muted" aria-label="Следующий день">→</button>
+                            <button id="calendarToggle" type="button" class="btn-muted" aria-label="Открыть календарь">📅</button>
+                            <div id="calendarPanel" class="calendar-panel hidden">
+                                <div class="calendar-head">
+                                    <button id="calendarPrevMonth" type="button" class="btn-muted" aria-label="Предыдущий месяц">←</button>
+                                    <div id="calendarMonthLabel" class="text-sm text-amber-200 font-semibold"></div>
+                                    <button id="calendarNextMonth" type="button" class="btn-muted" aria-label="Следующий месяц">→</button>
+                                </div>
+                                <div class="calendar-grid mb-2">
+                                    <div class="calendar-weekday">Пн</div>
+                                    <div class="calendar-weekday">Вт</div>
+                                    <div class="calendar-weekday">Ср</div>
+                                    <div class="calendar-weekday">Чт</div>
+                                    <div class="calendar-weekday">Пт</div>
+                                    <div class="calendar-weekday">Сб</div>
+                                    <div class="calendar-weekday">Вс</div>
+                                </div>
+                                <div id="calendarDays" class="calendar-grid"></div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between text-sm text-gray-300">
+                                <span>Выпито сегодня</span>
+                                <span class="font-semibold text-amber-200"><span id="dayTotal">0</span> мл</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm text-gray-300 mt-1">
+                                <span>Осталось</span>
+                                <span class="font-semibold text-amber-200"><span id="dayRemaining">0</span> мл</span>
+                            </div>
+                            <div class="progress-track mt-3">
+                                <div id="progressFill" class="progress-fill"></div>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-2">Прогресс: <span id="progressPercent">0</span>%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card glow p-5 mt-6">
+                    <div class="flex flex-col lg:flex-row gap-6">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="section-title">Дневник воды</div>
+                                <button id="addRowBtn" type="button" class="btn-amber">+ Запись</button>
+                            </div>
+                            <div class="table-wrap mt-4">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Время</th>
+                                            <th>Количество (мл)</th>
+                                            <th class="text-right">Действие</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="waterLogBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="text-xs text-gray-400 mt-3">Записывай каждый стакан — кувшин справа будет наполняться по мере ввода.</div>
+                        </div>
+                        <div class="w-full lg:w-72 flex flex-col items-center">
+                            <div class="jug-wrap">
+                                <div class="jug-row">
+                                    <div class="jug">
+                                    <svg class="jug-svg" viewBox="0 0 512 512" aria-hidden="true">
+                                        <defs>
+                                            <clipPath id="jugFillClip">
+                                                <rect id="jugFillRect" x="0" y="497" width="512" height="0"></rect>
+                                            </clipPath>
+                                        </defs>
+                                        <g clip-path="url(#jugFillClip)">
+                                            <path id="jugFillPath" class="jug-fill" fill-rule="evenodd" d="M188 15 L187 15 L187 16 L183 16 L183 17 L180 17 L180 18 L178 18 L178 19 L176 19 L176 20 L174 20 L174 21 L173 21 L173 22 L171 22 L171 23 L170 23 L170 24 L169 24 L169 25 L168 25 L168 26 L167 26 L167 27 L166 27 L166 28 L167 28 L167 29 L168 29 L168 30 L169 30 L169 31 L170 31 L170 32 L172 32 L172 33 L173 33 L173 34 L175 34 L175 35 L176 35 L176 36 L178 36 L178 37 L179 37 L179 38 L180 38 L180 39 L181 39 L181 40 L183 40 L183 41 L184 41 L184 42 L185 42 L185 43 L186 43 L186 44 L187 44 L187 45 L188 45 L188 46 L189 46 L189 47 L190 47 L190 48 L191 48 L191 49 L192 49 L192 50 L193 50 L193 51 L194 51 L194 52 L195 52 L195 53 L196 53 L196 54 L197 54 L197 55 L198 55 L198 56 L199 56 L199 57 L200 57 L200 59 L201 59 L201 60 L202 60 L202 61 L203 61 L203 62 L204 62 L204 64 L205 64 L205 65 L206 65 L206 67 L207 67 L207 68 L208 68 L208 70 L209 70 L209 72 L210 72 L210 73 L211 73 L211 75 L212 75 L212 77 L213 77 L213 79 L214 79 L214 81 L215 81 L215 83 L216 83 L216 86 L217 86 L217 89 L218 89 L218 91 L219 91 L219 95 L220 95 L220 99 L221 99 L221 104 L222 104 L222 113 L223 113 L223 127 L222 127 L222 135 L221 135 L221 140 L220 140 L220 145 L219 145 L219 148 L218 148 L218 151 L217 151 L217 154 L216 154 L216 156 L215 156 L215 159 L214 159 L214 161 L213 161 L213 163 L212 163 L212 165 L211 165 L211 167 L210 167 L210 168 L209 168 L209 170 L208 170 L208 172 L207 172 L207 173 L206 173 L206 175 L205 175 L205 177 L204 177 L204 178 L203 178 L203 179 L202 179 L202 181 L201 181 L201 182 L200 182 L200 183 L199 183 L199 185 L198 185 L198 186 L197 186 L197 187 L196 187 L196 188 L195 188 L195 190 L194 190 L194 191 L193 191 L193 192 L192 192 L192 193 L191 193 L191 194 L190 194 L190 195 L189 195 L189 196 L188 196 L188 197 L187 197 L187 198 L186 198 L186 199 L185 199 L185 200 L184 200 L184 201 L183 201 L183 202 L182 202 L182 203 L181 203 L181 204 L180 204 L180 205 L179 205 L179 206 L178 206 L178 207 L177 207 L177 208 L176 208 L176 209 L175 209 L175 210 L174 210 L174 211 L173 211 L173 212 L171 212 L171 213 L170 213 L170 214 L169 214 L169 215 L168 215 L168 216 L167 216 L167 217 L166 217 L166 218 L165 218 L165 219 L164 219 L164 220 L163 220 L163 221 L162 221 L162 222 L160 222 L160 223 L159 223 L159 224 L158 224 L158 225 L157 225 L157 226 L156 226 L156 227 L155 227 L155 228 L154 228 L154 229 L153 229 L153 230 L151 230 L151 231 L150 231 L150 232 L149 232 L149 233 L148 233 L148 234 L147 234 L147 235 L146 235 L146 236 L145 236 L145 237 L143 237 L143 238 L142 238 L142 239 L141 239 L141 240 L140 240 L140 241 L139 241 L139 242 L138 242 L138 243 L137 243 L137 244 L136 244 L136 245 L135 245 L135 246 L134 246 L134 247 L133 247 L133 248 L132 248 L132 249 L131 249 L131 250 L130 250 L130 251 L129 251 L129 252 L128 252 L128 253 L127 253 L127 254 L126 254 L126 255 L125 255 L125 256 L124 256 L124 258 L123 258 L123 259 L122 259 L122 260 L121 260 L121 261 L120 261 L120 263 L119 263 L119 264 L118 264 L118 266 L117 266 L117 268 L116 268 L116 269 L115 269 L115 271 L114 271 L114 273 L113 273 L113 274 L112 274 L112 277 L111 277 L111 279 L110 279 L110 281 L109 281 L109 284 L108 284 L108 287 L107 287 L107 291 L106 291 L106 295 L105 295 L105 300 L104 300 L104 311 L103 311 L103 320 L104 320 L104 340 L105 340 L105 349 L106 349 L106 356 L107 356 L107 361 L108 361 L108 366 L109 366 L109 370 L110 370 L110 373 L111 373 L111 376 L112 376 L112 380 L113 380 L113 382 L114 382 L114 385 L115 385 L115 387 L116 387 L116 390 L117 390 L117 392 L118 392 L118 394 L119 394 L119 396 L120 396 L120 398 L121 398 L121 400 L122 400 L122 402 L123 402 L123 404 L124 404 L124 405 L125 405 L125 407 L126 407 L126 409 L127 409 L127 410 L128 410 L128 412 L129 412 L129 413 L130 413 L130 415 L131 415 L131 416 L132 416 L132 417 L133 417 L133 419 L134 419 L134 420 L135 420 L135 421 L136 421 L136 423 L137 423 L137 424 L138 424 L138 425 L139 425 L139 427 L140 427 L140 428 L141 428 L141 429 L142 429 L142 430 L143 430 L143 431 L144 431 L144 432 L145 432 L145 434 L146 434 L146 435 L147 435 L147 436 L148 436 L148 437 L149 437 L149 438 L150 438 L150 439 L151 439 L151 440 L152 440 L152 441 L153 441 L153 442 L154 442 L154 443 L155 443 L155 444 L156 444 L156 445 L157 445 L157 446 L158 446 L158 447 L159 447 L159 448 L160 448 L160 449 L162 449 L162 450 L163 450 L163 451 L164 451 L164 452 L165 452 L165 453 L166 453 L166 454 L167 454 L167 455 L168 455 L168 456 L170 456 L170 457 L171 457 L171 458 L172 458 L172 459 L173 459 L173 460 L174 460 L174 461 L176 461 L176 462 L177 462 L177 463 L178 463 L178 464 L179 464 L179 465 L181 465 L181 466 L182 466 L182 467 L183 467 L183 468 L184 468 L184 469 L186 469 L186 470 L187 470 L187 471 L188 471 L188 472 L190 472 L190 473 L191 473 L191 474 L192 474 L192 475 L194 475 L194 476 L195 476 L195 477 L196 477 L196 479 L197 479 L197 485 L196 485 L196 488 L195 488 L195 490 L194 490 L194 495 L193 495 L193 497 L321 497 L321 495 L320 495 L320 490 L319 490 L319 485 L318 485 L318 479 L319 479 L319 477 L320 477 L320 476 L322 476 L322 475 L323 475 L323 474 L325 474 L325 473 L327 473 L327 472 L328 472 L328 471 L330 471 L330 470 L331 470 L331 469 L333 469 L333 468 L334 468 L334 467 L336 467 L336 466 L337 466 L337 465 L339 465 L339 464 L340 464 L340 463 L341 463 L341 462 L342 462 L342 461 L344 461 L344 460 L345 460 L345 459 L346 459 L346 458 L347 458 L347 457 L348 457 L348 456 L350 456 L350 455 L351 455 L351 454 L352 454 L352 453 L353 453 L353 452 L354 452 L354 451 L355 451 L355 450 L356 450 L356 449 L357 449 L357 448 L358 448 L358 447 L359 447 L359 446 L360 446 L360 445 L361 445 L361 444 L362 444 L362 443 L363 443 L363 442 L364 442 L364 441 L365 441 L365 439 L366 439 L366 438 L367 438 L367 437 L368 437 L368 436 L369 436 L369 435 L370 435 L370 433 L371 433 L371 432 L372 432 L372 431 L373 431 L373 429 L374 429 L374 428 L375 428 L375 427 L376 427 L376 425 L377 425 L377 424 L378 424 L378 423 L379 423 L379 421 L380 421 L380 420 L381 420 L381 418 L382 418 L382 416 L383 416 L383 415 L384 415 L384 413 L385 413 L385 411 L386 411 L386 410 L387 410 L387 408 L388 408 L388 406 L389 406 L389 404 L390 404 L390 402 L391 402 L391 400 L392 400 L392 398 L393 398 L393 396 L394 396 L394 393 L395 393 L395 391 L396 391 L396 389 L397 389 L397 386 L398 386 L398 383 L399 383 L399 381 L400 381 L400 378 L401 378 L401 374 L402 374 L402 371 L403 371 L403 367 L404 367 L404 363 L405 363 L405 358 L406 358 L406 354 L407 354 L407 346 L408 346 L408 335 L409 335 L409 320 L408 320 L408 309 L407 309 L407 303 L406 303 L406 299 L405 299 L405 296 L404 296 L404 293 L403 293 L403 290 L402 290 L402 287 L401 287 L401 285 L400 285 L400 282 L399 282 L399 279 L398 279 L398 277 L397 277 L397 275 L396 275 L396 273 L395 273 L395 271 L394 271 L394 269 L393 269 L393 267 L392 267 L392 265 L391 265 L391 264 L390 264 L390 262 L389 262 L389 260 L388 260 L388 259 L387 259 L387 257 L386 257 L386 256 L385 256 L385 255 L384 255 L384 253 L383 253 L383 252 L382 252 L382 251 L381 251 L381 249 L380 249 L380 248 L379 248 L379 247 L378 247 L378 246 L377 246 L377 245 L376 245 L376 244 L375 244 L375 243 L374 243 L374 241 L373 241 L373 240 L372 240 L372 239 L371 239 L371 238 L370 238 L370 237 L369 237 L369 236 L368 236 L368 235 L367 235 L367 234 L365 234 L365 233 L364 233 L364 232 L363 232 L363 231 L362 231 L362 230 L361 230 L361 229 L360 229 L360 228 L359 228 L359 227 L357 227 L357 226 L356 226 L356 225 L355 225 L355 224 L354 224 L354 223 L352 223 L352 222 L351 222 L351 221 L350 221 L350 220 L349 220 L349 219 L347 219 L347 218 L346 218 L346 217 L345 217 L345 216 L344 216 L344 215 L342 215 L342 214 L341 214 L341 213 L340 213 L340 212 L339 212 L339 211 L337 211 L337 210 L336 210 L336 209 L335 209 L335 208 L334 208 L334 207 L333 207 L333 206 L332 206 L332 205 L331 205 L331 204 L329 204 L329 203 L328 203 L328 202 L327 202 L327 201 L326 201 L326 200 L325 200 L325 199 L324 199 L324 198 L323 198 L323 197 L322 197 L322 196 L321 196 L321 195 L320 195 L320 194 L319 194 L319 193 L318 193 L318 192 L317 192 L317 191 L316 191 L316 190 L315 190 L315 189 L314 189 L314 188 L313 188 L313 187 L312 187 L312 186 L311 186 L311 185 L310 185 L310 184 L309 184 L309 183 L308 183 L308 181 L307 181 L307 180 L306 180 L306 179 L305 179 L305 178 L304 178 L304 176 L303 176 L303 175 L302 175 L302 174 L301 174 L301 172 L300 172 L300 171 L299 171 L299 170 L298 170 L298 168 L297 168 L297 166 L296 166 L296 165 L295 165 L295 163 L294 163 L294 161 L293 161 L293 159 L292 159 L292 157 L291 157 L291 155 L290 155 L290 153 L289 153 L289 150 L288 150 L288 148 L287 148 L287 145 L286 145 L286 141 L285 141 L285 137 L284 137 L284 133 L283 133 L283 126 L282 126 L282 96 L283 96 L283 90 L284 90 L284 86 L285 86 L285 82 L286 82 L286 79 L287 79 L287 76 L288 76 L288 73 L289 73 L289 72 L290 72 L290 70 L291 70 L291 68 L292 68 L292 67 L293 67 L293 65 L283 65 L283 64 L276 64 L276 63 L271 63 L271 62 L268 62 L268 61 L264 61 L264 60 L261 60 L261 59 L259 59 L259 58 L256 58 L256 57 L254 57 L254 56 L252 56 L252 55 L250 55 L250 54 L249 54 L249 53 L247 53 L247 52 L246 52 L246 51 L244 51 L244 50 L242 50 L242 49 L241 49 L241 48 L240 48 L240 47 L238 47 L238 46 L237 46 L237 45 L236 45 L236 44 L234 44 L234 43 L233 43 L233 42 L232 42 L232 41 L231 41 L231 40 L230 40 L230 39 L229 39 L229 38 L228 38 L228 37 L226 37 L226 36 L225 36 L225 35 L224 35 L224 34 L223 34 L223 33 L222 33 L222 32 L221 32 L221 31 L220 31 L220 30 L219 30 L219 29 L218 29 L218 28 L217 28 L217 27 L216 27 L216 26 L215 26 L215 25 L214 25 L214 24 L213 24 L213 23 L212 23 L212 22 L211 22 L211 21 L210 21 L210 20 L208 20 L208 19 L207 19 L207 18 L205 18 L205 17 L203 17 L203 16 L199 16 L199 15 Z"></path>
+                                        </g>
+                                        <path class="jug-outline" fill-rule="evenodd" d="M186 0 L200 0 L200 1 L204 1 L204 2 L208 2 L208 3 L210 3 L210 4 L212 4 L212 5 L214 5 L214 6 L216 6 L216 7 L217 7 L217 8 L219 8 L219 9 L220 9 L220 10 L221 10 L221 11 L222 11 L222 12 L223 12 L223 13 L225 13 L225 14 L226 14 L226 15 L227 15 L227 16 L228 16 L228 17 L229 17 L229 18 L230 18 L230 19 L231 19 L231 20 L232 20 L232 21 L233 21 L233 22 L234 22 L234 23 L235 23 L235 24 L236 24 L236 25 L237 25 L237 26 L238 26 L238 27 L239 27 L239 28 L240 28 L240 29 L241 29 L241 30 L242 30 L242 31 L243 31 L243 32 L245 32 L245 33 L246 33 L246 34 L247 34 L247 35 L248 35 L248 36 L250 36 L250 37 L251 37 L251 38 L253 38 L253 39 L255 39 L255 40 L256 40 L256 41 L258 41 L258 42 L260 42 L260 43 L262 43 L262 44 L264 44 L264 45 L267 45 L267 46 L270 46 L270 47 L273 47 L273 48 L277 48 L277 49 L284 49 L284 50 L310 50 L310 49 L319 49 L319 50 L321 50 L321 51 L322 51 L322 53 L323 53 L323 60 L322 60 L322 61 L321 61 L321 62 L320 62 L320 63 L319 63 L319 64 L318 64 L318 65 L317 65 L317 66 L315 66 L315 67 L314 67 L314 68 L313 68 L313 69 L312 69 L312 70 L311 70 L311 71 L309 71 L309 72 L308 72 L308 73 L307 73 L307 74 L312 74 L312 75 L329 75 L329 76 L337 76 L337 77 L343 77 L343 78 L348 78 L348 79 L352 79 L352 80 L356 80 L356 81 L360 81 L360 82 L363 82 L363 83 L366 83 L366 84 L369 84 L369 85 L372 85 L372 86 L374 86 L374 87 L376 87 L376 88 L378 88 L378 89 L380 89 L380 90 L382 90 L382 91 L384 91 L384 92 L385 92 L385 93 L387 93 L387 94 L388 94 L388 95 L389 95 L389 96 L391 96 L391 97 L392 97 L392 98 L393 98 L393 99 L394 99 L394 100 L395 100 L395 101 L396 101 L396 102 L397 102 L397 103 L398 103 L398 104 L399 104 L399 105 L400 105 L400 107 L401 107 L401 108 L402 108 L402 109 L403 109 L403 111 L404 111 L404 112 L405 112 L405 114 L406 114 L406 116 L407 116 L407 118 L408 118 L408 120 L409 120 L409 122 L410 122 L410 125 L411 125 L411 128 L412 128 L412 132 L413 132 L413 137 L414 137 L414 144 L415 144 L415 176 L414 176 L414 184 L413 184 L413 192 L412 192 L412 200 L411 200 L411 207 L410 207 L410 214 L409 214 L409 224 L408 224 L408 252 L409 252 L409 260 L410 260 L410 267 L411 267 L411 271 L412 271 L412 274 L413 274 L413 277 L414 277 L414 279 L415 279 L415 282 L416 282 L416 285 L417 285 L417 287 L418 287 L418 290 L419 290 L419 294 L420 294 L420 298 L421 298 L421 303 L422 303 L422 309 L423 309 L423 322 L424 322 L424 328 L423 328 L423 345 L422 345 L422 354 L421 354 L421 359 L420 359 L420 364 L419 364 L419 368 L418 368 L418 373 L417 373 L417 376 L416 376 L416 380 L415 380 L415 383 L414 383 L414 386 L413 386 L413 389 L412 389 L412 391 L411 391 L411 394 L410 394 L410 396 L409 396 L409 399 L408 399 L408 401 L407 401 L407 403 L406 403 L406 405 L405 405 L405 407 L404 407 L404 409 L403 409 L403 412 L402 412 L402 413 L401 413 L401 415 L400 415 L400 417 L399 417 L399 419 L398 419 L398 420 L397 420 L397 422 L396 422 L396 424 L395 424 L395 425 L394 425 L394 427 L393 427 L393 429 L392 429 L392 430 L391 430 L391 431 L390 431 L390 433 L389 433 L389 434 L388 434 L388 436 L387 436 L387 437 L386 437 L386 439 L385 439 L385 440 L384 440 L384 441 L383 441 L383 443 L382 443 L382 444 L381 444 L381 445 L380 445 L380 446 L379 446 L379 447 L378 447 L378 448 L377 448 L377 450 L376 450 L376 451 L375 451 L375 452 L374 452 L374 453 L373 453 L373 454 L372 454 L372 455 L371 455 L371 456 L370 456 L370 457 L369 457 L369 458 L368 458 L368 459 L367 459 L367 460 L366 460 L366 461 L365 461 L365 462 L364 462 L364 463 L363 463 L363 464 L362 464 L362 465 L361 465 L361 466 L360 466 L360 467 L359 467 L359 468 L358 468 L358 469 L356 469 L356 470 L355 470 L355 471 L354 471 L354 472 L353 472 L353 473 L352 473 L352 474 L350 474 L350 475 L349 475 L349 476 L348 476 L348 477 L346 477 L346 478 L345 478 L345 479 L343 479 L343 480 L342 480 L342 481 L340 481 L340 482 L339 482 L339 483 L337 483 L337 484 L336 484 L336 485 L334 485 L334 489 L335 489 L335 494 L336 494 L336 506 L335 506 L335 508 L334 508 L334 510 L333 510 L333 511 L331 511 L331 512 L183 512 L183 511 L181 511 L181 510 L180 510 L180 508 L179 508 L179 506 L178 506 L178 495 L179 495 L179 488 L180 488 L180 484 L179 484 L179 483 L178 483 L178 482 L177 482 L177 481 L176 481 L176 480 L174 480 L174 479 L173 479 L173 478 L172 478 L172 477 L170 477 L170 476 L169 476 L169 475 L168 475 L168 474 L167 474 L167 473 L165 473 L165 472 L164 472 L164 471 L163 471 L163 470 L162 470 L162 469 L161 469 L161 468 L159 468 L159 467 L158 467 L158 466 L157 466 L157 465 L156 465 L156 464 L155 464 L155 463 L154 463 L154 462 L153 462 L153 461 L152 461 L152 460 L151 460 L151 459 L149 459 L149 458 L148 458 L148 457 L147 457 L147 456 L146 456 L146 455 L145 455 L145 454 L144 454 L144 453 L143 453 L143 452 L142 452 L142 451 L141 451 L141 450 L140 450 L140 449 L139 449 L139 448 L138 448 L138 447 L137 447 L137 446 L136 446 L136 445 L135 445 L135 444 L134 444 L134 443 L133 443 L133 442 L132 442 L132 440 L131 440 L131 439 L130 439 L130 438 L129 438 L129 437 L128 437 L128 436 L127 436 L127 434 L126 434 L126 433 L125 433 L125 432 L124 432 L124 430 L123 430 L123 429 L122 429 L122 428 L121 428 L121 426 L120 426 L120 425 L119 425 L119 424 L118 424 L118 422 L117 422 L117 421 L116 421 L116 419 L115 419 L115 418 L114 418 L114 416 L113 416 L113 414 L112 414 L112 413 L111 413 L111 411 L110 411 L110 409 L109 409 L109 407 L108 407 L108 405 L107 405 L107 404 L106 404 L106 402 L105 402 L105 400 L104 400 L104 397 L103 397 L103 395 L102 395 L102 393 L101 393 L101 390 L100 390 L100 388 L99 388 L99 385 L98 385 L98 382 L97 382 L97 378 L96 378 L96 375 L95 375 L95 372 L94 372 L94 367 L93 367 L93 362 L92 362 L92 357 L91 357 L91 349 L90 349 L90 340 L89 340 L89 320 L88 320 L88 311 L89 311 L89 299 L90 299 L90 293 L91 293 L91 288 L92 288 L92 285 L93 285 L93 281 L94 281 L94 279 L95 279 L95 276 L96 276 L96 273 L97 273 L97 271 L98 271 L98 269 L99 269 L99 267 L100 267 L100 265 L101 265 L101 264 L102 264 L102 262 L103 262 L103 260 L104 260 L104 258 L105 258 L105 257 L106 257 L106 255 L107 255 L107 254 L108 254 L108 253 L109 253 L109 251 L110 251 L110 250 L111 250 L111 249 L112 249 L112 247 L113 247 L113 246 L114 246 L114 245 L115 245 L115 244 L116 244 L116 243 L117 243 L117 242 L118 242 L118 241 L119 241 L119 240 L120 240 L120 238 L121 238 L121 237 L122 237 L122 236 L123 236 L123 235 L125 235 L125 234 L126 234 L126 233 L127 233 L127 232 L128 232 L128 231 L129 231 L129 230 L130 230 L130 229 L131 229 L131 228 L132 228 L132 227 L133 227 L133 226 L135 226 L135 225 L136 225 L136 224 L137 224 L137 223 L138 223 L138 222 L139 222 L139 221 L140 221 L140 220 L141 220 L141 219 L143 219 L143 218 L144 218 L144 217 L145 217 L145 216 L146 216 L146 215 L147 215 L147 214 L148 214 L148 213 L149 213 L149 212 L150 212 L150 211 L151 211 L151 210 L153 210 L153 209 L154 209 L154 208 L155 208 L155 207 L156 207 L156 206 L157 206 L157 205 L158 205 L158 204 L159 204 L159 203 L160 203 L160 202 L161 202 L161 201 L162 201 L162 200 L163 200 L163 199 L165 199 L165 198 L166 198 L166 197 L167 197 L167 196 L168 196 L168 195 L169 195 L169 194 L170 194 L170 193 L171 193 L171 192 L172 192 L172 191 L173 191 L173 190 L174 190 L174 189 L175 189 L175 188 L176 188 L176 187 L177 187 L177 186 L178 186 L178 185 L179 185 L179 184 L180 184 L180 183 L181 183 L181 182 L182 182 L182 181 L183 181 L183 180 L184 180 L184 178 L185 178 L185 177 L186 177 L186 176 L187 176 L187 175 L188 175 L188 173 L189 173 L189 172 L190 172 L190 171 L191 171 L191 169 L192 169 L192 168 L193 168 L193 166 L194 166 L194 164 L195 164 L195 163 L196 163 L196 161 L197 161 L197 160 L198 160 L198 158 L199 158 L199 156 L200 156 L200 153 L201 153 L201 151 L202 151 L202 149 L203 149 L203 146 L204 146 L204 143 L205 143 L205 139 L206 139 L206 134 L207 134 L207 127 L208 127 L208 113 L207 113 L207 106 L206 106 L206 101 L205 101 L205 97 L204 97 L204 94 L203 94 L203 92 L202 92 L202 89 L201 89 L201 87 L200 87 L200 85 L199 85 L199 83 L198 83 L198 81 L197 81 L197 79 L196 79 L196 78 L195 78 L195 76 L194 76 L194 74 L193 74 L193 73 L192 73 L192 72 L191 72 L191 70 L190 70 L190 69 L189 69 L189 68 L188 68 L188 67 L187 67 L187 65 L186 65 L186 64 L185 64 L185 63 L184 63 L184 62 L183 62 L183 61 L182 61 L182 60 L181 60 L181 59 L180 59 L180 58 L179 58 L179 57 L178 57 L178 56 L177 56 L177 55 L176 55 L176 54 L175 54 L175 53 L174 53 L174 52 L172 52 L172 51 L171 51 L171 50 L170 50 L170 49 L169 49 L169 48 L167 48 L167 47 L166 47 L166 46 L164 46 L164 45 L163 45 L163 44 L161 44 L161 43 L160 43 L160 42 L159 42 L159 41 L157 41 L157 40 L156 40 L156 39 L155 39 L155 38 L154 38 L154 36 L153 36 L153 35 L152 35 L152 33 L151 33 L151 31 L150 31 L150 25 L151 25 L151 22 L152 22 L152 20 L153 20 L153 19 L154 19 L154 18 L155 18 L155 16 L156 16 L156 15 L158 15 L158 14 L159 14 L159 13 L160 13 L160 12 L161 12 L161 11 L162 11 L162 10 L164 10 L164 9 L165 9 L165 8 L167 8 L167 7 L168 7 L168 6 L170 6 L170 5 L172 5 L172 4 L175 4 L175 3 L178 3 L178 2 L181 2 L181 1 L186 1 Z M188 15 L187 15 L187 16 L183 16 L183 17 L180 17 L180 18 L178 18 L178 19 L176 19 L176 20 L174 20 L174 21 L173 21 L173 22 L171 22 L171 23 L170 23 L170 24 L169 24 L169 25 L168 25 L168 26 L167 26 L167 27 L166 27 L166 28 L167 28 L167 29 L168 29 L168 30 L169 30 L169 31 L170 31 L170 32 L172 32 L172 33 L173 33 L173 34 L175 34 L175 35 L176 35 L176 36 L178 36 L178 37 L179 37 L179 38 L180 38 L180 39 L181 39 L181 40 L183 40 L183 41 L184 41 L184 42 L185 42 L185 43 L186 43 L186 44 L187 44 L187 45 L188 45 L188 46 L189 46 L189 47 L190 47 L190 48 L191 48 L191 49 L192 49 L192 50 L193 50 L193 51 L194 51 L194 52 L195 52 L195 53 L196 53 L196 54 L197 54 L197 55 L198 55 L198 56 L199 56 L199 57 L200 57 L200 59 L201 59 L201 60 L202 60 L202 61 L203 61 L203 62 L204 62 L204 64 L205 64 L205 65 L206 65 L206 67 L207 67 L207 68 L208 68 L208 70 L209 70 L209 72 L210 72 L210 73 L211 73 L211 75 L212 75 L212 77 L213 77 L213 79 L214 79 L214 81 L215 81 L215 83 L216 83 L216 86 L217 86 L217 89 L218 89 L218 91 L219 91 L219 95 L220 95 L220 99 L221 99 L221 104 L222 104 L222 113 L223 113 L223 127 L222 127 L222 135 L221 135 L221 140 L220 140 L220 145 L219 145 L219 148 L218 148 L218 151 L217 151 L217 154 L216 154 L216 156 L215 156 L215 159 L214 159 L214 161 L213 161 L213 163 L212 163 L212 165 L211 165 L211 167 L210 167 L210 168 L209 168 L209 170 L208 170 L208 172 L207 172 L207 173 L206 173 L206 175 L205 175 L205 177 L204 177 L204 178 L203 178 L203 179 L202 179 L202 181 L201 181 L201 182 L200 182 L200 183 L199 183 L199 185 L198 185 L198 186 L197 186 L197 187 L196 187 L196 188 L195 188 L195 190 L194 190 L194 191 L193 191 L193 192 L192 192 L192 193 L191 193 L191 194 L190 194 L190 195 L189 195 L189 196 L188 196 L188 197 L187 197 L187 198 L186 198 L186 199 L185 199 L185 200 L184 200 L184 201 L183 201 L183 202 L182 202 L182 203 L181 203 L181 204 L180 204 L180 205 L179 205 L179 206 L178 206 L178 207 L177 207 L177 208 L176 208 L176 209 L175 209 L175 210 L174 210 L174 211 L173 211 L173 212 L171 212 L171 213 L170 213 L170 214 L169 214 L169 215 L168 215 L168 216 L167 216 L167 217 L166 217 L166 218 L165 218 L165 219 L164 219 L164 220 L163 220 L163 221 L162 221 L162 222 L160 222 L160 223 L159 223 L159 224 L158 224 L158 225 L157 225 L157 226 L156 226 L156 227 L155 227 L155 228 L154 228 L154 229 L153 229 L153 230 L151 230 L151 231 L150 231 L150 232 L149 232 L149 233 L148 233 L148 234 L147 234 L147 235 L146 235 L146 236 L145 236 L145 237 L143 237 L143 238 L142 238 L142 239 L141 239 L141 240 L140 240 L140 241 L139 241 L139 242 L138 242 L138 243 L137 243 L137 244 L136 244 L136 245 L135 245 L135 246 L134 246 L134 247 L133 247 L133 248 L132 248 L132 249 L131 249 L131 250 L130 250 L130 251 L129 251 L129 252 L128 252 L128 253 L127 253 L127 254 L126 254 L126 255 L125 255 L125 256 L124 256 L124 258 L123 258 L123 259 L122 259 L122 260 L121 260 L121 261 L120 261 L120 263 L119 263 L119 264 L118 264 L118 266 L117 266 L117 268 L116 268 L116 269 L115 269 L115 271 L114 271 L114 273 L113 273 L113 274 L112 274 L112 277 L111 277 L111 279 L110 279 L110 281 L109 281 L109 284 L108 284 L108 287 L107 287 L107 291 L106 291 L106 295 L105 295 L105 300 L104 300 L104 311 L103 311 L103 320 L104 320 L104 340 L105 340 L105 349 L106 349 L106 356 L107 356 L107 361 L108 361 L108 366 L109 366 L109 370 L110 370 L110 373 L111 373 L111 376 L112 376 L112 380 L113 380 L113 382 L114 382 L114 385 L115 385 L115 387 L116 387 L116 390 L117 390 L117 392 L118 392 L118 394 L119 394 L119 396 L120 396 L120 398 L121 398 L121 400 L122 400 L122 402 L123 402 L123 404 L124 404 L124 405 L125 405 L125 407 L126 407 L126 409 L127 409 L127 410 L128 410 L128 412 L129 412 L129 413 L130 413 L130 415 L131 415 L131 416 L132 416 L132 417 L133 417 L133 419 L134 419 L134 420 L135 420 L135 421 L136 421 L136 423 L137 423 L137 424 L138 424 L138 425 L139 425 L139 427 L140 427 L140 428 L141 428 L141 429 L142 429 L142 430 L143 430 L143 431 L144 431 L144 432 L145 432 L145 434 L146 434 L146 435 L147 435 L147 436 L148 436 L148 437 L149 437 L149 438 L150 438 L150 439 L151 439 L151 440 L152 440 L152 441 L153 441 L153 442 L154 442 L154 443 L155 443 L155 444 L156 444 L156 445 L157 445 L157 446 L158 446 L158 447 L159 447 L159 448 L160 448 L160 449 L162 449 L162 450 L163 450 L163 451 L164 451 L164 452 L165 452 L165 453 L166 453 L166 454 L167 454 L167 455 L168 455 L168 456 L170 456 L170 457 L171 457 L171 458 L172 458 L172 459 L173 459 L173 460 L174 460 L174 461 L176 461 L176 462 L177 462 L177 463 L178 463 L178 464 L179 464 L179 465 L181 465 L181 466 L182 466 L182 467 L183 467 L183 468 L184 468 L184 469 L186 469 L186 470 L187 470 L187 471 L188 471 L188 472 L190 472 L190 473 L191 473 L191 474 L192 474 L192 475 L194 475 L194 476 L195 476 L195 477 L196 477 L196 479 L197 479 L197 485 L196 485 L196 488 L195 488 L195 490 L194 490 L194 495 L193 495 L193 497 L321 497 L321 495 L320 495 L320 490 L319 490 L319 485 L318 485 L318 479 L319 479 L319 477 L320 477 L320 476 L322 476 L322 475 L323 475 L323 474 L325 474 L325 473 L327 473 L327 472 L328 472 L328 471 L330 471 L330 470 L331 470 L331 469 L333 469 L333 468 L334 468 L334 467 L336 467 L336 466 L337 466 L337 465 L339 465 L339 464 L340 464 L340 463 L341 463 L341 462 L342 462 L342 461 L344 461 L344 460 L345 460 L345 459 L346 459 L346 458 L347 458 L347 457 L348 457 L348 456 L350 456 L350 455 L351 455 L351 454 L352 454 L352 453 L353 453 L353 452 L354 452 L354 451 L355 451 L355 450 L356 450 L356 449 L357 449 L357 448 L358 448 L358 447 L359 447 L359 446 L360 446 L360 445 L361 445 L361 444 L362 444 L362 443 L363 443 L363 442 L364 442 L364 441 L365 441 L365 439 L366 439 L366 438 L367 438 L367 437 L368 437 L368 436 L369 436 L369 435 L370 435 L370 433 L371 433 L371 432 L372 432 L372 431 L373 431 L373 429 L374 429 L374 428 L375 428 L375 427 L376 427 L376 425 L377 425 L377 424 L378 424 L378 423 L379 423 L379 421 L380 421 L380 420 L381 420 L381 418 L382 418 L382 416 L383 416 L383 415 L384 415 L384 413 L385 413 L385 411 L386 411 L386 410 L387 410 L387 408 L388 408 L388 406 L389 406 L389 404 L390 404 L390 402 L391 402 L391 400 L392 400 L392 398 L393 398 L393 396 L394 396 L394 393 L395 393 L395 391 L396 391 L396 389 L397 389 L397 386 L398 386 L398 383 L399 383 L399 381 L400 381 L400 378 L401 378 L401 374 L402 374 L402 371 L403 371 L403 367 L404 367 L404 363 L405 363 L405 358 L406 358 L406 354 L407 354 L407 346 L408 346 L408 335 L409 335 L409 320 L408 320 L408 309 L407 309 L407 303 L406 303 L406 299 L405 299 L405 296 L404 296 L404 293 L403 293 L403 290 L402 290 L402 287 L401 287 L401 285 L400 285 L400 282 L399 282 L399 279 L398 279 L398 277 L397 277 L397 275 L396 275 L396 273 L395 273 L395 271 L394 271 L394 269 L393 269 L393 267 L392 267 L392 265 L391 265 L391 264 L390 264 L390 262 L389 262 L389 260 L388 260 L388 259 L387 259 L387 257 L386 257 L386 256 L385 256 L385 255 L384 255 L384 253 L383 253 L383 252 L382 252 L382 251 L381 251 L381 249 L380 249 L380 248 L379 248 L379 247 L378 247 L378 246 L377 246 L377 245 L376 245 L376 244 L375 244 L375 243 L374 243 L374 241 L373 241 L373 240 L372 240 L372 239 L371 239 L371 238 L370 238 L370 237 L369 237 L369 236 L368 236 L368 235 L367 235 L367 234 L365 234 L365 233 L364 233 L364 232 L363 232 L363 231 L362 231 L362 230 L361 230 L361 229 L360 229 L360 228 L359 228 L359 227 L357 227 L357 226 L356 226 L356 225 L355 225 L355 224 L354 224 L354 223 L352 223 L352 222 L351 222 L351 221 L350 221 L350 220 L349 220 L349 219 L347 219 L347 218 L346 218 L346 217 L345 217 L345 216 L344 216 L344 215 L342 215 L342 214 L341 214 L341 213 L340 213 L340 212 L339 212 L339 211 L337 211 L337 210 L336 210 L336 209 L335 209 L335 208 L334 208 L334 207 L333 207 L333 206 L332 206 L332 205 L331 205 L331 204 L329 204 L329 203 L328 203 L328 202 L327 202 L327 201 L326 201 L326 200 L325 200 L325 199 L324 199 L324 198 L323 198 L323 197 L322 197 L322 196 L321 196 L321 195 L320 195 L320 194 L319 194 L319 193 L318 193 L318 192 L317 192 L317 191 L316 191 L316 190 L315 190 L315 189 L314 189 L314 188 L313 188 L313 187 L312 187 L312 186 L311 186 L311 185 L310 185 L310 184 L309 184 L309 183 L308 183 L308 181 L307 181 L307 180 L306 180 L306 179 L305 179 L305 178 L304 178 L304 176 L303 176 L303 175 L302 175 L302 174 L301 174 L301 172 L300 172 L300 171 L299 171 L299 170 L298 170 L298 168 L297 168 L297 166 L296 166 L296 165 L295 165 L295 163 L294 163 L294 161 L293 161 L293 159 L292 159 L292 157 L291 157 L291 155 L290 155 L290 153 L289 153 L289 150 L288 150 L288 148 L287 148 L287 145 L286 145 L286 141 L285 141 L285 137 L284 137 L284 133 L283 133 L283 126 L282 126 L282 96 L283 96 L283 90 L284 90 L284 86 L285 86 L285 82 L286 82 L286 79 L287 79 L287 76 L288 76 L288 73 L289 73 L289 72 L290 72 L290 70 L291 70 L291 68 L292 68 L292 67 L293 67 L293 65 L283 65 L283 64 L276 64 L276 63 L271 63 L271 62 L268 62 L268 61 L264 61 L264 60 L261 60 L261 59 L259 59 L259 58 L256 58 L256 57 L254 57 L254 56 L252 56 L252 55 L250 55 L250 54 L249 54 L249 53 L247 53 L247 52 L246 52 L246 51 L244 51 L244 50 L242 50 L242 49 L241 49 L241 48 L240 48 L240 47 L238 47 L238 46 L237 46 L237 45 L236 45 L236 44 L234 44 L234 43 L233 43 L233 42 L232 42 L232 41 L231 41 L231 40 L230 40 L230 39 L229 39 L229 38 L228 38 L228 37 L226 37 L226 36 L225 36 L225 35 L224 35 L224 34 L223 34 L223 33 L222 33 L222 32 L221 32 L221 31 L220 31 L220 30 L219 30 L219 29 L218 29 L218 28 L217 28 L217 27 L216 27 L216 26 L215 26 L215 25 L214 25 L214 24 L213 24 L213 23 L212 23 L212 22 L211 22 L211 21 L210 21 L210 20 L208 20 L208 19 L207 19 L207 18 L205 18 L205 17 L203 17 L203 16 L199 16 L199 15 Z M300 89 L299 89 L299 92 L298 92 L298 97 L297 97 L297 125 L298 125 L298 132 L299 132 L299 136 L300 136 L300 140 L301 140 L301 143 L302 143 L302 145 L303 145 L303 148 L304 148 L304 150 L305 150 L305 152 L306 152 L306 154 L307 154 L307 156 L308 156 L308 158 L309 158 L309 159 L310 159 L310 161 L311 161 L311 162 L312 162 L312 164 L313 164 L313 165 L314 165 L314 167 L315 167 L315 168 L316 168 L316 169 L317 169 L317 170 L318 170 L318 171 L319 171 L319 173 L320 173 L320 174 L321 174 L321 175 L322 175 L322 176 L323 176 L323 177 L324 177 L324 178 L325 178 L325 179 L326 179 L326 180 L327 180 L327 181 L328 181 L328 182 L329 182 L329 183 L330 183 L330 184 L331 184 L331 185 L332 185 L332 186 L333 186 L333 187 L334 187 L334 188 L335 188 L335 189 L336 189 L336 190 L337 190 L337 191 L338 191 L338 192 L340 192 L340 193 L341 193 L341 194 L342 194 L342 195 L343 195 L343 196 L344 196 L344 197 L345 197 L345 198 L346 198 L346 199 L348 199 L348 200 L349 200 L349 201 L350 201 L350 202 L351 202 L351 203 L353 203 L353 204 L354 204 L354 205 L355 205 L355 206 L356 206 L356 207 L358 207 L358 208 L359 208 L359 209 L360 209 L360 210 L361 210 L361 211 L363 211 L363 212 L364 212 L364 213 L365 213 L365 214 L366 214 L366 215 L368 215 L368 216 L369 216 L369 217 L370 217 L370 218 L371 218 L371 219 L372 219 L372 220 L373 220 L373 221 L374 221 L374 222 L376 222 L376 223 L377 223 L377 224 L378 224 L378 225 L379 225 L379 226 L380 226 L380 227 L381 227 L381 228 L382 228 L382 229 L383 229 L383 230 L384 230 L384 231 L385 231 L385 232 L386 232 L386 233 L387 233 L387 235 L388 235 L388 236 L389 236 L389 237 L390 237 L390 238 L391 238 L391 239 L392 239 L392 240 L393 240 L393 224 L394 224 L394 214 L395 214 L395 206 L396 206 L396 199 L397 199 L397 191 L398 191 L398 183 L399 183 L399 175 L400 175 L400 144 L399 144 L399 138 L398 138 L398 133 L397 133 L397 130 L396 130 L396 128 L395 128 L395 125 L394 125 L394 123 L393 123 L393 121 L392 121 L392 120 L391 120 L391 118 L390 118 L390 117 L389 117 L389 115 L388 115 L388 114 L387 114 L387 113 L386 113 L386 112 L385 112 L385 111 L384 111 L384 110 L383 110 L383 109 L382 109 L382 108 L380 108 L380 107 L379 107 L379 106 L378 106 L378 105 L376 105 L376 104 L375 104 L375 103 L373 103 L373 102 L371 102 L371 101 L369 101 L369 100 L367 100 L367 99 L364 99 L364 98 L361 98 L361 97 L358 97 L358 96 L354 96 L354 95 L351 95 L351 94 L347 94 L347 93 L342 93 L342 92 L336 92 L336 91 L328 91 L328 90 L314 90 L314 89 Z"></path>
+                                        <path class="jug-highlight" d="M129 293 L135 293 L135 294 L137 294 L137 295 L138 295 L138 297 L139 297 L139 311 L138 311 L138 328 L139 328 L139 341 L140 341 L140 348 L141 348 L141 353 L142 353 L142 356 L143 356 L143 360 L144 360 L144 363 L145 363 L145 366 L146 366 L146 368 L147 368 L147 370 L148 370 L148 373 L149 373 L149 375 L150 375 L150 377 L151 377 L151 379 L152 379 L152 381 L153 381 L153 382 L154 382 L154 384 L155 384 L155 386 L156 386 L156 387 L157 387 L157 389 L158 389 L158 390 L159 390 L159 392 L160 392 L160 393 L161 393 L161 395 L162 395 L162 396 L163 396 L163 398 L164 398 L164 399 L165 399 L165 400 L166 400 L166 402 L167 402 L167 409 L166 409 L166 410 L165 410 L165 411 L164 411 L164 412 L162 412 L162 413 L158 413 L158 412 L156 412 L156 411 L155 411 L155 410 L154 410 L154 409 L153 409 L153 408 L152 408 L152 407 L151 407 L151 405 L150 405 L150 404 L149 404 L149 402 L148 402 L148 401 L147 401 L147 399 L146 399 L146 398 L145 398 L145 396 L144 396 L144 395 L143 395 L143 393 L142 393 L142 391 L141 391 L141 390 L140 390 L140 388 L139 388 L139 386 L138 386 L138 384 L137 384 L137 382 L136 382 L136 380 L135 380 L135 378 L134 378 L134 376 L133 376 L133 373 L132 373 L132 371 L131 371 L131 368 L130 368 L130 365 L129 365 L129 362 L128 362 L128 359 L127 359 L127 354 L126 354 L126 349 L125 349 L125 342 L124 342 L124 331 L123 331 L123 311 L124 311 L124 299 L125 299 L125 296 L126 296 L126 295 L127 295 L127 294 L129 294 Z"></path>
+                                    </svg>
+                                    </div>
+                                    <div class="jug-scale" aria-hidden="true">
+                                        <div class="jug-scale-line" data-ratio="0" data-align="top"><span>100%</span><span class="jug-scale-tick"></span></div>
+                                        <div class="jug-scale-line" data-ratio="0.25"><span>75%</span><span class="jug-scale-tick"></span></div>
+                                        <div class="jug-scale-line" data-ratio="0.5"><span>50%</span><span class="jug-scale-tick"></span></div>
+                                        <div class="jug-scale-line" data-ratio="0.75"><span>25%</span><span class="jug-scale-tick"></span></div>
+                                        <div class="jug-scale-line" data-ratio="1" data-align="bottom"><span>0%</span><span class="jug-scale-tick"></span></div>
+                                    </div>
+                                </div>
+                                <div class="jug-caption">
+                                    <div class="font-semibold"><span id="jugTotal">0</span> мл из <span id="jugGoal">0</span> мл</div>
+                                    <div class="text-xs text-gray-400">Заполнено: <span id="jugPercent">0</span>%</div>
+                                </div>
+                                <div class="color-picker mt-2">
+                                    <label class="color-picker-main">
+                                        <input id="colorInput" type="color" class="color-input" aria-label="Цвет воды" />
+                                        <span id="colorChip" class="color-chip" aria-hidden="true"></span>
+                                        <span class="color-meta">
+                                            <span class="color-title">Цвет воды</span>
+                                            <span class="color-hint">Нажмите, чтобы выбрать</span>
+                                        </span>
+                                        <span class="color-cta">Выбрать</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-rating" class="tab-panel hidden">
+                <div class="card glow p-6">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div>
+                            <div class="section-title">Рейтинг водохлебов</div>
+                            <p class="text-sm text-gray-400 mt-2">Топ по общему объему воды за выбранный период.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" class="range-btn active" data-range="day">День</button>
+                            <button type="button" class="range-btn" data-range="week">Неделя</button>
+                            <button type="button" class="range-btn" data-range="month">Месяц</button>
+                            <button type="button" class="range-btn" data-range="year">Год</button>
+                            <button type="button" class="range-btn" data-range="custom">Период</button>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-4 mt-5">
+                        <label class="text-sm text-gray-300">
+                            Календарь
+                            <div class="rating-date-field mt-2">
+                                <button id="ratingAnchorDisplay" type="button" class="rating-date-btn" data-rating-field="ratingAnchorDate">
+                                    <span class="rating-date-value">—</span>
+                                    <span class="rating-date-icon">📅</span>
+                                </button>
+                                <input id="ratingAnchorDate" type="date" class="rating-date-input" />
+                            </div>
+                        </label>
+                        <div id="customRangeWrap" class="hidden">
+                            <div class="text-sm text-gray-300">Произвольный период</div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <div class="rating-date-field w-full">
+                                    <button id="rangeStartDisplay" type="button" class="rating-date-btn" data-rating-field="rangeStart">
+                                        <span class="rating-date-value">—</span>
+                                        <span class="rating-date-icon">📅</span>
+                                    </button>
+                                    <input id="rangeStart" type="date" class="rating-date-input" />
+                                </div>
+                                <span class="text-gray-500">—</span>
+                                <div class="rating-date-field w-full">
+                                    <button id="rangeEndDisplay" type="button" class="rating-date-btn" data-rating-field="rangeEnd">
+                                        <span class="rating-date-value">—</span>
+                                        <span class="rating-date-icon">📅</span>
+                                    </button>
+                                    <input id="rangeEnd" type="date" class="rating-date-input" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-sm text-gray-400 mt-4">Период: <span id="ratingPeriodLabel">—</span></div>
+
+                    <div id="ratingCalendarPanel" class="calendar-panel rating-calendar hidden">
+                        <div class="calendar-head">
+                            <button id="ratingCalendarPrevMonth" type="button" class="btn-muted" aria-label="Предыдущий месяц">←</button>
+                            <div id="ratingCalendarMonthLabel" class="text-sm text-amber-200 font-semibold"></div>
+                            <button id="ratingCalendarNextMonth" type="button" class="btn-muted" aria-label="Следующий месяц">→</button>
+                        </div>
+                        <div class="calendar-grid mb-2">
+                            <div class="calendar-weekday">Пн</div>
+                            <div class="calendar-weekday">Вт</div>
+                            <div class="calendar-weekday">Ср</div>
+                            <div class="calendar-weekday">Чт</div>
+                            <div class="calendar-weekday">Пт</div>
+                            <div class="calendar-weekday">Сб</div>
+                            <div class="calendar-weekday">Вс</div>
+                        </div>
+                        <div id="ratingCalendarDays" class="calendar-grid"></div>
+                    </div>
+
+                    <div id="ratingChart" class="mt-6"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+        const DEFAULT_SETTINGS = {
+            weight: 70,
+            activity: 'medium',
+            climate: 'normal',
+            color: '#38bdf8'
+        };
+        const ACTIVITY_BONUS = {
+            low: 0,
+            medium: 300,
+            high: 600
+        };
+        const CLIMATE_BONUS = {
+            normal: 0,
+            hot: 400
+        };
+        const JUG_FILL_TOP = 15;
+        const JUG_FILL_BOTTOM = 497;
+        const JUG_FILL_HEIGHT = JUG_FILL_BOTTOM - JUG_FILL_TOP;
+        const JUG_SCALE_TOP_FALLBACK = 80;
+        const JUG_SCALE_BOTTOM_FALLBACK = 485;
+        const JUG_VIEWBOX_HEIGHT = 512;
+
+        const state = {
+            db: null,
+            logsRef: null,
+            settingsRef: null,
+            data: { settings: {}, logs: {} },
+            currentUser: null,
+            userKey: '',
+            userDbKey: '',
+            userName: '',
+            currentDate: '',
+            calendarMonth: null,
+            ratingCalendarMonth: null,
+            settings: { ...DEFAULT_SETTINGS },
+            entries: [],
+            goalMl: 0,
+            dateCounts: {},
+            rangeType: 'day',
+            suppressLogUpdate: false,
+            lastSavedAt: null,
+            settingsLoaded: false
+        };
+        let ratingCalendarTarget = null;
+
+        function safeParse(value, fallback) {
+            try {
+                const parsed = JSON.parse(value);
+                return parsed && typeof parsed === 'object' ? parsed : fallback;
+            } catch (_) {
+                return fallback;
+            }
+        }
+
+        function initFirebase() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            state.db = firebase.database();
+            state.settingsRef = state.db.ref('waterTracker/settings');
+            state.logsRef = state.db.ref('waterTracker/logs');
+
+            state.settingsRef.on('value', snapshot => {
+                state.data.settings = snapshot.val() || {};
+                getUserSettings();
+                applySettingsToForm();
+                if (!state.settingsLoaded) {
+                    state.settingsLoaded = true;
+                    document.documentElement.classList.add('settings-ready');
+                }
+            });
+
+            state.logsRef.on('value', snapshot => {
+                state.data.logs = snapshot.val() || {};
+                rebuildDateCounts();
+                const currentEntry = state.currentDate
+                    ? (state.data.logs[state.currentDate] || {})[state.userDbKey]
+                    : null;
+                const shouldSkip = state.suppressLogUpdate
+                    && currentEntry
+                    && state.lastSavedAt != null
+                    && currentEntry.updatedAt === state.lastSavedAt;
+                if (!shouldSkip) {
+                    state.entries = getEntriesForDate(state.currentDate);
+                    renderEntries();
+                    updateTotals();
+                }
+                state.suppressLogUpdate = false;
+                renderCalendar();
+                renderRating();
+            });
+        }
+
+        function formatLocalDateFromDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatLocalDate() {
+            return formatLocalDateFromDate(new Date());
+        }
+
+        function parseDateKey(key) {
+            if (!key) return new Date();
+            const [y, m, d] = key.split('-').map(Number);
+            return new Date(y, (m || 1) - 1, d || 1);
+        }
+
+        function formatMl(value) {
+            if (!value || Number.isNaN(value)) return '0 мл';
+            if (value >= 1000) {
+                const liters = (value / 1000).toFixed(1);
+                return `${liters} л`;
+            }
+            return `${value} мл`;
+        }
+
+        function normalizeColor(value) {
+            if (!value) return DEFAULT_SETTINGS.color;
+            const raw = String(value).trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(raw) || /^#[0-9a-fA-F]{3}$/.test(raw)) {
+                return raw.toLowerCase();
+            }
+            return DEFAULT_SETTINGS.color;
+        }
+
+        function toDbKey(value) {
+            return String(value || 'user').replace(/[.#$\[\]/]/g, '_');
+        }
+
+        function expandHex(hex) {
+            const raw = hex.replace('#', '');
+            if (raw.length === 3) {
+                return `#${raw[0]}${raw[0]}${raw[1]}${raw[1]}${raw[2]}${raw[2]}`;
+            }
+            return `#${raw}`;
+        }
+
+        function darkenHex(hex, factor = 0.82) {
+            const base = expandHex(normalizeColor(hex));
+            const r = parseInt(base.slice(1, 3), 16);
+            const g = parseInt(base.slice(3, 5), 16);
+            const b = parseInt(base.slice(5, 7), 16);
+            const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+            const toHex = (v) => clamp(v).toString(16).padStart(2, '0');
+            return `#${toHex(r * factor)}${toHex(g * factor)}${toHex(b * factor)}`;
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function computeGoal(settings) {
+            const weight = Math.max(30, Number(settings.weight) || DEFAULT_SETTINGS.weight);
+            const base = weight * 30;
+            const activity = ACTIVITY_BONUS[settings.activity] || 0;
+            const climate = CLIMATE_BONUS[settings.climate] || 0;
+            const goal = base + activity + climate;
+            return Math.round(goal / 50) * 50;
+        }
+
+        function getUserSettings() {
+            const saved = state.data.settings[state.userDbKey];
+            state.settings = { ...DEFAULT_SETTINGS, ...(saved || {}) };
+            if (saved && Object.prototype.hasOwnProperty.call(saved, 'weight') && (saved.weight === '' || saved.weight == null)) {
+                state.settings.weight = '';
+            }
+            state.settings.color = normalizeColor(state.settings.color);
+            state.goalMl = computeGoal(state.settings);
+        }
+
+        function setThemeWaterColor() {
+            const color = normalizeColor(state.settings.color);
+            document.documentElement.style.setProperty('--water-color', color);
+            const chip = document.getElementById('colorChip');
+            if (chip) chip.style.background = color;
+        }
+
+        function syncJugScale() {
+            const scale = document.querySelector('.jug-scale');
+            if (!scale) return;
+            const svg = document.querySelector('.jug-svg');
+            const outline = document.querySelector('.jug-outline');
+            if (svg && outline) {
+                const svgRect = svg.getBoundingClientRect();
+                const outlineRect = outline.getBoundingClientRect();
+                if (svgRect.height && outlineRect.height) {
+                    const topEdgePx = outlineRect.top - svgRect.top;
+                    const bottomEdgePx = outlineRect.bottom - svgRect.top;
+                    const span = bottomEdgePx - topEdgePx;
+                    if (span) {
+                        scale.style.height = `${svgRect.height}px`;
+                        scale.querySelectorAll('.jug-scale-line').forEach(line => {
+                            const ratio = Number(line.dataset.ratio || 0);
+                            const pos = topEdgePx + span * ratio;
+                            line.style.top = `${(pos / svgRect.height) * 100}%`;
+                        });
+                        return;
+                    }
+                }
+            }
+
+            const viewHeight = svg && svg.viewBox && svg.viewBox.baseVal
+                ? svg.viewBox.baseVal.height
+                : JUG_VIEWBOX_HEIGHT;
+            if (!viewHeight) return;
+            let topEdge = JUG_SCALE_TOP_FALLBACK;
+            let bottomEdge = JUG_SCALE_BOTTOM_FALLBACK;
+            if (outline) {
+                const path = outline.getAttribute('d') || '';
+                const nums = path.match(/-?\d+(?:\.\d+)?/g);
+                if (nums && nums.length > 1) {
+                    let minY = Infinity;
+                    let maxY = -Infinity;
+                    for (let i = 1; i < nums.length; i += 2) {
+                        const y = Number(nums[i]);
+                        if (!Number.isFinite(y)) continue;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                    if (Number.isFinite(minY) && Number.isFinite(maxY)) {
+                        topEdge = minY;
+                        bottomEdge = maxY;
+                    }
+                } else if (typeof outline.getBBox === 'function') {
+                    const box = outline.getBBox();
+                    if (box && Number.isFinite(box.y) && Number.isFinite(box.height)) {
+                        topEdge = box.y;
+                        bottomEdge = box.y + box.height;
+                    }
+                }
+            }
+            const span = bottomEdge - topEdge;
+            if (!span) return;
+            scale.querySelectorAll('.jug-scale-line').forEach(line => {
+                const ratio = Number(line.dataset.ratio || 0);
+                const pos = topEdge + span * ratio;
+                line.style.top = `${(pos / viewHeight) * 100}%`;
+            });
+        }
+
+        function syncCustomSelect(selectEl) {
+            if (!selectEl) return;
+            const wrapper = selectEl.closest('.select-custom');
+            if (!wrapper) return;
+            let label = '';
+            wrapper.querySelectorAll('.select-option').forEach(option => {
+                const isActive = option.dataset.value === selectEl.value;
+                option.classList.toggle('is-active', isActive);
+                if (isActive) label = option.textContent.trim();
+            });
+            if (!label) {
+                const fallback = selectEl.querySelector('option:checked');
+                if (fallback) label = fallback.textContent.trim();
+            }
+            const valueEl = wrapper.querySelector('.select-value');
+            if (valueEl) valueEl.textContent = label || 'Выберите';
+        }
+
+        function closeCustomSelects(except) {
+            document.querySelectorAll('.select-custom.open').forEach(wrapper => {
+                if (except && wrapper === except) return;
+                wrapper.classList.remove('open');
+                const trigger = wrapper.querySelector('.select-trigger');
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                const card = wrapper.closest('.card');
+                if (card) card.classList.remove('select-open');
+            });
+        }
+
+        function applySettingsToForm() {
+            const weightInput = document.getElementById('weightInput');
+            const activityInput = document.getElementById('activityInput');
+            const climateInput = document.getElementById('climateInput');
+            const colorInput = document.getElementById('colorInput');
+
+            if (weightInput) weightInput.value = state.settings.weight === '' ? '' : state.settings.weight;
+            if (activityInput) activityInput.value = state.settings.activity;
+            if (climateInput) climateInput.value = state.settings.climate;
+            if (colorInput) colorInput.value = state.settings.color;
+
+            syncCustomSelect(activityInput);
+            syncCustomSelect(climateInput);
+            updateGoalUI();
+            setThemeWaterColor();
+        }
+
+        function updateGoalUI() {
+            const goalValue = document.getElementById('goalValue');
+            const goalLiters = document.getElementById('goalLiters');
+            if (goalValue) goalValue.textContent = state.goalMl;
+            if (goalLiters) goalLiters.textContent = (state.goalMl / 1000).toFixed(1);
+            const jugGoal = document.getElementById('jugGoal');
+            if (jugGoal) jugGoal.textContent = state.goalMl;
+        }
+
+        function getEntriesForDate(dateKey) {
+            const day = state.data.logs[dateKey];
+            if (!day) return [];
+            const entry = day[state.userDbKey];
+            return entry && Array.isArray(entry.entries) ? entry.entries : [];
+        }
+
+        function saveCurrentDay() {
+            if (!state.currentDate || !state.db) return;
+            const updatedAt = Date.now();
+            const payload = {
+                name: state.userName,
+                entries: state.entries,
+                goalMl: state.goalMl,
+                color: state.settings.color,
+                updatedAt
+            };
+            state.suppressLogUpdate = true;
+            state.lastSavedAt = updatedAt;
+            state.db.ref(`waterTracker/logs/${state.currentDate}/${state.userDbKey}`).set(payload);
+        }
+
+        function rebuildDateCounts() {
+            const counts = {};
+            Object.entries(state.data.logs).forEach(([dateKey, day]) => {
+                const entry = day[state.userDbKey];
+                if (!entry || !Array.isArray(entry.entries)) return;
+                const totalEntries = entry.entries.filter(item => Number(item.amount) > 0).length;
+                if (totalEntries > 0) counts[dateKey] = totalEntries;
+            });
+            state.dateCounts = counts;
+        }
+
+        function setDate(dateKey) {
+            state.currentDate = dateKey;
+            const dateInput = document.getElementById('waterDate');
+            if (dateInput) dateInput.value = dateKey;
+            const ratingAnchor = document.getElementById('ratingAnchorDate');
+            if (ratingAnchor) ratingAnchor.value = dateKey;
+            syncRatingDateDisplays();
+            state.entries = getEntriesForDate(dateKey);
+            renderEntries();
+            updateTotals();
+            state.calendarMonth = parseDateKey(dateKey);
+            renderCalendar();
+        }
+
+        function shiftDateBy(days) {
+            const base = parseDateKey(state.currentDate || formatLocalDate());
+            base.setDate(base.getDate() + days);
+            setDate(formatLocalDateFromDate(base));
+        }
+
+        function sumEntries(entries) {
+            return entries.reduce((sum, entry) => {
+                const amt = Number(entry.amount);
+                if (Number.isNaN(amt)) return sum;
+                return sum + Math.max(0, amt);
+            }, 0);
+        }
+
+        function updateTotals() {
+            const total = sumEntries(state.entries);
+            const remaining = Math.max(0, state.goalMl - total);
+            const percent = state.goalMl ? Math.min(100, Math.round((total / state.goalMl) * 100)) : 0;
+
+            const totalEl = document.getElementById('dayTotal');
+            const remainingEl = document.getElementById('dayRemaining');
+            const progressFill = document.getElementById('progressFill');
+            const progressPercent = document.getElementById('progressPercent');
+            const jugFill = document.getElementById('jugFillRect');
+            const jugTotal = document.getElementById('jugTotal');
+            const jugPercent = document.getElementById('jugPercent');
+
+            if (totalEl) totalEl.textContent = total;
+            if (remainingEl) remainingEl.textContent = remaining;
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (progressPercent) progressPercent.textContent = percent;
+            if (jugFill) {
+                const fillHeight = Math.max(0, Math.round((percent / 100) * JUG_FILL_HEIGHT));
+                const y = JUG_FILL_BOTTOM - fillHeight;
+                jugFill.setAttribute('height', String(fillHeight));
+                jugFill.setAttribute('y', String(y));
+            }
+            if (jugTotal) jugTotal.textContent = total;
+            if (jugPercent) jugPercent.textContent = percent;
+        }
+
+        function renderEntries() {
+            const body = document.getElementById('waterLogBody');
+            if (!body) return;
+            if (!state.entries.length) {
+                state.entries = [{ time: '', amount: '' }];
+            }
+            body.innerHTML = state.entries.map((entry, idx) => {
+                return `
+                    <tr data-index="${idx}">
+                        <td><input type="time" class="input-field entry-time" value="${entry.time || ''}"></td>
+                        <td><input type="number" min="0" step="10" class="input-field entry-amount" value="${entry.amount || ''}" placeholder="Введите значение"></td>
+                        <td class="text-right">
+                            <button type="button" class="row-remove" aria-label="Удалить">✕</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function handleEntryInput(e) {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            const idx = Number(row.dataset.index);
+            if (Number.isNaN(idx) || !state.entries[idx]) return;
+            if (e.target.classList.contains('entry-time')) {
+                state.entries[idx].time = e.target.value;
+            }
+            if (e.target.classList.contains('entry-amount')) {
+                state.entries[idx].amount = e.target.value;
+            }
+            saveCurrentDay();
+            updateTotals();
+        }
+
+        function handleEntryRemove(e) {
+            if (!e.target.classList.contains('row-remove')) return;
+            const row = e.target.closest('tr');
+            if (!row) return;
+            const idx = Number(row.dataset.index);
+            if (Number.isNaN(idx)) return;
+            state.entries.splice(idx, 1);
+            renderEntries();
+            saveCurrentDay();
+            updateTotals();
+        }
+
+        function addEntryRow() {
+            const now = new Date();
+            const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            state.entries.push({ time, amount: '' });
+            renderEntries();
+            saveCurrentDay();
+        }
+
+        function renderCalendar() {
+            const panel = document.getElementById('calendarPanel');
+            const daysEl = document.getElementById('calendarDays');
+            const label = document.getElementById('calendarMonthLabel');
+            if (!panel || !daysEl || !label) return;
+            const monthDate = state.calendarMonth || new Date();
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            label.textContent = monthDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1);
+            const startWeekday = (firstDay.getDay() + 6) % 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayKey = formatLocalDate();
+
+            const cells = [];
+            for (let i = 0; i < startWeekday; i += 1) {
+                cells.push('<div class="calendar-day" aria-hidden="true"></div>');
+            }
+            for (let day = 1; day <= daysInMonth; day += 1) {
+                const dateKey = formatLocalDateFromDate(new Date(year, month, day));
+                const count = state.dateCounts[dateKey] || 0;
+                const isToday = dateKey === todayKey;
+                const isActive = dateKey === state.currentDate;
+                const countBadge = count ? `<span class="day-count">${count}</span>` : '';
+                const classes = ['calendar-day'];
+                if (isToday) classes.push('is-today');
+                if (isActive) classes.push('is-active');
+                cells.push(`
+                    <div class="${classes.join(' ')}">
+                        ${countBadge}
+                        <button type="button" data-cal-date="${dateKey}">${day}</button>
+                    </div>
+                `);
+            }
+            daysEl.innerHTML = cells.join('');
+        }
+
+        function toggleCalendar(open) {
+            const panel = document.getElementById('calendarPanel');
+            if (!panel) return;
+            const shouldOpen = typeof open === 'boolean' ? open : panel.classList.contains('hidden');
+            const card = panel.closest('.card');
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+                renderCalendar();
+                if (card) card.classList.add('calendar-open');
+            } else {
+                panel.classList.add('hidden');
+                if (card) card.classList.remove('calendar-open');
+            }
+        }
+
+        function formatDisplayDate(value) {
+            if (!value) return 'Выберите дату';
+            const date = parseDateKey(value);
+            return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function syncRatingDateDisplays() {
+            document.querySelectorAll('.rating-date-btn').forEach(btn => {
+                const targetId = btn.dataset.ratingField;
+                if (!targetId) return;
+                const input = document.getElementById(targetId);
+                const valueEl = btn.querySelector('.rating-date-value');
+                if (!valueEl) return;
+                valueEl.textContent = formatDisplayDate(input && input.value ? input.value : '');
+            });
+        }
+
+        function positionRatingCalendar(anchorEl) {
+            const panel = document.getElementById('ratingCalendarPanel');
+            if (!panel || !anchorEl) return;
+            const field = anchorEl.closest('.rating-date-field');
+            if (field && panel.parentElement !== field) {
+                field.appendChild(panel);
+            }
+            panel.style.top = 'calc(100% + 2px)';
+            panel.style.left = 'auto';
+            panel.style.right = '0';
+        }
+
+        function renderRatingCalendar() {
+            const panel = document.getElementById('ratingCalendarPanel');
+            const daysEl = document.getElementById('ratingCalendarDays');
+            const label = document.getElementById('ratingCalendarMonthLabel');
+            if (!panel || !daysEl || !label) return;
+            const baseDate = (() => {
+                const input = ratingCalendarTarget ? document.getElementById(ratingCalendarTarget) : null;
+                const key = input && input.value ? input.value : state.currentDate;
+                return parseDateKey(key);
+            })();
+            const monthDate = state.ratingCalendarMonth || new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+            state.ratingCalendarMonth = monthDate;
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            label.textContent = monthDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1);
+            const startWeekday = (firstDay.getDay() + 6) % 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayKey = formatLocalDate();
+            const selectedInput = ratingCalendarTarget ? document.getElementById(ratingCalendarTarget) : null;
+            const selectedKey = selectedInput && selectedInput.value ? selectedInput.value : '';
+
+            const cells = [];
+            for (let i = 0; i < startWeekday; i += 1) {
+                cells.push('<div class="calendar-day" aria-hidden="true"></div>');
+            }
+            for (let day = 1; day <= daysInMonth; day += 1) {
+                const dateKey = formatLocalDateFromDate(new Date(year, month, day));
+                const isToday = dateKey === todayKey;
+                const isActive = dateKey === selectedKey;
+                const classes = ['calendar-day'];
+                if (isToday) classes.push('is-today');
+                if (isActive) classes.push('is-active');
+                const dayLog = state.data.logs[dateKey] || {};
+                const count = Object.values(dayLog).filter(entry => entry && Array.isArray(entry.entries) && sumEntries(entry.entries) > 0).length;
+                cells.push(`
+                    <div class="${classes.join(' ')}">
+                        <button type="button" data-rating-date="${dateKey}">${day}</button>
+                        ${count ? `<span class="day-count">${count}</span>` : ''}
+                    </div>
+                `);
+            }
+            daysEl.innerHTML = cells.join('');
+        }
+
+        function toggleRatingCalendar(open, anchorEl) {
+            const panel = document.getElementById('ratingCalendarPanel');
+            if (!panel) return;
+            const shouldOpen = typeof open === 'boolean' ? open : panel.classList.contains('hidden');
+            if (shouldOpen) {
+                panel.classList.remove('hidden');
+                renderRatingCalendar();
+                positionRatingCalendar(anchorEl || document.querySelector(`[data-rating-field="${ratingCalendarTarget}"]`));
+            } else {
+                panel.classList.add('hidden');
+                ratingCalendarTarget = null;
+            }
+        }
+
+        function openRatingCalendar(targetId, anchorEl) {
+            if (!targetId) return;
+            ratingCalendarTarget = targetId;
+            const input = document.getElementById(targetId);
+            const baseKey = input && input.value ? input.value : state.currentDate;
+            const baseDate = parseDateKey(baseKey);
+            state.ratingCalendarMonth = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+            toggleRatingCalendar(true, anchorEl);
+        }
+
+        function getRangeBounds() {
+            const anchorInput = document.getElementById('ratingAnchorDate');
+            const anchorKey = anchorInput && anchorInput.value ? anchorInput.value : state.currentDate;
+            const anchorDate = parseDateKey(anchorKey);
+            let startDate = new Date(anchorDate);
+            let endDate = new Date(anchorDate);
+
+            if (state.rangeType === 'week') {
+                const diff = (anchorDate.getDay() + 6) % 7;
+                startDate.setDate(anchorDate.getDate() - diff);
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+            } else if (state.rangeType === 'month') {
+                startDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+                endDate = new Date(anchorDate.getFullYear(), anchorDate.getMonth() + 1, 0);
+            } else if (state.rangeType === 'year') {
+                startDate = new Date(anchorDate.getFullYear(), 0, 1);
+                endDate = new Date(anchorDate.getFullYear(), 11, 31);
+            } else if (state.rangeType === 'custom') {
+                const startInput = document.getElementById('rangeStart');
+                const endInput = document.getElementById('rangeEnd');
+                if (startInput && startInput.value) startDate = parseDateKey(startInput.value);
+                if (endInput && endInput.value) endDate = parseDateKey(endInput.value);
+            }
+
+            if (startDate > endDate) {
+                const temp = startDate;
+                startDate = endDate;
+                endDate = temp;
+            }
+
+            return {
+                startKey: formatLocalDateFromDate(startDate),
+                endKey: formatLocalDateFromDate(endDate)
+            };
+        }
+
+        function renderRating() {
+            const chart = document.getElementById('ratingChart');
+            const label = document.getElementById('ratingPeriodLabel');
+            if (!chart || !label) return;
+            const { startKey, endKey } = getRangeBounds();
+            label.textContent = `${startKey} — ${endKey}`;
+
+            const userColors = {};
+            Object.entries(state.data.settings || {}).forEach(([userId, settings]) => {
+                if (!settings || !settings.color) return;
+                userColors[userId] = normalizeColor(settings.color);
+            });
+
+            const totals = {};
+            const names = {};
+            const colors = {};
+            const colorUpdated = {};
+            Object.entries(state.data.logs).forEach(([dateKey, day]) => {
+                if (dateKey < startKey || dateKey > endKey) return;
+                Object.entries(day).forEach(([userId, entry]) => {
+                    if (!entry || !Array.isArray(entry.entries)) return;
+                    const sum = sumEntries(entry.entries);
+                    if (sum <= 0) return;
+                    totals[userId] = (totals[userId] || 0) + sum;
+                    names[userId] = entry.name || userId;
+                    const entryColor = userColors[userId] || normalizeColor(entry.color) || DEFAULT_SETTINGS.color;
+                    const stamp = entry.updatedAt || 0;
+                    if (!colors[userId] || stamp >= (colorUpdated[userId] || 0)) {
+                        colors[userId] = entryColor;
+                        colorUpdated[userId] = stamp;
+                    }
+                });
+            });
+
+            const rows = Object.keys(totals)
+                .map(key => ({ userId: key, name: names[key], total: totals[key], color: colors[key] || DEFAULT_SETTINGS.color }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 8);
+
+            if (!rows.length) {
+                chart.innerHTML = '<div class="text-sm text-gray-500">Нет данных за выбранный период.</div>';
+                return;
+            }
+
+            const max = Math.max(...rows.map(r => r.total));
+            const step = max > 5000 ? 1000 : max > 2000 ? 500 : max > 1000 ? 250 : 100;
+            const axisMax = Math.ceil(max / step) * step;
+            const ticks = 4;
+            const yLabels = Array.from({ length: ticks + 1 }, (_, i) => {
+                const value = Math.round(axisMax - (axisMax / ticks) * i);
+                return `<div>${formatMl(value)}</div>`;
+            }).join('');
+            const gridLines = Array.from({ length: ticks + 1 }, (_, i) => {
+                const percent = Math.round((i / ticks) * 100);
+                return `<div class="rating-grid-line" style="bottom: ${percent}%"></div>`;
+            }).join('');
+            const bars = rows.map((row) => {
+                const height = axisMax ? Math.max(2, Math.round((row.total / axisMax) * 100)) : 0;
+                const baseColor = normalizeColor(row.color);
+                const darkColor = darkenHex(baseColor);
+                return `
+                    <div class="rating-bar-vert" style="height: ${height}%; --bar-color: ${baseColor}; --bar-color-dark: ${darkColor};">
+                        <div class="rating-bar-value">${formatMl(row.total)}</div>
+                    </div>
+                `;
+            }).join('');
+            const labels = rows.map((row) => {
+                const name = escapeHtml(row.name);
+                return `<div class="rating-x-label" title="${name}">${name}</div>`;
+            }).join('');
+
+            chart.innerHTML = `
+                <div class="rating-chart">
+                    <div class="rating-y-axis">${yLabels}</div>
+                    <div class="rating-plot-area">
+                        <div class="rating-plot">
+                            ${gridLines}
+                            <div class="rating-bars">${bars}</div>
+                        </div>
+                        <div class="rating-x-axis">${labels}</div>
+                        <div class="rating-axis-note">
+                            <span>Ось Y — объем воды</span>
+                            <span>Ось X — люди</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateRangeButtons(selected) {
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                const isActive = btn.dataset.range === selected;
+                btn.classList.toggle('active', isActive);
+            });
+            const customWrap = document.getElementById('customRangeWrap');
+            if (customWrap) customWrap.classList.toggle('hidden', selected !== 'custom');
+        }
+
+        function setActiveTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            const tracker = document.getElementById('tab-tracker');
+            const rating = document.getElementById('tab-rating');
+            if (tracker) tracker.classList.toggle('hidden', tabName !== 'tracker');
+            if (rating) rating.classList.toggle('hidden', tabName !== 'rating');
+            if (tabName === 'rating') {
+                renderRating();
+            }
+        }
+
+        function init() {
+            const userDataStr = localStorage.getItem('currentUser');
+            if (!userDataStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+            state.currentUser = safeParse(userDataStr, null);
+            if (!state.currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            state.userKey = state.currentUser.username || state.currentUser.name || 'user';
+            state.userDbKey = toDbKey(state.userKey);
+            state.userName = state.currentUser.name || state.userKey;
+
+            const nameEl = document.getElementById('profileName');
+            if (nameEl) nameEl.textContent = state.userName;
+
+            document.documentElement.classList.remove('settings-ready');
+            initFirebase();
+
+            const today = formatLocalDate();
+            setDate(today);
+            requestAnimationFrame(syncJugScale);
+
+            const weightInput = document.getElementById('weightInput');
+            const activityInput = document.getElementById('activityInput');
+            const climateInput = document.getElementById('climateInput');
+            const colorInput = document.getElementById('colorInput');
+
+            document.querySelectorAll('.select-custom').forEach(wrapper => {
+                const trigger = wrapper.querySelector('.select-trigger');
+                const menu = wrapper.querySelector('.select-menu');
+                const select = wrapper.querySelector('.select-native');
+                if (!trigger || !menu || !select) return;
+
+                trigger.addEventListener('click', () => {
+                    const isOpen = wrapper.classList.contains('open');
+                    if (isOpen) {
+                        closeCustomSelects();
+                        return;
+                    }
+                    closeCustomSelects(wrapper);
+                    wrapper.classList.add('open');
+                    trigger.setAttribute('aria-expanded', 'true');
+                    const card = wrapper.closest('.card');
+                    if (card) card.classList.add('select-open');
+                });
+
+                menu.addEventListener('click', (e) => {
+                    const option = e.target.closest('.select-option');
+                    if (!option) return;
+                    select.value = option.dataset.value || '';
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncCustomSelect(select);
+                    closeCustomSelects();
+                });
+            });
+
+            function onSettingsChange() {
+                const rawWeight = weightInput.value.trim();
+                state.settings.weight = rawWeight === '' ? '' : Number(rawWeight) || DEFAULT_SETTINGS.weight;
+                state.settings.activity = activityInput.value;
+                state.settings.climate = climateInput.value;
+                state.settings.color = normalizeColor(colorInput.value);
+                state.goalMl = computeGoal(state.settings);
+                const settingsPayload = {
+                    ...state.settings,
+                    name: state.userName,
+                    updatedAt: Date.now()
+                };
+                state.data.settings[state.userDbKey] = settingsPayload;
+                syncCustomSelect(activityInput);
+                syncCustomSelect(climateInput);
+                updateGoalUI();
+                setThemeWaterColor();
+                if (state.db) {
+                    state.db.ref(`waterTracker/settings/${state.userDbKey}`).set(settingsPayload);
+                }
+                saveCurrentDay();
+                updateTotals();
+            }
+
+            if (weightInput) weightInput.addEventListener('input', onSettingsChange);
+            if (activityInput) activityInput.addEventListener('change', onSettingsChange);
+            if (climateInput) climateInput.addEventListener('change', onSettingsChange);
+            if (colorInput) colorInput.addEventListener('input', onSettingsChange);
+
+            const body = document.getElementById('waterLogBody');
+            if (body) {
+                body.addEventListener('input', handleEntryInput);
+                body.addEventListener('click', handleEntryRemove);
+            }
+
+            const addBtn = document.getElementById('addRowBtn');
+            if (addBtn) addBtn.addEventListener('click', addEntryRow);
+
+            const dateInput = document.getElementById('waterDate');
+            if (dateInput) {
+                dateInput.addEventListener('change', (e) => {
+                    setDate(e.target.value);
+                });
+            }
+
+            const prevBtn = document.getElementById('prevDateBtn');
+            const nextBtn = document.getElementById('nextDateBtn');
+            if (prevBtn) prevBtn.addEventListener('click', () => shiftDateBy(-1));
+            if (nextBtn) nextBtn.addEventListener('click', () => shiftDateBy(1));
+
+            const toggleBtn = document.getElementById('calendarToggle');
+            if (toggleBtn) toggleBtn.addEventListener('click', () => toggleCalendar());
+
+            const daysEl = document.getElementById('calendarDays');
+            if (daysEl) {
+                daysEl.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-cal-date]');
+                    if (!btn) return;
+                    setDate(btn.dataset.calDate);
+                    toggleCalendar(false);
+                });
+            }
+
+            const prevMonthBtn = document.getElementById('calendarPrevMonth');
+            const nextMonthBtn = document.getElementById('calendarNextMonth');
+            if (prevMonthBtn) {
+                prevMonthBtn.addEventListener('click', () => {
+                    const base = state.calendarMonth || new Date();
+                    state.calendarMonth = new Date(base.getFullYear(), base.getMonth() - 1, 1);
+                    renderCalendar();
+                });
+            }
+            if (nextMonthBtn) {
+                nextMonthBtn.addEventListener('click', () => {
+                    const base = state.calendarMonth || new Date();
+                    state.calendarMonth = new Date(base.getFullYear(), base.getMonth() + 1, 1);
+                    renderCalendar();
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('calendarPanel');
+                if (!panel || panel.classList.contains('hidden')) return;
+                if (e.target.closest('#calendarPanel') || e.target.closest('#calendarToggle')) return;
+                toggleCalendar(false);
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.select-custom')) closeCustomSelects();
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setActiveTab(btn.dataset.tab);
+                });
+            });
+
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.rangeType = btn.dataset.range;
+                    updateRangeButtons(state.rangeType);
+                    renderRating();
+                });
+            });
+
+            const ratingAnchor = document.getElementById('ratingAnchorDate');
+            if (ratingAnchor) {
+                ratingAnchor.addEventListener('change', () => {
+                    syncRatingDateDisplays();
+                    renderRating();
+                });
+            }
+            const rangeStart = document.getElementById('rangeStart');
+            const rangeEnd = document.getElementById('rangeEnd');
+            if (rangeStart) {
+                rangeStart.addEventListener('change', () => {
+                    syncRatingDateDisplays();
+                    renderRating();
+                });
+            }
+            if (rangeEnd) {
+                rangeEnd.addEventListener('change', () => {
+                    syncRatingDateDisplays();
+                    renderRating();
+                });
+            }
+
+            document.querySelectorAll('.rating-date-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const panel = document.getElementById('ratingCalendarPanel');
+                    if (panel && !panel.classList.contains('hidden') && ratingCalendarTarget === btn.dataset.ratingField) {
+                        toggleRatingCalendar(false);
+                        return;
+                    }
+                    openRatingCalendar(btn.dataset.ratingField, btn);
+                });
+            });
+            const ratingPrevMonth = document.getElementById('ratingCalendarPrevMonth');
+            const ratingNextMonth = document.getElementById('ratingCalendarNextMonth');
+            if (ratingPrevMonth) {
+                ratingPrevMonth.addEventListener('click', () => {
+                    const base = state.ratingCalendarMonth || parseDateKey(state.currentDate);
+                    base.setMonth(base.getMonth() - 1);
+                    state.ratingCalendarMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+                    renderRatingCalendar();
+                });
+            }
+            if (ratingNextMonth) {
+                ratingNextMonth.addEventListener('click', () => {
+                    const base = state.ratingCalendarMonth || parseDateKey(state.currentDate);
+                    base.setMonth(base.getMonth() + 1);
+                    state.ratingCalendarMonth = new Date(base.getFullYear(), base.getMonth(), 1);
+                    renderRatingCalendar();
+                });
+            }
+            const ratingDays = document.getElementById('ratingCalendarDays');
+            if (ratingDays) {
+                ratingDays.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-rating-date]');
+                    if (!btn || !ratingCalendarTarget) return;
+                    const input = document.getElementById(ratingCalendarTarget);
+                    if (input) input.value = btn.dataset.ratingDate;
+                    syncRatingDateDisplays();
+                    renderRating();
+                    toggleRatingCalendar(false);
+                });
+            }
+            document.addEventListener('click', (e) => {
+                const panel = document.getElementById('ratingCalendarPanel');
+                if (!panel || panel.classList.contains('hidden')) return;
+                if (panel.contains(e.target) || e.target.closest('.rating-date-btn')) return;
+                toggleRatingCalendar(false);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') toggleRatingCalendar(false);
+            });
+            window.addEventListener('resize', () => toggleRatingCalendar(false));
+            window.addEventListener('resize', () => syncJugScale());
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeCustomSelects();
+            });
+
+            updateRangeButtons(state.rangeType);
+            renderRating();
+            syncRatingDateDisplays();
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
