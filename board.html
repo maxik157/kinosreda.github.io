@@ -2979,7 +2979,6 @@
 
         function queueDrawingUpdate(el) {
             if (!boardDb || !el) return;
-            if (!collabActive && (drawingDrag.active || handleState.active || groupDrag.active)) return;
             const id = ensureDrawingId(el);
             const html = snapshotElement(el);
             const last = lastDrawingSent.get(id);
@@ -4631,14 +4630,32 @@
         });
         document.getElementById('toolColor')?.addEventListener('input', (event) => {
             event.target.style.backgroundColor = event.target.value;
+            const nextColor = event.target.value;
             if (editingTextElement) {
-                editingTextElement.setAttribute('fill', event.target.value);
-                if (inlineEditor) inlineEditor.style.color = event.target.value;
+                editingTextElement.setAttribute('fill', nextColor);
+                if (inlineEditor) inlineEditor.style.color = nextColor;
                 queueDrawingUpdate(editingTextElement);
             }
-            try { localStorage.setItem(TOOL_COLOR_LS_KEY, event.target.value); } catch (_) {}
+            if (selectedDrawings.size) {
+                selectedDrawings.forEach((el) => {
+                    const type = el.tagName.toLowerCase();
+                    if (type === 'rect' || type === 'ellipse') {
+                        el.setAttribute('stroke', nextColor);
+                        el.setAttribute('fill', hexToRgba(nextColor, 0.18));
+                        queueDrawingUpdate(el);
+                    } else if (type === 'line') {
+                        el.setAttribute('stroke', nextColor);
+                        el.style.color = nextColor;
+                        queueDrawingUpdate(el);
+                    } else if (type === 'text') {
+                        el.setAttribute('fill', nextColor);
+                        queueDrawingUpdate(el);
+                    }
+                });
+            }
+            try { localStorage.setItem(TOOL_COLOR_LS_KEY, nextColor); } catch (_) {}
             if (!boardDb) return;
-            const payload = { color: event.target.value, by: getClientId(), ts: Date.now() };
+            const payload = { color: nextColor, by: getClientId(), ts: Date.now() };
             boardDb.ref('boardLive/drawingState').set(payload);
         });
         const toolSizeInput = document.getElementById('toolSize');
