@@ -133,8 +133,11 @@
                         linear-gradient(140deg, var(--bg-1), var(--bg-2) 55%, var(--bg-3));
             min-height: 100vh;
             overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none;
         }
         button, input, select, textarea { font-family: inherit; }
+        input, textarea, .text-inline-editor { -webkit-user-select: text; user-select: text; }
 
         .board {
             position: fixed;
@@ -171,7 +174,7 @@
             position: absolute;
             inset: 0;
             z-index: 12;
-            pointer-events: none;
+            display: contents;
         }
         .cards-layer.is-loading {
             opacity: 0;
@@ -195,6 +198,7 @@
             user-select: none;
             animation: card-fade 0.6s ease both;
             pointer-events: auto;
+            z-index: 12;
         }
         .card.remote-moving {
             transition: transform 0.08s linear, width 0.08s linear, height 0.08s linear;
@@ -389,6 +393,12 @@
             border-bottom: 2px solid rgba(255, 255, 255, 0.4);
             cursor: se-resize;
             opacity: 0.7;
+            touch-action: none;
+        }
+        .card-resize-handle::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
         }
         .card-resize-handle:hover { opacity: 1; }
 
@@ -1588,7 +1598,8 @@
             top: 50%;
             left: 18px;
             transform: translateY(-50%);
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: 8px;
             padding: 10px;
             border-radius: 18px;
@@ -1597,8 +1608,29 @@
             z-index: 25;
             backdrop-filter: blur(14px);
             width: 68px;
+            align-items: center;
+            transition: width 0.25s ease, padding 0.25s ease;
+        }
+        .toolbox.collapsed {
+            width: 48px;
+            padding: 10px 6px;
+        }
+        .toolbox-body {
+            width: 100%;
+            display: grid;
+            gap: 8px;
             justify-items: center;
             align-content: center;
+            max-height: 520px;
+            overflow: hidden;
+            transition: max-height 0.25s ease, opacity 0.2s ease, transform 0.25s ease;
+            transform-origin: top;
+        }
+        .toolbox.collapsed .toolbox-body {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
         }
         .tool-btn {
             width: 36px;
@@ -1611,11 +1643,16 @@
             display: grid;
             place-items: center;
             cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
         .tool-btn svg {
             width: 18px;
             height: 18px;
             fill: currentColor;
+        }
+        .tool-btn[data-tool="select"] svg {
+            display: block;
+            transform: translate(1px, 1px);
         }
         .tool-btn.active {
             border-color: rgba(245, 158, 11, 0.6);
@@ -1674,6 +1711,25 @@
             border-color: rgba(248, 113, 113, 0.7);
             box-shadow: 0 0 12px rgba(248, 113, 113, 0.45);
         }
+        .toolbox-toggle {
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(255, 255, 255, 0.08);
+            color: #f8fafc;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .toolbox-toggle:hover { background: rgba(255, 255, 255, 0.16); }
+        .toolbox-toggle svg {
+            width: 14px;
+            height: 14px;
+            transition: transform 0.2s ease;
+        }
+        .toolbox:not(.collapsed) .toolbox-toggle svg { transform: rotate(180deg); }
         .tool-text-panel {
             position: absolute;
             left: calc(100% + 10px);
@@ -1924,6 +1980,13 @@
             .roulette-card { width: 320px; }
             .planning-card { width: 320px; }
             .preview-frame { height: 260px; }
+            .card-resize-handle {
+                width: 22px;
+                height: 22px;
+                right: 6px;
+                bottom: 6px;
+            }
+            .card-resize-handle::after { inset: -10px; }
             .modal {
                 align-items: flex-start;
                 padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
@@ -1974,6 +2037,156 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             white-space: nowrap;
         }
+        .zoom-controls {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 26;
+        }
+        .zoom-btn,
+        .zoom-menu-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(6, 8, 12, 0.75);
+            color: #f8fafc;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        }
+        .zoom-btn:hover,
+        .zoom-menu-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+        }
+        .zoom-btn svg,
+        .zoom-menu-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .zoom-menu {
+            position: relative;
+        }
+        .zoom-menu-panel {
+            position: absolute;
+            left: 50%;
+            bottom: 48px;
+            display: grid;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(6, 8, 12, 0.9);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+            transform: translate(-50%, 10px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .zoom-menu.is-open .zoom-menu-panel {
+            transform: translate(-50%, 0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .zoom-menu-item {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: #f8fafc;
+            padding: 8px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .zoom-menu-item:hover {
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #fcd34d;
+        }
+        .minimap-panel {
+            position: absolute;
+            right: 0;
+            bottom: 56px;
+            width: 220px;
+            height: 150px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(6, 8, 12, 0.9);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            box-sizing: border-box;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            display: block;
+        }
+        .zoom-controls.minimap-open .minimap-panel {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .minimap-preview {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 10px;
+            background: rgba(15, 20, 27, 0.9);
+            touch-action: none;
+        }
+        .minimap-surface {
+            position: absolute;
+            left: 0;
+            top: 0;
+            transform-origin: 0 0;
+        }
+        .minimap-preview * { pointer-events: none; }
+        .minimap-preview .card {
+            animation: none;
+            box-shadow: none;
+            backdrop-filter: none;
+        }
+        .minimap-preview .card-resize-handle,
+        .minimap-preview .card-actions,
+        .minimap-preview .card-close {
+            display: none;
+        }
+        .minimap-preview .board-header,
+        .minimap-preview .cursor-layer {
+            display: none;
+        }
+        .minimap-preview .draw-layer {
+            pointer-events: none;
+        }
+        .minimap-preview .grid-layer {
+            opacity: 0.6;
+        }
+        .minimap-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            background: rgba(15, 20, 27, 0.9);
+        }
+        .minimap-viewport {
+            position: absolute;
+            border: 1px solid rgba(245, 158, 11, 0.9);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+            border-radius: 4px;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -1983,29 +2196,36 @@
                 <path d="M6.5 4.5l9.8 9.8-4.1.7 2.3 4.8-2.2 1-2.3-4.8-3.2 3V4.5z"></path>
             </svg>
         </button>
-        <button class="tool-btn" type="button" data-tool="pen" title="Карандаш">✏️</button>
-        <button class="tool-btn" type="button" data-tool="rect" title="Прямоугольник">▭</button>
-        <button class="tool-btn" type="button" data-tool="circle" title="Круг">◯</button>
-        <button class="tool-btn" type="button" data-tool="line" title="Линия">／</button>
-        <button class="tool-btn" type="button" data-tool="arrow" title="Стрелка">➤</button>
-        <button class="tool-btn" type="button" data-tool="text" title="Текст">T</button>
-        <button class="tool-btn" type="button" data-tool="select-area" title="Выделить область">▧</button>
-        <div class="tool-section">
-            <div class="tool-label">Цвет</div>
-            <input class="tool-color" type="color" id="toolColor" value="#f59e0b">
-        </div>
-        <div class="tool-section">
-            <div class="tool-label">Размер</div>
-            <input class="tool-size" type="range" id="toolSize" min="2" max="18" step="1" value="6">
-        </div>
-        <button class="tool-delete" type="button" id="deleteDrawingBtn" aria-label="Удалить"></button>
-        <div class="tool-text-panel" id="toolTextPanel">
-            <input class="tool-text-input" id="toolTextInput" type="text" placeholder="Введите текст">
-            <div class="tool-text-actions">
-                <button class="tool-text-btn" type="button" id="toolTextCancel">Отмена</button>
-                <button class="tool-text-btn primary" type="button" id="toolTextApply">Добавить</button>
+        <div class="toolbox-body" id="toolboxBody">
+            <button class="tool-btn" type="button" data-tool="pen" title="Карандаш">✏️</button>
+            <button class="tool-btn" type="button" data-tool="rect" title="Прямоугольник">▭</button>
+            <button class="tool-btn" type="button" data-tool="circle" title="Круг">◯</button>
+            <button class="tool-btn" type="button" data-tool="line" title="Линия">／</button>
+            <button class="tool-btn" type="button" data-tool="arrow" title="Стрелка">➤</button>
+            <button class="tool-btn" type="button" data-tool="text" title="Текст">T</button>
+            <button class="tool-btn" type="button" data-tool="select-area" title="Выделить область">▧</button>
+            <div class="tool-section">
+                <div class="tool-label">Цвет</div>
+                <input class="tool-color" type="color" id="toolColor" value="#f59e0b">
+            </div>
+            <div class="tool-section">
+                <div class="tool-label">Размер</div>
+                <input class="tool-size" type="range" id="toolSize" min="2" max="18" step="1" value="6">
+            </div>
+            <button class="tool-delete" type="button" id="deleteDrawingBtn" aria-label="Удалить"></button>
+            <div class="tool-text-panel" id="toolTextPanel">
+                <input class="tool-text-input" id="toolTextInput" type="text" placeholder="Введите текст">
+                <div class="tool-text-actions">
+                    <button class="tool-text-btn" type="button" id="toolTextCancel">Отмена</button>
+                    <button class="tool-text-btn primary" type="button" id="toolTextApply">Добавить</button>
+                </div>
             </div>
         </div>
+        <button class="toolbox-toggle" type="button" id="toolboxToggle" aria-label="Свернуть панель" aria-expanded="true">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
     </aside>
     <header class="board-header">
         <a class="board-logo" href="index.html" aria-label="Киносреда">
@@ -2032,6 +2252,36 @@
             <div class="cards-layer" id="cards"></div>
         </div>
     </main>
+    <div class="zoom-controls" id="zoomControls">
+        <div class="minimap-panel" id="minimapPanel">
+            <div class="minimap-preview" id="minimapPreview">
+                <div class="minimap-surface" id="minimapSurface"></div>
+                <div class="minimap-viewport" id="minimapViewport"></div>
+            </div>
+        </div>
+        <button class="zoom-btn" type="button" id="zoomOutBtn" aria-label="Уменьшить">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <div class="zoom-menu" id="zoomMenu">
+            <button class="zoom-menu-btn" type="button" id="zoomMenuToggle" aria-label="Дополнительные действия">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+            <div class="zoom-menu-panel" id="zoomMenuPanel">
+                <button class="zoom-menu-item" type="button" id="fitBoardBtn">Показать все</button>
+                <button class="zoom-menu-item" type="button" id="fullscreenBtn">Полный экран</button>
+                <button class="zoom-menu-item" type="button" id="minimapBtn">Миникарта</button>
+            </div>
+        </div>
+        <button class="zoom-btn" type="button" id="zoomInBtn" aria-label="Увеличить">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
     <div class="modal-backdrop" id="addBeerModal" aria-hidden="true">
         <div class="modal-card">
             <h3>Добавить пиво</h3>
@@ -2204,12 +2454,26 @@
         const cardsLayer = document.getElementById('cards');
         const surface = document.getElementById('surface');
         const board = document.getElementById('board');
-        cardsLayer.classList.add('is-loading');
+        cardsLayer.classList.remove('is-loading');
         const boardState = { x: 0, y: 0, scale: 1 };
+        const zoomAnim = { raf: 0, start: 0, from: 1, to: 1, anchorX: 0, anchorY: 0, cx: 0, cy: 0 };
+        let minimapRaf = 0;
+        let minimapDirty = true;
         const dragState = { active: false, card: null, startX: 0, startY: 0, originX: 0, originY: 0 };
         const resizeState = { active: false, card: null, startX: 0, startY: 0, startW: 0, startH: 0 };
         const panState = { active: false, startX: 0, startY: 0, originX: 0, originY: 0 };
-        const pinchState = { active: false, startDist: 0, startScale: 1, startX: 0, startY: 0, raf: 0, lastScale: 1, lastX: 0, lastY: 0 };
+        const pinchState = {
+            active: false,
+            startDist: 0,
+            startScale: 1,
+            startX: 0,
+            startY: 0,
+            raf: 0,
+            lastScale: 1,
+            lastX: 0,
+            lastY: 0,
+            rect: null
+        };
         let boardDb = null;
         let layoutSaveTimer = null;
         const VIEWPORT_LS_KEY = 'boardViewport';
@@ -2241,6 +2505,7 @@
         const selectedDrawings = new Set();
         const TOOL_SIZE_LS_KEY = 'boardToolSize';
         const TOOL_COLOR_LS_KEY = 'boardToolColor';
+        const TOOLBOX_LS_KEY = 'boardToolboxCollapsed';
         let editingTextElement = null;
         let inlineEditor = null;
         let handleLayer = null;
@@ -2272,6 +2537,54 @@
         function applyTransform() {
             surface.style.transform = `translate(${boardState.x}px, ${boardState.y}px) scale(${boardState.scale})`;
             queueViewportSave();
+            scheduleMinimapUpdate();
+        }
+
+        function applyZoom(delta, centerX, centerY) {
+            const nextScale = clamp(boardState.scale * (1 + delta), 0.3, 1.9);
+            const rect = board.getBoundingClientRect();
+            const cx = typeof centerX === 'number' ? centerX : rect.width / 2;
+            const cy = typeof centerY === 'number' ? centerY : rect.height / 2;
+            const worldX = (cx - boardState.x) / boardState.scale;
+            const worldY = (cy - boardState.y) / boardState.scale;
+            setScaleAt(nextScale, worldX, worldY, cx, cy);
+        }
+
+        function setScaleAt(scale, anchorX, anchorY, cx, cy) {
+            boardState.scale = scale;
+            boardState.x = cx - anchorX * scale;
+            boardState.y = cy - anchorY * scale;
+            applyTransform();
+        }
+
+        function animateZoomTo(targetScale, centerX, centerY) {
+            const rect = board.getBoundingClientRect();
+            const cx = typeof centerX === 'number' ? centerX : rect.width / 2;
+            const cy = typeof centerY === 'number' ? centerY : rect.height / 2;
+            const anchorX = (cx - boardState.x) / boardState.scale;
+            const anchorY = (cy - boardState.y) / boardState.scale;
+            const to = clamp(targetScale, 0.3, 1.9);
+            if (zoomAnim.raf) cancelAnimationFrame(zoomAnim.raf);
+            zoomAnim.start = performance.now();
+            zoomAnim.from = boardState.scale;
+            zoomAnim.to = to;
+            zoomAnim.anchorX = anchorX;
+            zoomAnim.anchorY = anchorY;
+            zoomAnim.cx = cx;
+            zoomAnim.cy = cy;
+            const duration = 180;
+            const step = (now) => {
+                const t = Math.min(1, (now - zoomAnim.start) / duration);
+                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                const scale = zoomAnim.from + (zoomAnim.to - zoomAnim.from) * eased;
+                setScaleAt(scale, zoomAnim.anchorX, zoomAnim.anchorY, zoomAnim.cx, zoomAnim.cy);
+                if (t < 1) {
+                    zoomAnim.raf = requestAnimationFrame(step);
+                } else {
+                    zoomAnim.raf = 0;
+                }
+            };
+            zoomAnim.raf = requestAnimationFrame(step);
         }
 
         function loadHiddenCards() {
@@ -2483,6 +2796,7 @@
             card.dataset.x = x;
             card.dataset.y = y;
             card.style.transform = `translate(${x}px, ${y}px)`;
+            scheduleMinimapUpdate();
         }
 
         function setCardSize(card, w, h) {
@@ -2491,6 +2805,7 @@
             card.dataset.h = h;
             card.style.width = `${w}px`;
             card.style.height = `${h}px`;
+            scheduleMinimapUpdate();
         }
 
         function addResizeHandle(card) {
@@ -2569,6 +2884,36 @@
             const g = parseInt(value.slice(2, 4), 16);
             const b = parseInt(value.slice(4, 6), 16);
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function rgbToHex(color) {
+            if (!color) return '';
+            if (color.startsWith('#')) return color;
+            const match = color.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+            if (!match) return '';
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            const toHex = (v) => v.toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+        }
+
+        function updateColorPickerFromElement(el) {
+            const colorInput = document.getElementById('toolColor');
+            if (!colorInput || !el) return;
+            let color = '';
+            const type = el.tagName.toLowerCase();
+            if (type === 'text') {
+                color = el.getAttribute('fill') || '';
+            } else if (type === 'line') {
+                color = el.getAttribute('stroke') || '';
+            } else {
+                color = el.getAttribute('stroke') || el.getAttribute('fill') || '';
+            }
+            const hex = rgbToHex(color);
+            if (!hex) return;
+            colorInput.value = hex;
+            colorInput.style.backgroundColor = hex;
         }
 
         function setTool(tool) {
@@ -2979,7 +3324,9 @@
         }
 
         function queueDrawingUpdate(el) {
-            if (!boardDb || !el) return;
+            if (!el) return;
+            scheduleMinimapUpdate();
+            if (!boardDb) return;
             const id = ensureDrawingId(el);
             const html = snapshotElement(el);
             const last = lastDrawingSent.get(id);
@@ -4127,16 +4474,123 @@
             if (!event.ctrlKey && !event.metaKey) return;
             event.preventDefault();
             const delta = -event.deltaY * 0.0045;
-            const nextScale = clamp(boardState.scale * (1 + delta), 0.3, 1.9);
             const rect = board.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
-            const worldX = (mouseX - boardState.x) / boardState.scale;
-            const worldY = (mouseY - boardState.y) / boardState.scale;
+            applyZoom(delta, mouseX, mouseY);
+        }
+
+        function fitBoardToContent() {
+            const rect = board.getBoundingClientRect();
+            const padding = 80;
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+            const cards = Array.from(cardsLayer.querySelectorAll('.card'));
+            cards.forEach((card) => {
+                const x = parseFloat(card.dataset.x || '0');
+                const y = parseFloat(card.dataset.y || '0');
+                const w = card.offsetWidth || 280;
+                const h = card.offsetHeight || 190;
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + w);
+                maxY = Math.max(maxY, y + h);
+            });
+            const drawLayer = document.getElementById('drawLayer');
+            const drawings = drawLayer ? Array.from(drawLayer.querySelectorAll('.board-drawing')) : [];
+            drawings.forEach((el) => {
+                if (typeof el.getBBox !== 'function') return;
+                const box = el.getBBox();
+                minX = Math.min(minX, box.x);
+                minY = Math.min(minY, box.y);
+                maxX = Math.max(maxX, box.x + box.width);
+                maxY = Math.max(maxY, box.y + box.height);
+            });
+            if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) return;
+            const contentW = Math.max(1, maxX - minX);
+            const contentH = Math.max(1, maxY - minY);
+            const scaleX = (rect.width - padding * 2) / contentW;
+            const scaleY = (rect.height - padding * 2) / contentH;
+            const nextScale = clamp(Math.min(scaleX, scaleY), 0.3, 1.9);
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
             boardState.scale = nextScale;
-            boardState.x = mouseX - worldX * nextScale;
-            boardState.y = mouseY - worldY * nextScale;
+            boardState.x = (rect.width / 2) - centerX * nextScale;
+            boardState.y = (rect.height / 2) - centerY * nextScale;
             applyTransform();
+        }
+
+        function toggleFullscreen() {
+            const root = document.documentElement;
+            if (!document.fullscreenElement) {
+                root.requestFullscreen?.().catch(() => {});
+            } else {
+                document.exitFullscreen?.().catch(() => {});
+            }
+        }
+
+        function scheduleMinimapUpdate() {
+            minimapDirty = true;
+            const zoomControls = document.getElementById('zoomControls');
+            if (!zoomControls || !zoomControls.classList.contains('minimap-open')) return;
+            if (minimapRaf) return;
+            minimapRaf = requestAnimationFrame(() => {
+                if (minimapDirty) renderMinimap();
+                minimapDirty = false;
+                minimapRaf = 0;
+            });
+        }
+
+        function renderMinimap() {
+            const preview = document.getElementById('minimapPreview');
+            const miniSurface = document.getElementById('minimapSurface');
+            const viewport = document.getElementById('minimapViewport');
+            if (!preview || !miniSurface || !viewport) return;
+            const cssW = preview.clientWidth || 220;
+            const cssH = preview.clientHeight || 150;
+            const surfaceW = surface.offsetWidth || 5600;
+            const surfaceH = surface.offsetHeight || 3600;
+            const scale = Math.min(cssW / surfaceW, cssH / surfaceH);
+            const drawW = surfaceW * scale;
+            const drawH = surfaceH * scale;
+            const ox = (cssW - drawW) / 2;
+            const oy = (cssH - drawH) / 2;
+            miniSurface.style.width = `${surfaceW}px`;
+            miniSurface.style.height = `${surfaceH}px`;
+            miniSurface.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`;
+            miniSurface.replaceChildren();
+            const fragment = document.createDocumentFragment();
+            const gridClone = surface.querySelector('.grid-layer')?.cloneNode(true);
+            const drawClone = surface.querySelector('.draw-layer')?.cloneNode(true);
+            const cardsClone = surface.querySelector('.cards-layer')?.cloneNode(true);
+            if (gridClone) {
+                gridClone.removeAttribute('id');
+                fragment.appendChild(gridClone);
+            }
+            if (drawClone) {
+                drawClone.removeAttribute('id');
+                drawClone.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+                fragment.appendChild(drawClone);
+            }
+            if (cardsClone) {
+                cardsClone.removeAttribute('id');
+                cardsClone.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+                fragment.appendChild(cardsClone);
+            }
+            miniSurface.appendChild(fragment);
+            const rect = board.getBoundingClientRect();
+            const viewW = rect.width / boardState.scale;
+            const viewH = rect.height / boardState.scale;
+            const viewX = (-boardState.x) / boardState.scale;
+            const viewY = (-boardState.y) / boardState.scale;
+            const rawLeft = ox + viewX * scale;
+            const rawTop = oy + viewY * scale;
+            viewport.style.left = `${rawLeft}px`;
+            viewport.style.top = `${rawTop}px`;
+            viewport.style.width = `${viewW * scale}px`;
+            viewport.style.height = `${viewH * scale}px`;
         }
 
         function getTouchDistance(touches) {
@@ -4152,6 +4606,7 @@
             pinchState.startDist = getTouchDistance(event.touches);
             pinchState.startScale = boardState.scale;
             const rect = board.getBoundingClientRect();
+            pinchState.rect = rect;
             const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
             const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
             pinchState.startX = (cx - boardState.x) / boardState.scale;
@@ -4166,7 +4621,7 @@
                 if (!dist || !pinchState.startDist) return;
                 const ratio = dist / pinchState.startDist;
                 const nextScale = clamp(pinchState.startScale * ratio, 0.3, 1.9);
-                const rect = board.getBoundingClientRect();
+                const rect = pinchState.rect || board.getBoundingClientRect();
                 const cx = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
                 const cy = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
                 pinchState.lastScale = nextScale;
@@ -4186,6 +4641,7 @@
 
         function handleTouchEnd() {
             pinchState.active = false;
+            pinchState.rect = null;
             if (pinchState.raf) {
                 cancelAnimationFrame(pinchState.raf);
                 pinchState.raf = 0;
@@ -4569,10 +5025,21 @@
         board.addEventListener('touchmove', handleTouchMove, { passive: false });
         board.addEventListener('touchend', handleTouchEnd);
         board.addEventListener('touchcancel', handleTouchEnd);
+        board.addEventListener('gesturestart', (event) => {
+            if (event.cancelable) event.preventDefault();
+        }, { passive: false });
+        board.addEventListener('gesturechange', (event) => {
+            if (event.cancelable) event.preventDefault();
+        }, { passive: false });
+        board.addEventListener('gestureend', (event) => {
+            if (event.cancelable) event.preventDefault();
+        }, { passive: false });
+        window.addEventListener('resize', scheduleMinimapUpdate);
 
         loadHiddenCards();
         const cardEntries = initCards();
         applyHiddenCards();
+        scheduleMinimapUpdate();
         cardEntries.forEach(({ card }) => {
             card.addEventListener('pointerdown', (event) => {
                 bringCardToFront(card);
@@ -4584,6 +5051,117 @@
         document.querySelectorAll('.tool-btn[data-tool]').forEach((btn) => {
             btn.addEventListener('click', () => setTool(btn.dataset.tool));
         });
+        const toolboxEl = document.querySelector('.toolbox');
+        const toolboxToggle = document.getElementById('toolboxToggle');
+        if (toolboxEl && toolboxToggle) {
+            try {
+                const stored = localStorage.getItem(TOOLBOX_LS_KEY);
+                if (stored === 'true') {
+                    toolboxEl.classList.add('collapsed');
+                    toolboxToggle.setAttribute('aria-expanded', 'false');
+                }
+            } catch (_) {}
+            toolboxToggle.addEventListener('click', () => {
+                const isCollapsed = toolboxEl.classList.toggle('collapsed');
+                toolboxToggle.setAttribute('aria-expanded', String(!isCollapsed));
+                try {
+                    localStorage.setItem(TOOLBOX_LS_KEY, String(isCollapsed));
+                } catch (_) {}
+            });
+        }
+        const zoomMenu = document.getElementById('zoomMenu');
+        const zoomMenuToggle = document.getElementById('zoomMenuToggle');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const fitBoardBtn = document.getElementById('fitBoardBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const minimapBtn = document.getElementById('minimapBtn');
+        const zoomControls = document.getElementById('zoomControls');
+        const minimapPanel = document.getElementById('minimapPanel');
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', () => {
+                const target = clamp(boardState.scale * (1 + 0.14), 0.3, 1.9);
+                animateZoomTo(target);
+            });
+        }
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', () => {
+                const target = clamp(boardState.scale * (1 - 0.14), 0.3, 1.9);
+                animateZoomTo(target);
+            });
+        }
+        if (fitBoardBtn) {
+            fitBoardBtn.addEventListener('click', () => {
+                fitBoardToContent();
+                zoomMenu?.classList.remove('is-open');
+            });
+        }
+        if (fullscreenBtn) {
+            fullscreenBtn.addEventListener('click', () => {
+                toggleFullscreen();
+                zoomMenu?.classList.remove('is-open');
+            });
+        }
+        if (minimapBtn && zoomControls) {
+            minimapBtn.addEventListener('click', () => {
+                zoomControls.classList.toggle('minimap-open');
+                minimapDirty = true;
+                scheduleMinimapUpdate();
+                zoomMenu?.classList.remove('is-open');
+            });
+        }
+        if (zoomMenuToggle && zoomMenu) {
+            zoomMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                zoomMenu.classList.toggle('is-open');
+            });
+            document.addEventListener('click', (event) => {
+                if (event.target.closest('#zoomMenu')) return;
+                zoomMenu.classList.remove('is-open');
+            });
+        }
+        if (minimapPanel) {
+            let miniDrag = false;
+            const handleMiniPointer = (event) => {
+                const preview = minimapPanel.querySelector('#minimapPreview');
+                if (!preview) return;
+                const rect = preview.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                const surfaceW = surface.offsetWidth || 5600;
+                const surfaceH = surface.offsetHeight || 3600;
+                const scale = Math.min(rect.width / surfaceW, rect.height / surfaceH);
+                const drawW = surfaceW * scale;
+                const drawH = surfaceH * scale;
+                const ox = (rect.width - drawW) / 2;
+                const oy = (rect.height - drawH) / 2;
+                const worldX = (x - ox) / scale;
+                const worldY = (y - oy) / scale;
+                if (!Number.isFinite(worldX) || !Number.isFinite(worldY)) return;
+                const boardRect = board.getBoundingClientRect();
+                boardState.x = (boardRect.width / 2) - worldX * boardState.scale;
+                boardState.y = (boardRect.height / 2) - worldY * boardState.scale;
+                applyTransform();
+            };
+            minimapPanel.addEventListener('pointerdown', (event) => {
+                if (!event.target.closest('#minimapPreview')) return;
+                if (event.cancelable) event.preventDefault();
+                miniDrag = true;
+                minimapPanel.setPointerCapture(event.pointerId);
+                handleMiniPointer(event);
+            });
+            minimapPanel.addEventListener('pointermove', (event) => {
+                if (!miniDrag) return;
+                if (event.cancelable) event.preventDefault();
+                handleMiniPointer(event);
+            });
+            minimapPanel.addEventListener('pointerup', () => {
+                miniDrag = false;
+            });
+            minimapPanel.addEventListener('pointercancel', () => {
+                miniDrag = false;
+            });
+        }
         document.getElementById('deleteDrawingBtn')?.addEventListener('click', () => {
             if (selectedDrawings.size || selectedDrawing) {
                 deleteSelectedDrawing();
@@ -4720,6 +5298,7 @@
                 selectedDrawing = hit;
                 selectedDrawing.classList.add('is-selected');
                 selectedDrawings.add(hit);
+                updateColorPickerFromElement(hit);
                 showDrawingHandles(hit);
                 startDrawingDrag(event, hit);
             });
