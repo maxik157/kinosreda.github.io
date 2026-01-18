@@ -314,6 +314,12 @@
             justify-content: flex-end;
             gap: 8px;
         }
+        .modal-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--muted);
+            display: none;
+        }
 
         @media (max-width: 900px) {
             .header-shell { top: 8px; right: 8px; }
@@ -406,6 +412,7 @@
             </div>
             <label class="modal-label" for="imageUrlInput">Ссылка на изображение</label>
             <input class="modal-field" type="url" id="imageUrlInput" placeholder="Вставьте URL изображения...">
+            <div class="modal-status" id="imageModalStatus">Обработка...</div>
             <div class="modal-actions">
                 <button class="btn" type="button" onclick="closeImageModal()">Отмена</button>
                 <button class="btn primary" type="button" onclick="saveImageUrl()">Сохранить</button>
@@ -464,10 +471,11 @@
 
         const REMOVE_BG_API_KEY = '';
         const REMOVE_BG_ENDPOINT = '';
-        const REMOVE_BG_PROXY_URL = 'https://kinosreda.maxik157.workers.dev/remove-bg';
-        const LOCAL_BG_ENDPOINT = 'http://127.0.0.1:8787/remove-bg';
-        const LOCAL_IMAGE_PROXY_ENDPOINT = 'http://127.0.0.1:8787/fetch-image';
+        const REMOVE_BG_PROXY_URL = '';
+        const LOCAL_BG_ENDPOINT = 'http://127.0.0.1:8790/remove-bg';
+        const LOCAL_IMAGE_PROXY_ENDPOINT = 'http://127.0.0.1:8790/fetch-image';
         const IMGBB_API_KEY = '098e096c756627e49db6fe75d6ddb03e';
+        const IMAGE_OUTPUT_SCALE = 3;
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
         const BEER_CACHE_KEY = 'beerShelfBeerCache';
         const BEER_CACHE_TS_KEY = 'beerShelfBeerCacheTs';
@@ -476,10 +484,10 @@
         const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
         const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
         const DEFAULT_RUG_URL = 'https://ir.ozone.ru/s3/multimedia-3/c1000/6669779151.jpg';
-        const FLOOR_TEXTURE_URL = 'assets/textures/wood-floor.jpg';
-        const WALL_TEXTURE_URL = 'assets/textures/brick-wall.jpg';
-        const CEILING_TEXTURE_URL = 'assets/textures/ceiling-armstrong.jpg';
-        const AVATAR_MODEL_URL = 'assets/models/soldier.glb';
+        const FLOOR_TEXTURE_URL = 'wood-floor.jpg';
+        const WALL_TEXTURE_URL = 'brick-wall.jpg';
+        const CEILING_TEXTURE_URL = 'ceiling-armstrong.jpg';
+        const AVATAR_MODEL_URL = 'soldier.glb';
         const AVATAR_MODEL_FALLBACK_URL = 'https://threejs.org/examples/models/gltf/Soldier.glb';
         const REALTIME_WS_URL = 'wss://kinosreda-realtime.maxik157.workers.dev/ws';
         const REALTIME_ROOM = 'beer-shelf';
@@ -589,21 +597,11 @@
         }
 
         function getCachedImage(id) {
-            const cache = loadImageCache();
-            const key = String(id || '');
-            return cache[key] || '';
+            return '';
         }
 
         function setCachedImage(id, dataUrl) {
-            const cache = loadImageCache();
-            const key = String(id || '');
-            if (!key) return;
-            if (dataUrl) {
-                cache[key] = dataUrl;
-            } else {
-                delete cache[key];
-            }
-            saveImageCache(cache);
+            return;
         }
 
         function readCache(key) {
@@ -715,23 +713,27 @@
             return out.toDataURL('image/png');
         }
 
-        async function normalizeImageToBox(dataUrl, boxW = 90, boxH = 170) {
+        async function normalizeImageToBox(dataUrl, boxW = 90, boxH = 170, scaleFactor = IMAGE_OUTPUT_SCALE) {
             const cropped = await cropTransparentEdges(dataUrl);
             const img = await loadImage(cropped);
             const srcW = img.naturalWidth || img.width;
             const srcH = img.naturalHeight || img.height;
             if (!srcW || !srcH) return dataUrl;
-            const scale = boxH / srcH;
+            const targetW = Math.max(1, Math.round(boxW * scaleFactor));
+            const targetH = Math.max(1, Math.round(boxH * scaleFactor));
+            const scale = targetH / srcH;
             const scaledW = srcW * scale;
             const canvas = document.createElement('canvas');
-            canvas.width = boxW;
-            canvas.height = boxH;
+            canvas.width = targetW;
+            canvas.height = targetH;
             const ctx = canvas.getContext('2d');
             if (!ctx) return dataUrl;
-            ctx.clearRect(0, 0, boxW, boxH);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.clearRect(0, 0, targetW, targetH);
             const drawW = scaledW;
-            const drawH = boxH;
-            const dx = (boxW - drawW) / 2;
+            const drawH = targetH;
+            const dx = (targetW - drawW) / 2;
             ctx.drawImage(img, 0, 0, srcW, srcH, dx, 0, drawW, drawH);
             return canvas.toDataURL('image/png');
         }
@@ -761,8 +763,9 @@
                 }
             })();
             const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            if (isCrossOrigin && canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) {
-                return fetchImageViaLocalProxy(resolved);
+            if (isCrossOrigin) {
+                if (canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) return fetchImageViaLocalProxy(resolved);
+                throw new Error('image_fetch_blocked');
             }
             try {
                 const response = await fetch(resolved);
@@ -770,9 +773,7 @@
                 const blob = await response.blob();
                 return blobToDataUrl(blob);
             } catch (err) {
-                if (canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) {
-                    return fetchImageViaLocalProxy(resolved);
-                }
+                if (canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) return fetchImageViaLocalProxy(resolved);
                 throw err;
             }
         }
@@ -813,7 +814,7 @@
         async function processImageUrl(url) {
             const dataUrl = await loadImageAsDataUrl(url);
             const removed = await removeBackground(dataUrl);
-            return normalizeImageToBox(removed, 90, 170);
+            return normalizeImageToBox(removed, 90, 170, IMAGE_OUTPUT_SCALE);
         }
 
         function openImageModal(beer) {
@@ -825,6 +826,8 @@
             }
             const modal = document.getElementById('imageModal');
             if (modal) modal.classList.add('open');
+            const status = document.getElementById('imageModalStatus');
+            if (status) status.style.display = 'none';
             const input = document.getElementById('imageUrlInput');
             const current = beerData.find((b) => String(b.id) === String(selectedBeerId || ''));
             if (input) input.value = current?.imageUrl || '';
@@ -834,6 +837,8 @@
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             if (modal) modal.classList.remove('open');
+            const status = document.getElementById('imageModalStatus');
+            if (status) status.style.display = 'none';
         }
 
         async function saveImageUrl() {
@@ -842,7 +847,9 @@
             if (!url) return;
             if (!selectedBeerId) return;
             const saveBtn = document.querySelector('#imageModal .btn.primary');
+            const status = document.getElementById('imageModalStatus');
             if (saveBtn) saveBtn.disabled = true;
+            if (status) status.style.display = 'block';
             try {
                 const processed = await processImageUrl(url);
                 const hostedUrl = await uploadToImgbb(processed);
@@ -862,6 +869,7 @@
                 console.warn(err);
             } finally {
                 if (saveBtn) saveBtn.disabled = false;
+                if (status) status.style.display = 'none';
             }
         }
 
@@ -1991,9 +1999,8 @@
             const mesh = new THREE.Mesh(planeGeo, mat);
             mesh.position.set(0, height / 2, 0.02);
             group.add(mesh);
-            const cached = getCachedImage(beer.id);
-            const url = cached || beer.imageUrl || '';
-            if (url) {
+            const url = (beer.imageUrl || '').trim();
+            if (url && !/^data:image/i.test(url)) {
                 const safe = toSafeImageUrl(url);
                 bottleTextureLoader.load(safe, (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
