@@ -217,6 +217,42 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+        .mobile-warning {
+            position: fixed;
+            top: 90px;
+            left: 0;
+            right: 0;
+            z-index: 15;
+            display: none;
+            padding: 0 18px;
+            pointer-events: none;
+        }
+        .mobile-warning .card {
+            margin: 0 auto;
+            max-width: 520px;
+            background: rgba(8, 10, 16, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 18px;
+            padding: 18px 20px;
+            text-align: center;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+            color: var(--text);
+            font-weight: 600;
+        }
+        @media (max-width: 900px) {
+            #scene,
+            .reticle,
+            .modal,
+            .wall-image-toolbar {
+                display: none !important;
+            }
+            .tools-panel {
+                display: none !important;
+            }
+            .mobile-warning {
+                display: block;
+            }
+        }
         .tools-panel {
             position: relative;
             display: flex;
@@ -291,6 +327,99 @@
             border-color: rgba(245, 158, 11, 0.4);
             transform: translateX(-1px);
         }
+        .css3d-root {
+            pointer-events: none;
+        }
+        .beer-add-3d {
+            width: 380px;
+            background: radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 55%),
+                        rgba(10, 14, 22, 0.92);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: 18px;
+            padding: 18px;
+            color: var(--text);
+            font-family: 'Comfortaa', cursive;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+            pointer-events: auto;
+            display: none;
+        }
+        .beer-add-3d.open {
+            display: block;
+        }
+        .beer-add-3d .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .beer-add-3d h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--accent-500);
+        }
+        .beer-add-3d .move-btn {
+            display: none;
+        }
+        .beer-add-3d label {
+            display: block;
+            font-size: 12px;
+            color: rgba(248, 250, 252, 0.7);
+            margin: 10px 0 6px;
+        }
+        .beer-add-3d input,
+        .beer-add-3d select {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            background: rgba(10, 12, 18, 0.9);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+        .beer-add-3d input:focus,
+        .beer-add-3d select:focus {
+            border-color: rgba(245, 158, 11, 0.65);
+        }
+        .beer-add-3d .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .beer-add-3d .actions button {
+            flex: 1;
+            border: 0;
+            border-radius: 12px;
+            padding: 9px 12px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+        }
+        .beer-add-3d .actions .primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #1f1300;
+        }
+        .beer-add-3d .actions .ghost {
+            background: rgba(148, 163, 184, 0.15);
+            color: rgba(248, 250, 252, 0.85);
+        }
+        .beer-add-3d .cs {
+            min-width: 100%;
+        }
+        .beer-add-3d .cs-btn {
+            font-size: 13px;
+            border-color: rgba(245, 158, 11, 0.28);
+            background: rgba(10, 12, 18, 0.9);
+            font-family: inherit;
+        }
+        .beer-add-3d .cs-menu {
+            max-height: 180px;
+        }
+        .beer-add-3d .cs-opt {
+            font-family: inherit;
+        }
         .cs {
             position: relative;
             min-width: 220px;
@@ -304,6 +433,7 @@
             padding: 8px 10px;
             font-size: 12px;
             font-weight: 600;
+            font-family: inherit;
             text-align: left;
             cursor: pointer;
         }
@@ -331,6 +461,7 @@
             background: transparent;
             border: 0;
             cursor: pointer;
+            font-family: inherit;
         }
         .cs-opt:hover { background: rgba(245, 158, 11, 0.12); color: #fff; }
         .cs-opt[aria-selected="true"] { background: rgba(245, 158, 11, 0.2); color: #fff; }
@@ -352,6 +483,7 @@
             border-radius: 50%;
             display: none;
             z-index: 12;
+            pointer-events: none;
         }
         body.pointer-locked .reticle { display: block; }
 
@@ -516,6 +648,10 @@
 
     <div class="reticle" id="reticle"></div>
 
+    <div class="mobile-warning" id="mobileWarning" role="status" aria-live="polite">
+        <div class="card">Раздел доступен только с ПК</div>
+    </div>
+
     <div class="modal" id="imageModal" role="dialog" aria-modal="true">
         <div class="modal-card">
             <div class="modal-title">Изображение бутылки</div>
@@ -612,6 +748,7 @@
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
         const BEER_CACHE_KEY = 'beerShelfBeerCache';
         const BEER_CACHE_TS_KEY = 'beerShelfBeerCacheTs';
+        const BEER_META_TS_KEY = 'beerShelfBeerMetaTs';
         const RUG_CACHE_KEY = 'beerShelfRugCache';
         const RUG_CACHE_TS_KEY = 'beerShelfRugCacheTs';
         const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -645,6 +782,7 @@
         let rugUrl = '';
         let boardContentGroup = null;
         let boardArrowMeshes = [];
+        let boardActionMeshes = [];
         let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0 };
         const boardRaycaster = new THREE.Raycaster();
         const boardPointer = new THREE.Vector2();
@@ -654,7 +792,8 @@
         let wallImageGroup = null;
         let wallImageTextureLoader = null;
         let wallImages = [];
-        let wallImageIdCounter = 0;
+            let wallImageIdCounter = 0;
+            let wallImageLayerCounter = 0;
         let selectedWallImageId = null;
         const wallImageMeshMap = new Map();
         const wallImageDrag = { active: false, mesh: null, wall: null, offset: new THREE.Vector2(), moved: false, suppressClick: false };
@@ -662,9 +801,21 @@
         let wallImagesMetaTs = null;
         let suppressWallImagesSave = false;
         let lastWallImagesSaved = '';
+        let beerAddAnchor = null;
+        let beerAddObject = null;
+        let isBeerAddOpen = false;
+        let beerAddHitMesh = null;
+        const beerAddTempPos = new THREE.Vector3();
+        const beerAddTempDir = new THREE.Vector3();
+        let poopMesh = null;
         let sofaColliders = [];
-        const playerRadius = 0.65;
-        const eyeHeight = 1.7;
+        let poopCollisionSpheres = [];
+        const PLAYER_SCALE = 1.5;
+        const BASE_EYE_HEIGHT = 1.7;
+        const AVATAR_TARGET_HEIGHT = 1.7 * PLAYER_SCALE;
+        const LABEL_OFFSET = 0.6 * PLAYER_SCALE;
+        const playerRadius = 0.65 * PLAYER_SCALE;
+        const eyeHeight = BASE_EYE_HEIGHT * PLAYER_SCALE;
         let boardClipPlanes = null;
         let boardClipMesh = null;
         const boardStencilRef = 1;
@@ -676,6 +827,7 @@
         let avatarTemplate = null;
         let avatarClips = [];
         let avatarLoadPromise = null;
+        const userColorCache = new Map();
         let verticalVelocity = 0;
         let isGrounded = true;
         const gravity = -18;
@@ -809,6 +961,7 @@
             });
             wallImageMeshMap.clear();
             wallImages = normalizeWallImages(list);
+            wallImageLayerCounter = 0;
             wallImageIdCounter = wallImages.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0);
             wallImages.forEach((item) => createWallImageMesh(item));
             if (cache) {
@@ -1274,10 +1427,25 @@
                     const btn = document.getElementById('beerSelectBtn');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
+                if (!(isBeerAddOpen && isLocked)) {
+                    document.querySelectorAll('.beer-add-3d .cs.open').forEach((node) => {
+                        if (!event.target.closest('.beer-add-3d')) {
+                            node.classList.remove('open');
+                            const btn = node.querySelector('.cs-btn');
+                            if (btn) btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
                 if (toolsPanel && !event.target.closest('#toolsPanel')) {
                     setToolsOpen(false);
                 }
             });
+            document.addEventListener('pointerdown', (event) => {
+                if (!isBeerAddOpen) return;
+                if (isLocked) return;
+                if (event.target.closest && event.target.closest('.beer-add-3d')) return;
+                exitBeerAddEditing(event);
+            }, true);
             document.getElementById('imageModal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'imageModal') closeImageModal();
             });
@@ -1456,9 +1624,9 @@
             seat.position.set(0, 0.45, 0);
             group.add(seat);
 
-            const backGeo = createRoundedBox(4.2, 0.75, 0.28, 0.12);
+            const backGeo = createRoundedBox(4.2, 0.78, 0.24, 0.12);
             const back = new THREE.Mesh(backGeo, baseMat);
-            back.position.set(0, 0.95, 0.76);
+            back.position.set(0, 1.08, 0.92);
             group.add(back);
 
             const armGeo = createRoundedBox(0.34, 0.6, 1.7, 0.14);
@@ -1484,11 +1652,11 @@
             return group;
         }
 
-        function buildSofaColliders(sofa) {
+        function buildMeshColliders(root) {
             const colliders = [];
-            if (!sofa) return colliders;
-            sofa.updateMatrixWorld(true);
-            sofa.traverse((obj) => {
+            if (!root) return colliders;
+            root.updateMatrixWorld(true);
+            root.traverse((obj) => {
                 if (!obj.isMesh || !obj.geometry) return;
                 if (!obj.geometry.boundingBox) {
                     obj.geometry.computeBoundingBox();
@@ -1501,16 +1669,47 @@
             return colliders;
         }
 
+        function buildSofaColliders(sofa) {
+            return buildMeshColliders(sofa);
+        }
+
+        function buildPoopCollisionSpheres(poop) {
+            if (!poop?.userData?.poopSegments) return [];
+            const scale = poop.scale.x || 1;
+            const pos = poop.position.clone();
+            return poop.userData.poopSegments.map((seg) => {
+                const local = new THREE.Vector3(seg.x, seg.y + seg.h / 2, seg.z);
+                local.multiplyScalar(scale);
+                const center = local.add(pos);
+                return {
+                    center,
+                    radius: seg.r * scale * 0.95
+                };
+            });
+        }
+
         function collidesWithSofa(x, z, yBottom, yTop) {
-            if (!sofaColliders.length) return false;
-            for (const box of sofaColliders) {
-                if (yBottom >= box.max.y - 0.05) continue;
-                if (yTop < box.min.y || yBottom > box.max.y) continue;
-                const clampedX = Math.max(box.min.x, Math.min(box.max.x, x));
-                const clampedZ = Math.max(box.min.z, Math.min(box.max.z, z));
-                const dx = x - clampedX;
-                const dz = z - clampedZ;
-                if ((dx * dx + dz * dz) <= playerRadius * playerRadius) return true;
+            if (sofaColliders.length) {
+                for (const box of sofaColliders) {
+                    if (yBottom >= box.max.y - 0.05) continue;
+                    if (yTop < box.min.y || yBottom > box.max.y) continue;
+                    const clampedX = Math.max(box.min.x, Math.min(box.max.x, x));
+                    const clampedZ = Math.max(box.min.z, Math.min(box.max.z, z));
+                    const dx = x - clampedX;
+                    const dz = z - clampedZ;
+                    if ((dx * dx + dz * dz) <= playerRadius * playerRadius) return true;
+                }
+            }
+            if (poopCollisionSpheres.length) {
+                for (const sphere of poopCollisionSpheres) {
+                    const top = sphere.center.y + sphere.radius;
+                    const bottom = sphere.center.y - sphere.radius;
+                    if (yTop < bottom || yBottom > top) continue;
+                    const dx = x - sphere.center.x;
+                    const dz = z - sphere.center.z;
+                    const dist = Math.hypot(dx, dz);
+                    if (dist <= playerRadius + sphere.radius) return true;
+                }
             }
             return false;
         }
@@ -1542,14 +1741,15 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.font = 'bold 210px Comfortaa, sans-serif';
-            ctx.shadowColor = 'rgba(57, 232, 255, 0.95)';
-            ctx.shadowBlur = 55;
-            ctx.fillStyle = '#f8fdff';
+            ctx.lineJoin = 'round';
+            ctx.miterLimit = 2;
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.9)';
+            ctx.shadowBlur = 60;
+            ctx.fillStyle = '#fff7ed';
             ctx.fillText('КИНОСРЕДА', canvas.width / 2, canvas.height / 2);
-            ctx.shadowBlur = 0;
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = 'rgba(57, 232, 255, 0.85)';
-            ctx.strokeText('КИНОСРЕДА', canvas.width / 2, canvas.height / 2);
+            ctx.shadowBlur = 18;
+            ctx.fillStyle = '#ffedd5';
+            ctx.fillText('КИНОСРЕДА', canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
             return { texture, width: canvas.width, height: canvas.height };
@@ -1564,14 +1764,15 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.font = 'bold 170px Comfortaa, sans-serif';
-            ctx.shadowColor = 'rgba(57, 232, 255, 0.95)';
-            ctx.shadowBlur = 48;
-            ctx.fillStyle = '#f8fdff';
+            ctx.lineJoin = 'round';
+            ctx.miterLimit = 2;
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.9)';
+            ctx.shadowBlur = 50;
+            ctx.fillStyle = '#fff7ed';
             ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-            ctx.shadowBlur = 0;
-            ctx.lineWidth = 7;
-            ctx.strokeStyle = 'rgba(57, 232, 255, 0.85)';
-            ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+            ctx.shadowBlur = 16;
+            ctx.fillStyle = '#ffedd5';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
             return { texture, width: canvas.width, height: canvas.height };
@@ -1579,7 +1780,7 @@
 
         function createNeonGlowMaterial() {
             return new THREE.MeshBasicMaterial({
-                color: 0x49f2ff,
+                color: 0xf59e0b,
                 transparent: true,
                 opacity: 0.28,
                 blending: THREE.AdditiveBlending,
@@ -1587,6 +1788,58 @@
                 depthTest: true,
                 side: THREE.BackSide
             });
+        }
+
+        function createPoopModel() {
+            const group = new THREE.Group();
+            const mats = [
+                new THREE.MeshStandardMaterial({ color: 0x6b3612, roughness: 0.9, metalness: 0.02 }),
+                new THREE.MeshStandardMaterial({ color: 0x7b4216, roughness: 0.86, metalness: 0.03 }),
+                new THREE.MeshStandardMaterial({ color: 0x5a2c0c, roughness: 0.92, metalness: 0.02 })
+            ];
+            const sphere = new THREE.SphereGeometry(1, 24, 18);
+            const segments = [
+                { r: 1.25, h: 0.95, y: 0.0, x: 0.0, z: 0.0, m: 0 },
+                { r: 0.95, h: 0.78, y: 0.72, x: 0.12, z: 0.1, m: 1 },
+                { r: 0.7, h: 0.62, y: 1.32, x: -0.05, z: 0.08, m: 0 },
+                { r: 0.48, h: 0.48, y: 1.78, x: 0.06, z: -0.02, m: 1 },
+                { r: 0.3, h: 0.32, y: 2.08, x: 0.02, z: 0.02, m: 2 }
+            ];
+            group.userData.poopSegments = segments;
+            segments.forEach((seg) => {
+                const mesh = new THREE.Mesh(sphere, mats[seg.m]);
+                mesh.scale.set(seg.r, seg.h / 2, seg.r);
+                mesh.position.set(seg.x, seg.y + seg.h / 2, seg.z);
+                group.add(mesh);
+            });
+
+            const gloss = new THREE.Mesh(
+                new THREE.SphereGeometry(0.18, 16, 12),
+                new THREE.MeshStandardMaterial({
+                    color: 0x9a5a2a,
+                    roughness: 0.6,
+                    metalness: 0.08,
+                    transparent: true,
+                    opacity: 0.55
+                })
+            );
+            gloss.position.set(0.35, 1.1, 0.45);
+            group.add(gloss);
+            return group;
+        }
+
+        function placeCornerPoop() {
+            if (!scene) return;
+            if (poopMesh) {
+                scene.remove(poopMesh);
+                poopMesh = null;
+            }
+            poopMesh = createPoopModel();
+            poopMesh.scale.set(2.1, 2.1, 2.1);
+            const margin = 1.0;
+            poopMesh.position.set(-room.width / 2 + margin, 0, -room.depth / 2 + margin);
+            scene.add(poopMesh);
+            poopCollisionSpheres = buildPoopCollisionSpheres(poopMesh);
         }
 
         function createNeonSignFallback() {
@@ -1612,7 +1865,7 @@
             const signZ = 0;
             group.position.set(signX, signY, signZ);
             group.rotation.y = Math.PI / 2;
-            const halo = new THREE.PointLight(0x4adfff, 2.6, 16, 2);
+            const halo = new THREE.PointLight(0xf59e0b, 2.2, 16, 2);
             halo.position.set(1.4, 0.2, 0.4);
             group.add(halo);
             group.userData.neon = { halo, glowMat: null };
@@ -1625,72 +1878,8 @@
                 scene.remove(neonSignGroup);
                 neonSignGroup = null;
             }
-            if (!THREE.FontLoader || !THREE.TextGeometry) {
-                neonSignGroup = createNeonSignFallback();
-                scene.add(neonSignGroup);
-                return;
-            }
-            const loader = new THREE.FontLoader();
-            loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-                const geometry = new THREE.TextGeometry('КИНОСРЕДА', {
-                    font,
-                    size: 1,
-                    height: 0.15,
-                    curveSegments: 10,
-                    bevelEnabled: true,
-                    bevelThickness: 0.02,
-                    bevelSize: 0.02,
-                    bevelOffset: 0,
-                    bevelSegments: 6
-                });
-                geometry.computeBoundingBox();
-                const box = geometry.boundingBox;
-                const textWidth = box.max.x - box.min.x;
-                const textHeight = box.max.y - box.min.y;
-                geometry.translate(-textWidth / 2, -textHeight / 2, 0);
-
-                const textMat = new THREE.MeshStandardMaterial({
-                    color: 0xf0fbff,
-                    emissive: 0x49f2ff,
-                    emissiveIntensity: 1.7,
-                    roughness: 0.22,
-                    metalness: 0.45,
-                    flatShading: false
-                });
-                const textMesh = new THREE.Mesh(geometry, textMat);
-                textMesh.position.z = 0.14;
-                textMesh.castShadow = true;
-                textMesh.receiveShadow = true;
-
-                const group = new THREE.Group();
-                const glowMat = createNeonGlowMaterial();
-                const glowMesh = new THREE.Mesh(geometry, glowMat);
-                glowMesh.scale.set(1.04, 1.04, 1.04);
-                glowMesh.position.z = 0.1;
-                glowMesh.renderOrder = 1;
-                textMesh.renderOrder = 2;
-                group.add(glowMesh, textMesh);
-
-                const signX = -room.width / 2 + 0.45;
-                const signY = room.height * 0.5;
-                const signZ = 0;
-                group.position.set(signX, signY, signZ);
-                group.rotation.y = Math.PI / 2;
-                const targetWidth = 18;
-                if (textWidth > 0) {
-                    const scale = targetWidth / textWidth;
-                    group.scale.set(scale, scale, scale);
-                }
-
-                const halo = new THREE.PointLight(0x4adfff, 2.1, 16, 2);
-                halo.position.set(1.6, 0.2, 0.4);
-                group.add(halo);
-                group.userData.neon = { halo, glowMat, neonMat: textMat };
-
-                if (neonSignGroup) scene.remove(neonSignGroup);
-                neonSignGroup = group;
-                scene.add(neonSignGroup);
-            });
+            neonSignGroup = createNeonSignFallback();
+            scene.add(neonSignGroup);
         }
 
         function createBeerRatingSign() {
@@ -1706,90 +1895,31 @@
             const signX = 0;
             const signY = boardY + boardHeight / 2 + 1.4;
             const signZ = -room.depth / 2 + 0.24;
-            if (!THREE.FontLoader || !THREE.TextGeometry) {
-                const { texture, width, height } = createNeonCanvasTextureText(text);
-                const aspect = width / height;
-                const signWidth = targetWidth;
-                const signHeight = signWidth / aspect;
-                const signGeo = new THREE.PlaneGeometry(signWidth, signHeight);
-                const signMat = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    transparent: true,
-                    alphaTest: 0.1,
-                    depthWrite: false,
-                    side: THREE.FrontSide
-                });
-                const signMesh = new THREE.Mesh(signGeo, signMat);
-                signMesh.position.z = 0.08;
-
-                const group = new THREE.Group();
-                group.add(signMesh);
-                group.position.set(signX, signY, signZ);
-                group.rotation.y = 0;
-                const halo = new THREE.PointLight(0x4adfff, 2.2, 14, 2);
-                halo.position.set(0, 0.2, 0.6);
-                group.add(halo);
-                group.userData.neon = { halo, glowMat: null };
-                beerRatingSignGroup = group;
-                scene.add(beerRatingSignGroup);
-                return;
-            }
-            const loader = new THREE.FontLoader();
-            loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
-                const geometry = new THREE.TextGeometry(text, {
-                    font,
-                    size: 1,
-                    height: 0.15,
-                    curveSegments: 10,
-                    bevelEnabled: true,
-                    bevelThickness: 0.02,
-                    bevelSize: 0.02,
-                    bevelOffset: 0,
-                    bevelSegments: 6
-                });
-                geometry.computeBoundingBox();
-                const box = geometry.boundingBox;
-                const textWidth = box.max.x - box.min.x;
-                const textHeight = box.max.y - box.min.y;
-                geometry.translate(-textWidth / 2, -textHeight / 2, 0);
-
-                const textMat = new THREE.MeshStandardMaterial({
-                    color: 0xf0fbff,
-                    emissive: 0x49f2ff,
-                    emissiveIntensity: 1.7,
-                    roughness: 0.22,
-                    metalness: 0.45,
-                    flatShading: false
-                });
-                const textMesh = new THREE.Mesh(geometry, textMat);
-                textMesh.position.z = 0.14;
-                textMesh.castShadow = true;
-                textMesh.receiveShadow = true;
-
-                const group = new THREE.Group();
-                const glowMat = createNeonGlowMaterial();
-                const glowMesh = new THREE.Mesh(geometry, glowMat);
-                glowMesh.scale.set(1.04, 1.04, 1.04);
-                glowMesh.position.z = 0.1;
-                glowMesh.renderOrder = 1;
-                textMesh.renderOrder = 2;
-                group.add(glowMesh, textMesh);
-                group.position.set(signX, signY, signZ);
-                group.rotation.y = 0;
-                if (textWidth > 0) {
-                    const scale = targetWidth / textWidth;
-                    group.scale.set(scale, scale, scale);
-                }
-
-                const halo = new THREE.PointLight(0x4adfff, 1.9, 14, 2);
-                halo.position.set(0, 0.2, 0.6);
-                group.add(halo);
-                group.userData.neon = { halo, glowMat, neonMat: textMat };
-
-                if (beerRatingSignGroup) scene.remove(beerRatingSignGroup);
-                beerRatingSignGroup = group;
-                scene.add(beerRatingSignGroup);
+            const { texture, width, height } = createNeonCanvasTextureText(text);
+            const aspect = width / height;
+            const signWidth = targetWidth;
+            const signHeight = signWidth / aspect;
+            const signGeo = new THREE.PlaneGeometry(signWidth, signHeight);
+            const signMat = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                alphaTest: 0.1,
+                depthWrite: false,
+                side: THREE.FrontSide
             });
+            const signMesh = new THREE.Mesh(signGeo, signMat);
+            signMesh.position.z = 0.08;
+
+            const group = new THREE.Group();
+            group.add(signMesh);
+            group.position.set(signX, signY, signZ);
+            group.rotation.y = 0;
+            const halo = new THREE.PointLight(0xf59e0b, 2.1, 14, 2);
+            halo.position.set(0, 0.2, 0.6);
+            group.add(halo);
+            group.userData.neon = { halo, glowMat: null };
+            beerRatingSignGroup = group;
+            scene.add(beerRatingSignGroup);
         }
 
         function initScene() {
@@ -1801,7 +1931,7 @@
             pitchObject = new THREE.Object3D();
             yawObject.add(pitchObject);
             pitchObject.add(camera);
-            yawObject.position.set(0, 1.9, 10);
+            yawObject.position.set(0, eyeHeight + 0.2, 1.4);
             scene.add(yawObject);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
@@ -1878,6 +2008,7 @@
             // initVideoScreen();
 
             const sofa = createSofa();
+            sofa.scale.setScalar(PLAYER_SCALE);
             sofa.position.set(0, 0, 4.5);
             scene.add(sofa);
             sofaColliders = buildSofaColliders(sofa);
@@ -1897,6 +2028,7 @@
             clock = new THREE.Clock();
             createNeonSign();
             createBeerRatingSign();
+            placeCornerPoop();
             setupWallSurfaces(backWall, frontWall, leftWall, rightWall);
             setupControls();
             animate();
@@ -1917,6 +2049,11 @@
                     return;
                 }
             });
+            dom.addEventListener('wheel', (event) => {
+                if (handleBeerAddLockedScroll(event)) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
             dom.addEventListener('pointermove', handleWallImagePointerMove);
             dom.addEventListener('pointerup', () => stopBoardScrollHold());
             dom.addEventListener('pointerleave', () => stopBoardScrollHold());
@@ -1924,6 +2061,11 @@
             dom.addEventListener('click', (event) => {
                 const target = event.target;
                 if (target.closest('header') || target.closest('.modal') || target.closest('.wall-image-toolbar') || target.closest('.tools-panel')) return;
+                if (handleBeerAddLockedClick(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 if (handleBeerBoardClick(event)) return;
                 if (handleWallImageClick(event)) return;
                 dom.requestPointerLock();
@@ -1933,9 +2075,10 @@
             dom.addEventListener('pointercancel', handleWallImagePointerUp);
 
             document.addEventListener('pointerlockchange', () => {
-                isLocked = document.pointerLockElement === dom;
+                isLocked = document.pointerLockElement === dom || document.pointerLockElement === cssRenderer?.domElement;
                 document.body.classList.toggle('pointer-locked', isLocked);
                 if (!isLocked) stopBoardScrollHold();
+                updateBeerAddPointerEvents();
             });
 
             document.addEventListener('mousemove', (event) => {
@@ -1949,10 +2092,17 @@
             });
 
             document.addEventListener('keydown', (event) => {
+                if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
+                    return;
+                }
                 if ((event.ctrlKey || event.metaKey) && (event.code === 'KeyA' || event.code === 'KeyD')) {
                     return;
                 }
                 if (event.code === 'Escape') {
+                    if (isBeerAddOpen) {
+                        closeBeerAddModal3D();
+                        return;
+                    }
                     if (selectedWallImageId) setSelectedWallImage(null);
                     return;
                 }
@@ -1969,6 +2119,9 @@
                 }
             });
             document.addEventListener('keyup', (event) => {
+                if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
+                    return;
+                }
                 if (event.code === 'KeyW') moveState.forward = false;
                 if (event.code === 'KeyS') moveState.back = false;
                 if (event.code === 'KeyA') moveState.left = false;
@@ -1987,6 +2140,7 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                if (cssRenderer) cssRenderer.setSize(window.innerWidth, window.innerHeight);
             });
         }
 
@@ -2007,7 +2161,7 @@
             const sprite = new THREE.Sprite(mat);
             sprite.scale.set(2.6, 0.65, 1);
             sprite.userData.text = text;
-            sprite.renderOrder = 10;
+            sprite.renderOrder = 1000;
             sprite.material.depthTest = false;
             sprite.material.depthWrite = false;
             sprite.material.transparent = true;
@@ -2056,7 +2210,7 @@
             return avatarClips.find((clip) => String(clip.name || '').toLowerCase().includes(target));
         }
 
-        function setupAvatar(group) {
+        function setupAvatar(group, bodyColor) {
             const avatar = cloneAvatar();
             if (!avatar) return null;
             avatar.traverse((child) => {
@@ -2066,10 +2220,11 @@
                     child.frustumCulled = false;
                 }
             });
+            applyUserColorToAvatar(avatar, bodyColor);
             const box = new THREE.Box3().setFromObject(avatar);
             const size = box.getSize(new THREE.Vector3());
             const height = Math.max(size.y, 0.0001);
-            const scale = 1.7 / height;
+            const scale = AVATAR_TARGET_HEIGHT / height;
             avatar.scale.setScalar(scale);
             avatar.updateMatrixWorld(true);
             const adjustedBox = new THREE.Box3().setFromObject(avatar);
@@ -2097,7 +2252,7 @@
             group.userData.actions = actionMap;
             group.userData.activeAction = 'idle';
             if (group.userData.label) {
-                group.userData.label.position.y = (avatarHeight || 1.7) + 0.35;
+                group.userData.label.position.y = (avatarHeight || AVATAR_TARGET_HEIGHT) + LABEL_OFFSET;
             }
             if (group.userData.placeholder) {
                 group.remove(group.userData.placeholder);
@@ -2117,26 +2272,27 @@
         }
 
         function createRemotePlayer(user) {
+            const bodyColor = getUserBodyColor(user);
             const group = new THREE.Group();
             if (avatarTemplate) {
-                setupAvatar(group);
+                setupAvatar(group, bodyColor);
             } else {
                 loadAvatarModel().then((model) => {
                     if (!model) return;
                     if (!group.userData.avatar) {
                         const placeholder = group.userData.placeholder;
                         if (placeholder) group.remove(placeholder);
-                        setupAvatar(group);
+                        setupAvatar(group, bodyColor);
                     }
                 });
                 const placeholder = new THREE.Group();
-                const shirtMat = new THREE.MeshStandardMaterial({ color: 0x5b7cfa, roughness: 0.7, metalness: 0.1 });
+                const shirtMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.7, metalness: 0.1 });
                 const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8, metalness: 0.05 });
                 const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: 0.5, metalness: 0.05 });
-                const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.8, 6, 12), shirtMat);
+                    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.8, 6, 12), shirtMat);
                 torso.position.y = 1.2;
                 placeholder.add(torso);
-                const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), skinMat);
+                    const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), skinMat);
                 head.position.y = 1.85;
                 placeholder.add(head);
                 const armLength = 0.65;
@@ -2182,9 +2338,18 @@
                 armRightGroup.userData.baseRotX = armRightGroup.rotation.x;
                 group.add(placeholder);
                 group.userData.placeholder = placeholder;
+                const placeholderBox = new THREE.Box3().setFromObject(placeholder);
+                const placeholderSize = placeholderBox.getSize(new THREE.Vector3());
+                const placeholderHeight = Math.max(placeholderSize.y, 0.0001);
+                const placeholderScale = AVATAR_TARGET_HEIGHT / placeholderHeight;
+                placeholder.scale.setScalar(placeholderScale);
+                placeholder.updateMatrixWorld(true);
+                const adjustedBox = new THREE.Box3().setFromObject(placeholder);
+                placeholder.position.y -= adjustedBox.min.y;
+                group.userData.avatarHeight = adjustedBox.getSize(new THREE.Vector3()).y;
             }
             const label = createNameSprite(user.name || 'Guest');
-            label.position.set(0, (group.userData.avatarHeight || 1.7) + 0.35, 0);
+            label.position.set(0, (group.userData.avatarHeight || AVATAR_TARGET_HEIGHT) + LABEL_OFFSET, 0);
             group.add(label);
             group.userData.label = label;
             return group;
@@ -2313,6 +2478,40 @@
             return nameA.localeCompare(nameB, 'ru');
         }
 
+        function getUserBodyColor(user) {
+            const key = String(user?.id || user?.name || 'guest');
+            if (userColorCache.has(key)) return userColorCache.get(key);
+            let hash = 0;
+            for (let i = 0; i < key.length; i += 1) {
+                hash = ((hash << 5) - hash) + key.charCodeAt(i);
+                hash |= 0;
+            }
+            const hue = ((hash % 360) + 360) % 360;
+            const color = new THREE.Color();
+            color.setHSL(hue / 360, 0.5, 0.55);
+            userColorCache.set(key, color);
+            return color;
+        }
+
+        function applyUserColorToAvatar(avatar, color) {
+            if (!avatar || !color) return;
+            avatar.traverse((child) => {
+                if (!child.isMesh) return;
+                const name = String(child.name || '').toLowerCase();
+                const isSkin = /(head|face|skin|hand|leg|arm)/.test(name);
+                const isBody = /(body|torso|shirt|upper|jacket|cloth|uniform)/.test(name);
+                const apply = isBody || (!isSkin);
+                if (!apply) return;
+                const materials = Array.isArray(child.material) ? child.material : [child.material];
+                materials.forEach((mat) => {
+                    if (!mat || !mat.color) return;
+                    mat.color = mat.color.clone ? mat.color.clone() : new THREE.Color(mat.color);
+                    mat.color.set(color);
+                    mat.needsUpdate = true;
+                });
+            });
+        }
+
         function normalizeBeerData(raw) {
             if (Array.isArray(raw)) return raw;
             if (raw && typeof raw === 'object') {
@@ -2342,6 +2541,22 @@
                 writeCache(BEER_CACHE_KEY, beerData);
                 writeCacheTs(BEER_CACHE_TS_KEY);
             }
+        }
+
+        function initBeerRatingFeed() {
+            if (!window.firebase) return;
+            const db = firebase.database();
+            let lastMeta = readCache(BEER_META_TS_KEY) || 0;
+            db.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
+                const remoteTs = snapshot.val();
+                if (!remoteTs) return;
+                if (lastMeta && remoteTs <= lastMeta) return;
+                db.ref('beerRating').once('value').then((dataSnap) => {
+                    applyBeerData(dataSnap.val());
+                    lastMeta = remoteTs;
+                    writeCache(BEER_META_TS_KEY, remoteTs);
+                }).catch((err) => console.warn('beerRating meta fetch failed', err));
+            });
         }
 
         function getBeerName(beer) {
@@ -2383,9 +2598,216 @@
             return num.toFixed(digits).replace(/\.0+$/, '').replace(/\.$/, '');
         }
 
+        const COUNTRY_INFO = {
+            be: { flag: '🇧🇪', name: 'Бельгия' },
+            gb: { flag: '🇬🇧', name: 'Великобритания' },
+            uk: { flag: '🇬🇧', name: 'Великобритания' },
+            de: { flag: '🇩🇪', name: 'Германия' },
+            cn: { flag: '🇨🇳', name: 'Китай' },
+            nl: { flag: '🇳🇱', name: 'Нидерланды' },
+            ru: { flag: '🇷🇺', name: 'Россия' },
+            cz: { flag: '🇨🇿', name: 'Чехия' },
+            at: { flag: '🇦🇹', name: 'Австрия' },
+            rs: { flag: '🇷🇸', name: 'Сербия' },
+            fr: { flag: '🇫🇷', name: 'Франция' },
+            es: { flag: '🇪🇸', name: 'Испания' },
+            lt: { flag: '🇱🇹', name: 'Литва' },
+            kr: { flag: '🇰🇷', name: 'Южная Корея' },
+            vn: { flag: '🇻🇳', name: 'Вьетнам' },
+            us: { flag: '🇺🇸', name: 'США' },
+            mx: { flag: '🇲🇽', name: 'Мексика' },
+            бельгия: { flag: '🇧🇪', name: 'Бельгия' },
+            великобритания: { flag: '🇬🇧', name: 'Великобритания' },
+            германия: { flag: '🇩🇪', name: 'Германия' },
+            китай: { flag: '🇨🇳', name: 'Китай' },
+            нидерланды: { flag: '🇳🇱', name: 'Нидерланды' },
+            россия: { flag: '🇷🇺', name: 'Россия' },
+            чехия: { flag: '🇨🇿', name: 'Чехия' },
+            австрия: { flag: '🇦🇹', name: 'Австрия' },
+            сербия: { flag: '🇷🇸', name: 'Сербия' },
+            франция: { flag: '🇫🇷', name: 'Франция' },
+            испания: { flag: '🇪🇸', name: 'Испания' },
+            литва: { flag: '🇱🇹', name: 'Литва' },
+            'южная корея': { flag: '🇰🇷', name: 'Южная Корея' },
+            вьетнам: { flag: '🇻🇳', name: 'Вьетнам' },
+            сша: { flag: '🇺🇸', name: 'США' },
+            мексика: { flag: '🇲🇽', name: 'Мексика' }
+        };
+        const BEER_TITLE_CANVAS = { width: 720, height: 190 };
+        const BEER_INFO_CANVAS = { width: 720, height: 380 };
+        const BEER_SELECT_OPTIONS = {
+            type: [
+                { value: 'Светлое', label: 'Светлое' },
+                { value: 'Тёмное', label: 'Тёмное' }
+            ],
+            style: [
+                { value: 'Lager', label: 'Lager' },
+                { value: 'Wheat', label: 'Wheat' },
+                { value: 'Pilsner', label: 'Pilsner' },
+                { value: 'Cider', label: 'Cider' },
+                { value: 'Bock', label: 'Bock' },
+                { value: 'Marzen', label: 'Marzen' },
+                { value: 'Ale', label: 'Ale' },
+                { value: 'Porter', label: 'Porter' },
+                { value: 'Stout', label: 'Stout' },
+                { value: 'Dunkel', label: 'Dunkel' },
+                { value: 'Weizen', label: 'Weizen' },
+                { value: 'Hell', label: 'Hell' },
+                { value: 'IPA', label: 'IPA' },
+                { value: 'APA', label: 'APA' },
+                { value: 'Kellerbier', label: 'Kellerbier' },
+                { value: 'Dubbel', label: 'Dubbel' },
+                { value: 'Tripel', label: 'Tripel' }
+            ],
+            filtered: [
+                { value: 'Фильтрованное', label: 'Фильтрованное' },
+                { value: 'Нефильтрованное', label: 'Нефильтрованное' }
+            ],
+            country: [
+                { value: 'Бельгия', label: '🇧🇪 Бельгия' },
+                { value: 'Великобритания', label: '🇬🇧 Великобритания' },
+                { value: 'Германия', label: '🇩🇪 Германия' },
+                { value: 'Китай', label: '🇨🇳 Китай' },
+                { value: 'Нидерланды', label: '🇳🇱 Нидерланды' },
+                { value: 'Россия', label: '🇷🇺 Россия' },
+                { value: 'Чехия', label: '🇨🇿 Чехия' },
+                { value: 'Австрия', label: '🇦🇹 Австрия' },
+                { value: 'Сербия', label: '🇷🇸 Сербия' },
+                { value: 'Франция', label: '🇫🇷 Франция' },
+                { value: 'Испания', label: '🇪🇸 Испания' },
+                { value: 'Литва', label: '🇱🇹 Литва' },
+                { value: 'Южная Корея', label: '🇰🇷 Южная Корея' },
+                { value: 'Вьетнам', label: '🇻🇳 Вьетнам' },
+                { value: 'США', label: '🇺🇸 США' },
+                { value: 'Мексика', label: '🇲🇽 Мексика' }
+            ],
+            volume: [
+                { value: '0.33', label: '0.33 л' },
+                { value: '0.45', label: '0.45 л' },
+                { value: '0.5', label: '0.5 л' },
+                { value: '0.75', label: '0.75 л' },
+                { value: '1', label: '1 л' },
+                { value: '5', label: '5 л' }
+            ]
+        };
+        const BEER_SELECT_DEFAULTS = {
+            type: 'Светлое',
+            style: 'Lager',
+            filtered: 'Фильтрованное',
+            country: 'Россия',
+            volume: '0.5'
+        };
+
         function formatBeerValue(value, suffix = '') {
             if (value === undefined || value === null || value === '') return '—';
             return `${value}${suffix}`;
+        }
+
+        function getCountryMeta(raw) {
+            const value = String(raw || '').trim();
+            if (!value) return { flag: '', name: '—' };
+            const flagMatch = value.match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
+            if (flagMatch) {
+                const flag = flagMatch[0];
+                const name = value.replace(flag, '').trim();
+                return { flag, name: name || value };
+            }
+            const key = value.toLowerCase();
+            if (COUNTRY_INFO[key]) return COUNTRY_INFO[key];
+            const stripped = key.replace(/[^a-zа-яё\s]/g, '').trim();
+            if (COUNTRY_INFO[stripped]) return COUNTRY_INFO[stripped];
+            if (COUNTRY_INFO[stripped.slice(0, 2)]) return COUNTRY_INFO[stripped.slice(0, 2)];
+            return { flag: '', name: value };
+        }
+
+        function wrapTextLines(ctx, text, maxWidth) {
+            const words = String(text || '').split(/\s+/).filter(Boolean);
+            if (!words.length) return [''];
+            const lines = [];
+            let line = words[0];
+            for (let i = 1; i < words.length; i += 1) {
+                const next = `${line} ${words[i]}`;
+                if (ctx.measureText(next).width <= maxWidth) {
+                    line = next;
+                } else {
+                    lines.push(line);
+                    line = words[i];
+                }
+            }
+            lines.push(line);
+            return lines;
+        }
+
+        function clampLinesToHeight(ctx, lines, maxWidth, maxLines) {
+            if (lines.length <= maxLines) return lines;
+            const trimmed = lines.slice(0, maxLines).map((line) => {
+                if (typeof line === 'string') return { text: line };
+                return line;
+            });
+            const lastIndex = trimmed.length - 1;
+            const last = trimmed[lastIndex];
+            const text = typeof last.text === 'string' ? last.text : String(last.text || '');
+            trimmed[lastIndex] = { ...last, text: truncateText(ctx, text, maxWidth) };
+            return trimmed;
+        }
+
+        function drawFunnelIcon(ctx, x, y, size, color) {
+            const scale = size / 24;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.4;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(3, 4);
+            ctx.lineTo(21, 4);
+            ctx.lineTo(14, 12);
+            ctx.lineTo(14, 18);
+            ctx.lineTo(10, 20);
+            ctx.lineTo(10, 12);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function createBoardButtonTexture(label) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 420;
+            canvas.height = 140;
+            const ctx = canvas.getContext('2d');
+            const radius = 36;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(canvas.width - radius, 0);
+            ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
+            ctx.lineTo(canvas.width, canvas.height - radius);
+            ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - radius, canvas.height);
+            ctx.lineTo(radius, canvas.height);
+            ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, 'rgba(245, 158, 11, 0.18)');
+            grad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.font = 'bold 40px Comfortaa, sans-serif';
+            ctx.fillStyle = '#f8fafc';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, canvas.width / 2, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return texture;
         }
 
         function getRatingsSummaryText(beer) {
@@ -2400,8 +2822,8 @@
 
         function createBeerTitleTexture(beer) {
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 120;
+            canvas.width = BEER_TITLE_CANVAS.width;
+            canvas.height = BEER_TITLE_CANVAS.height;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(14, 18, 26, 0.82)';
@@ -2416,14 +2838,38 @@
             ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
             ctx.textAlign = 'left';
             ctx.textBaseline = 'top';
-            ctx.font = 'bold 32px Comfortaa, sans-serif';
-            ctx.fillStyle = '#f8fafc';
             const name = String(beer?.name || 'Без названия');
-            ctx.fillText(name, 16, 10);
-            ctx.font = '22px Comfortaa, sans-serif';
-            ctx.fillStyle = 'rgba(226, 232, 240, 0.8)';
-            const meta = String(beer?.country || '—');
-            ctx.fillText(meta, 16, 60);
+            const leftPad = 28;
+            const maxWidth = canvas.width - leftPad * 2;
+            let nameFont = 38;
+            let nameLines = [];
+            while (nameFont >= 22) {
+                ctx.font = `bold ${nameFont}px Comfortaa, sans-serif`;
+                nameLines = wrapTextLines(ctx, name, maxWidth);
+                if (nameLines.length <= 2) break;
+                nameFont -= 2;
+            }
+            const nameLineHeight = Math.round(nameFont * 1.2);
+            const nameY = 18;
+            ctx.fillStyle = '#f8fafc';
+            nameLines.slice(0, 2).forEach((line, idx) => {
+                ctx.fillText(line, leftPad, nameY + idx * nameLineHeight);
+            });
+
+            const { flag, name: countryName } = getCountryMeta(beer?.country || '');
+            const countryY = nameY + nameLineHeight * Math.min(nameLines.length, 2) + 8;
+            const emojiFont = '26px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+            const textFont = '26px Comfortaa, sans-serif';
+            let x = leftPad;
+            if (flag) {
+                ctx.font = emojiFont;
+                ctx.fillText(flag, x, countryY);
+                x += ctx.measureText(flag).width + 6;
+            }
+            ctx.font = textFont;
+            ctx.fillStyle = 'rgba(226, 232, 240, 0.85)';
+            const countryText = truncateText(ctx, countryName || '—', maxWidth - (x - leftPad));
+            ctx.fillText(countryText, x, countryY);
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
             return texture;
@@ -2431,8 +2877,8 @@
 
         function createBeerInfoTexture(beer) {
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 240;
+            canvas.width = BEER_INFO_CANVAS.width;
+            canvas.height = BEER_INFO_CANVAS.height;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = 'rgba(12, 16, 24, 0.82)';
@@ -2455,24 +2901,64 @@
             const countText = summary.count != null ? String(summary.count) : (getRatingsCount(beer) != null ? String(getRatingsCount(beer)) : '—');
             const ratingsText = getRatingsSummaryText(beer);
 
-            const lines = [
-                `Рейтинг: ${avgText} (оценок: ${countText})`,
-                `Оценки: ${ratingsText}`,
-                `Автор: ${formatBeerValue(beer?.author)}`,
-                `Вид: ${formatBeerValue(beer?.type)}`,
-                `Сорт: ${formatBeerValue(beer?.style)}`,
-                `Объём: ${formatBeerValue(beer?.volume, ' л')}`,
-                `Крепость: ${formatBeerValue(formatNumber(beer?.alcohol, 1), '%')}`,
-                `Калории: ${formatBeerValue(formatNumber(beer?.calories, 0), ' ккал')}`
+            const filteredValue = String(beer?.filtered || '').trim().toLowerCase();
+            const isFiltered = filteredValue && !filteredValue.startsWith('не') && filteredValue.includes('фильтр');
+            const entries = [
+                { text: `Рейтинг: ${avgText} (оценок: ${countText})` },
+                { text: `Оценки: ${ratingsText}` },
+                { text: `Автор: ${formatBeerValue(beer?.author)}` },
+                { text: `Вид: ${formatBeerValue(beer?.type)}`, icon: isFiltered },
+                { text: `Сорт: ${formatBeerValue(beer?.style)}` },
+                { text: `Объём: ${formatBeerValue(beer?.volume, ' л')}` },
+                { text: `Крепость: ${formatBeerValue(formatNumber(beer?.alcohol, 1), '%')}` },
+                { text: `Калории: ${formatBeerValue(formatNumber(beer?.calories, 0), ' ккал')}` }
             ];
 
-            let y = 12;
-            const leftPad = 16;
+            const leftPad = 26;
             const maxWidth = canvas.width - leftPad * 2;
-            lines.forEach((line) => {
-                const text = truncateText(ctx, line, maxWidth);
+            let fontSize = 26;
+            let lineHeight = Math.round(fontSize * 1.3);
+            let iconSize = Math.round(lineHeight * 0.7);
+            const maxHeight = canvas.height - leftPad * 2;
+            let wrapped = [];
+            const buildWrapped = () => {
+                ctx.font = `${fontSize}px Comfortaa, sans-serif`;
+                lineHeight = Math.round(fontSize * 1.3);
+                iconSize = Math.round(lineHeight * 0.7);
+                wrapped = [];
+                entries.forEach((entry) => {
+                    const lineMaxWidth = entry.icon ? (maxWidth - iconSize - 8) : maxWidth;
+                    const parts = wrapTextLines(ctx, entry.text, lineMaxWidth);
+                    parts.forEach((part, idx) => {
+                        const iconAfterText = entry.icon && idx === 0;
+                        const textWidth = iconAfterText ? ctx.measureText(part).width : 0;
+                        wrapped.push({
+                            text: part,
+                            icon: iconAfterText,
+                            iconXOffset: iconAfterText ? Math.min(textWidth + 8, maxWidth - iconSize) : 0
+                        });
+                    });
+                });
+            };
+            buildWrapped();
+            while (wrapped.length * lineHeight > maxHeight && fontSize > 18) {
+                fontSize -= 1;
+                buildWrapped();
+            }
+            const maxLines = Math.max(1, Math.floor(maxHeight / lineHeight));
+            const finalLines = clampLinesToHeight(ctx, wrapped, maxWidth, maxLines);
+            let y = 20;
+            finalLines.forEach((line) => {
+                const lineMaxWidth = line.icon ? (maxWidth - iconSize - 8) : maxWidth;
+                const text = truncateText(ctx, line.text, lineMaxWidth);
                 ctx.fillText(text, leftPad, y);
-                y += 26;
+                if (line.icon) {
+                    const offset = Number.isFinite(line.iconXOffset) ? line.iconXOffset : (maxWidth - iconSize);
+                    const iconX = leftPad + offset;
+                    const iconY = y + (lineHeight - iconSize) / 2;
+                    drawFunnelIcon(ctx, iconX, iconY, iconSize, 'rgba(253, 230, 138, 0.95)');
+                }
+                y += lineHeight;
             });
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -2516,7 +3002,7 @@
             const makeSurface = (id, mesh, width, height) => {
                 const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
                 const anchor = new THREE.Group();
-                anchor.position.copy(mesh.position).addScaledVector(normal, 0.08);
+                anchor.position.copy(mesh.position).addScaledVector(normal, 0.12);
                 anchor.rotation.copy(mesh.rotation);
                 wallImageGroup.add(anchor);
                 return { id, mesh, anchor, normal, width, height };
@@ -2598,6 +3084,9 @@
             item.scale = mesh.userData.scale || 1;
             item.baseW = mesh.userData.baseW || item.baseW || 2;
             item.baseH = mesh.userData.baseH || item.baseH || 2;
+            if (Number.isFinite(mesh.userData.layer)) {
+                item.layer = mesh.userData.layer;
+            }
         }
 
         function removeWallImageById(id) {
@@ -2625,6 +3114,13 @@
             mesh.userData.scale = data.scale || 1;
             mesh.userData.baseW = data.baseW || 2;
             mesh.userData.baseH = data.baseH || 2;
+            if (!Number.isFinite(data.layer)) {
+                data.layer = wallImageLayerCounter++;
+            } else {
+                wallImageLayerCounter = Math.max(wallImageLayerCounter, data.layer + 1);
+            }
+            mesh.position.z = (data.layer || 0) * 0.002;
+            mesh.renderOrder = 30 + (data.layer || 0);
             const outline = new THREE.LineSegments(
                 new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
                 new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.8 })
@@ -2675,6 +3171,15 @@
             }
             selectedWallImageId = mesh.userData.id;
             if (mesh.userData?.outline) mesh.userData.outline.visible = true;
+            if (!Number.isFinite(mesh.userData.layer)) {
+                mesh.userData.layer = wallImageLayerCounter++;
+            } else {
+                mesh.userData.layer = wallImageLayerCounter++;
+            }
+            mesh.position.z = mesh.userData.layer * 0.002;
+            mesh.renderOrder = 30 + mesh.userData.layer;
+            syncWallImageData(mesh);
+            queueWallImagesSave();
             const toolbar = document.getElementById('wallImageToolbar');
             if (toolbar) toolbar.style.display = 'flex';
             const scaleInput = document.getElementById('wallImageScale');
@@ -2770,6 +3275,7 @@
         function createBeerBoard() {
             boardGroup.clear();
             boardArrowMeshes = [];
+            boardActionMeshes = [];
             boardContentGroup = new THREE.Group();
 
             const boardWidth = room.width * 0.7;
@@ -2783,6 +3289,7 @@
             boardMesh.position.set(0, 4.15, -room.depth / 2 + 0.2);
             boardMesh.rotation.y = 0;
             boardGroup.add(boardMesh);
+            boardGroup.userData.boardPos = boardMesh.position.clone();
 
             const frameGeoH = new THREE.BoxGeometry(boardWidth + frameThickness * 2, frameThickness, boardDepth + 0.05);
             const frameGeoV = new THREE.BoxGeometry(frameThickness, boardHeight + frameThickness * 2, boardDepth + 0.05);
@@ -2845,6 +3352,345 @@
             boardClipMesh.position.set(boardMesh.position.x, boardMesh.position.y, boardMesh.position.z + 0.16);
             boardClipMesh.renderOrder = 1;
             boardGroup.add(boardClipMesh);
+
+            const addButtonTex = createBoardButtonTexture('Добавить пиво');
+            const addButtonMat = new THREE.MeshBasicMaterial({ map: addButtonTex, transparent: true });
+            const addButtonMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 0.55), addButtonMat);
+            addButtonMesh.position.set(boardMesh.position.x + boardWidth / 2 - 1.28, boardMesh.position.y + boardHeight / 2 - 0.45, boardMesh.position.z + 0.26);
+            addButtonMesh.userData.action = 'add-beer';
+            boardGroup.add(addButtonMesh);
+            boardActionMeshes.push(addButtonMesh);
+        }
+
+        function ensureCssRenderer() {
+            if (cssRenderer && cssScene) return true;
+            if (!window.THREE?.CSS3DRenderer || !window.THREE?.CSS3DObject) return false;
+            cssScene = new THREE.Scene();
+            cssRenderer = new THREE.CSS3DRenderer();
+            cssRenderer.setSize(window.innerWidth, window.innerHeight);
+            cssRenderer.domElement.className = 'css3d-root';
+            cssRenderer.domElement.style.position = 'absolute';
+            cssRenderer.domElement.style.top = '0';
+            cssRenderer.domElement.style.left = '0';
+            cssRenderer.domElement.style.zIndex = '1';
+            cssRenderer.domElement.style.pointerEvents = 'none';
+            const exitHandler = (event) => {
+                if (!isBeerAddOpen) return;
+                if (event.target.closest && event.target.closest('.beer-add-3d')) return;
+                exitBeerAddEditing(event);
+            };
+            cssRenderer.domElement.addEventListener('pointerdown', exitHandler);
+            cssRenderer.domElement.addEventListener('click', exitHandler);
+            document.getElementById('scene').appendChild(cssRenderer.domElement);
+            return true;
+        }
+
+        function updateBeerAddPointerEvents() {
+            if (!cssRenderer?.domElement) return;
+            if (!isBeerAddOpen) {
+                cssRenderer.domElement.style.pointerEvents = 'none';
+                return;
+            }
+            cssRenderer.domElement.style.pointerEvents = isLocked ? 'none' : 'auto';
+        }
+
+        function exitBeerAddEditing(event) {
+            if (!isBeerAddOpen) return;
+            const active = document.activeElement;
+            if (active && active.closest && active.closest('.beer-add-3d')) {
+                active.blur();
+            }
+            document.querySelectorAll('.beer-add-3d .cs.open').forEach((node) => {
+                node.classList.remove('open');
+                const btn = node.querySelector('.cs-btn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+            if (cssRenderer?.domElement) cssRenderer.domElement.style.pointerEvents = 'none';
+            const prefersCssLock = Boolean(
+                cssRenderer?.domElement &&
+                event?.target &&
+                cssRenderer.domElement.contains(event.target)
+            );
+            const lockTarget = prefersCssLock ? cssRenderer?.domElement : renderer?.domElement;
+            if (lockTarget?.requestPointerLock) {
+                lockTarget.requestPointerLock();
+            } else if (cssRenderer?.domElement?.requestPointerLock) {
+                cssRenderer.domElement.requestPointerLock();
+            }
+            window.setTimeout(() => {
+                if (!isBeerAddOpen) return;
+                if (
+                    document.pointerLockElement !== renderer?.domElement &&
+                    document.pointerLockElement !== cssRenderer?.domElement
+                ) {
+                    updateBeerAddPointerEvents();
+                }
+            }, 250);
+        }
+
+        function buildBeerAddModalElement() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'beer-add-3d';
+            wrapper.innerHTML = `
+                <div class="modal-header">
+                    <h3>Добавить пиво</h3>
+                </div>
+                <label for="beer3dName">Название</label>
+                <input id="beer3dName" type="text" placeholder="Название...">
+                <label for="beer3dTypeBtn">Вид</label>
+                <div class="cs" data-key="type">
+                    <button class="cs-btn" id="beer3dTypeBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+                    <div class="cs-menu" role="listbox"></div>
+                </div>
+                <label for="beer3dStyleBtn">Сорт</label>
+                <div class="cs" data-key="style">
+                    <button class="cs-btn" id="beer3dStyleBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+                    <div class="cs-menu" role="listbox"></div>
+                </div>
+                <label for="beer3dFilteredBtn">Фильтрация</label>
+                <div class="cs" data-key="filtered">
+                    <button class="cs-btn" id="beer3dFilteredBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+                    <div class="cs-menu" role="listbox"></div>
+                </div>
+                <label for="beer3dCountryBtn">Страна</label>
+                <div class="cs" data-key="country">
+                    <button class="cs-btn" id="beer3dCountryBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+                    <div class="cs-menu" role="listbox"></div>
+                </div>
+                <label for="beer3dVolumeBtn">Объём</label>
+                <div class="cs" data-key="volume">
+                    <button class="cs-btn" id="beer3dVolumeBtn" type="button" aria-haspopup="listbox" aria-expanded="false"></button>
+                    <div class="cs-menu" role="listbox"></div>
+                </div>
+                <label for="beer3dAlcohol">Крепость (%)</label>
+                <input id="beer3dAlcohol" type="number" min="0" max="100" step="0.1" placeholder="Крепость">
+                <label for="beer3dCalories">Калорийность (ккал)</label>
+                <input id="beer3dCalories" type="number" min="0" max="2000" step="1" placeholder="Ккал">
+                <div class="actions">
+                    <button class="primary" type="button" id="beer3dSubmit">Добавить</button>
+                    <button class="ghost" type="button" id="beer3dCancel">Отмена</button>
+                </div>
+            `;
+            wrapper.addEventListener('click', (event) => event.stopPropagation());
+            wrapper.querySelectorAll('input, select, button').forEach((el) => {
+                el.addEventListener('pointerdown', (event) => event.stopPropagation());
+            });
+            return wrapper;
+        }
+
+        function setupCustomSelect(wrapper, options, defaultValue) {
+            if (!wrapper || !options?.length) return;
+            if (wrapper.dataset.ready === 'true') return;
+            const btn = wrapper.querySelector('.cs-btn');
+            const menu = wrapper.querySelector('.cs-menu');
+            if (!btn || !menu) return;
+            wrapper.dataset.ready = 'true';
+
+            const setValue = (value) => {
+                const option = options.find((opt) => opt.value === value) || options[0];
+                wrapper.dataset.value = option.value;
+                btn.textContent = option.label;
+                menu.querySelectorAll('.cs-opt').forEach((opt) => {
+                    opt.setAttribute('aria-selected', String(opt.dataset.value === option.value));
+                });
+            };
+
+            menu.innerHTML = '';
+            options.forEach((opt) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'cs-opt';
+                item.dataset.value = opt.value;
+                item.textContent = opt.label;
+                item.setAttribute('aria-selected', 'false');
+                item.addEventListener('pointerdown', (event) => event.stopPropagation());
+                item.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    setValue(opt.value);
+                    wrapper.classList.remove('open');
+                    btn.setAttribute('aria-expanded', 'false');
+                });
+                menu.appendChild(item);
+            });
+
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const root = wrapper.closest('.beer-add-3d');
+                if (root) {
+                    root.querySelectorAll('.cs.open').forEach((node) => {
+                        if (node !== wrapper) {
+                            node.classList.remove('open');
+                            const nodeBtn = node.querySelector('.cs-btn');
+                            if (nodeBtn) nodeBtn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
+                const open = !wrapper.classList.contains('open');
+                wrapper.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+
+            setValue(defaultValue ?? options[0].value);
+        }
+
+        function initBeerAddCustomSelects(root) {
+            if (!root) return;
+            root.querySelectorAll('.cs[data-key]').forEach((wrap) => {
+                const key = wrap.dataset.key;
+                const options = BEER_SELECT_OPTIONS[key] || [];
+                const defValue = BEER_SELECT_DEFAULTS[key];
+                setupCustomSelect(wrap, options, defValue);
+            });
+        }
+
+        function setBeerAddSelectValue(root, key, value) {
+            if (!root) return;
+            const wrap = root.querySelector(`.cs[data-key="${key}"]`);
+            if (!wrap) return;
+            const options = BEER_SELECT_OPTIONS[key] || [];
+            const btn = wrap.querySelector('.cs-btn');
+            const menu = wrap.querySelector('.cs-menu');
+            if (!btn || !menu || !options.length) return;
+            const opt = options.find((item) => item.value === value) || options[0];
+            wrap.dataset.value = opt.value;
+            btn.textContent = opt.label;
+            menu.querySelectorAll('.cs-opt').forEach((item) => {
+                item.setAttribute('aria-selected', String(item.dataset.value === opt.value));
+            });
+        }
+
+        function getBeerAddSelectValue(root, key) {
+            const wrap = root?.querySelector(`.cs[data-key="${key}"]`);
+            return wrap?.dataset?.value || '';
+        }
+
+        function syncBeerAddModalPosition() {
+            if (!beerAddAnchor || !boardGroup?.userData?.boardPos) return;
+            if (beerAddAnchor.userData.hasCustomPosition) return;
+            const pos = boardGroup.userData.boardPos;
+            const height = boardGroup.userData.boardHeight || 7.4;
+            const width = boardGroup.userData.boardWidth || room.width * 0.7;
+            const offsetX = width / 2 + 4.4;
+            const targetX = pos.x + offsetX;
+            const targetY = pos.y + height * 0.05;
+            const targetZ = pos.z + 0.9;
+            beerAddAnchor.position.set(targetX, targetY, targetZ);
+            beerAddAnchor.rotation.set(0, 0, 0);
+            if (beerAddHitMesh) {
+                beerAddHitMesh.position.set(targetX, targetY, targetZ + 0.01);
+                beerAddHitMesh.rotation.set(0, 0, 0);
+            }
+        }
+
+        function setupBeerAddModal3D() {
+            if (beerAddObject || !ensureCssRenderer()) return;
+            const el = buildBeerAddModalElement();
+            beerAddObject = new THREE.CSS3DObject(el);
+            beerAddObject.scale.set(0.01, 0.01, 0.01);
+            beerAddAnchor = new THREE.Group();
+            beerAddAnchor.userData.hasCustomPosition = false;
+            beerAddAnchor.add(beerAddObject);
+            cssScene.add(beerAddAnchor);
+            if (!beerAddHitMesh) {
+                const hitGeo = new THREE.PlaneGeometry(4.2, 6.4);
+                const hitMat = new THREE.MeshBasicMaterial({
+                    transparent: true,
+                    opacity: 0,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+                beerAddHitMesh = new THREE.Mesh(hitGeo, hitMat);
+                beerAddHitMesh.visible = false;
+                scene.add(beerAddHitMesh);
+            }
+            syncBeerAddModalPosition();
+            initBeerAddCustomSelects(el);
+
+            const submitBtn = el.querySelector('#beer3dSubmit');
+            const cancelBtn = el.querySelector('#beer3dCancel');
+            if (submitBtn) submitBtn.addEventListener('click', addBeerFrom3DModal);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeBeerAddModal3D);
+        }
+
+        function resetBeerAddModalForm() {
+            const root = beerAddObject?.element;
+            if (!root) return;
+            root.querySelector('#beer3dName').value = '';
+            setBeerAddSelectValue(root, 'type', BEER_SELECT_DEFAULTS.type);
+            setBeerAddSelectValue(root, 'style', BEER_SELECT_DEFAULTS.style);
+            setBeerAddSelectValue(root, 'filtered', BEER_SELECT_DEFAULTS.filtered);
+            setBeerAddSelectValue(root, 'country', BEER_SELECT_DEFAULTS.country);
+            setBeerAddSelectValue(root, 'volume', BEER_SELECT_DEFAULTS.volume);
+            root.querySelector('#beer3dAlcohol').value = '';
+            root.querySelector('#beer3dCalories').value = '';
+        }
+
+        function openBeerAddModal3D() {
+            setupBeerAddModal3D();
+            if (!beerAddObject) return;
+            isBeerAddOpen = true;
+            syncBeerAddModalPosition();
+            beerAddObject.element.classList.add('open');
+            if (beerAddHitMesh) beerAddHitMesh.visible = true;
+            updateBeerAddPointerEvents();
+            resetBeerAddModalForm();
+            moveState.forward = false;
+            moveState.back = false;
+            moveState.left = false;
+            moveState.right = false;
+            moveState.fast = false;
+        }
+
+        function closeBeerAddModal3D() {
+            if (!beerAddObject) return;
+            isBeerAddOpen = false;
+            beerAddObject.element.classList.remove('open');
+            if (beerAddHitMesh) beerAddHitMesh.visible = false;
+            updateBeerAddPointerEvents();
+        }
+
+        async function addBeerFrom3DModal() {
+            const root = beerAddObject?.element;
+            if (!root) return;
+            const name = root.querySelector('#beer3dName').value.trim();
+            const type = getBeerAddSelectValue(root, 'type');
+            const style = getBeerAddSelectValue(root, 'style');
+            const filtered = getBeerAddSelectValue(root, 'filtered');
+            const country = getBeerAddSelectValue(root, 'country');
+            const volume = getBeerAddSelectValue(root, 'volume');
+            const alcohol = root.querySelector('#beer3dAlcohol').value.trim();
+            const calories = root.querySelector('#beer3dCalories').value.trim();
+            const author = getCurrentUserName();
+
+            if (!name || !alcohol || !author) {
+                alert('Заполните все поля!');
+                return;
+            }
+            const beer = {
+                id: Date.now().toString(),
+                name,
+                type,
+                style,
+                filtered,
+                country,
+                volume,
+                alcohol,
+                calories,
+                author,
+                ratings: {},
+                timestamp: Date.now()
+            };
+            const updated = [...beerData, beer];
+            try {
+                const db = firebase.database();
+                const updates = { beerRating: updated };
+                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                await db.ref().update(updates);
+                applyBeerData(updated);
+                closeBeerAddModal3D();
+            } catch (err) {
+                console.warn('add beer failed', err);
+            }
         }
 
         function updateBeerBoard() {
@@ -2858,6 +3704,12 @@
             const innerWidth = boardGroup.userData.innerWidth || (boardWidth - 4.4);
             const gap = 0.2;
             const itemWidth = Math.min(2.6, Math.max(1.9, innerWidth / Math.min(beerData.length, 22)));
+            const titleAspect = BEER_TITLE_CANVAS.width / BEER_TITLE_CANVAS.height;
+            const infoAspect = BEER_INFO_CANVAS.width / BEER_INFO_CANVAS.height;
+            const titleWidth = itemWidth * 0.98;
+            const titleHeight = titleWidth / titleAspect;
+            const infoWidth = itemWidth * 1.02;
+            const infoHeight = infoWidth / infoAspect;
             const totalWidth = itemWidth * beerData.length + gap * (beerData.length - 1);
             boardScrollState.maxOffset = Math.max(0, (totalWidth - innerWidth) / 2);
             boardScrollState.step = itemWidth + gap;
@@ -2870,21 +3722,28 @@
                 const group = new THREE.Group();
                 group.position.set(startX + i * (itemWidth + gap), 0, 0);
                 const bottle = createBottleMesh(beer);
-                bottle.position.set(0, 0.25, 0);
+                const bottleYOffset = 0.25;
+                bottle.position.set(0, bottleYOffset, 0);
                 group.add(bottle);
+
+                const bottleBottom = bottleYOffset - 1.25;
+                const titleGap = 0.16;
+                const infoGap = 0.18;
+                const titleY = bottleBottom - titleGap - titleHeight / 2;
+                const infoY = titleY - titleHeight / 2 - infoGap - infoHeight / 2;
 
                 const titleTex = createBeerTitleTexture(beer);
                 const titleMat = new THREE.MeshBasicMaterial({ map: titleTex, transparent: true });
                 applyBoardStencil(titleMat);
-                const titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(itemWidth * 0.9, 0.6), titleMat);
-                titleMesh.position.set(0, -0.9, 0.02);
+                const titleMesh = new THREE.Mesh(new THREE.PlaneGeometry(titleWidth, titleHeight), titleMat);
+                titleMesh.position.set(0, titleY, 0.02);
                 group.add(titleMesh);
 
                 const infoTex = createBeerInfoTexture(beer);
                 const infoMat = new THREE.MeshBasicMaterial({ map: infoTex, transparent: true });
                 applyBoardStencil(infoMat);
-                const infoMesh = new THREE.Mesh(new THREE.PlaneGeometry(itemWidth * 0.95, 1.25), infoMat);
-                infoMesh.position.set(0, -2.25, 0.02);
+                const infoMesh = new THREE.Mesh(new THREE.PlaneGeometry(infoWidth, infoHeight), infoMat);
+                infoMesh.position.set(0, infoY, 0.02);
                 group.add(infoMesh);
 
                 boardContentGroup.add(group);
@@ -2962,8 +3821,71 @@
             boardScrollState.speed = 0;
         }
 
+        function handleBeerAddLockedClick(event) {
+            if (!isBeerAddOpen || !isLocked || !beerAddHitMesh || !renderer || !camera) return false;
+            if (!beerAddHitMesh.visible) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x = rect.width / 2;
+            const y = rect.height / 2;
+            boardPointer.x = (x / rect.width) * 2 - 1;
+            boardPointer.y = -(y / rect.height) * 2 + 1;
+            boardRaycaster.setFromCamera(boardPointer, camera);
+            const hits = boardRaycaster.intersectObject(beerAddHitMesh, true);
+            if (!hits.length) return false;
+            if (!cssRenderer?.domElement) return false;
+            const cssRect = cssRenderer.domElement.getBoundingClientRect();
+            const px = cssRect.left + cssRect.width / 2;
+            const py = cssRect.top + cssRect.height / 2;
+            const prevPointerEvents = cssRenderer.domElement.style.pointerEvents;
+            cssRenderer.domElement.style.pointerEvents = 'auto';
+            const elements = document.elementsFromPoint
+                ? document.elementsFromPoint(px, py)
+                : [document.elementFromPoint(px, py)].filter(Boolean);
+            cssRenderer.domElement.style.pointerEvents = prevPointerEvents;
+            const pick = (selector) => elements.find((el) => el?.matches?.(selector) || el?.closest?.(selector));
+            const scoped = elements.find((el) => el?.closest && el.closest('.beer-add-3d'));
+            if (!scoped) return true;
+            const optionEl = pick('.cs-opt');
+            if (optionEl) {
+                optionEl.closest('.cs-opt')?.click?.();
+                return true;
+            }
+            const input = pick('input');
+            if (input) {
+                const field = input.closest('input') || input;
+                field.focus();
+                if (field.select) field.select();
+                return true;
+            }
+            const openMenu = document.querySelector('.beer-add-3d .cs.open .cs-menu');
+            if (openMenu) {
+                const menuRect = openMenu.getBoundingClientRect();
+                if (px >= menuRect.left && px <= menuRect.right && py >= menuRect.top && py <= menuRect.bottom) {
+                    const opts = Array.from(openMenu.querySelectorAll('.cs-opt'));
+                    if (opts.length) {
+                        const optHeight = opts[0].getBoundingClientRect().height || 24;
+                        const index = Math.floor((py - menuRect.top + openMenu.scrollTop) / optHeight);
+                        const pickOpt = opts[Math.max(0, Math.min(opts.length - 1, index))];
+                        pickOpt?.click?.();
+                        return true;
+                    }
+                }
+            }
+            const selectBtn = pick('.cs-btn');
+            if (selectBtn) {
+                selectBtn.closest('.cs-btn')?.click?.();
+                return true;
+            }
+            const actionBtn = pick('.beer-add-3d button');
+            if (actionBtn) {
+                actionBtn.closest('.beer-add-3d button')?.click?.();
+                return true;
+            }
+            return true;
+        }
+
         function handleBeerBoardClick(event) {
-            if (!boardArrowMeshes.length || !renderer || !camera) return false;
+            if ((!boardArrowMeshes.length && !boardActionMeshes.length) || !renderer || !camera) return false;
             const rect = renderer.domElement.getBoundingClientRect();
             let x = rect.width / 2;
             let y = rect.height / 2;
@@ -2974,12 +3896,33 @@
             boardPointer.x = (x / rect.width) * 2 - 1;
             boardPointer.y = -(y / rect.height) * 2 + 1;
             boardRaycaster.setFromCamera(boardPointer, camera);
+            if (boardActionMeshes.length) {
+                const actionHits = boardRaycaster.intersectObjects(boardActionMeshes, true);
+                if (actionHits.length) {
+                    const target = actionHits[0].object;
+                    const action = target.userData.action || target.parent?.userData?.action;
+                    if (action === 'add-beer') {
+                        if (event?.preventDefault) event.preventDefault();
+                        if (event?.stopPropagation) event.stopPropagation();
+                        openBeerAddModal3D();
+                        return true;
+                    }
+                }
+            }
             const hits = boardRaycaster.intersectObjects(boardArrowMeshes, true);
             if (!hits.length) return false;
             const target = hits[0].object;
             const dir = target.userData.scrollDir || target.parent?.userData?.scrollDir;
             if (!dir) return false;
             scrollBeerBoard(dir);
+            return true;
+        }
+
+        function handleBeerAddLockedScroll(event) {
+            if (!isBeerAddOpen || !isLocked) return false;
+            const menu = document.querySelector('.beer-add-3d .cs.open .cs-menu');
+            if (!menu) return false;
+            menu.scrollTop += event.deltaY;
             return true;
         }
 
@@ -3134,6 +4077,9 @@
                 if (neon.neonMat) neon.neonMat.emissiveIntensity = 0.8 + intensity * 0.85;
                 if (neon.glowMat) neon.glowMat.opacity = 0.1 + intensity * 0.15;
             }
+            if (beerAddAnchor && !beerAddAnchor.userData.hasCustomPosition) {
+                syncBeerAddModalPosition();
+            }
             const dirForward = (moveState.forward ? 1 : 0) - (moveState.back ? 1 : 0);
             const dirRight = (moveState.right ? 1 : 0) - (moveState.left ? 1 : 0);
             if (dirForward !== 0 || dirRight !== 0) {
@@ -3212,6 +4158,7 @@
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             initUI();
             initScene();
+            initBeerRatingFeed();
             initWallImagesFeed();
             connectRealtime();
             const db = firebase.database();
@@ -3219,12 +4166,6 @@
             const hasCachedBeer = Array.isArray(cachedBeer) || (cachedBeer && typeof cachedBeer === 'object');
             if (hasCachedBeer) {
                 applyBeerData(cachedBeer, { cache: false });
-            }
-            const beerTs = readCacheTs(BEER_CACHE_TS_KEY);
-            if (!hasCachedBeer || shouldRefreshCache(beerTs)) {
-                db.ref('beerRating').once('value').then((snapshot) => {
-                    applyBeerData(snapshot.val());
-                }).catch((err) => console.warn('beerRating fetch failed', err));
             }
             const cachedRug = readCache(RUG_CACHE_KEY);
             if (cachedRug) {
@@ -3241,12 +4182,6 @@
             }
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState !== 'visible') return;
-                const freshBeerTs = readCacheTs(BEER_CACHE_TS_KEY);
-                if (shouldRefreshCache(freshBeerTs)) {
-                    db.ref('beerRating').once('value').then((snapshot) => {
-                        applyBeerData(snapshot.val());
-                    }).catch((err) => console.warn('beerRating refresh failed', err));
-                }
                 const freshRugTs = readCacheTs(RUG_CACHE_TS_KEY);
                 if (shouldRefreshCache(freshRugTs)) {
                     db.ref('beerShelfRugUrl').once('value').then((snapshot) => {

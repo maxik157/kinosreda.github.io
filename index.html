@@ -637,16 +637,260 @@
             background: linear-gradient(135deg, #78350f, #451a03);
             color: #fff;
         }
+        .beer-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 170px;
+        }
+        .beer-name-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+        .beer-name-info .font-medium,
+        .beer-name-info .text-xs {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .beer-thumb {
+            position: relative;
+            width: 28px;
+            height: 42px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            margin-left: -4px;
+            border: 0;
+            background: transparent;
+        }
+        .beer-thumb-mask {
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .beer-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .beer-thumb-placeholder {
+            font-size: 16px;
+            line-height: 1;
+            opacity: 0.7;
+        }
+        .beer-thumb-preview {
+            position: absolute;
+            left: calc(100% + 10px);
+            top: 50%;
+            transform: translateY(-50%) scale(0.98);
+            width: 195px;
+            height: 330px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(8, 10, 16, 0.92);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.16s ease, transform 0.16s ease;
+            z-index: 2000;
+        }
+        .beer-thumb-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .beer-thumb:hover .beer-thumb-preview {
+            opacity: 1;
+            transform: translateY(-50%) scale(1);
+        }
+        #beerHoverPreview {
+            position: fixed;
+            width: 195px;
+            height: 330px;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(8, 10, 16, 0.92);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.16s ease, transform 0.16s ease;
+            transform: scale(0.98);
+            z-index: 10000;
+        }
+        #beerHoverPreview.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        #beerHoverPreview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .beer-table-scroll {
+            overflow-x: auto;
+            overflow-y: visible;
+            position: relative;
+            z-index: 80;
+            -webkit-overflow-scrolling: touch;
+        }
+        .beer-rating-card {
+            position: relative;
+            overflow: visible;
+            padding-bottom: 8px;
+        }
+        #beerSticky {
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 60;
+        }
+        #beerTable {
+            table-layout: fixed;
+            width: 100%;
+            font-size: 0.82rem;
+        }
+        #beerTable th,
+        #beerTable td {
+            padding: 0.45rem 0.5rem;
+            white-space: nowrap;
+        }
+        #beerTable td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #beerTable th:first-child,
+        #beerTable td:first-child {
+            width: 170px;
+            max-width: 170px;
+            padding-left: 8px;
+            overflow: visible;
+        }
+        #beerTable th:nth-child(2),
+        #beerTable td:nth-child(2) {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTable th:nth-child(3),
+        #beerTable td:nth-child(3) {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTable th:nth-child(4),
+        #beerTable td:nth-child(4) {
+            width: 110px;
+            max-width: 110px;
+        }
+        #beerTable th:nth-child(5),
+        #beerTable td:nth-child(5),
+        #beerTable th:nth-child(6),
+        #beerTable td:nth-child(6) {
+            width: 80px;
+            max-width: 80px;
+        }
+        #beerTable th:nth-child(7),
+        #beerTable td:nth-child(7) {
+            width: 120px;
+            max-width: 120px;
+        }
+        #beerTable th:nth-child(8),
+        #beerTable td:nth-child(8),
+        #beerTable th:nth-child(9),
+        #beerTable td:nth-child(9) {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTable th:nth-child(6),
+        #beerTable td:nth-child(6) {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTable th:nth-child(7),
+        #beerTable td:nth-child(7),
+        #beerTable th:nth-child(8),
+        #beerTable td:nth-child(8) {
+            padding-left: 0.35rem;
+            padding-right: 0.35rem;
+        }
+        #beerTable th:last-child,
+        #beerTable td:last-child {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTextTooltip {
+            position: fixed;
+            max-width: 320px;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(8, 10, 16, 0.95);
+            color: rgba(248, 250, 252, 0.96);
+            font-size: 11px;
+            line-height: 1.3;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(4px);
+            transition: opacity 0.12s ease, transform 0.12s ease;
+            z-index: 10000;
+        }
+        #beerTextTooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .calories-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0 6px;
+            white-space: nowrap;
+        }
+        .calories-head {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+        #beerTable th:last-child,
+        #beerTable td:last-child {
+            width: 90px;
+            max-width: 90px;
+        }
+        #beerTable th:first-child,
+        #beerTable td:first-child {
+            width: 190px;
+            max-width: 190px;
+        }
         #beerSection {
             scroll-margin-top: max(8rem, calc(var(--header-offset, 0px) + 1.5rem));
         }
         #beerSticky {
             position: sticky;
             top: var(--header-offset, 0px);
-            z-index: 45;
+            z-index: 120;
             display: flow-root;
-            background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--accent-border-20);
             box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
             border-radius: 0.75rem;
@@ -1569,7 +1813,7 @@
 
         <!-- Backlog Section -->
         <div id="backlogSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
-            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in">
+            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in beer-rating-card">
                 <h2 class="text-2xl font-bold text-amber-400 mb-6 flex items-center gap-3">
                     <span class="text-3xl">🎥</span> Бэклог фильмов
                 </h2>
@@ -1738,7 +1982,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto beer-table-scroll">
                     <table class="w-full text-sm" id="beerTable">
                         <thead>
                             <tr class="border-b border-gray-700">
@@ -1758,17 +2002,18 @@
                                     Объём, л <span id="sort-volume">↕</span>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('alcohol')">
-                                    Крепость, % <span id="sort-alcohol">↕</span>
+                                    ABV <span id="sort-alcohol">↕</span>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('calories')">
-                                    Калорийность
-                                    <span id="sort-calories">↕</span>
-                                    <button type="button" onclick="event.stopPropagation(); toggleCaloriesMode()" class="ml-2 px-2 py-0.5 rounded-full text-[10px] border border-amber-500/30 text-amber-200 hover:text-amber-100 hover:border-amber-400 transition" title="Переключить базу калорийности">
-                                        <span id="caloriesModeLabel">100 мл</span>
-                                    </button>
+                                    <div class="calories-head">
+                                        <span>Калорийность <span id="sort-calories">↕</span></span>
+                                        <button type="button" onclick="event.stopPropagation(); toggleCaloriesMode()" class="calories-toggle rounded-full text-[10px] border border-amber-500/30 text-amber-200 hover:text-amber-100 hover:border-amber-400 transition" title="Переключить базу калорийности">
+                                            <span id="caloriesModeLabel">100 мл</span>
+                                        </button>
+                                    </div>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating_avg')">
-                                    Рейтинг общий <span id="sort-rating-avg">↕</span>
+                                    Рейтинг <span id="sort-rating-avg">↕</span>
                                 </th>
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('rating_my')">
                                     Мой рейтинг <span id="sort-rating-my">↕</span>
@@ -2356,6 +2601,17 @@
         let beerSortDirection = 'asc';
         let beerSearchQuery = '';
         let beerCaloriesMode = 'per100';
+        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+        const EVENTS_META_PATH = 'eventsMeta/updatedAt';
+        const BACKLOG_META_PATH = 'backlogMeta/updatedAt';
+        const BIRTHDAY_META_PATH = 'birthdayWishlistsMeta/updatedAt';
+        let beerRatingMetaTs = null;
+        let eventsMetaTs = null;
+        let backlogMetaTs = null;
+        let birthdayMetaTs = null;
+        let lastBeerRatingHash = '';
+        let lastEventsHash = '';
+        let lastBacklogHash = '';
 
         // -----------------
         // Chat (Realtime)
@@ -2835,6 +3091,10 @@
                             <span>🎨</span>
                             <span>Доска</span>
                         </a>
+                        <a href="gallery.html" class="nav-dropdown-item" title="Галерея">
+                            <span>🖼️</span>
+                            <span>Галерея</span>
+                        </a>
                         <a href="snacks.html" class="nav-dropdown-item" title="Перекусы">
                             <span>🥨</span>
                             <span>Перекусы</span>
@@ -3019,14 +3279,23 @@
                 db = firebase.database();
                 useFirebase = true;
                 
-                db.ref('events').on('value', (snapshot) => {
+                const applyEventsSnapshot = (snapshot) => {
                     data.events = snapshot.val() || {};
+                    lastEventsHash = JSON.stringify(data.events || {});
                     renderCalendar();
                     renderUpcomingEvents();
                     if (selectedDate) renderPanelContent();
+                };
+                const fetchEventsOnce = () => db.ref('events').once('value').then(applyEventsSnapshot);
+                db.ref(EVENTS_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    const hasEvents = data.events && Object.keys(data.events).length > 0;
+                    if (ts && ts === eventsMetaTs && hasEvents) return;
+                    if (ts) eventsMetaTs = ts;
+                    fetchEventsOnce().catch(() => {});
                 });
-                
-                db.ref('backlog').on('value', (snapshot) => {
+
+                const applyBacklogSnapshot = (snapshot) => {
                     const backlogData = snapshot.val() || { columns: [], cards: [] };
                     // Конвертируем объекты в массивы если нужно
                     if (backlogData.columns && !Array.isArray(backlogData.columns)) {
@@ -3039,10 +3308,19 @@
                         columns: backlogData.columns || [],
                         cards: backlogData.cards || []
                     };
+                    lastBacklogHash = JSON.stringify(data.backlog || {});
                     renderBacklog();
+                };
+                const fetchBacklogOnce = () => db.ref('backlog').once('value').then(applyBacklogSnapshot);
+                db.ref(BACKLOG_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    const hasBacklog = data.backlog && (data.backlog.columns?.length || data.backlog.cards?.length);
+                    if (ts && ts === backlogMetaTs && hasBacklog) return;
+                    if (ts) backlogMetaTs = ts;
+                    fetchBacklogOnce().catch(() => {});
                 });
 
-                db.ref('beerRating').on('value', (snapshot) => {
+                const applyBeerRatingSnapshot = (snapshot) => {
                     const beerData = snapshot.val() || [];
                     // Конвертируем объект в массив если нужно
                     if (beerData && !Array.isArray(beerData)) {
@@ -3050,10 +3328,20 @@
                     } else {
                         data.beerRating = beerData || [];
                     }
+                    lastBeerRatingHash = JSON.stringify(data.beerRating || []);
                     renderBeerRating();
+                };
+                const fetchBeerRatingOnce = () => {
+                    return db.ref('beerRating').once('value').then(applyBeerRatingSnapshot);
+                };
+                db.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    if (ts && ts === beerRatingMetaTs && data.beerRating.length) return;
+                    if (ts) beerRatingMetaTs = ts;
+                    fetchBeerRatingOnce().catch(() => {});
                 });
 
-                db.ref('birthdayWishlists').on('value', (snapshot) => {
+                const applyBirthdaySnapshot = (snapshot) => {
                     birthdayWishlists = snapshot.val() || {};
                     if (selectedDate) {
                         const birthday = getBirthdayForDateKey(selectedDate);
@@ -3061,6 +3349,14 @@
                         renderBirthdaySectionForSelectedDate(birthday, hasKino);
                         applyBirthdayPanelVisibility(hasKino, !!birthday);
                     }
+                };
+                const fetchBirthdayOnce = () => db.ref('birthdayWishlists').once('value').then(applyBirthdaySnapshot);
+                db.ref(BIRTHDAY_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    const hasData = birthdayWishlists && Object.keys(birthdayWishlists).length > 0;
+                    if (ts && ts === birthdayMetaTs && hasData) return;
+                    if (ts) birthdayMetaTs = ts;
+                    fetchBirthdayOnce().catch(() => {});
                 });
 
                 // Start chat subscription immediately (for unread badge), even if chat panel was never opened
@@ -3075,15 +3371,37 @@
                 renderUpcomingEvents();
                 renderBacklog();
                 renderBeerRating();
+                lastBeerRatingHash = JSON.stringify(data.beerRating || []);
+                lastEventsHash = JSON.stringify(data.events || {});
+                lastBacklogHash = JSON.stringify(data.backlog || {});
             }
         }
 
         // Data Methods
         function saveData() {
             if (useFirebase && db) {
-                db.ref('events').set(data.events);
-                db.ref('backlog').set(data.backlog);
-                db.ref('beerRating').set(data.beerRating);
+                const updates = {};
+                const eventsHash = JSON.stringify(data.events || {});
+                if (eventsHash !== lastEventsHash) {
+                    updates.events = data.events || {};
+                    updates[EVENTS_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                    lastEventsHash = eventsHash;
+                }
+                const backlogHash = JSON.stringify(data.backlog || {});
+                if (backlogHash !== lastBacklogHash) {
+                    updates.backlog = data.backlog || { columns: [], cards: [] };
+                    updates[BACKLOG_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                    lastBacklogHash = backlogHash;
+                }
+                const beerHash = JSON.stringify(data.beerRating || []);
+                if (beerHash !== lastBeerRatingHash) {
+                    updates.beerRating = data.beerRating || [];
+                    updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                    lastBeerRatingHash = beerHash;
+                }
+                if (Object.keys(updates).length) {
+                    db.ref().update(updates);
+                }
             } else {
                 localStorage.setItem('eventData', JSON.stringify(data));
                 renderCalendar();
@@ -3551,6 +3869,19 @@
             applyBirthdayPanelVisibility(hasKino, hasBirthday);
         }
 
+        function updateBirthdayWishlist(path, payload, onSuccess, onError) {
+            if (!useFirebase || !db) return false;
+            const updates = {};
+            updates[path] = payload;
+            updates[BIRTHDAY_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+            db.ref().update(updates).then(() => {
+                if (onSuccess) onSuccess();
+            }).catch((err) => {
+                if (onError) onError(err);
+            });
+            return true;
+        }
+
         function saveBirthdayWishlist() {
             const birthday = getBirthdayForDateKey(selectedDate);
             if (!birthday) return;
@@ -3612,8 +3943,9 @@
                 updatedAt: Date.now()
             };
 
+            const path = `birthdayWishlists/${selectedDate}/${birthday.name}`;
             if (useFirebase && db) {
-                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).then(() => {
+                updateBirthdayWishlist(path, birthdayWishlists[selectedDate][birthday.name], () => {
                     // Show success feedback
                     const saveBtn = document.getElementById('birthdayWishlistSaveBtn');
                     if (saveBtn) {
@@ -3625,7 +3957,7 @@
                             saveBtn.disabled = false;
                         }, 2000);
                     }
-                }).catch(err => {
+                }, (err) => {
                     console.error('Error saving wishlist:', err);
                     alert('Ошибка при сохранении вишлиста. Попробуйте еще раз.');
                 });
@@ -3673,8 +4005,9 @@
                 updatedAt: Date.now()
             };
 
+            const path = `birthdayWishlists/${selectedDate}/${birthday.name}`;
             if (useFirebase && db) {
-                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).catch(err => {
+                updateBirthdayWishlist(path, birthdayWishlists[selectedDate][birthday.name], null, (err) => {
                     console.error('Error reserving item:', err);
                     alert('Ошибка при резервировании подарка. Попробуйте еще раз.');
                 });
@@ -3713,8 +4046,9 @@
                 updatedAt: Date.now()
             };
 
+            const path = `birthdayWishlists/${selectedDate}/${birthday.name}`;
             if (useFirebase && db) {
-                db.ref(`birthdayWishlists/${selectedDate}/${birthday.name}`).set(birthdayWishlists[selectedDate][birthday.name]).catch(err => {
+                updateBirthdayWishlist(path, birthdayWishlists[selectedDate][birthday.name], null, (err) => {
                     console.error('Error unreserving item:', err);
                     alert('Ошибка при отмене резервирования. Попробуйте еще раз.');
                 });
@@ -5324,6 +5658,9 @@
             
             tbody.innerHTML = sortedBeers.map(beer => {
                 const ratings = Object.entries(beer.ratings || {});
+                const ratingsText = ratings.map(([name, rating]) => `${name}: ${rating}`).join(', ');
+                const safeName = escapeHtml(beer.name || '');
+                const safeRatings = escapeHtml(ratingsText);
                 const avgRating = ratings.length > 0 
                     ? (ratings.reduce((sum, [, r]) => sum + r, 0) / ratings.length).toFixed(1)
                     : '—';
@@ -5333,8 +5670,19 @@
                 return `
                     <tr class="border-b border-gray-800 beer-row">
                         <td class="py-3 px-4">
-                            <div class="font-medium text-white">${beer.name}</div>
-                            ${ratings.length > 0 ? `<div class="text-xs text-gray-500 mt-1">${ratings.map(([name, rating]) => `${name}: ${rating}`).join(', ')}</div>` : ''}
+                            <div class="beer-name-cell">
+                                <div class="beer-thumb" aria-hidden="true" data-preview="${beer.imageUrl || ''}">
+                                    ${beer.imageUrl ? `
+                                        <div class="beer-thumb-mask">
+                                            <img src="${beer.imageUrl}" alt="">
+                                        </div>
+                                    ` : `<span class="beer-thumb-placeholder">🍺</span>`}
+                                </div>
+                                <div class="beer-name-info">
+                                    <div class="font-medium text-white beer-name-text" data-tooltip-text="${safeName}">${safeName}</div>
+                                    ${ratings.length > 0 ? `<div class="text-xs text-gray-500 mt-1 beer-ratings-text" data-tooltip-text="${safeRatings}">${safeRatings}</div>` : ''}
+                                </div>
+                            </div>
                         </td>
                         <td class="py-3 px-4">
                             <div class="flex items-center gap-2">
@@ -5382,6 +5730,146 @@
 
             // Apply column visibility after rendering
             applyBeerColumnsVisibility();
+            attachBeerThumbPreviews();
+            attachBeerTextTooltips();
+        }
+
+        let beerHoverPreviewEl = null;
+        let beerTextTooltipEl = null;
+        let beerMeasureEl = null;
+
+        function ensureBeerHoverPreview() {
+            if (beerHoverPreviewEl) return beerHoverPreviewEl;
+            const preview = document.createElement('div');
+            preview.id = 'beerHoverPreview';
+            preview.innerHTML = '<img alt="">';
+            document.body.appendChild(preview);
+            beerHoverPreviewEl = preview;
+            return preview;
+        }
+
+        function positionBeerHoverPreview(anchorRect) {
+            const preview = beerHoverPreviewEl;
+            if (!preview || !anchorRect) return;
+            const width = preview.offsetWidth || 195;
+            const height = preview.offsetHeight || 330;
+            const gap = 12;
+            let left = anchorRect.right + gap;
+            if (left + width > window.innerWidth - 8) {
+                left = anchorRect.left - width - gap;
+            }
+            let top = anchorRect.top + anchorRect.height / 2 - height / 2;
+            top = Math.max(8, Math.min(window.innerHeight - height - 8, top));
+            preview.style.left = `${left}px`;
+            preview.style.top = `${top}px`;
+        }
+
+        function attachBeerThumbPreviews() {
+            const preview = ensureBeerHoverPreview();
+            const img = preview.querySelector('img');
+            document.querySelectorAll('.beer-thumb[data-preview]').forEach((thumb) => {
+                if (thumb.dataset.previewBound === 'true') return;
+                thumb.dataset.previewBound = 'true';
+                const url = (thumb.dataset.preview || '').trim();
+                if (!url) return;
+                thumb.addEventListener('mouseenter', () => {
+                    if (!img) return;
+                    img.src = url;
+                    const rect = thumb.getBoundingClientRect();
+                    positionBeerHoverPreview(rect);
+                    preview.classList.add('show');
+                });
+                thumb.addEventListener('mousemove', () => {
+                    const rect = thumb.getBoundingClientRect();
+                    positionBeerHoverPreview(rect);
+                });
+                thumb.addEventListener('mouseleave', () => {
+                    preview.classList.remove('show');
+                });
+            });
+        }
+
+        function ensureBeerTextTooltip() {
+            if (beerTextTooltipEl) return beerTextTooltipEl;
+            const tooltip = document.createElement('div');
+            tooltip.id = 'beerTextTooltip';
+            document.body.appendChild(tooltip);
+            beerTextTooltipEl = tooltip;
+            return tooltip;
+        }
+
+        function ensureBeerMeasureEl() {
+            if (beerMeasureEl) return beerMeasureEl;
+            const span = document.createElement('span');
+            span.style.position = 'fixed';
+            span.style.left = '-9999px';
+            span.style.top = '-9999px';
+            span.style.visibility = 'hidden';
+            span.style.whiteSpace = 'nowrap';
+            span.style.pointerEvents = 'none';
+            document.body.appendChild(span);
+            beerMeasureEl = span;
+            return span;
+        }
+
+        function isBeerTextTruncated(el) {
+            if (!el) return false;
+            const text = el.textContent || '';
+            if (!text) return false;
+            const style = window.getComputedStyle(el);
+            const meas = ensureBeerMeasureEl();
+            meas.textContent = text;
+            meas.style.font = style.font;
+            meas.style.letterSpacing = style.letterSpacing;
+            meas.style.textTransform = style.textTransform;
+            meas.style.fontVariant = style.fontVariant;
+            meas.style.fontKerning = style.fontKerning;
+            const width = meas.getBoundingClientRect().width;
+            const available = el.clientWidth;
+            return width > available - 1;
+        }
+
+        function positionBeerTextTooltip(target) {
+            if (!beerTextTooltipEl || !target) return;
+            const rect = target.getBoundingClientRect();
+            const padding = 8;
+            const width = beerTextTooltipEl.offsetWidth || 200;
+            const height = beerTextTooltipEl.offsetHeight || 28;
+            let left = rect.left;
+            if (left + width + padding > window.innerWidth) {
+                left = window.innerWidth - width - padding;
+            }
+            if (left < padding) left = padding;
+            let top = rect.bottom + 8;
+            if (top + height + padding > window.innerHeight) {
+                top = rect.top - height - 8;
+            }
+            if (top < padding) top = padding;
+            beerTextTooltipEl.style.left = `${left}px`;
+            beerTextTooltipEl.style.top = `${top}px`;
+        }
+
+        function attachBeerTextTooltips() {
+            const tooltip = ensureBeerTextTooltip();
+            document.querySelectorAll('[data-tooltip-text]').forEach((el) => {
+                if (el.dataset.tooltipBound === 'true') return;
+                el.dataset.tooltipBound = 'true';
+                el.addEventListener('mouseenter', () => {
+                    const text = el.dataset.tooltipText || '';
+                    if (!text) return;
+                    if (!isBeerTextTruncated(el)) return;
+                    tooltip.textContent = text;
+                    tooltip.classList.add('show');
+                    requestAnimationFrame(() => positionBeerTextTooltip(el));
+                });
+                el.addEventListener('mousemove', () => {
+                    if (!tooltip.classList.contains('show')) return;
+                    positionBeerTextTooltip(el);
+                });
+                el.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('show');
+                });
+            });
         }
 
         function openAddBeerModal() {
