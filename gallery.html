@@ -849,7 +849,7 @@
         let boardContentGroup = null;
         let boardArrowMeshes = [];
         let boardActionMeshes = [];
-        let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0 };
+        let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0, initialized: false };
         const boardRaycaster = new THREE.Raycaster();
         const boardPointer = new THREE.Vector2();
         const wallImageRaycaster = new THREE.Raycaster();
@@ -4003,6 +4003,8 @@
                 boardContentGroup.clear();
                 return;
             }
+            const prevTarget = boardScrollState.target;
+            const prevOffset = boardScrollState.offset;
             boardContentGroup.clear();
             const boardWidth = boardGroup.userData.boardWidth || room.width * 0.7;
             const innerWidth = boardGroup.userData.innerWidth || (boardWidth - 4.4);
@@ -4017,8 +4019,18 @@
             const totalWidth = itemWidth * beerData.length + gap * (beerData.length - 1);
             boardScrollState.maxOffset = Math.max(0, (totalWidth - innerWidth) / 2);
             boardScrollState.step = itemWidth + gap;
-            boardScrollState.target = boardScrollState.maxOffset;
-            boardScrollState.offset = boardScrollState.target;
+            const maxOffset = boardScrollState.maxOffset || 0;
+            const clampOffset = (value) => Math.max(-maxOffset, Math.min(maxOffset, value));
+            if (boardScrollState.initialized) {
+                const nextTarget = Number.isFinite(prevTarget) ? prevTarget : prevOffset;
+                const nextOffset = Number.isFinite(prevOffset) ? prevOffset : nextTarget;
+                boardScrollState.target = clampOffset(Number.isFinite(nextTarget) ? nextTarget : 0);
+                boardScrollState.offset = clampOffset(Number.isFinite(nextOffset) ? nextOffset : boardScrollState.target);
+            } else {
+                boardScrollState.target = maxOffset;
+                boardScrollState.offset = boardScrollState.target;
+                boardScrollState.initialized = true;
+            }
             boardContentGroup.position.x = boardScrollState.offset;
 
             const startX = -totalWidth / 2 + itemWidth / 2;
