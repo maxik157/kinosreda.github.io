@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+withoutbg
+pillow
+pydantic
+requests

@@ -472,8 +472,8 @@
         const REMOVE_BG_API_KEY = '';
         const REMOVE_BG_ENDPOINT = '';
         const REMOVE_BG_PROXY_URL = '';
-        const LOCAL_BG_ENDPOINT = 'http://127.0.0.1:8790/remove-bg';
-        const LOCAL_IMAGE_PROXY_ENDPOINT = 'http://127.0.0.1:8790/fetch-image';
+        const LOCAL_BG_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
+        const LOCAL_IMAGE_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/fetch-image';
         const IMGBB_API_KEY = '098e096c756627e49db6fe75d6ddb03e';
         const IMAGE_OUTPUT_SCALE = 3;
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
@@ -738,6 +738,16 @@
             return canvas.toDataURL('image/png');
         }
 
+        function isLocalEndpoint(url) {
+            if (!url) return false;
+            try {
+                const host = new URL(url).hostname;
+                return host === 'localhost' || host === '127.0.0.1';
+            } catch (_) {
+                return false;
+            }
+        }
+
         async function fetchImageViaLocalProxy(url) {
             const response = await fetch(LOCAL_IMAGE_PROXY_ENDPOINT, {
                 method: 'POST',
@@ -763,8 +773,11 @@
                 }
             })();
             const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const localProxyIsLocal = isLocalEndpoint(LOCAL_IMAGE_PROXY_ENDPOINT);
             if (isCrossOrigin) {
-                if (canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) return fetchImageViaLocalProxy(resolved);
+                if (LOCAL_IMAGE_PROXY_ENDPOINT && (canUseLocal || !localProxyIsLocal)) {
+                    return fetchImageViaLocalProxy(resolved);
+                }
                 throw new Error('image_fetch_blocked');
             }
             try {
@@ -773,7 +786,9 @@
                 const blob = await response.blob();
                 return blobToDataUrl(blob);
             } catch (err) {
-                if (canUseLocal && LOCAL_IMAGE_PROXY_ENDPOINT) return fetchImageViaLocalProxy(resolved);
+                if (LOCAL_IMAGE_PROXY_ENDPOINT && (canUseLocal || !localProxyIsLocal)) {
+                    return fetchImageViaLocalProxy(resolved);
+                }
                 throw err;
             }
         }
@@ -800,7 +815,10 @@
             const base64 = dataUrlToBase64(dataUrl);
             const endpoints = [];
             const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            if (canUseLocal) endpoints.push({ url: LOCAL_BG_ENDPOINT, key: '' });
+            const localBgIsLocal = isLocalEndpoint(LOCAL_BG_ENDPOINT);
+            if (LOCAL_BG_ENDPOINT && (canUseLocal || !localBgIsLocal)) {
+                endpoints.push({ url: LOCAL_BG_ENDPOINT, key: '' });
+            }
             if (REMOVE_BG_PROXY_URL) endpoints.push({ url: REMOVE_BG_PROXY_URL, key: '' });
             for (const item of endpoints) {
                 try {
