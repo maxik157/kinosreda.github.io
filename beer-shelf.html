@@ -217,6 +217,80 @@
             gap: 8px;
             flex-wrap: wrap;
         }
+        .tools-panel {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .tools-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tools-caret {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            border: 0;
+            background: rgba(245, 158, 11, 0.14);
+            color: var(--accent-500);
+            line-height: 1;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .tools-caret svg {
+            width: 14px;
+            height: 14px;
+            display: block;
+        }
+        .tools-panel.open .tools-caret {
+            transform: rotate(180deg);
+            background: rgba(245, 158, 11, 0.22);
+        }
+        .tools-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(6, 8, 12, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
+            transform: translateY(-6px) scale(0.98);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            min-width: 200px;
+            z-index: 25;
+        }
+        .tools-panel.open .tools-menu {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .tools-item {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+        .tools-item:hover {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(245, 158, 11, 0.4);
+            transform: translateX(-1px);
+        }
         .cs {
             position: relative;
             min-width: 220px;
@@ -320,6 +394,33 @@
             color: var(--muted);
             display: none;
         }
+        .wall-image-toolbar {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            z-index: 18;
+            background: rgba(10, 12, 16, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 10px 12px;
+            display: none;
+            gap: 8px;
+            align-items: center;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(10px);
+        }
+        .wall-image-toolbar label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-right: 6px;
+        }
+        .wall-image-toolbar input[type="range"] {
+            width: 140px;
+        }
+        .wall-image-toolbar .btn {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
 
         @media (max-width: 900px) {
             .header-shell { top: 8px; right: 8px; }
@@ -386,7 +487,20 @@
                     </svg>
                 </a>
             </div>
-            <button class="nav-pill" id="editImageBtn" type="button">Изображения</button>
+            <div class="tools-panel" id="toolsPanel">
+                <button class="nav-pill tools-toggle" id="toolsToggle" type="button" aria-expanded="false">
+                    <span>Меню</span>
+                    <span class="tools-caret" aria-hidden="true">
+                        <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+                            <path d="M3.2 5.6L8 10.4L12.8 5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="tools-menu" id="toolsMenu" role="menu" aria-hidden="true">
+                    <button class="tools-item" id="toolsBeerBtn" type="button">Фото пива</button>
+                    <button class="tools-item" id="toolsWallBtn" type="button">Картинка на стене</button>
+                </div>
+            </div>
             <!-- <button class="btn" id="videoControlBtn" type="button">Видео</button> -->
             <a href="profile.html" class="nav-pill profile-btn" title="Профиль">
                 <span class="profile-icon" aria-hidden="true">
@@ -418,6 +532,25 @@
                 <button class="btn primary" type="button" onclick="saveImageUrl()">Сохранить</button>
             </div>
         </div>
+    </div>
+
+    <div class="modal" id="wallImageModal" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-title">Картинка на стене</div>
+            <label class="modal-label" for="wallImageUrlInput">Ссылка на изображение</label>
+            <input class="modal-field" type="url" id="wallImageUrlInput" placeholder="https://...">
+            <div class="modal-status" id="wallImageStatus">Добавляем...</div>
+            <div class="modal-actions">
+                <button class="btn" type="button" onclick="closeWallImageModal()">Отмена</button>
+                <button class="btn primary" type="button" onclick="addWallImageFromModal()">Добавить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wall-image-toolbar" id="wallImageToolbar">
+        <label for="wallImageScale">Размер</label>
+        <input type="range" id="wallImageScale" min="0.4" max="5" step="0.05" value="1">
+        <button class="btn" type="button" id="wallImageDeleteBtn">Удалить</button>
     </div>
 
     <!--
@@ -491,6 +624,11 @@
         const AVATAR_MODEL_FALLBACK_URL = 'https://threejs.org/examples/models/gltf/Soldier.glb';
         const REALTIME_WS_URL = 'wss://kinosreda-realtime.maxik157.workers.dev/ws';
         const REALTIME_ROOM = 'beer-shelf';
+        const WALL_IMAGES_LS_KEY = 'beerShelfWallImages';
+        const WALL_IMAGES_CACHE_TS_KEY = 'beerShelfWallImagesCacheTs';
+        const WALL_IMAGES_DB_PATH = 'beerShelfWallImages';
+        const WALL_IMAGES_META_PATH = 'beerShelfWallImagesMeta';
+        const WALL_IMAGES_META_TS_KEY = 'beerShelfWallImagesMetaTs';
 
         let beerData = [];
         let selectedBeerId = null;
@@ -501,6 +639,7 @@
         let bottleTextureLoader = null;
         let boardGroup = null;
         let neonSignGroup = null;
+        let beerRatingSignGroup = null;
         let rugMesh = null;
         let rugTextureLoader = null;
         let rugUrl = '';
@@ -509,6 +648,20 @@
         let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0 };
         const boardRaycaster = new THREE.Raycaster();
         const boardPointer = new THREE.Vector2();
+        const wallImageRaycaster = new THREE.Raycaster();
+        const wallImagePointer = new THREE.Vector2();
+        let wallSurfaces = [];
+        let wallImageGroup = null;
+        let wallImageTextureLoader = null;
+        let wallImages = [];
+        let wallImageIdCounter = 0;
+        let selectedWallImageId = null;
+        const wallImageMeshMap = new Map();
+        const wallImageDrag = { active: false, mesh: null, wall: null, offset: new THREE.Vector2(), moved: false, suppressClick: false };
+        let wallImagesSaveTimer = null;
+        let wallImagesMetaTs = null;
+        let suppressWallImagesSave = false;
+        let lastWallImagesSaved = '';
         let sofaColliders = [];
         const playerRadius = 0.65;
         const eyeHeight = 1.7;
@@ -602,6 +755,101 @@
 
         function setCachedImage(id, dataUrl) {
             return;
+        }
+
+        function loadWallImagesFromStorage() {
+            try {
+                const raw = localStorage.getItem(WALL_IMAGES_LS_KEY);
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+                if (parsed && typeof parsed === 'object') return Object.values(parsed);
+                return [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function saveWallImagesToStorage() {
+            try {
+                localStorage.setItem(WALL_IMAGES_LS_KEY, JSON.stringify(wallImages));
+            } catch (_) {}
+        }
+
+        function normalizeWallImages(raw) {
+            if (Array.isArray(raw)) return raw.filter(Boolean);
+            if (raw && typeof raw === 'object') return Object.values(raw).filter(Boolean);
+            return [];
+        }
+
+        function queueWallImagesSave() {
+            if (suppressWallImagesSave) return;
+            if (wallImagesSaveTimer) window.clearTimeout(wallImagesSaveTimer);
+            wallImagesSaveTimer = window.setTimeout(() => {
+                saveWallImagesToStorage();
+                writeCacheTs(WALL_IMAGES_CACHE_TS_KEY);
+                if (!window.firebase) return;
+                const snapshot = JSON.stringify(wallImages);
+                if (snapshot === lastWallImagesSaved) return;
+                lastWallImagesSaved = snapshot;
+                const db = firebase.database();
+                const updates = {};
+                updates[WALL_IMAGES_DB_PATH] = wallImages;
+                updates[`${WALL_IMAGES_META_PATH}/updatedAt`] = firebase.database.ServerValue.TIMESTAMP;
+                updates[`${WALL_IMAGES_META_PATH}/updatedBy`] = getLocalClientId();
+                db.ref().update(updates);
+            }, 700);
+        }
+
+        function applyWallImages(list, { cache = true } = {}) {
+            if (!wallSurfaces.length) return;
+            suppressWallImagesSave = true;
+            wallImageMeshMap.forEach((mesh) => {
+                if (mesh.parent) mesh.parent.remove(mesh);
+            });
+            wallImageMeshMap.clear();
+            wallImages = normalizeWallImages(list);
+            wallImageIdCounter = wallImages.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0);
+            wallImages.forEach((item) => createWallImageMesh(item));
+            if (cache) {
+                saveWallImagesToStorage();
+                writeCacheTs(WALL_IMAGES_CACHE_TS_KEY);
+            }
+            suppressWallImagesSave = false;
+        }
+
+        function getWallImagesMetaTs() {
+            const cached = readCache(WALL_IMAGES_META_TS_KEY);
+            return typeof cached === 'number' ? cached : 0;
+        }
+
+        function setWallImagesMetaTs(value) {
+            if (!value) return;
+            wallImagesMetaTs = value;
+            writeCache(WALL_IMAGES_META_TS_KEY, value);
+        }
+
+        function initWallImagesFeed() {
+            if (!window.firebase) return;
+            if (!wallSurfaces.length) return;
+            wallImagesMetaTs = getWallImagesMetaTs();
+            const db = firebase.database();
+            db.ref(WALL_IMAGES_META_PATH).on('value', (snapshot) => {
+                const meta = snapshot.val();
+                if (!meta || typeof meta !== 'object') return;
+                const remoteTs = meta.updatedAt;
+                if (!remoteTs) return;
+                if (wallImagesMetaTs && remoteTs <= wallImagesMetaTs) return;
+                const updatedBy = meta.updatedBy || '';
+                if (updatedBy && updatedBy === getLocalClientId()) {
+                    setWallImagesMetaTs(remoteTs);
+                    return;
+                }
+                db.ref(WALL_IMAGES_DB_PATH).once('value').then((dataSnap) => {
+                    applyWallImages(dataSnap.val() || [], { cache: true });
+                    setWallImagesMetaTs(remoteTs);
+                }).catch((err) => console.warn('wall images fetch failed', err));
+            });
         }
 
         function readCache(key) {
@@ -900,6 +1148,41 @@
             if (input) input.value = beer?.imageUrl || '';
         }
 
+        function openWallImageModal() {
+            const modal = document.getElementById('wallImageModal');
+            if (modal) modal.classList.add('open');
+            const input = document.getElementById('wallImageUrlInput');
+            if (input) input.value = '';
+            const status = document.getElementById('wallImageStatus');
+            if (status) status.style.display = 'none';
+        }
+
+        function closeWallImageModal() {
+            const modal = document.getElementById('wallImageModal');
+            if (modal) modal.classList.remove('open');
+            const status = document.getElementById('wallImageStatus');
+            if (status) status.style.display = 'none';
+        }
+
+        async function addWallImageFromModal() {
+            const input = document.getElementById('wallImageUrlInput');
+            const url = input ? input.value.trim() : '';
+            if (!url) return;
+            const status = document.getElementById('wallImageStatus');
+            const addBtn = document.querySelector('#wallImageModal .btn.primary');
+            if (addBtn) addBtn.disabled = true;
+            if (status) status.style.display = 'block';
+            try {
+                addWallImage(url);
+                closeWallImageModal();
+            } catch (err) {
+                console.warn(err);
+            } finally {
+                if (addBtn) addBtn.disabled = false;
+                if (status) status.style.display = 'none';
+            }
+        }
+
         function renderBeerSelect() {
             const menu = document.getElementById('beerSelectMenu');
             const btn = document.getElementById('beerSelectBtn');
@@ -934,10 +1217,36 @@
                 profileName.textContent = name || 'Профиль';
                 profileName.title = name || 'Профиль';
             }
-            const editBtn = document.getElementById('editImageBtn');
-            if (editBtn) {
-                editBtn.addEventListener('click', () => {
+            const toolsPanel = document.getElementById('toolsPanel');
+            const toolsToggle = document.getElementById('toolsToggle');
+            const toolsMenu = document.getElementById('toolsMenu');
+            const toolsBeerBtn = document.getElementById('toolsBeerBtn');
+            const toolsWallBtn = document.getElementById('toolsWallBtn');
+
+            const setToolsOpen = (open) => {
+                if (!toolsPanel || !toolsToggle || !toolsMenu) return;
+                toolsPanel.classList.toggle('open', open);
+                toolsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toolsMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+            };
+
+            if (toolsToggle) {
+                toolsToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = toolsPanel?.classList.contains('open');
+                    setToolsOpen(!isOpen);
+                });
+            }
+            if (toolsBeerBtn) {
+                toolsBeerBtn.addEventListener('click', () => {
+                    setToolsOpen(false);
                     openImageModal();
+                });
+            }
+            if (toolsWallBtn) {
+                toolsWallBtn.addEventListener('click', () => {
+                    setToolsOpen(false);
+                    openWallImageModal();
                 });
             }
             /*
@@ -960,21 +1269,46 @@
             }
             document.addEventListener('click', (event) => {
                 const wrap = document.getElementById('beerSelectCS');
-                if (!wrap) return;
-                if (!event.target.closest('#beerSelectCS')) {
+                if (wrap && !event.target.closest('#beerSelectCS')) {
                     wrap.classList.remove('open');
                     const btn = document.getElementById('beerSelectBtn');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
+                if (toolsPanel && !event.target.closest('#toolsPanel')) {
+                    setToolsOpen(false);
+                }
             });
             document.getElementById('imageModal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'imageModal') closeImageModal();
+            });
+            document.getElementById('wallImageModal')?.addEventListener('click', (event) => {
+                if (event.target.id === 'wallImageModal') closeWallImageModal();
             });
             /*
             document.getElementById('videoModal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'videoModal') closeVideoModal();
             });
             */
+            const scaleInput = document.getElementById('wallImageScale');
+            if (scaleInput) {
+                scaleInput.addEventListener('input', () => {
+                    const mesh = getSelectedWallImageMesh();
+                    if (!mesh) return;
+                    const nextScale = parseFloat(scaleInput.value) || 1;
+                    mesh.userData.scale = nextScale;
+                    applyWallImageTransform(mesh);
+                    syncWallImageData(mesh);
+                    queueWallImagesSave();
+                });
+            }
+            const deleteBtn = document.getElementById('wallImageDeleteBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    const mesh = getSelectedWallImageMesh();
+                    if (!mesh) return;
+                    removeWallImageById(mesh.userData.id);
+                });
+            }
         }
 
         function createStoneTexture() {
@@ -1221,6 +1555,28 @@
             return { texture, width: canvas.width, height: canvas.height };
         }
 
+        function createNeonCanvasTextureText(text) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1600;
+            canvas.height = 420;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 170px Comfortaa, sans-serif';
+            ctx.shadowColor = 'rgba(57, 232, 255, 0.95)';
+            ctx.shadowBlur = 48;
+            ctx.fillStyle = '#f8fdff';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 7;
+            ctx.strokeStyle = 'rgba(57, 232, 255, 0.85)';
+            ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            return { texture, width: canvas.width, height: canvas.height };
+        }
+
         function createNeonGlowMaterial() {
             return new THREE.MeshBasicMaterial({
                 color: 0x49f2ff,
@@ -1337,6 +1693,105 @@
             });
         }
 
+        function createBeerRatingSign() {
+            if (!scene) return;
+            if (beerRatingSignGroup) {
+                scene.remove(beerRatingSignGroup);
+                beerRatingSignGroup = null;
+            }
+            const text = 'Рейтинг пива';
+            const targetWidth = 15;
+            const boardY = 4.15;
+            const boardHeight = 7.4;
+            const signX = 0;
+            const signY = boardY + boardHeight / 2 + 1.4;
+            const signZ = -room.depth / 2 + 0.24;
+            if (!THREE.FontLoader || !THREE.TextGeometry) {
+                const { texture, width, height } = createNeonCanvasTextureText(text);
+                const aspect = width / height;
+                const signWidth = targetWidth;
+                const signHeight = signWidth / aspect;
+                const signGeo = new THREE.PlaneGeometry(signWidth, signHeight);
+                const signMat = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    alphaTest: 0.1,
+                    depthWrite: false,
+                    side: THREE.FrontSide
+                });
+                const signMesh = new THREE.Mesh(signGeo, signMat);
+                signMesh.position.z = 0.08;
+
+                const group = new THREE.Group();
+                group.add(signMesh);
+                group.position.set(signX, signY, signZ);
+                group.rotation.y = 0;
+                const halo = new THREE.PointLight(0x4adfff, 2.2, 14, 2);
+                halo.position.set(0, 0.2, 0.6);
+                group.add(halo);
+                group.userData.neon = { halo, glowMat: null };
+                beerRatingSignGroup = group;
+                scene.add(beerRatingSignGroup);
+                return;
+            }
+            const loader = new THREE.FontLoader();
+            loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', (font) => {
+                const geometry = new THREE.TextGeometry(text, {
+                    font,
+                    size: 1,
+                    height: 0.15,
+                    curveSegments: 10,
+                    bevelEnabled: true,
+                    bevelThickness: 0.02,
+                    bevelSize: 0.02,
+                    bevelOffset: 0,
+                    bevelSegments: 6
+                });
+                geometry.computeBoundingBox();
+                const box = geometry.boundingBox;
+                const textWidth = box.max.x - box.min.x;
+                const textHeight = box.max.y - box.min.y;
+                geometry.translate(-textWidth / 2, -textHeight / 2, 0);
+
+                const textMat = new THREE.MeshStandardMaterial({
+                    color: 0xf0fbff,
+                    emissive: 0x49f2ff,
+                    emissiveIntensity: 1.7,
+                    roughness: 0.22,
+                    metalness: 0.45,
+                    flatShading: false
+                });
+                const textMesh = new THREE.Mesh(geometry, textMat);
+                textMesh.position.z = 0.14;
+                textMesh.castShadow = true;
+                textMesh.receiveShadow = true;
+
+                const group = new THREE.Group();
+                const glowMat = createNeonGlowMaterial();
+                const glowMesh = new THREE.Mesh(geometry, glowMat);
+                glowMesh.scale.set(1.04, 1.04, 1.04);
+                glowMesh.position.z = 0.1;
+                glowMesh.renderOrder = 1;
+                textMesh.renderOrder = 2;
+                group.add(glowMesh, textMesh);
+                group.position.set(signX, signY, signZ);
+                group.rotation.y = 0;
+                if (textWidth > 0) {
+                    const scale = targetWidth / textWidth;
+                    group.scale.set(scale, scale, scale);
+                }
+
+                const halo = new THREE.PointLight(0x4adfff, 1.9, 14, 2);
+                halo.position.set(0, 0.2, 0.6);
+                group.add(halo);
+                group.userData.neon = { halo, glowMat, neonMat: textMat };
+
+                if (beerRatingSignGroup) scene.remove(beerRatingSignGroup);
+                beerRatingSignGroup = group;
+                scene.add(beerRatingSignGroup);
+            });
+        }
+
         function initScene() {
             scene = new THREE.Scene();
             scene.fog = new THREE.Fog(0x0b0f16, 20, 120);
@@ -1434,11 +1889,15 @@
             scene.add(boardGroup);
             bottleTextureLoader = new THREE.TextureLoader();
             bottleTextureLoader.setCrossOrigin('anonymous');
+            wallImageTextureLoader = new THREE.TextureLoader();
+            wallImageTextureLoader.setCrossOrigin('anonymous');
             rugTextureLoader = new THREE.TextureLoader();
             rugTextureLoader.setCrossOrigin('anonymous');
 
             clock = new THREE.Clock();
             createNeonSign();
+            createBeerRatingSign();
+            setupWallSurfaces(backWall, frontWall, leftWall, rightWall);
             setupControls();
             animate();
             loadAvatarModel();
@@ -1448,21 +1907,30 @@
             const dom = renderer.domElement;
             dom.addEventListener('pointerdown', (event) => {
                 const target = event.target;
-                if (target.closest('header') || target.closest('.modal')) return;
+                if (target.closest('header') || target.closest('.modal') || target.closest('.wall-image-toolbar') || target.closest('.tools-panel')) return;
+                if (handleWallImagePointerDown(event)) {
+                    event.preventDefault();
+                    return;
+                }
                 if (handleBeerBoardPress(event)) {
                     event.preventDefault();
                     return;
                 }
             });
+            dom.addEventListener('pointermove', handleWallImagePointerMove);
             dom.addEventListener('pointerup', () => stopBoardScrollHold());
             dom.addEventListener('pointerleave', () => stopBoardScrollHold());
             dom.addEventListener('pointercancel', () => stopBoardScrollHold());
             dom.addEventListener('click', (event) => {
                 const target = event.target;
-                if (target.closest('header') || target.closest('.modal')) return;
+                if (target.closest('header') || target.closest('.modal') || target.closest('.wall-image-toolbar') || target.closest('.tools-panel')) return;
                 if (handleBeerBoardClick(event)) return;
+                if (handleWallImageClick(event)) return;
                 dom.requestPointerLock();
             });
+            dom.addEventListener('pointerup', handleWallImagePointerUp);
+            dom.addEventListener('pointerleave', handleWallImagePointerUp);
+            dom.addEventListener('pointercancel', handleWallImagePointerUp);
 
             document.addEventListener('pointerlockchange', () => {
                 isLocked = document.pointerLockElement === dom;
@@ -1482,6 +1950,10 @@
 
             document.addEventListener('keydown', (event) => {
                 if ((event.ctrlKey || event.metaKey) && (event.code === 'KeyA' || event.code === 'KeyD')) {
+                    return;
+                }
+                if (event.code === 'Escape') {
+                    if (selectedWallImageId) setSelectedWallImage(null);
                     return;
                 }
                 if (event.code === 'KeyW') moveState.forward = true;
@@ -2038,6 +2510,263 @@
             return group;
         }
 
+        function setupWallSurfaces(backWall, frontWall, leftWall, rightWall) {
+            wallImageGroup = new THREE.Group();
+            scene.add(wallImageGroup);
+            const makeSurface = (id, mesh, width, height) => {
+                const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
+                const anchor = new THREE.Group();
+                anchor.position.copy(mesh.position).addScaledVector(normal, 0.08);
+                anchor.rotation.copy(mesh.rotation);
+                wallImageGroup.add(anchor);
+                return { id, mesh, anchor, normal, width, height };
+            };
+            wallSurfaces = [
+                makeSurface('back', backWall, room.width, room.height),
+                makeSurface('front', frontWall, room.width, room.height),
+                makeSurface('left', leftWall, room.depth, room.height),
+                makeSurface('right', rightWall, room.depth, room.height)
+            ];
+            const stored = loadWallImagesFromStorage();
+            if (stored.length) applyWallImages(stored, { cache: false });
+        }
+
+        function addWallImage(url) {
+            const placement = pickWallPlacement();
+            const id = Date.now() + (wallImageIdCounter++ % 1000);
+            const data = {
+                id,
+                url,
+                wallId: placement.wall.id,
+                x: placement.local.x,
+                y: placement.local.y,
+                scale: 1,
+                baseW: 2,
+                baseH: 2
+            };
+            wallImages.push(data);
+            queueWallImagesSave();
+            const mesh = createWallImageMesh(data);
+            if (mesh) setSelectedWallImage(mesh);
+        }
+
+        function pickWallPlacement() {
+            const pointer = new THREE.Vector2(0, 0);
+            wallImageRaycaster.setFromCamera(pointer, camera);
+            const hits = wallImageRaycaster.intersectObjects(wallSurfaces.map((s) => s.mesh), false);
+            if (hits.length) {
+                const hit = hits[0];
+                const wall = wallSurfaces.find((s) => s.mesh === hit.object) || wallSurfaces[0];
+                const local = wall.anchor.worldToLocal(hit.point.clone());
+                return { wall, local };
+            }
+            const fallback = wallSurfaces[0];
+            return { wall: fallback, local: new THREE.Vector3(0, 0, 0) };
+        }
+
+        function applyWallImageTransform(mesh) {
+            const scale = mesh.userData.scale || 1;
+            const baseW = mesh.userData.baseW || 2;
+            const baseH = mesh.userData.baseH || 2;
+            mesh.scale.set(baseW * scale, baseH * scale, 1);
+            if (mesh.userData.outline) {
+                mesh.userData.outline.scale.set(1, 1, 1);
+            }
+            const wall = wallSurfaces.find((s) => s.id === mesh.userData.wallId);
+            if (wall) clampWallImagePosition(mesh, wall);
+        }
+
+        function clampWallImagePosition(mesh, wall) {
+            const baseW = mesh.userData.baseW || 2;
+            const baseH = mesh.userData.baseH || 2;
+            const scale = mesh.userData.scale || 1;
+            const halfW = (baseW * scale) / 2;
+            const halfH = (baseH * scale) / 2;
+            const margin = 0.2;
+            const maxX = wall.width / 2 - halfW - margin;
+            const maxY = wall.height / 2 - halfH - margin;
+            mesh.position.x = Math.min(maxX, Math.max(-maxX, mesh.position.x));
+            mesh.position.y = Math.min(maxY, Math.max(-maxY, mesh.position.y));
+        }
+
+        function syncWallImageData(mesh) {
+            const id = mesh.userData.id;
+            const item = wallImages.find((img) => String(img.id) === String(id));
+            if (!item) return;
+            item.x = mesh.position.x;
+            item.y = mesh.position.y;
+            item.scale = mesh.userData.scale || 1;
+            item.baseW = mesh.userData.baseW || item.baseW || 2;
+            item.baseH = mesh.userData.baseH || item.baseH || 2;
+        }
+
+        function removeWallImageById(id) {
+            const idx = wallImages.findIndex((img) => String(img.id) === String(id));
+            if (idx !== -1) wallImages.splice(idx, 1);
+            const mesh = wallImageMeshMap.get(String(id));
+            if (mesh && mesh.parent) mesh.parent.remove(mesh);
+            wallImageMeshMap.delete(String(id));
+            if (selectedWallImageId && String(selectedWallImageId) === String(id)) {
+                setSelectedWallImage(null);
+            }
+            queueWallImagesSave();
+        }
+
+        function createWallImageMesh(data) {
+            const wall = wallSurfaces.find((s) => s.id === data.wallId);
+            if (!wall) return null;
+            const mesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(1, 1),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 })
+            );
+            mesh.position.set(data.x || 0, data.y || 0, 0);
+            mesh.userData.id = data.id;
+            mesh.userData.wallId = data.wallId;
+            mesh.userData.scale = data.scale || 1;
+            mesh.userData.baseW = data.baseW || 2;
+            mesh.userData.baseH = data.baseH || 2;
+            const outline = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
+                new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.8 })
+            );
+            outline.visible = false;
+            outline.position.z = 0.01;
+            outline.raycast = () => {};
+            mesh.add(outline);
+            mesh.userData.outline = outline;
+            applyWallImageTransform(mesh);
+            wall.anchor.add(mesh);
+            wallImageMeshMap.set(String(data.id), mesh);
+            if (data.url) {
+                const safeUrl = data.url.startsWith('data:image') ? data.url : toSafeImageUrl(data.url);
+                wallImageTextureLoader.load(safeUrl, (texture) => {
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    mesh.material.map = texture;
+                    mesh.material.needsUpdate = true;
+                    const img = texture.image;
+                    if (img && img.width && img.height) {
+                        const aspect = img.width / img.height;
+                        mesh.userData.baseH = 2;
+                        mesh.userData.baseW = 2 * aspect;
+                        applyWallImageTransform(mesh);
+                        syncWallImageData(mesh);
+                        saveWallImagesToStorage();
+                    }
+                });
+            }
+            return mesh;
+        }
+
+        function getSelectedWallImageMesh() {
+            if (!selectedWallImageId) return null;
+            return wallImageMeshMap.get(String(selectedWallImageId)) || null;
+        }
+
+        function setSelectedWallImage(mesh) {
+            const prev = getSelectedWallImageMesh();
+            if (prev && prev.userData?.outline) prev.userData.outline.visible = false;
+            if (!mesh) {
+                selectedWallImageId = null;
+                const toolbar = document.getElementById('wallImageToolbar');
+                if (toolbar) toolbar.style.display = 'none';
+                return;
+            }
+            selectedWallImageId = mesh.userData.id;
+            if (mesh.userData?.outline) mesh.userData.outline.visible = true;
+            const toolbar = document.getElementById('wallImageToolbar');
+            if (toolbar) toolbar.style.display = 'flex';
+            const scaleInput = document.getElementById('wallImageScale');
+            if (scaleInput) scaleInput.value = String(mesh.userData.scale || 1);
+        }
+
+        function handleWallImagePointerDown(event) {
+            if (isLocked || !wallImageGroup) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            wallImageRaycaster.setFromCamera(wallImagePointer, camera);
+            const hits = wallImageRaycaster.intersectObjects(wallImageGroup.children, true);
+            if (!hits.length) return false;
+            const mesh = hits[0].object;
+            const root = mesh.userData?.id ? mesh : mesh.parent;
+            if (!root || !root.userData?.id) return false;
+            const wall = wallSurfaces.find((s) => s.id === root.userData.wallId);
+            if (!wall) return false;
+            const wallHit = wallImageRaycaster.intersectObject(wall.mesh, false)[0];
+            if (!wallHit) return false;
+            const local = wall.anchor.worldToLocal(wallHit.point.clone());
+            wallImageDrag.active = true;
+            wallImageDrag.mesh = root;
+            wallImageDrag.wall = wall;
+            wallImageDrag.offset.set(local.x - root.position.x, local.y - root.position.y);
+            wallImageDrag.moved = false;
+            wallImageDrag.suppressClick = false;
+            setSelectedWallImage(root);
+            renderer.domElement.setPointerCapture(event.pointerId);
+            return true;
+        }
+
+        function handleWallImagePointerMove(event) {
+            if (!wallImageDrag.active || !wallImageDrag.mesh || !wallImageDrag.wall) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            wallImageRaycaster.setFromCamera(wallImagePointer, camera);
+            const wallHit = wallImageRaycaster.intersectObject(wallImageDrag.wall.mesh, false)[0];
+            if (!wallHit) return;
+            const local = wallImageDrag.wall.anchor.worldToLocal(wallHit.point.clone());
+            const nextX = local.x - wallImageDrag.offset.x;
+            const nextY = local.y - wallImageDrag.offset.y;
+            if (!wallImageDrag.moved) {
+                const dx = nextX - wallImageDrag.mesh.position.x;
+                const dy = nextY - wallImageDrag.mesh.position.y;
+                if (Math.hypot(dx, dy) > 0.02) wallImageDrag.moved = true;
+            }
+            wallImageDrag.mesh.position.x = nextX;
+            wallImageDrag.mesh.position.y = nextY;
+            clampWallImagePosition(wallImageDrag.mesh, wallImageDrag.wall);
+            syncWallImageData(wallImageDrag.mesh);
+        }
+
+        function handleWallImagePointerUp(event) {
+            if (!wallImageDrag.active) return;
+            wallImageDrag.active = false;
+            if (event && renderer?.domElement && renderer.domElement.hasPointerCapture?.(event.pointerId)) {
+                renderer.domElement.releasePointerCapture(event.pointerId);
+            }
+            if (wallImageDrag.moved) wallImageDrag.suppressClick = true;
+            wallImageDrag.mesh = null;
+            wallImageDrag.wall = null;
+            wallImageDrag.offset.set(0, 0);
+            if (wallImageDrag.moved) queueWallImagesSave();
+        }
+
+        function handleWallImageClick(event) {
+            if (isLocked || !wallImageGroup) return false;
+            if (wallImageDrag.suppressClick) {
+                wallImageDrag.suppressClick = false;
+                return true;
+            }
+            const rect = renderer.domElement.getBoundingClientRect();
+            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            wallImageRaycaster.setFromCamera(wallImagePointer, camera);
+            const hits = wallImageRaycaster.intersectObjects(wallImageGroup.children, true);
+            if (!hits.length) {
+                if (selectedWallImageId) {
+                    setSelectedWallImage(null);
+                    return true;
+                }
+                return false;
+            }
+            const mesh = hits[0].object.userData?.id ? hits[0].object : hits[0].object.parent;
+            if (!mesh || !mesh.userData?.id) return false;
+            setSelectedWallImage(mesh);
+            return true;
+        }
+
         function createBeerBoard() {
             boardGroup.clear();
             boardArrowMeshes = [];
@@ -2396,6 +3125,15 @@
                 if (neon.neonMat) neon.neonMat.emissiveIntensity = 0.85 + intensity * 0.9;
                 if (neon.glowMat) neon.glowMat.opacity = 0.12 + intensity * 0.16;
             }
+            if (beerRatingSignGroup?.userData?.neon) {
+                const neon = beerRatingSignGroup.userData.neon;
+                const flicker = 0.9 + 0.1 * Math.sin(t * 0.6) + 0.05 * Math.sin(t * 1.1);
+                const jitter = 0.02 * Math.sin(t * 2.1);
+                const intensity = Math.max(0.78, flicker + jitter);
+                if (neon.halo) neon.halo.intensity = 0.85 + intensity * 1.05;
+                if (neon.neonMat) neon.neonMat.emissiveIntensity = 0.8 + intensity * 0.85;
+                if (neon.glowMat) neon.glowMat.opacity = 0.1 + intensity * 0.15;
+            }
             const dirForward = (moveState.forward ? 1 : 0) - (moveState.back ? 1 : 0);
             const dirRight = (moveState.right ? 1 : 0) - (moveState.left ? 1 : 0);
             if (dirForward !== 0 || dirRight !== 0) {
@@ -2474,6 +3212,7 @@
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             initUI();
             initScene();
+            initWallImagesFeed();
             connectRealtime();
             const db = firebase.database();
             const cachedBeer = readCache(BEER_CACHE_KEY);
