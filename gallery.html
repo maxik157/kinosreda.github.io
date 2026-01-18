@@ -547,6 +547,63 @@
             color: var(--muted);
             margin-right: 6px;
         }
+        .wall-image-toolbar .frame-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 4px;
+            font-size: 12px;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+        }
+        .wall-image-toolbar .frame-toggle input[type="checkbox"] {
+            accent-color: #f59e0b;
+        }
+        .wall-image-toolbar .label-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            user-select: none;
+        }
+        .wall-image-toolbar .label-toggle input[type="text"] {
+            width: 140px;
+            padding: 4px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(10, 12, 18, 0.9);
+            color: var(--text);
+            font-size: 12px;
+            outline: none;
+        }
+        .wall-image-toolbar .label-toggle input[type="text"]:focus {
+            border-color: rgba(245, 158, 11, 0.6);
+        }
+        .wall-image-toolbar .label-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            user-select: none;
+        }
+        .wall-image-toolbar .label-toggle input[type="text"] {
+            width: 140px;
+            padding: 4px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(10, 12, 18, 0.9);
+            color: var(--text);
+            font-size: 12px;
+            outline: none;
+        }
+        .wall-image-toolbar .label-toggle input[type="text"]:focus {
+            border-color: rgba(245, 158, 11, 0.6);
+        }
         .wall-image-toolbar input[type="range"] {
             width: 140px;
         }
@@ -687,6 +744,14 @@
     <div class="wall-image-toolbar" id="wallImageToolbar">
         <label for="wallImageScale">Размер</label>
         <input type="range" id="wallImageScale" min="0.4" max="5" step="0.05" value="1">
+        <label for="wallImageLabel" class="label-toggle">
+            Табличка
+            <input type="text" id="wallImageLabel" placeholder="Текст...">
+        </label>
+        <label for="wallImageFrame" class="frame-toggle">
+            <input type="checkbox" id="wallImageFrame">
+            Рамка
+        </label>
         <button class="btn" type="button" id="wallImageDeleteBtn">Удалить</button>
     </div>
 
@@ -796,6 +861,7 @@
             let wallImageIdCounter = 0;
             let wallImageLayerCounter = 0;
         let selectedWallImageId = null;
+        let isWallLabelEditing = false;
         const wallImageMeshMap = new Map();
         const wallImageDrag = { active: false, mesh: null, wall: null, offset: new THREE.Vector2(), moved: false, suppressClick: false };
         let wallImagesSaveTimer = null;
@@ -1470,6 +1536,52 @@
                     queueWallImagesSave();
                 });
             }
+            const frameInput = document.getElementById('wallImageFrame');
+            if (frameInput) {
+                frameInput.addEventListener('change', () => {
+                    const mesh = getSelectedWallImageMesh();
+                    if (!mesh) return;
+                    setWallImageFrameVisible(mesh, frameInput.checked);
+                    syncWallImageData(mesh);
+                    queueWallImagesSave();
+                });
+            }
+            const labelInput = document.getElementById('wallImageLabel');
+            if (labelInput) {
+                labelInput.addEventListener('pointerdown', () => {
+                    isWallLabelEditing = true;
+                    moveState.forward = false;
+                    moveState.back = false;
+                    moveState.left = false;
+                    moveState.right = false;
+                    moveState.fast = false;
+                    if (document.pointerLockElement) {
+                        document.exitPointerLock();
+                    }
+                });
+                labelInput.addEventListener('focus', () => {
+                    isWallLabelEditing = true;
+                    moveState.forward = false;
+                    moveState.back = false;
+                    moveState.left = false;
+                    moveState.right = false;
+                    moveState.fast = false;
+                    if (document.pointerLockElement) {
+                        document.exitPointerLock();
+                    }
+                });
+                labelInput.addEventListener('blur', () => {
+                    isWallLabelEditing = false;
+                });
+                labelInput.addEventListener('input', () => {
+                    const mesh = getSelectedWallImageMesh();
+                    if (!mesh) return;
+                    mesh.userData.labelText = labelInput.value;
+                    updateWallImageLabel(mesh);
+                    syncWallImageData(mesh);
+                    queueWallImagesSave();
+                });
+            }
             const deleteBtn = document.getElementById('wallImageDeleteBtn');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', () => {
@@ -2093,6 +2205,7 @@
             });
 
             document.addEventListener('keydown', (event) => {
+                if (isWallLabelEditing) return;
                 if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
                     return;
                 }
@@ -2120,6 +2233,7 @@
                 }
             });
             document.addEventListener('keyup', (event) => {
+                if (isWallLabelEditing) return;
                 if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
                     return;
                 }
@@ -3029,7 +3143,9 @@
                 y: placement.local.y,
                 scale: 1,
                 baseW: 2,
-                baseH: 2
+                baseH: 2,
+                frame: false,
+                labelText: ''
             };
             wallImages.push(data);
             queueWallImagesSave();
@@ -3059,6 +3175,12 @@
             if (mesh.userData.outline) {
                 mesh.userData.outline.scale.set(1, 1, 1);
             }
+            if (mesh.userData.frameGroup) {
+                mesh.userData.frameGroup.scale.set(1, 1, 1);
+            }
+            if (mesh.userData.labelMesh) {
+                updateWallImageLabel(mesh);
+            }
             const wall = wallSurfaces.find((s) => s.id === mesh.userData.wallId);
             if (wall) clampWallImagePosition(mesh, wall);
         }
@@ -3085,6 +3207,8 @@
             item.scale = mesh.userData.scale || 1;
             item.baseW = mesh.userData.baseW || item.baseW || 2;
             item.baseH = mesh.userData.baseH || item.baseH || 2;
+            item.frame = Boolean(mesh.userData.frame);
+            item.labelText = String(mesh.userData.labelText || '');
             if (Number.isFinite(mesh.userData.layer)) {
                 item.layer = mesh.userData.layer;
             }
@@ -3115,6 +3239,8 @@
             mesh.userData.scale = data.scale || 1;
             mesh.userData.baseW = data.baseW || 2;
             mesh.userData.baseH = data.baseH || 2;
+            mesh.userData.frame = Boolean(data.frame);
+            mesh.userData.labelText = String(data.labelText || '');
             if (!Number.isFinite(data.layer)) {
                 data.layer = wallImageLayerCounter++;
             } else {
@@ -3131,6 +3257,10 @@
             outline.raycast = () => {};
             mesh.add(outline);
             mesh.userData.outline = outline;
+            ensureWallImageFrame(mesh);
+            setWallImageFrameVisible(mesh, mesh.userData.frame);
+            ensureWallImageLabel(mesh);
+            updateWallImageLabel(mesh);
             applyWallImageTransform(mesh);
             wall.anchor.add(mesh);
             wallImageMeshMap.set(String(data.id), mesh);
@@ -3154,6 +3284,175 @@
                 });
             }
             return mesh;
+        }
+
+        function ensureWallImageFrame(mesh) {
+            if (mesh.userData.frameGroup) return;
+            const t = 0.08;
+            const depth = 0.06;
+            const frameMat = new THREE.MeshStandardMaterial({
+                color: 0x4a2d16,
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            const frameGroup = new THREE.Group();
+            const horizGeo = new THREE.BoxGeometry(1 + t * 2, t, depth);
+            const vertGeo = new THREE.BoxGeometry(t, 1 + t * 2, depth);
+            const top = new THREE.Mesh(horizGeo, frameMat);
+            top.position.set(0, 0.5 + t / 2, 0.02);
+            const bottom = top.clone();
+            bottom.position.y = -0.5 - t / 2;
+            const left = new THREE.Mesh(vertGeo, frameMat);
+            left.position.set(-0.5 - t / 2, 0, 0.02);
+            const right = left.clone();
+            right.position.x = 0.5 + t / 2;
+            frameGroup.add(top, bottom, left, right);
+            frameGroup.raycast = () => {};
+            frameGroup.visible = false;
+            mesh.add(frameGroup);
+            mesh.userData.frameGroup = frameGroup;
+        }
+
+        function setWallImageFrameVisible(mesh, visible) {
+            if (!mesh) return;
+            ensureWallImageFrame(mesh);
+            mesh.userData.frame = Boolean(visible);
+            if (mesh.userData.frameGroup) {
+                mesh.userData.frameGroup.visible = mesh.userData.frame;
+            }
+        }
+
+        function ensureWallImageLabel(mesh) {
+            if (mesh.userData.labelMesh) return;
+            const mat = new THREE.MeshBasicMaterial({
+                transparent: true,
+                color: 0xffffff,
+                depthTest: true,
+                depthWrite: false,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+            const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
+            labelMesh.position.z = 0.05;
+            labelMesh.renderOrder = (mesh.renderOrder || 0) + 2;
+            labelMesh.visible = false;
+            labelMesh.raycast = () => {};
+            mesh.add(labelMesh);
+            mesh.userData.labelMesh = labelMesh;
+            mesh.userData.labelCanvas = document.createElement('canvas');
+        }
+
+        function updateWallImageLabel(mesh) {
+            const text = String(mesh.userData.labelText || '').trim();
+            ensureWallImageLabel(mesh);
+            const labelMesh = mesh.userData.labelMesh;
+            if (!labelMesh) return;
+            if (!text) {
+                labelMesh.visible = false;
+                return;
+            }
+            const canvas = mesh.userData.labelCanvas || document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const baseW = mesh.userData.baseW || 2;
+            const baseH = mesh.userData.baseH || 2;
+            const labelW = Math.max(0.6, baseW * 0.6);
+            const labelH = Math.max(0.08, Math.min(baseH * 0.09, 0.18));
+            const localW = labelW / baseW;
+            const localH = labelH / baseH;
+            labelMesh.scale.set(localW, localH, 1);
+            const gap = 0.06 / baseH;
+            labelMesh.position.y = -0.5 - gap - localH / 2;
+            labelMesh.renderOrder = (mesh.renderOrder || 0) + 2;
+
+            const pxPerUnit = 220;
+            const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+            const widthPx = Math.max(1, Math.round(labelW * pxPerUnit * pixelRatio));
+            const heightPx = Math.max(1, Math.round(labelH * pxPerUnit * pixelRatio));
+            canvas.width = widthPx;
+            canvas.height = heightPx;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, widthPx, heightPx);
+            ctx.scale(pixelRatio, pixelRatio);
+            ctx.imageSmoothingEnabled = true;
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+
+            const cssW = widthPx / pixelRatio;
+            const cssH = heightPx / pixelRatio;
+            ctx.fillStyle = '#f6f1e8';
+            ctx.fillRect(0, 0, cssW, cssH);
+            ctx.strokeStyle = '#d7c6a8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(1, 1, cssW - 2, cssH - 2);
+            const paddingX = 10;
+            const paddingY = 8;
+            let fontSize = Math.floor(cssH * 0.3);
+            const minFontSize = Math.max(9, Math.floor(cssH * 0.22));
+            const maxLines = 2;
+            const applyFont = () => {
+                ctx.font = `600 ${fontSize}px Comfortaa, sans-serif`;
+                if ('fontKerning' in ctx) ctx.fontKerning = 'normal';
+            };
+            const wrapText = () => {
+                const words = text.split(/\s+/).filter(Boolean);
+                const lines = [];
+                let line = '';
+                words.forEach((word) => {
+                    const test = line ? `${line} ${word}` : word;
+                    const width = ctx.measureText(test).width;
+                    if (width <= cssW - paddingX * 2) {
+                        line = test;
+                    } else {
+                        if (line) lines.push(line);
+                        line = word;
+                    }
+                });
+                if (line) lines.push(line);
+                return lines;
+            };
+            applyFont();
+            let lines = wrapText();
+            while (lines.length > maxLines && fontSize > minFontSize) {
+                fontSize -= 1;
+                applyFont();
+                lines = wrapText();
+            }
+            if (lines.length > maxLines) {
+                lines = lines.slice(0, maxLines);
+                let last = lines[lines.length - 1];
+                while (ctx.measureText(`${last}…`).width > cssW - paddingX * 2 && last.length > 1) {
+                    last = last.slice(0, -1);
+                }
+                lines[lines.length - 1] = `${last}…`;
+            }
+            ctx.fillStyle = '#1a1a1a';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const lineHeight = fontSize * 1.2;
+            const totalHeight = lines.length * lineHeight;
+            let startY = (cssH - totalHeight) / 2 + lineHeight / 2;
+            startY = Math.max(startY, paddingY + lineHeight / 2);
+            lines.forEach((line, idx) => {
+                ctx.fillText(line, cssW / 2, startY + idx * lineHeight);
+            });
+
+            let texture = labelMesh.material.map;
+            if (!texture) {
+                texture = new THREE.CanvasTexture(canvas);
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.minFilter = THREE.LinearFilter;
+                texture.magFilter = THREE.LinearFilter;
+                if (renderer?.capabilities?.getMaxAnisotropy) {
+                    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+                }
+                labelMesh.material.map = texture;
+            } else {
+                texture.image = canvas;
+                texture.needsUpdate = true;
+            }
+            labelMesh.material.needsUpdate = true;
+            labelMesh.visible = true;
         }
 
         function getSelectedWallImageMesh() {
@@ -3185,6 +3484,10 @@
             if (toolbar) toolbar.style.display = 'flex';
             const scaleInput = document.getElementById('wallImageScale');
             if (scaleInput) scaleInput.value = String(mesh.userData.scale || 1);
+            const frameInput = document.getElementById('wallImageFrame');
+            if (frameInput) frameInput.checked = Boolean(mesh.userData.frame);
+            const labelInput = document.getElementById('wallImageLabel');
+            if (labelInput) labelInput.value = String(mesh.userData.labelText || '');
         }
 
         function handleWallImagePointerDown(event) {
