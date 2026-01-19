@@ -688,7 +688,7 @@
                 </button>
                 <div class="tools-menu" id="toolsMenu" role="menu" aria-hidden="true">
                     <button class="tools-item" id="toolsBeerBtn" type="button">Фото пива</button>
-                    <button class="tools-item" id="toolsWallBtn" type="button">Картинка на стене</button>
+                    <button class="tools-item" id="toolsWallBtn" type="button">Картина на стене</button>
                 </div>
             </div>
             <!-- <button class="btn" id="videoControlBtn" type="button">Видео</button> -->
@@ -730,7 +730,7 @@
 
     <div class="modal" id="wallImageModal" role="dialog" aria-modal="true">
         <div class="modal-card">
-            <div class="modal-title">Картинка на стене</div>
+            <div class="modal-title">Картина на стене</div>
             <label class="modal-label" for="wallImageUrlInput">Ссылка на изображение</label>
             <input class="modal-field" type="url" id="wallImageUrlInput" placeholder="https://...">
             <div class="modal-status" id="wallImageStatus">Добавляем...</div>
@@ -874,6 +874,9 @@
         let beerAddHitMesh = null;
         const beerAddTempPos = new THREE.Vector3();
         const beerAddTempDir = new THREE.Vector3();
+        let ladderGroup = null;
+        let ladderData = null;
+        let ladderColliders = [];
         let poopMesh = null;
         let sofaColliders = [];
         let poopCollisionSpheres = [];
@@ -891,6 +894,7 @@
         let wsReconnectTimer = null;
         let lastPresenceSent = 0;
         const remotePlayers = new Map();
+        const remoteLadders = new Map();
         let avatarTemplate = null;
         let avatarClips = [];
         let avatarLoadPromise = null;
@@ -1765,6 +1769,91 @@
             return group;
         }
 
+        function createBeerBottle(color, labelColor) {
+            const group = new THREE.Group();
+            const glassMat = new THREE.MeshStandardMaterial({
+                color,
+                transparent: true,
+                opacity: 0.82,
+                roughness: 0.25,
+                metalness: 0.1
+            });
+            const labelMat = new THREE.MeshStandardMaterial({
+                color: labelColor,
+                roughness: 0.6,
+                metalness: 0.05
+            });
+            const capMat = new THREE.MeshStandardMaterial({
+                color: 0xd4a373,
+                roughness: 0.35,
+                metalness: 0.2
+            });
+
+            const bodyHeight = 0.28;
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.11, bodyHeight, 16), glassMat);
+            body.position.y = bodyHeight / 2;
+            group.add(body);
+
+            const neckHeight = 0.12;
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, neckHeight, 14), glassMat);
+            neck.position.y = bodyHeight + neckHeight / 2;
+            group.add(neck);
+
+            const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.02, 14), capMat);
+            cap.position.y = bodyHeight + neckHeight + 0.01;
+            group.add(cap);
+
+            const label = new THREE.Mesh(new THREE.CylinderGeometry(0.102, 0.102, 0.1, 16, 1, true), labelMat);
+            label.position.y = bodyHeight * 0.55;
+            group.add(label);
+
+            return group;
+        }
+
+        function createRoundTableWithBottles(woodTexture) {
+            const group = new THREE.Group();
+            const woodMat = new THREE.MeshStandardMaterial({
+                map: woodTexture || null,
+                color: woodTexture ? 0xffffff : 0x7a5536,
+                roughness: 0.7,
+                metalness: 0.05
+            });
+            const metalMat = new THREE.MeshStandardMaterial({
+                color: 0x2b2b2b,
+                roughness: 0.4,
+                metalness: 0.3
+            });
+
+            const topRadius = 0.6;
+            const topThickness = 0.08;
+            const tableHeight = 0.72;
+            const top = new THREE.Mesh(new THREE.CylinderGeometry(topRadius, topRadius * 0.98, topThickness, 24), woodMat);
+            top.position.y = tableHeight;
+            group.add(top);
+
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, tableHeight - topThickness, 16), metalMat);
+            stem.position.y = (tableHeight - topThickness) / 2;
+            group.add(stem);
+
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.32, 0.06, 20), metalMat);
+            base.position.y = 0.03;
+            group.add(base);
+
+            const bottleColors = [0x2d6a4f, 0x7b4c1d, 0x1b4332, 0x9b5a2e, 0x31572c];
+            const labelColors = [0xf4d58d, 0xe9c46a, 0xe0fbfc, 0xf7d1ba, 0xd9ed92];
+            const bottleCount = 5;
+            const ringRadius = 0.28;
+            for (let i = 0; i < bottleCount; i += 1) {
+                const bottle = createBeerBottle(bottleColors[i % bottleColors.length], labelColors[i % labelColors.length]);
+                const angle = (i / bottleCount) * Math.PI * 2;
+                bottle.position.set(Math.cos(angle) * ringRadius, tableHeight + topThickness / 2, Math.sin(angle) * ringRadius);
+                bottle.rotation.y = angle + Math.PI * 0.4;
+                group.add(bottle);
+            }
+
+            return group;
+        }
+
         function buildMeshColliders(root) {
             const colliders = [];
             if (!root) return colliders;
@@ -1801,6 +1890,295 @@
             });
         }
 
+        function createLadderModel(height) {
+            const group = new THREE.Group();
+            const width = 1.4;
+            const depth = 2.2;
+            const steps = Math.max(6, Math.floor(height / 0.6));
+            const platformThickness = 0.08;
+            const railMat = new THREE.MeshStandardMaterial({ color: 0x8b5e34, roughness: 0.65, metalness: 0.05 });
+            const stepMat = new THREE.MeshStandardMaterial({ color: 0xb38b5c, roughness: 0.7, metalness: 0.05 });
+
+            const railLength = Math.hypot(height, depth);
+            const railGeo = new THREE.BoxGeometry(0.08, railLength, 0.08);
+            const railAngle = Math.atan2(depth, height);
+            const railY = height / 2;
+            const railZ = depth / 2;
+            const leftRail = new THREE.Mesh(railGeo, railMat);
+            leftRail.position.set(-width / 2, railY, railZ);
+            leftRail.rotation.x = railAngle;
+            leftRail.userData.ladderCollide = true;
+            const rightRail = leftRail.clone();
+            rightRail.position.x = width / 2;
+            rightRail.userData.ladderCollide = true;
+            group.add(leftRail, rightRail);
+
+            const topRailGeo = new THREE.BoxGeometry(width + 0.12, 0.08, 0.08);
+            const topRail = new THREE.Mesh(topRailGeo, railMat);
+            topRail.position.set(0, height + 0.08, depth);
+            topRail.userData.ladderCollide = true;
+            group.add(topRail);
+
+            const stepDepth = depth / steps * 0.8;
+            const stepGeo = new THREE.BoxGeometry(width * 0.98, 0.06, stepDepth);
+            for (let i = 0; i < steps; i += 1) {
+                const t = (i + 1) / steps;
+                const step = new THREE.Mesh(stepGeo, stepMat);
+                step.position.set(0, t * height, t * depth - stepDepth * 0.3);
+                group.add(step);
+            }
+
+            const railConnectorGeo = new THREE.BoxGeometry(width * 0.98, 0.05, 0.05);
+            for (let i = 0; i < steps; i += 1) {
+                const t = (i + 0.5) / steps;
+                const connector = new THREE.Mesh(railConnectorGeo, railMat);
+                connector.position.set(0, t * height, t * depth - stepDepth * 0.45);
+                group.add(connector);
+            }
+
+            const baseGeo = new THREE.BoxGeometry(width * 0.95, 0.08, depth * 0.18);
+            const base = new THREE.Mesh(baseGeo, stepMat);
+            base.position.set(0, 0.04, 0.05);
+            group.add(base);
+
+            const platformDepth = Math.min(1.6, depth * 0.64);
+            const platformOffset = 0.02;
+            const platformGeo = new THREE.BoxGeometry(width * 0.95, platformThickness, platformDepth);
+            const platform = new THREE.Mesh(platformGeo, stepMat);
+            platform.position.set(0, height + platformThickness / 2, depth + platformDepth / 2 + platformOffset);
+            platform.userData.ladderCollide = true;
+            group.add(platform);
+
+            const platformConnectorGeo = new THREE.BoxGeometry(width * 0.9, 0.06, 0.08);
+            const platformConnector = new THREE.Mesh(platformConnectorGeo, railMat);
+            platformConnector.position.set(0, height + 0.08, depth + platformOffset);
+            platformConnector.userData.ladderCollide = true;
+            group.add(platformConnector);
+
+            group.userData.width = width;
+            group.userData.depth = depth;
+            group.userData.height = height;
+            group.userData.platformDepth = platformDepth;
+            group.userData.platformThickness = platformThickness;
+            group.userData.platformOffset = platformOffset;
+            return group;
+        }
+
+        function buildLadderColliders(ladder) {
+            const colliders = [];
+            if (!ladder) return colliders;
+            ladder.updateMatrixWorld(true);
+            ladder.traverse((obj) => {
+                if (!obj.isMesh || !obj.geometry || !obj.userData?.ladderCollide) return;
+                if (!obj.geometry.boundingBox) {
+                    obj.geometry.computeBoundingBox();
+                }
+                if (!obj.geometry.boundingBox) return;
+                const box = obj.geometry.boundingBox.clone();
+                box.applyMatrix4(obj.matrixWorld);
+                colliders.push(box);
+            });
+            return colliders;
+        }
+
+        function buildLadderData(position, rotationY, width, depth, height, platformDepth, platformThickness) {
+            const axis = new THREE.Vector3(0, 1, 0);
+            const forward = new THREE.Vector3(0, 0, 1).applyAxisAngle(axis, rotationY);
+            const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(axis, rotationY);
+            const platform = Number.isFinite(platformDepth) ? platformDepth : 0.6;
+            const topOffset = Number.isFinite(platformThickness) ? platformThickness : 0.08;
+            return {
+                position: position.clone(),
+                forward,
+                right,
+                width,
+                depth,
+                height,
+                platformDepth: platform,
+                platformTopOffset: topOffset,
+                platformStart: depth,
+                platformEnd: depth + platform + 0.2
+            };
+        }
+
+        function getLadderGroundHeightFor(data, x, z, yBottom) {
+            if (!data) return null;
+            const dx = x - data.position.x;
+            const dz = z - data.position.z;
+            const localZ = dx * data.forward.x + dz * data.forward.z;
+            const localX = dx * data.right.x + dz * data.right.z;
+            if (localZ < -0.2 || localZ > data.platformEnd + 0.15) return null;
+            const entryLimit = Math.max(0.35, data.depth * 0.3);
+            if (yBottom <= 0.06 && localZ > entryLimit) return null;
+            const halfW = data.width / 2 + playerRadius * 0.35;
+            if (Math.abs(localX) > halfW) return null;
+            const rampDepth = Math.max(0.2, data.depth);
+            if (localZ >= data.platformStart) {
+                return data.height + (data.platformTopOffset || 0) + eyeHeight;
+            }
+            const progress = Math.max(0, Math.min(1, localZ / rampDepth));
+            const topOffset = data.platformTopOffset || 0;
+            return data.height * progress + topOffset * progress + eyeHeight;
+        }
+
+        function getCombinedLadderGroundHeight(x, z, yBottom) {
+            let ground = getLadderGroundHeightFor(ladderData, x, z, yBottom);
+            remoteLadders.forEach((entry) => {
+                const candidate = getLadderGroundHeightFor(entry?.data, x, z, yBottom);
+                if (Number.isFinite(candidate)) {
+                    ground = Number.isFinite(ground) ? Math.max(ground, candidate) : candidate;
+                }
+            });
+            return ground;
+        }
+
+        function ladderRailCollides(data, x, z, yBottom, yTop) {
+            if (!data) return false;
+            const dx = x - data.position.x;
+            const dz = z - data.position.z;
+            const localZ = dx * data.forward.x + dz * data.forward.z;
+            const localX = dx * data.right.x + dz * data.right.z;
+            const depthPad = 0.2;
+            if (localZ <= -depthPad || localZ >= data.depth + depthPad) return false;
+            const railThickness = 0.1;
+            const innerWidth = data.width / 2 - railThickness;
+            const outerWidth = data.width / 2 + railThickness;
+            if (Math.abs(localX) <= innerWidth || Math.abs(localX) >= outerWidth) return false;
+            const top = data.height + eyeHeight;
+            return yBottom <= top;
+        }
+
+        function ladderBackCollides(data, x, z, yBottom, yTop) {
+            if (!data) return false;
+            const dx = x - data.position.x;
+            const dz = z - data.position.z;
+            const localZ = dx * data.forward.x + dz * data.forward.z;
+            const localX = dx * data.right.x + dz * data.right.z;
+            const backThickness = Math.max(0.35, playerRadius * 0.6);
+            if (yBottom > 0.12) return false;
+            if (localZ < data.depth - backThickness || localZ > data.depth + backThickness) return false;
+            const halfW = data.width / 2 + playerRadius * 0.3;
+            if (Math.abs(localX) > halfW) return false;
+            const top = data.height + eyeHeight;
+            return yBottom <= top;
+        }
+
+        function removeLadder() {
+            if (ladderGroup && ladderGroup.parent) ladderGroup.parent.remove(ladderGroup);
+            ladderGroup = null;
+            ladderData = null;
+            ladderColliders = [];
+        }
+
+        function broadcastLadderState() {
+            if (!wsConnected) return;
+            const id = getLocalClientId();
+            if (!ladderGroup || !ladderData) {
+                sendRealtime({ type: 'ladder', id, action: 'remove' });
+                return;
+            }
+            sendRealtime({
+                type: 'ladder',
+                id,
+                action: 'add',
+                position: {
+                    x: ladderGroup.position.x,
+                    y: ladderGroup.position.y,
+                    z: ladderGroup.position.z
+                },
+                rotationY: ladderGroup.rotation.y,
+                height: ladderData.height,
+                width: ladderData.width,
+                depth: ladderData.depth,
+                platformDepth: ladderData.platformDepth
+            });
+        }
+
+        function upsertRemoteLadder(payload) {
+            if (!payload || !payload.id) return;
+            const localId = getLocalClientId();
+            if (payload.id === localId) return;
+            if (payload.action === 'remove') {
+                removeRemoteLadder(payload.id);
+                return;
+            }
+            const height = Number(payload.height) || room.height * 0.5;
+            let entry = remoteLadders.get(payload.id);
+            let ladder = entry?.group;
+            if (!ladder || Math.abs((ladder.userData.height || 0) - height) > 0.01) {
+                if (ladder && ladder.parent) ladder.parent.remove(ladder);
+                ladder = createLadderModel(height);
+                scene.add(ladder);
+            }
+            const pos = payload.position || {};
+            const position = new THREE.Vector3(Number(pos.x) || 0, Number(pos.y) || 0, Number(pos.z) || 0);
+            const rotationY = Number.isFinite(payload.rotationY) ? payload.rotationY : 0;
+            ladder.position.copy(position);
+            ladder.rotation.y = rotationY;
+            const width = Number(payload.width) || ladder.userData.width || 1.4;
+            const depth = Number(payload.depth) || ladder.userData.depth || 2.2;
+            const platformDepth = Number(payload.platformDepth) || ladder.userData.platformDepth || 0.6;
+            const platformThickness = ladder.userData.platformThickness || 0.08;
+            const data = buildLadderData(position, rotationY, width, depth, height, platformDepth, platformThickness);
+            remoteLadders.set(payload.id, { group: ladder, data });
+        }
+
+        function removeRemoteLadder(id) {
+            const entry = remoteLadders.get(id);
+            if (!entry) return;
+            if (entry.group?.parent) entry.group.parent.remove(entry.group);
+            remoteLadders.delete(id);
+        }
+
+        function toggleLadder() {
+            if (ladderGroup) {
+                removeLadder();
+                broadcastLadderState();
+                return;
+            }
+            if (!yawObject) return;
+            if (!isGrounded || Math.abs(yawObject.position.y - eyeHeight) > 0.12) return;
+            const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yawObject.rotation.y);
+            const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yawObject.rotation.y);
+            const height = room.height * 0.5;
+            const tempLadder = createLadderModel(height);
+            const width = tempLadder.userData.width || 1.4;
+            const depth = tempLadder.userData.depth || 2.2;
+            const base = yawObject.position.clone().addScaledVector(forward, 1.4);
+            base.y = 0;
+
+            const halfW = room.width / 2 - 2;
+            const halfD = room.depth / 2 - 2;
+            const halfDepth = depth / 2;
+            const halfWidth = width / 2;
+            const center = base.clone().addScaledVector(forward, halfDepth);
+            const extentX = Math.abs(forward.x) * halfDepth + Math.abs(right.x) * halfWidth;
+            const extentZ = Math.abs(forward.z) * halfDepth + Math.abs(right.z) * halfWidth;
+            center.x = Math.max(-halfW + extentX, Math.min(halfW - extentX, center.x));
+            center.z = Math.max(-halfD + extentZ, Math.min(halfD - extentZ, center.z));
+            base.copy(center.addScaledVector(forward, -halfDepth));
+
+            ladderGroup = tempLadder;
+            ladderGroup.position.set(base.x, 0, base.z);
+            ladderGroup.rotation.y = yawObject.rotation.y + Math.PI;
+            scene.add(ladderGroup);
+            ladderColliders = buildLadderColliders(ladderGroup);
+            ladderData = buildLadderData(
+                new THREE.Vector3(base.x, 0, base.z),
+                ladderGroup.rotation.y,
+                width,
+                depth,
+                height,
+                tempLadder.userData.platformDepth || 0.6,
+                tempLadder.userData.platformThickness || 0.08
+            );
+            broadcastLadderState();
+        }
+
+        function getLadderGroundHeight(x, z, yBottom) {
+            return getLadderGroundHeightFor(ladderData, x, z, yBottom);
+        }
+
         function collidesWithSofa(x, z, yBottom, yTop) {
             if (sofaColliders.length) {
                 for (const box of sofaColliders) {
@@ -1812,6 +2190,12 @@
                     const dz = z - clampedZ;
                     if ((dx * dx + dz * dz) <= playerRadius * playerRadius) return true;
                 }
+            }
+            if (ladderRailCollides(ladderData, x, z, yBottom, yTop)) return true;
+            if (ladderBackCollides(ladderData, x, z, yBottom, yTop)) return true;
+            for (const entry of remoteLadders.values()) {
+                if (ladderRailCollides(entry?.data, x, z, yBottom, yTop)) return true;
+                if (ladderBackCollides(entry?.data, x, z, yBottom, yTop)) return true;
             }
             if (poopCollisionSpheres.length) {
                 for (const sphere of poopCollisionSpheres) {
@@ -1829,18 +2213,23 @@
 
         function getSofaGroundHeight(x, z, yBottom) {
             let ground = eyeHeight;
-            if (!sofaColliders.length) return ground;
-            for (const box of sofaColliders) {
-                const inXZ = (
-                    x > box.min.x - playerRadius &&
-                    x < box.max.x + playerRadius &&
-                    z > box.min.z - playerRadius &&
-                    z < box.max.z + playerRadius
-                );
-                if (!inXZ) continue;
-                if (yBottom >= box.max.y - 0.05) {
-                    ground = Math.max(ground, box.max.y + eyeHeight);
+            if (sofaColliders.length) {
+                for (const box of sofaColliders) {
+                    const inXZ = (
+                        x > box.min.x - playerRadius &&
+                        x < box.max.x + playerRadius &&
+                        z > box.min.z - playerRadius &&
+                        z < box.max.z + playerRadius
+                    );
+                    if (!inXZ) continue;
+                    if (yBottom >= box.max.y - 0.05) {
+                        ground = Math.max(ground, box.max.y + eyeHeight);
+                    }
                 }
+            }
+            const ladderGround = getCombinedLadderGroundHeight(x, z, yBottom);
+            if (Number.isFinite(ladderGround)) {
+                ground = Math.max(ground, ladderGround);
             }
             return ground;
         }
@@ -2126,6 +2515,12 @@
             scene.add(sofa);
             sofaColliders = buildSofaColliders(sofa);
 
+            const sideTable = createRoundTableWithBottles(woodTex);
+            sideTable.scale.setScalar(PLAYER_SCALE);
+            sideTable.position.set(4.6, 0, 4.2);
+            scene.add(sideTable);
+            sofaColliders = sofaColliders.concat(buildMeshColliders(sideTable));
+
             shelvesGroup = new THREE.Group();
             shelvesGroup.userData.woodMat = woodMat;
             scene.add(shelvesGroup);
@@ -2209,6 +2604,9 @@
                 if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
                     return;
                 }
+                if (event.target && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable)) {
+                    return;
+                }
                 if ((event.ctrlKey || event.metaKey) && (event.code === 'KeyA' || event.code === 'KeyD')) {
                     return;
                 }
@@ -2218,6 +2616,10 @@
                         return;
                     }
                     if (selectedWallImageId) setSelectedWallImage(null);
+                    return;
+                }
+                if (event.code === 'KeyC') {
+                    if (!event.repeat) toggleLadder();
                     return;
                 }
                 if (event.code === 'KeyW') moveState.forward = true;
@@ -2501,6 +2903,7 @@
             if (!current) return;
             scene.remove(current.group);
             remotePlayers.delete(id);
+            removeRemoteLadder(id);
         }
 
         function updateRemotePlayers(delta) {
@@ -4295,6 +4698,9 @@
             ws.addEventListener('open', () => {
                 wsConnected = true;
                 lastPresenceSent = 0;
+                if (ladderData) {
+                    broadcastLadderState();
+                }
             });
 
             ws.addEventListener('message', (event) => {
@@ -4312,15 +4718,33 @@
                             upsertRemotePlayer(user);
                         });
                     }
+                    if (Array.isArray(data.ladders)) {
+                        const seen = new Set();
+                        data.ladders.forEach((ladder) => {
+                            if (!ladder?.id) return;
+                            seen.add(String(ladder.id));
+                            upsertRemoteLadder({ ...ladder, action: 'add' });
+                        });
+                        remoteLadders.forEach((_, key) => {
+                            if (!seen.has(String(key))) {
+                                removeRemoteLadder(key);
+                            }
+                        });
+                    }
                     return;
                 }
                 if (data.type === 'user_join' && data.user) {
                     if (data.user.id === localId) return;
                     upsertRemotePlayer(data.user);
+                    if (ladderData) broadcastLadderState();
                     return;
                 }
                 if (data.type === 'user_leave' && data.id) {
                     removeRemotePlayer(data.id);
+                    return;
+                }
+                if (data.type === 'ladder') {
+                    upsertRemoteLadder(data);
                     return;
                 }
                 if (data.type === 'presence' && data.user) {
@@ -4419,8 +4843,9 @@
                         proposed.z = current.z;
                     }
                 }
-                const halfW = room.width / 2 - 2;
-                const halfD = room.depth / 2 - 2;
+                const wallPadding = playerRadius + 0.15;
+                const halfW = room.width / 2 - wallPadding;
+                const halfD = room.depth / 2 - wallPadding;
                 proposed.x = Math.max(-halfW, Math.min(halfW, proposed.x));
                 proposed.z = Math.max(-halfD, Math.min(halfD, proposed.z));
                 yawObject.position.x = proposed.x;
@@ -4457,6 +4882,14 @@
                 yawObject.position.y += verticalVelocity * delta;
                 if (yawObject.position.y <= groundY) {
                     yawObject.position.y = groundY;
+                    verticalVelocity = 0;
+                    isGrounded = true;
+                }
+            }
+            const ladderGround = getCombinedLadderGroundHeight(yawObject.position.x, yawObject.position.z, currentBottom);
+            if (Number.isFinite(ladderGround)) {
+                if (yawObject.position.y < ladderGround) {
+                    yawObject.position.y = ladderGround;
                     verticalVelocity = 0;
                     isGrounded = true;
                 }
