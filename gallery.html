@@ -5118,7 +5118,9 @@
         function syncBeerAddOpenState(open, data) {
             suppressBeerAddSync = true;
             if (open) {
-                openBeerAddModal3D(true);
+                if (!isBeerAddOpen) {
+                    openBeerAddModal3D(true);
+                }
                 applyBeerAddFormState(data);
             } else if (isBeerAddOpen) {
                 closeBeerAddModal3D(true);
