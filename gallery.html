@@ -421,6 +421,458 @@
         .beer-add-3d .cs-opt {
             font-family: inherit;
         }
+        .poop-add-3d {
+            width: 920px;
+            height: 820px;
+            background: rgba(8, 10, 14, 0.92);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-radius: 18px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+            overflow: hidden;
+            pointer-events: auto;
+            display: none;
+        }
+        .poop-add-3d.open {
+            display: block;
+        }
+        .poop-add-3d .poop-card {
+            height: 100%;
+            padding: 22px;
+            background: radial-gradient(circle at top, rgba(245, 158, 11, 0.12), transparent 50%), rgba(8, 10, 14, 0.92);
+            border: 1px solid rgba(245, 158, 11, 0.22);
+            border-radius: 18px;
+            color: var(--text);
+            font-family: 'Comfortaa', cursive;
+            overflow: hidden;
+        }
+        .poop-add-3d .poop-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+        .poop-add-3d .poop-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-500);
+        }
+        .poop-add-3d .poop-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: transparent;
+            border: 0;
+            color: rgba(226, 232, 240, 0.7);
+            cursor: pointer;
+        }
+        .poop-add-3d .poop-form {
+            display: grid;
+            gap: 14px;
+        }
+        .poop-add-3d .poop-grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .poop-add-3d .poop-label {
+            display: block;
+            font-size: 13px;
+            color: rgba(226, 232, 240, 0.75);
+            margin-bottom: 6px;
+        }
+        .poop-add-3d .poop-input,
+        .poop-add-3d .poop-select,
+        .poop-add-3d .poop-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(6, 7, 10, 0.75);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+        }
+        .poop-add-3d .poop-textarea { resize: none; }
+        .poop-add-3d .poop-input:focus,
+        .poop-add-3d .poop-select:focus,
+        .poop-add-3d .poop-textarea:focus {
+            border-color: rgba(245, 158, 11, 0.6);
+        }
+        .poop-add-3d .time-field-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .poop-add-3d .time-field-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+        .poop-add-3d .time-mode-toggle {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            width: 44px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: rgba(6, 7, 10, 0.7);
+            cursor: pointer;
+        }
+        .poop-add-3d .time-mode-thumb {
+            position: absolute;
+            left: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.45);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            transition: transform 0.2s ease;
+        }
+        .poop-add-3d .time-mode-toggle.toggle-on .time-mode-thumb {
+            transform: translateX(18px);
+        }
+        .poop-add-3d .time-wheel {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            contain: layout paint;
+        }
+        .poop-add-3d .time-wheel--single { grid-template-columns: 1fr; }
+        .poop-add-3d .time-wheel-col {
+            position: relative;
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            background: rgba(0, 0, 0, 0.6);
+            text-align: center;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            will-change: transform;
+        }
+        .poop-add-3d .time-wheel-static {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            color: rgba(148, 163, 184, 0.9);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            pointer-events: none;
+            min-width: 48px;
+        }
+        .poop-add-3d .time-wheel-list {
+            height: 48px;
+            overflow-y: auto;
+            scroll-snap-type: y mandatory;
+            scrollbar-width: none;
+            touch-action: pan-y;
+            padding-left: 76px;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+        .poop-add-3d .time-wheel-list--nolabel { padding-left: 0; }
+        .poop-add-3d .time-wheel-list::-webkit-scrollbar { width: 0; height: 0; }
+        .poop-add-3d .time-wheel-item {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: 100%;
+            background: transparent;
+            border: 0;
+            color: #9ca3af;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            scroll-snap-align: center;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+        .poop-add-3d .time-wheel--single .time-wheel-item { justify-content: center; }
+        .poop-add-3d .time-wheel-item.is-selected {
+            color: #fcd34d;
+            opacity: 1;
+            font-weight: 700;
+        }
+        .poop-add-3d .emoji-scale {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            contain: layout paint;
+            touch-action: pan-y;
+            user-select: none;
+            margin-top: 8px;
+        }
+        .poop-add-3d .emoji-seg { flex: 1 1 0; cursor: pointer; text-align: center; }
+        .poop-add-3d .emoji-seg input { pointer-events: none; }
+        .poop-add-3d .emoji-dot {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 26px;
+            line-height: 1;
+            opacity: 0.55;
+            border-radius: 0;
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            filter: brightness(1.2);
+            text-shadow:
+                1px 0 0 rgba(245, 158, 11, 0.6),
+               -1px 0 0 rgba(245, 158, 11, 0.6),
+                0 1px 0 rgba(245, 158, 11, 0.6),
+                0 -1px 0 rgba(245, 158, 11, 0.6),
+                1px 1px 0 rgba(245, 158, 11, 0.35),
+               -1px -1px 0 rgba(245, 158, 11, 0.35);
+            transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+        }
+        .poop-add-3d .emoji-dot--feather { filter: grayscale(1) brightness(1.8); }
+        .poop-add-3d .emoji-seg.is-active .emoji-dot,
+        .poop-add-3d .emoji-seg.is-hover .emoji-dot {
+            opacity: 1;
+            filter: brightness(1.35);
+            transform: translateY(-1px) scale(1.04);
+            text-shadow:
+                1px 0 0 rgba(245, 158, 11, 0.9),
+               -1px 0 0 rgba(245, 158, 11, 0.9),
+                0 1px 0 rgba(245, 158, 11, 0.9),
+                0 -1px 0 rgba(245, 158, 11, 0.9),
+                2px 0 0 rgba(245, 158, 11, 0.45),
+               -2px 0 0 rgba(245, 158, 11, 0.45),
+                0 2px 0 rgba(245, 158, 11, 0.45),
+                0 -2px 0 rgba(245, 158, 11, 0.45);
+        }
+        .poop-add-3d .emoji-seg.is-active .emoji-dot--feather,
+        .poop-add-3d .emoji-seg.is-hover .emoji-dot--feather { filter: grayscale(1) brightness(2); }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(1) .emoji-dot { font-size: 12px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(2) .emoji-dot { font-size: 13px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(3) .emoji-dot { font-size: 14px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(4) .emoji-dot { font-size: 15px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(5) .emoji-dot { font-size: 16px !important; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(6) .emoji-dot { font-size: 17px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(7) .emoji-dot { font-size: 18px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(8) .emoji-dot { font-size: 19px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(9) .emoji-dot { font-size: 20px; }
+        .poop-add-3d .emoji-scale .emoji-seg:nth-child(10) .emoji-dot { font-size: 22px; }
+        .poop-add-3d .poop-scale {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            touch-action: pan-y;
+            user-select: none;
+            contain: layout paint;
+            margin-top: 8px;
+        }
+        .poop-add-3d .poop-seg {
+            flex: 1 1 0;
+            cursor: pointer;
+        }
+        .poop-add-3d .poop-seg input { pointer-events: none; }
+        .poop-add-3d .poop-dot {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 12px;
+            border-radius: 999px 999px 800px 800px;
+            background: linear-gradient(180deg, rgba(146, 74, 0, 0.95), rgba(95, 45, 0, 0.95));
+            border: 1px solid rgba(86, 41, 0, 0.7);
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3), inset 0 2px 2px rgba(255, 255, 255, 0.12);
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .poop-add-3d .poop-dot::after {
+            content: '';
+            position: absolute;
+            right: 10%;
+            top: 15%;
+            width: 22%;
+            height: 55%;
+            border-radius: 999px;
+            background: rgba(255, 205, 90, 0.12);
+            transform: rotate(-12deg);
+        }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(1) .poop-dot { height: 9px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(2) .poop-dot { height: 10px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(3) .poop-dot { height: 12px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(4) .poop-dot { height: 14px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(5) .poop-dot { height: 16px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(6) .poop-dot { height: 18px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(7) .poop-dot { height: 20px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(8) .poop-dot { height: 22px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(9) .poop-dot { height: 24px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(10) .poop-dot { height: 28px; }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(1) .poop-dot { border-radius: 999px 999px 420px 420px; transform: rotate(-1.5deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(2) .poop-dot { border-radius: 999px 700px 600px 500px; transform: rotate(0.8deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(3) .poop-dot { border-radius: 850px 999px 600px 650px; transform: rotate(-0.8deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(4) .poop-dot { border-radius: 700px 900px 420px 520px; transform: rotate(1.2deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(5) .poop-dot { border-radius: 900px 700px 520px 420px; transform: rotate(-1deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(6) .poop-dot { border-radius: 650px 950px 520px 620px; transform: rotate(0.6deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(7) .poop-dot { border-radius: 999px 800px 520px 700px; transform: rotate(-0.6deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(8) .poop-dot { border-radius: 900px 999px 600px 420px; transform: rotate(0.9deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(9) .poop-dot { border-radius: 720px 980px 560px 420px; transform: rotate(-1.2deg); }
+        .poop-add-3d .poop-scale .poop-seg:nth-child(10) .poop-dot { border-radius: 999px 760px 620px 520px; transform: rotate(0.5deg); }
+        .poop-add-3d .poop-seg.is-active .poop-dot,
+        .poop-add-3d .poop-seg.is-hover .poop-dot {
+            background: linear-gradient(180deg, rgba(170, 88, 0, 0.98), rgba(112, 52, 0, 0.98));
+            border-color: rgba(245, 158, 11, 0.9);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35), inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+        }
+        .poop-add-3d .bristol-options {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .poop-add-3d .bristol-option {
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            background: rgba(6, 7, 10, 0.7);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .poop-add-3d .bristol-option.is-active {
+            border-color: rgba(245, 158, 11, 0.6);
+            background: rgba(245, 158, 11, 0.12);
+        }
+        .poop-add-3d .bristol-icon {
+            width: 48px;
+            height: 28px;
+        }
+        .poop-add-3d .poop-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .poop-add-3d .poop-btn {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            background: rgba(6, 7, 10, 0.7);
+            color: rgba(226, 232, 240, 0.85);
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .poop-add-3d .poop-btn.primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-color: transparent;
+            color: #1f1300;
+        }
+        .poop-add-3d .cs {
+            min-width: 100%;
+        }
+        .poop-add-3d .cs-btn {
+            border-color: rgba(245, 158, 11, 0.28);
+            background: rgba(10, 12, 18, 0.9);
+            font-family: inherit;
+        }
+        .poop-add-3d .cs-menu {
+            max-height: 200px;
+        }
+        .poop-add-3d .poop-anon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.9);
+        }
+        .poop-add-3d .poop-anon-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: rgba(6, 7, 10, 0.7);
+            cursor: pointer;
+        }
+        .poop-add-3d .poop-anon-thumb {
+            position: absolute;
+            left: 4px;
+            top: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.45);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            transition: transform 0.2s ease;
+        }
+        .poop-add-3d .poop-anon-toggle.toggle-on .poop-anon-thumb {
+            transform: translateX(18px);
+        }
+        .poop-add-3d .drawing-panel {
+            margin-top: 8px;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 12px;
+            display: none;
+        }
+        .poop-add-3d .drawing-panel.open { display: block; }
+        .poop-add-3d .drawing-tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .poop-add-3d .drawing-tools button {
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            background: rgba(6, 7, 10, 0.7);
+            color: rgba(226, 232, 240, 0.9);
+            border-radius: 999px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+        .poop-add-3d .drawing-colors {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+        }
+        .poop-add-3d .drawing-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            cursor: pointer;
+        }
+        .poop-add-3d .drawing-canvas-wrap {
+            margin-top: 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        .poop-add-3d .drawing-canvas {
+            width: 100%;
+            height: 220px;
+            display: block;
+            touch-action: none;
+        }
+        .poop-add-3d .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .poop-add-3d .hidden { display: none !important; }
         .cs {
             position: relative;
             min-width: 220px;
@@ -487,6 +939,11 @@
             pointer-events: none;
         }
         body.pointer-locked .reticle { display: block; }
+        body.poop-ui-active,
+        body.poop-ui-active * {
+            cursor: none !important;
+        }
+        body.poop-ui-active .reticle { display: block; }
 
         .modal {
             position: fixed;
@@ -836,6 +1293,8 @@
         let beerData = [];
         let selectedBeerId = null;
         let scene, camera, renderer, cssRenderer, cssScene, yawObject, pitchObject, clock;
+        let reticleEl = null;
+        let reticleFollow = false;
         let shelvesGroup = null;
         let isLocked = false;
         let bottleAssets = null;
@@ -874,6 +1333,35 @@
         let beerAddHitMesh = null;
         const beerAddTempPos = new THREE.Vector3();
         const beerAddTempDir = new THREE.Vector3();
+        let poopAddAnchor = null;
+        let poopAddObject = null;
+        let isPoopAddOpen = false;
+        let poopAddHitMesh = null;
+        let poopModalAnchorPos = null;
+        let poopModalAnchorYaw = null;
+        let poopDrawingReticleActive = false;
+        const POOP_MODAL_WIDTH = 9.2;
+        const POOP_MODAL_HEIGHT = 8.2;
+        let toiletData = null;
+        let poopModalRefs = null;
+        let poopTimeInputMode = 'wheel';
+        let poopTimeValue = '';
+        let poopDurationValue = 0;
+        let poopPaperValue = 1;
+        let poopSizeValue = null;
+        let poopEaseValue = null;
+        let poopSatisfactionValue = null;
+        let poopSizeHover = 0;
+        let poopEaseHover = 0;
+        let poopSatisfactionHover = 0;
+        let poopAnonymityOn = false;
+        let poopModalSuppressed = false;
+        let poopDrawingCtx = null;
+        let poopDrawingActive = false;
+        let poopDrawingHasContent = false;
+        let poopDrawingTool = 'pencil';
+        let poopDrawingColor = '#3d1f0a';
+        let poopEraserSize = 12;
         let ladderGroup = null;
         let ladderData = null;
         let ladderColliders = [];
@@ -1507,15 +1995,31 @@
                         }
                     });
                 }
+                if (!isPoopAddOpen) {
+                    document.querySelectorAll('.poop-add-3d .cs.open').forEach((node) => {
+                        if (!event.target.closest('.poop-add-3d')) {
+                            node.classList.remove('open');
+                            const btn = node.querySelector('.cs-btn');
+                            if (btn) btn.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                }
                 if (toolsPanel && !event.target.closest('#toolsPanel')) {
                     setToolsOpen(false);
                 }
             });
             document.addEventListener('pointerdown', (event) => {
-                if (!isBeerAddOpen) return;
-                if (isLocked) return;
-                if (event.target.closest && event.target.closest('.beer-add-3d')) return;
-                exitBeerAddEditing(event);
+                if (isPoopAddOpen) return;
+                if (isBeerAddOpen) {
+                    if (isLocked) return;
+                    if (event.target.closest && event.target.closest('.beer-add-3d')) return;
+                    exitBeerAddEditing(event);
+                }
+                if (isPoopAddOpen) {
+                    if (isLocked) return;
+                    if (event.target.closest && event.target.closest('.poop-add-3d')) return;
+                    exitPoopAddEditing(event);
+                }
             }, true);
             document.getElementById('imageModal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'imageModal') closeImageModal();
@@ -1766,6 +2270,146 @@
                 group.add(leg);
             });
 
+            return group;
+        }
+
+        function createToilet() {
+            const group = new THREE.Group();
+            const porcelainMat = new THREE.MeshStandardMaterial({
+                color: 0xf5f5f4,
+                roughness: 0.35,
+                metalness: 0.05
+            });
+            const innerMat = new THREE.MeshStandardMaterial({
+                color: 0x1f2937,
+                roughness: 0.6,
+                metalness: 0.05
+            });
+            const chromeMat = new THREE.MeshStandardMaterial({
+                color: 0xd4d4d4,
+                roughness: 0.25,
+                metalness: 0.7
+            });
+
+            const baseHeight = 0.32;
+            const base = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, baseHeight, 20), porcelainMat);
+            base.position.y = baseHeight / 2;
+            group.add(base);
+
+            const bowlHeight = 0.18;
+            const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.38, bowlHeight, 24), porcelainMat);
+            bowl.position.y = baseHeight + bowlHeight / 2 - 0.02;
+            group.add(bowl);
+
+            const bowlInner = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.37, 0.31, 0.12, 24, 1, true),
+                new THREE.MeshStandardMaterial({
+                    color: 0x111827,
+                    roughness: 0.9,
+                    metalness: 0.05,
+                    side: THREE.BackSide
+                })
+            );
+            bowlInner.position.y = baseHeight + bowlHeight / 2 - 0.01;
+            group.add(bowlInner);
+
+            const drain = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.12, 20), innerMat);
+            drain.position.y = baseHeight + 0.02;
+            group.add(drain);
+
+            const seat = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.045, 12, 24), porcelainMat);
+            seat.rotation.x = Math.PI / 2;
+            seat.position.y = baseHeight + bowlHeight + 0.02;
+            group.add(seat);
+
+            const tank = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.42, 0.26), porcelainMat);
+            tank.position.set(0, baseHeight + bowlHeight + 0.24, -0.28);
+            group.add(tank);
+
+            const lid = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.06, 0.24), porcelainMat);
+            lid.position.set(0, baseHeight + bowlHeight + 0.45, -0.28);
+            group.add(lid);
+
+            const flush = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16), chromeMat);
+            flush.position.set(0.14, baseHeight + bowlHeight + 0.48, -0.28);
+            group.add(flush);
+
+            group.userData.topY = baseHeight + bowlHeight + 0.05;
+            group.userData.radius = 0.5;
+            return group;
+        }
+
+        function createToiletPaperRoll() {
+            const rollRadius = 0.17;
+            const rollLength = 0.22;
+            const paperMat = new THREE.MeshStandardMaterial({
+                color: 0xf8fafc,
+                roughness: 0.8,
+                metalness: 0
+            });
+            const coreMat = new THREE.MeshStandardMaterial({
+                color: 0xc7b08a,
+                roughness: 0.9,
+                metalness: 0
+            });
+            const group = new THREE.Group();
+            const outer = new THREE.Mesh(
+                new THREE.CylinderGeometry(rollRadius, rollRadius, rollLength, 24, 1, true),
+                paperMat
+            );
+            group.add(outer);
+            const capGeo = new THREE.RingGeometry(0.07, rollRadius, 24, 1);
+            const capMat = paperMat.clone();
+            capMat.side = THREE.DoubleSide;
+            const capFront = new THREE.Mesh(capGeo, capMat);
+            capFront.rotation.x = Math.PI / 2;
+            capFront.position.y = rollLength / 2;
+            group.add(capFront);
+            const capBack = capFront.clone();
+            capBack.rotation.x = -Math.PI / 2;
+            capBack.position.y = -rollLength / 2;
+            group.add(capBack);
+            const core = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.07, 0.07, rollLength + 0.01, 18),
+                coreMat
+            );
+            group.add(core);
+            group.userData.rollRadius = rollRadius;
+            group.userData.rollLength = rollLength;
+            return group;
+        }
+
+        function createToiletPaperCluster(data) {
+            if (!data) return null;
+            const forward = data.forward ? data.forward.clone() : new THREE.Vector3(0, 0, 1);
+            const left = new THREE.Vector3(-forward.z, 0, forward.x);
+            const base = data.position.clone()
+                .addScaledVector(left, (data.radius || 0.5) + 0.9)
+                .addScaledVector(forward, -0.15);
+            const group = new THREE.Group();
+            const rollScale = PLAYER_SCALE * 0.85;
+            const addRoll = (offLeft, offForward, rotY, upright = false, tiltX = 0) => {
+                const roll = createToiletPaperRoll();
+                roll.scale.setScalar(rollScale);
+                if (upright) {
+                    roll.rotation.set(0, rotY, 0);
+                    roll.position.y = (roll.userData.rollLength * rollScale) / 2;
+                } else {
+                    roll.rotation.set(tiltX, rotY, Math.PI / 2);
+                    roll.position.y = roll.userData.rollRadius * rollScale;
+                }
+                roll.position.add(base)
+                    .addScaledVector(left, offLeft)
+                    .addScaledVector(forward, offForward);
+                group.add(roll);
+            };
+            addRoll(0.0, 0.0, 0.2, false, 0.06);
+            addRoll(0.55, 0.22, -0.8, false, -0.08);
+            addRoll(-0.45, 0.18, 0.5, true);
+            addRoll(0.25, -0.42, 1.4, false, 0.12);
+            addRoll(-0.65, -0.25, -1.1, false, -0.04);
+            addRoll(0.78, -0.05, 0.9, true);
+            addRoll(-0.08, 0.5, -0.3, false, 0.08);
             return group;
         }
 
@@ -2032,6 +2676,26 @@
             return ground;
         }
 
+        function getToiletGroundHeight(x, z, yBottom) {
+            if (!toiletData) return null;
+            const dx = x - toiletData.position.x;
+            const dz = z - toiletData.position.z;
+            const dist = Math.hypot(dx, dz);
+            if (dist > toiletData.radius) return null;
+            if (yBottom > toiletData.topY + 0.2) return null;
+            if (yBottom < toiletData.topY - 1.0) return null;
+            return toiletData.topY + eyeHeight;
+        }
+
+        function isPlayerOnToilet() {
+            if (!toiletData || !yawObject) return false;
+            const yBottom = yawObject.position.y - eyeHeight;
+            if (yBottom < toiletData.topY - 0.05 || yBottom > toiletData.topY + 0.45) return false;
+            const dx = yawObject.position.x - toiletData.position.x;
+            const dz = yawObject.position.z - toiletData.position.z;
+            return Math.hypot(dx, dz) <= toiletData.radius * 0.75;
+        }
+
         function ladderRailCollides(data, x, z, yBottom, yTop) {
             if (!data) return false;
             const dx = x - data.position.x;
@@ -2230,6 +2894,10 @@
             const ladderGround = getCombinedLadderGroundHeight(x, z, yBottom);
             if (Number.isFinite(ladderGround)) {
                 ground = Math.max(ground, ladderGround);
+            }
+            const toiletGround = getToiletGroundHeight(x, z, yBottom);
+            if (Number.isFinite(toiletGround)) {
+                ground = Math.max(ground, toiletGround);
             }
             return ground;
         }
@@ -2521,6 +3189,23 @@
             scene.add(sideTable);
             sofaColliders = sofaColliders.concat(buildMeshColliders(sideTable));
 
+            const toilet = createToilet();
+            const toiletScale = PLAYER_SCALE * 1.6;
+            toilet.scale.setScalar(toiletScale);
+            toilet.position.set(-room.width / 2 + 6.2, 0, -room.depth / 2 + 5.0);
+            scene.add(toilet);
+            sofaColliders = sofaColliders.concat(buildMeshColliders(toilet));
+            const toiletForward = new THREE.Vector3(0, 0, 1).applyQuaternion(toilet.quaternion);
+            toiletData = {
+                position: toilet.position.clone(),
+                radius: (toilet.userData.radius || 0.5) * toiletScale,
+                topY: (toilet.userData.topY || 0.6) * toiletScale,
+                forward: toiletForward,
+                yaw: Math.atan2(toiletForward.x, toiletForward.z)
+            };
+            const toiletPaperGroup = createToiletPaperCluster(toiletData);
+            if (toiletPaperGroup) scene.add(toiletPaperGroup);
+
             shelvesGroup = new THREE.Group();
             shelvesGroup.userData.woodMat = woodMat;
             scene.add(shelvesGroup);
@@ -2545,8 +3230,16 @@
 
         function setupControls() {
             const dom = renderer.domElement;
+            reticleEl = document.getElementById('reticle');
             dom.addEventListener('pointerdown', (event) => {
                 const target = event.target;
+                if (isPoopAddOpen) {
+                    if (handlePoopDrawingPointerDown(event)) {
+                        event.preventDefault();
+                        return;
+                    }
+                    return;
+                }
                 if (target.closest('header') || target.closest('.modal') || target.closest('.wall-image-toolbar') || target.closest('.tools-panel')) return;
                 if (handleWallImagePointerDown(event)) {
                     event.preventDefault();
@@ -2558,17 +3251,42 @@
                 }
             });
             dom.addEventListener('wheel', (event) => {
-                if (handleBeerAddLockedScroll(event)) {
+                if ((isPoopAddOpen && handlePoopAddLockedScroll(event)) || handleBeerAddLockedScroll(event)) {
                     event.preventDefault();
                 }
             }, { passive: false });
-            dom.addEventListener('pointermove', handleWallImagePointerMove);
-            dom.addEventListener('pointerup', () => stopBoardScrollHold());
-            dom.addEventListener('pointerleave', () => stopBoardScrollHold());
-            dom.addEventListener('pointercancel', () => stopBoardScrollHold());
+            dom.addEventListener('pointermove', (event) => {
+                if (isPoopAddOpen && poopDrawingReticleActive) {
+                    if (handlePoopDrawingPointerMove()) {
+                        event.preventDefault();
+                        return;
+                    }
+                }
+                handleWallImagePointerMove(event);
+            });
+            dom.addEventListener('pointerup', (event) => {
+                if (isPoopAddOpen && handlePoopDrawingPointerUp()) {
+                    event.preventDefault();
+                    return;
+                }
+                stopBoardScrollHold();
+            });
+            dom.addEventListener('pointerleave', () => {
+                if (isPoopAddOpen) handlePoopDrawingPointerUp();
+                stopBoardScrollHold();
+            });
+            dom.addEventListener('pointercancel', () => {
+                if (isPoopAddOpen) handlePoopDrawingPointerUp();
+                stopBoardScrollHold();
+            });
             dom.addEventListener('click', (event) => {
                 const target = event.target;
                 if (target.closest('header') || target.closest('.modal') || target.closest('.wall-image-toolbar') || target.closest('.tools-panel')) return;
+                if (isPoopAddOpen && handlePoopAddLockedClick(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
                 if (handleBeerAddLockedClick(event)) {
                     event.preventDefault();
                     event.stopPropagation();
@@ -2576,6 +3294,7 @@
                 }
                 if (handleBeerBoardClick(event)) return;
                 if (handleWallImageClick(event)) return;
+                if (isPoopAddOpen) return;
                 dom.requestPointerLock();
             });
             dom.addEventListener('pointerup', handleWallImagePointerUp);
@@ -2583,14 +3302,38 @@
             dom.addEventListener('pointercancel', handleWallImagePointerUp);
 
             document.addEventListener('pointerlockchange', () => {
-                isLocked = document.pointerLockElement === dom || document.pointerLockElement === cssRenderer?.domElement;
+                const locked = document.pointerLockElement === dom || document.pointerLockElement === cssRenderer?.domElement;
+                isLocked = locked;
                 document.body.classList.toggle('pointer-locked', isLocked);
                 if (!isLocked) stopBoardScrollHold();
                 updateBeerAddPointerEvents();
+                if (isLocked) {
+                    reticleFollow = false;
+                    if (reticleEl) {
+                        reticleEl.style.left = '50%';
+                        reticleEl.style.top = '50%';
+                        reticleEl.style.transform = '';
+                    }
+                }
             });
 
             document.addEventListener('mousemove', (event) => {
-                if (!isLocked) return;
+                if (reticleFollow && !isLocked && reticleEl) {
+                    reticleEl.style.left = `${event.clientX}px`;
+                    reticleEl.style.top = `${event.clientY}px`;
+                    reticleEl.style.transform = 'translate(-50%, -50%)';
+                }
+                if (!isLocked) {
+                    if (isPoopAddOpen) {
+                        const movementX = event.movementX || 0;
+                        const movementY = event.movementY || 0;
+                        yawObject.rotation.y -= movementX * 0.002;
+                        pitchObject.rotation.x -= movementY * 0.002;
+                        const maxPitch = Math.PI / 2 - 0.1;
+                        pitchObject.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, pitchObject.rotation.x));
+                    }
+                    return;
+                }
                 const movementX = event.movementX || 0;
                 const movementY = event.movementY || 0;
                 yawObject.rotation.y -= movementX * 0.002;
@@ -2599,10 +3342,20 @@
                 pitchObject.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, pitchObject.rotation.x));
             });
 
+            dom.addEventListener('contextmenu', (event) => {
+                if (isPoopAddOpen) event.preventDefault();
+            });
+
             document.addEventListener('keydown', (event) => {
                 if (isWallLabelEditing) return;
                 if (event.target && event.target.closest && event.target.closest('.beer-add-3d')) {
                     return;
+                }
+                if (event.target && event.target.closest && event.target.closest('.poop-add-3d')) {
+                    const tag = event.target.tagName;
+                    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target.isContentEditable) {
+                        return;
+                    }
                 }
                 if (event.target && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable)) {
                     return;
@@ -2613,6 +3366,10 @@
                 if (event.code === 'Escape') {
                     if (isBeerAddOpen) {
                         closeBeerAddModal3D();
+                        return;
+                    }
+                    if (isPoopAddOpen) {
+                        closePoopAddModal3D();
                         return;
                     }
                     if (selectedWallImageId) setSelectedWallImage(null);
@@ -4079,26 +4836,54 @@
             cssRenderer.domElement.style.position = 'absolute';
             cssRenderer.domElement.style.top = '0';
             cssRenderer.domElement.style.left = '0';
-            cssRenderer.domElement.style.zIndex = '1';
+            cssRenderer.domElement.style.zIndex = '3';
             cssRenderer.domElement.style.pointerEvents = 'none';
             const exitHandler = (event) => {
-                if (!isBeerAddOpen) return;
-                if (event.target.closest && event.target.closest('.beer-add-3d')) return;
-                exitBeerAddEditing(event);
+                if (isBeerAddOpen) {
+                    if (event.target.closest && event.target.closest('.beer-add-3d')) return;
+                    exitBeerAddEditing(event);
+                    return;
+                }
+                if (isPoopAddOpen) return;
             };
             cssRenderer.domElement.addEventListener('pointerdown', exitHandler);
             cssRenderer.domElement.addEventListener('click', exitHandler);
+            cssRenderer.domElement.addEventListener('click', (event) => {
+                if (isPoopAddOpen && handlePoopAddLockedClick(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+            cssRenderer.domElement.addEventListener('wheel', (event) => {
+                if ((isPoopAddOpen && handlePoopAddLockedScroll(event)) || handleBeerAddLockedScroll(event)) {
+                    event.preventDefault();
+                }
+            }, { passive: false });
             document.getElementById('scene').appendChild(cssRenderer.domElement);
             return true;
         }
 
         function updateBeerAddPointerEvents() {
             if (!cssRenderer?.domElement) return;
-            if (!isBeerAddOpen) {
+            if (isPoopAddOpen) {
                 cssRenderer.domElement.style.pointerEvents = 'none';
+                if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
+                if (wallImageGroup) wallImageGroup.visible = true;
+                cssRenderer.domElement.style.cursor = '';
+                if (renderer?.domElement) renderer.domElement.style.cursor = '';
+                return;
+            }
+            if (!isBeerAddOpen && !isPoopAddOpen) {
+                cssRenderer.domElement.style.pointerEvents = 'none';
+                if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
+                cssRenderer.domElement.style.cursor = '';
+                if (renderer?.domElement) renderer.domElement.style.cursor = '';
                 return;
             }
             cssRenderer.domElement.style.pointerEvents = isLocked ? 'none' : 'auto';
+            if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
+            cssRenderer.domElement.style.cursor = '';
+            if (renderer?.domElement) renderer.domElement.style.cursor = '';
         }
 
         function exitBeerAddEditing(event) {
@@ -4133,6 +4918,14 @@
                     updateBeerAddPointerEvents();
                 }
             }, 250);
+        }
+
+        function exitPoopAddEditing() {
+            if (!isPoopAddOpen) return;
+            closePoopAddModal3D();
+            if (renderer?.domElement?.requestPointerLock) {
+                renderer.domElement.requestPointerLock();
+            }
         }
 
         function buildBeerAddModalElement() {
@@ -4185,7 +4978,7 @@
             return wrapper;
         }
 
-        function setupCustomSelect(wrapper, options, defaultValue) {
+        function setupCustomSelect(wrapper, options, defaultValue, onChange) {
             if (!wrapper || !options?.length) return;
             if (wrapper.dataset.ready === 'true') return;
             const btn = wrapper.querySelector('.cs-btn');
@@ -4200,6 +4993,9 @@
                 menu.querySelectorAll('.cs-opt').forEach((opt) => {
                     opt.setAttribute('aria-selected', String(opt.dataset.value === option.value));
                 });
+                if (typeof onChange === 'function') {
+                    onChange(option.value);
+                }
             };
 
             menu.innerHTML = '';
@@ -4397,6 +5193,898 @@
                 closeBeerAddModal3D();
             } catch (err) {
                 console.warn('add beer failed', err);
+            }
+        }
+
+        function buildPoopAddModalElement() {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'poop-add-3d';
+            wrapper.innerHTML = `
+                <div class="poop-card">
+                    <button class="poop-close" id="poop3dCloseBtn" type="button" aria-label="Закрыть">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <div class="poop-header">
+                        <div class="poop-title">Новый покак</div>
+                        <div class="poop-anon">
+                            <span>Анонимность</span>
+                            <button id="poopAnonToggle" type="button" class="poop-anon-toggle" aria-label="Анонимность">
+                                <span class="poop-anon-thumb"></span>
+                            </button>
+                        </div>
+                    </div>
+                    <form id="poop3dForm" class="poop-form">
+                        <div class="poop-grid">
+                            <div>
+                                <div class="time-field-header">
+                                    <span class="poop-label">Время покака</span>
+                                    <div class="time-field-toggle">
+                                        <span id="poopTimeModeLabel">Колесо</span>
+                                        <button id="poopTimeModeToggle" type="button" class="time-mode-toggle" aria-label="Переключить режим времени">
+                                            <span class="time-mode-thumb"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="time" id="poopTimeInput">
+                                <div id="poopTimeWheelWrap">
+                                    <div id="poopTimeWheel" class="time-wheel" aria-label="Выбор времени">
+                                        <div class="time-wheel-col" data-part="hour">
+                                            <span class="time-wheel-static">Часы</span>
+                                            <div class="time-wheel-list"></div>
+                                        </div>
+                                        <div class="time-wheel-col" data-part="minute">
+                                            <span class="time-wheel-static">Минуты</span>
+                                            <div class="time-wheel-list"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="poopTimeSelectWrap" class="hidden">
+                                    <div class="cs" id="poopTimeSelect">
+                                        <button class="cs-btn" id="poopTimeSelectBtn" type="button" aria-haspopup="listbox" aria-expanded="false">Выберите время</button>
+                                        <div class="cs-menu" id="poopTimeSelectMenu" role="listbox"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="poop-label">Продолжительность</label>
+                                <input type="hidden" name="duration" id="poopDurationInput">
+                                <input type="hidden" name="durationSeconds" id="poopDurationSecondsInput">
+                                <div id="poopDurationWheel" class="time-wheel" aria-label="Продолжительность">
+                                    <div class="time-wheel-col" data-part="minute">
+                                        <span class="time-wheel-static">Минуты</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
+                                    <div class="time-wheel-col" data-part="second">
+                                        <span class="time-wheel-static">Секунды</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="poop-grid">
+                            <div>
+                                <label class="poop-label">Кол-во бумаги, шт</label>
+                                <input type="hidden" name="paper" id="poopPaperInput">
+                                <div id="poopPaperWheel" class="time-wheel time-wheel--single" aria-label="Бумага">
+                                    <div class="time-wheel-col" data-part="paper">
+                                        <div class="time-wheel-list time-wheel-list--nolabel"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="poop-label">Лёгкость очистки: <span id="poopEaseValueLabel">—</span></label>
+                                <div id="poopEaseScale" class="emoji-scale">
+                                    ${Array.from({ length: 10 }).map((_, i) => `
+                                        <label class="emoji-seg" data-scale-value="${i + 1}">
+                                            <input class="sr-only" type="radio" name="ease" value="${i + 1}">
+                                            <span class="emoji-dot">🪶</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="poop-grid">
+                            <div>
+                                <label class="poop-label">Удовлетворённость: <span id="poopSatisfactionValueLabel">—</span></label>
+                                <div id="poopSatisfactionScale" class="emoji-scale">
+                                    ${Array.from({ length: 10 }).map((_, i) => `
+                                        <label class="emoji-seg" data-scale-value="${i + 1}">
+                                            <input class="sr-only" type="radio" name="satisfaction" value="${i + 1}">
+                                            <span class="emoji-dot">🤩</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="poop-label">Размер: <span id="poopSizeValueLabel">—</span></label>
+                                <div id="poopSizeScale" class="poop-scale">
+                                    ${Array.from({ length: 10 }).map((_, i) => `
+                                        <label class="poop-seg" data-size="${i + 1}">
+                                            <input class="sr-only" type="radio" name="size" value="${i + 1}">
+                                            <span class="poop-dot"></span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="poop-label">Бристольская шкала (1–7)</label>
+                            <div id="poopBristolOptions" class="bristol-options"></div>
+                        </div>
+                        <div>
+                            <label class="poop-label">Комментарий (опционально)</label>
+                            <textarea name="comment" rows="2" class="poop-textarea" placeholder="Например, что ел или как себя чувствовал"></textarea>
+                        </div>
+                        <input type="hidden" name="drawing" id="poopDrawingInput">
+                        <div>
+                            <button type="button" id="poopDrawingToggle" class="poop-btn" style="padding:6px 10px;">🎨 Нарисовать кал</button>
+                            <div id="poopDrawingPanel" class="drawing-panel">
+                                <div class="drawing-tools">
+                                    <button type="button" data-drawing-tool="pencil">✏️ Карандаш</button>
+                                    <button type="button" data-drawing-tool="marker">🖋 Маркер</button>
+                                    <button type="button" data-drawing-tool="fill">🖌️ Заливка</button>
+                                    <button type="button" data-drawing-tool="eraser">🧽 Ластик</button>
+                                    <button type="button" id="poopDrawingClear">Очистить</button>
+                                </div>
+                                <div class="drawing-colors">
+                                    ${['#3d1f0a','#5d3a1a','#7c4f22','#4a2e15','#8b5a2b','#a8550e','#c2782a','#b56b2d']
+                                        .map((color) => `<button type="button" class="drawing-color" data-color="${color}" style="background:${color}"></button>`).join('')}
+                                </div>
+                                <div class="drawing-canvas-wrap">
+                                    <canvas id="poopDrawingCanvas" class="drawing-canvas" width="504" height="308"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="poop-actions">
+                            <button type="button" id="poopCancelBtn" class="poop-btn">Отмена</button>
+                            <button type="submit" class="poop-btn primary">Сохранить покак</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            wrapper.addEventListener('click', (event) => event.stopPropagation());
+            wrapper.querySelectorAll('input, textarea, button, select, label').forEach((el) => {
+                el.addEventListener('pointerdown', (event) => event.stopPropagation());
+            });
+            return wrapper;
+        }
+
+        function initPoopAddModalUI() {
+            if (!poopAddObject?.element) return;
+            if (poopModalRefs?.ready) return;
+            const root = poopAddObject.element;
+            poopModalRefs = {
+                ready: true,
+                root,
+                form: root.querySelector('#poop3dForm'),
+                closeBtn: root.querySelector('#poop3dCloseBtn'),
+                cancelBtn: root.querySelector('#poopCancelBtn'),
+                anonToggle: root.querySelector('#poopAnonToggle'),
+                timeInput: root.querySelector('#poopTimeInput'),
+                timeWheel: root.querySelector('#poopTimeWheel'),
+                timeWheelWrap: root.querySelector('#poopTimeWheelWrap'),
+                timeSelectWrap: root.querySelector('#poopTimeSelectWrap'),
+                timeSelect: root.querySelector('#poopTimeSelect'),
+                timeSelectBtn: root.querySelector('#poopTimeSelectBtn'),
+                timeSelectMenu: root.querySelector('#poopTimeSelectMenu'),
+                timeModeToggle: root.querySelector('#poopTimeModeToggle'),
+                timeModeLabel: root.querySelector('#poopTimeModeLabel'),
+                durationInput: root.querySelector('#poopDurationInput'),
+                durationSecondsInput: root.querySelector('#poopDurationSecondsInput'),
+                durationWheel: root.querySelector('#poopDurationWheel'),
+                paperInput: root.querySelector('#poopPaperInput'),
+                paperWheel: root.querySelector('#poopPaperWheel'),
+                easeScale: root.querySelector('#poopEaseScale'),
+                satisfactionScale: root.querySelector('#poopSatisfactionScale'),
+                sizeScale: root.querySelector('#poopSizeScale'),
+                easeValueLabel: root.querySelector('#poopEaseValueLabel'),
+                satisfactionValueLabel: root.querySelector('#poopSatisfactionValueLabel'),
+                sizeValueLabel: root.querySelector('#poopSizeValueLabel'),
+                bristolOptions: root.querySelector('#poopBristolOptions'),
+                drawingToggle: root.querySelector('#poopDrawingToggle'),
+                drawingPanel: root.querySelector('#poopDrawingPanel'),
+                drawingCanvas: root.querySelector('#poopDrawingCanvas'),
+                drawingInput: root.querySelector('#poopDrawingInput'),
+                drawingClear: root.querySelector('#poopDrawingClear'),
+                drawingToolButtons: root.querySelectorAll('[data-drawing-tool]'),
+                drawingColorButtons: root.querySelectorAll('[data-color]')
+            };
+
+            const TIME_WHEEL_ITEM_HEIGHT = 48;
+            const DURATION_MAX_MINUTES = 180;
+            const PAPER_MAX_COUNT = 100;
+
+            const pad = (n) => String(n).padStart(2, '0');
+            const formatTimeValue = (h, m) => `${pad(h)}:${pad(m)}`;
+            const parseTimeValue = (val) => {
+                const parts = String(val || '').split(':');
+                return {
+                    h: Math.min(23, Math.max(0, Number(parts[0]) || 0)),
+                    m: Math.min(59, Math.max(0, Number(parts[1]) || 0))
+                };
+            };
+            const defaultTime = () => {
+                const now = new Date();
+                return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            };
+
+            const updateWheelSelection = (col, forcedIndex) => {
+                if (!col) return 0;
+                const list = col.querySelector('.time-wheel-list');
+                const max = Number(list?.dataset.max || 0);
+                let index = typeof forcedIndex === 'number' ? forcedIndex : Math.round((list?.scrollTop || 0) / TIME_WHEEL_ITEM_HEIGHT);
+                index = Math.max(0, Math.min(max - 1, index));
+                if (col._selectedIndex === index) return index;
+                if (col._selectedEl) col._selectedEl.classList.remove('is-selected');
+                const el = list?.querySelector(`.time-wheel-item[data-value="${index}"]`);
+                if (el) {
+                    el.classList.add('is-selected');
+                    col._selectedEl = el;
+                }
+                col._selectedIndex = index;
+                return index;
+            };
+
+            const buildWheelList = (col, count, onPick, formatValue) => {
+                if (!col) return;
+                const list = col.querySelector('.time-wheel-list');
+                if (!list) return;
+                list.innerHTML = '';
+                list.dataset.max = String(count);
+                col._selectedIndex = null;
+                col._selectedEl = null;
+                const format = typeof formatValue === 'function' ? formatValue : pad;
+                for (let i = 0; i < count; i += 1) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'time-wheel-item';
+                    btn.dataset.value = String(i);
+                    btn.textContent = format(i);
+                    btn.addEventListener('click', () => {
+                        list.scrollTo({ top: i * TIME_WHEEL_ITEM_HEIGHT, behavior: 'smooth' });
+                        updateWheelSelection(col, i);
+                        if (onPick) onPick();
+                    });
+                    list.appendChild(btn);
+                }
+                list.addEventListener('scroll', () => {
+                    if (col._scrollRaf) cancelAnimationFrame(col._scrollRaf);
+                    col._scrollRaf = requestAnimationFrame(() => {
+                        updateWheelSelection(col);
+                        if (onPick) onPick();
+                    });
+                });
+            };
+
+            const syncTimeFromWheel = () => {
+                const hourCol = poopModalRefs.timeWheel?.querySelector('[data-part="hour"]');
+                const minuteCol = poopModalRefs.timeWheel?.querySelector('[data-part="minute"]');
+                const h = updateWheelSelection(hourCol);
+                const m = updateWheelSelection(minuteCol);
+                const formatted = formatTimeValue(h, m);
+                poopTimeValue = formatted;
+                if (poopModalRefs.timeInput) poopModalRefs.timeInput.value = formatted;
+            };
+
+            const buildTimeWheel = () => {
+                const hourCol = poopModalRefs.timeWheel?.querySelector('[data-part="hour"]');
+                const minuteCol = poopModalRefs.timeWheel?.querySelector('[data-part="minute"]');
+                buildWheelList(hourCol, 24, syncTimeFromWheel);
+                buildWheelList(minuteCol, 60, syncTimeFromWheel);
+            };
+
+            const buildTimeSelectOptions = () => {
+                const wrap = poopModalRefs.timeSelect;
+                const btn = poopModalRefs.timeSelectBtn;
+                const menu = poopModalRefs.timeSelectMenu;
+                if (!wrap || !btn || !menu) return;
+                const options = [];
+                for (let h = 0; h < 24; h += 1) {
+                    for (let m = 0; m < 60; m += 15) {
+                        const val = formatTimeValue(h, m);
+                        options.push({ value: val, label: val });
+                    }
+                }
+                poopModalRefs.timeSelectOptions = options;
+                wrap.dataset.ready = 'false';
+                setupCustomSelect(wrap, options, options[0]?.value, (value) => {
+                    if (value) setTime(value);
+                });
+                if (!wrap.dataset.value) {
+                    wrap.dataset.value = options[0]?.value || '';
+                    btn.textContent = wrap.dataset.value || 'Выберите время';
+                }
+            };
+
+            const setTime = (val) => {
+                const parsed = parseTimeValue(val);
+                let h = parsed.h;
+                let m = parsed.m;
+                if (poopTimeInputMode === 'list' && poopModalRefs.timeSelectOptions?.length) {
+                    const rounded = Math.round(m / 15) * 15;
+                    if (rounded >= 60) {
+                        m = 0;
+                        h = (h + 1) % 24;
+                    } else {
+                        m = rounded;
+                    }
+                }
+                const formatted = formatTimeValue(h, m);
+                const hourCol = poopModalRefs.timeWheel?.querySelector('[data-part="hour"]');
+                const minuteCol = poopModalRefs.timeWheel?.querySelector('[data-part="minute"]');
+                const hourList = hourCol?.querySelector('.time-wheel-list');
+                const minuteList = minuteCol?.querySelector('.time-wheel-list');
+                if (hourList) hourList.scrollTop = h * TIME_WHEEL_ITEM_HEIGHT;
+                if (minuteList) minuteList.scrollTop = m * TIME_WHEEL_ITEM_HEIGHT;
+                updateWheelSelection(hourCol, h);
+                updateWheelSelection(minuteCol, m);
+                poopTimeValue = formatted;
+                if (poopModalRefs.timeInput) poopModalRefs.timeInput.value = formatted;
+                if (poopModalRefs.timeSelectOptions?.length) {
+                    const wrap = poopModalRefs.timeSelect;
+                    const btn = poopModalRefs.timeSelectBtn;
+                    const menu = poopModalRefs.timeSelectMenu;
+                    if (wrap && btn && menu) {
+                        const opt = poopModalRefs.timeSelectOptions.find((item) => item.value === formatted) || poopModalRefs.timeSelectOptions[0];
+                        if (opt) {
+                            wrap.dataset.value = opt.value;
+                            btn.textContent = opt.label;
+                            menu.querySelectorAll('.cs-opt').forEach((item) => {
+                                item.setAttribute('aria-selected', String(item.dataset.value === opt.value));
+                            });
+                        }
+                    }
+                }
+            };
+
+            const setTimeInputMode = (mode) => {
+                poopTimeInputMode = mode === 'list' ? 'list' : 'wheel';
+                poopModalRefs.timeModeToggle?.classList.toggle('toggle-on', poopTimeInputMode === 'list');
+                if (poopModalRefs.timeModeLabel) {
+                    poopModalRefs.timeModeLabel.textContent = poopTimeInputMode === 'list' ? 'Список' : 'Колесо';
+                }
+                poopModalRefs.timeWheelWrap?.classList.toggle('hidden', poopTimeInputMode === 'list');
+                poopModalRefs.timeSelectWrap?.classList.toggle('hidden', poopTimeInputMode !== 'list');
+                setTime(poopTimeValue || defaultTime());
+            };
+
+            const syncDurationFromWheel = () => {
+                const minuteCol = poopModalRefs.durationWheel?.querySelector('[data-part="minute"]');
+                const secondCol = poopModalRefs.durationWheel?.querySelector('[data-part="second"]');
+                const m = updateWheelSelection(minuteCol);
+                const s = updateWheelSelection(secondCol);
+                const total = m * 60 + s;
+                poopDurationValue = total;
+                if (poopModalRefs.durationSecondsInput) poopModalRefs.durationSecondsInput.value = String(total);
+                if (poopModalRefs.durationInput) poopModalRefs.durationInput.value = String(m);
+            };
+
+            const buildDurationWheel = () => {
+                const minuteCol = poopModalRefs.durationWheel?.querySelector('[data-part="minute"]');
+                const secondCol = poopModalRefs.durationWheel?.querySelector('[data-part="second"]');
+                buildWheelList(minuteCol, DURATION_MAX_MINUTES + 1, syncDurationFromWheel);
+                buildWheelList(secondCol, 60, syncDurationFromWheel);
+            };
+
+            const setDurationSeconds = (totalSeconds) => {
+                const safeSeconds = Math.max(0, Math.min(DURATION_MAX_MINUTES * 60 + 59, Number(totalSeconds) || 0));
+                const m = Math.floor(safeSeconds / 60);
+                const s = safeSeconds % 60;
+                const minuteCol = poopModalRefs.durationWheel?.querySelector('[data-part="minute"]');
+                const secondCol = poopModalRefs.durationWheel?.querySelector('[data-part="second"]');
+                const minuteList = minuteCol?.querySelector('.time-wheel-list');
+                const secondList = secondCol?.querySelector('.time-wheel-list');
+                if (minuteList) minuteList.scrollTop = m * TIME_WHEEL_ITEM_HEIGHT;
+                if (secondList) secondList.scrollTop = s * TIME_WHEEL_ITEM_HEIGHT;
+                updateWheelSelection(minuteCol, m);
+                updateWheelSelection(secondCol, s);
+                poopDurationValue = safeSeconds;
+                if (poopModalRefs.durationSecondsInput) poopModalRefs.durationSecondsInput.value = String(safeSeconds);
+                if (poopModalRefs.durationInput) poopModalRefs.durationInput.value = String(m);
+            };
+
+            const syncPaperFromWheel = () => {
+                const paperCol = poopModalRefs.paperWheel?.querySelector('[data-part="paper"]');
+                const val = updateWheelSelection(paperCol);
+                poopPaperValue = val;
+                if (poopModalRefs.paperInput) poopModalRefs.paperInput.value = String(val);
+            };
+
+            const buildPaperWheel = () => {
+                const paperCol = poopModalRefs.paperWheel?.querySelector('[data-part="paper"]');
+                buildWheelList(paperCol, PAPER_MAX_COUNT + 1, syncPaperFromWheel, (n) => String(n));
+            };
+
+            const setPaperValue = (val) => {
+                const num = Number(val);
+                const safe = Number.isFinite(num) ? Math.max(0, Math.min(PAPER_MAX_COUNT, Math.round(num))) : 1;
+                const paperCol = poopModalRefs.paperWheel?.querySelector('[data-part="paper"]');
+                const paperList = paperCol?.querySelector('.time-wheel-list');
+                if (paperList) paperList.scrollTop = safe * TIME_WHEEL_ITEM_HEIGHT;
+                updateWheelSelection(paperCol, safe);
+                poopPaperValue = safe;
+                if (poopModalRefs.paperInput) poopModalRefs.paperInput.value = String(safe);
+            };
+
+            const renderEmojiScale = (scaleEl, value, hover) => {
+                if (!scaleEl) return;
+                scaleEl.querySelectorAll('[data-scale-value]').forEach((seg) => {
+                    const val = Number(seg.dataset.scaleValue);
+                    seg.classList.toggle('is-active', value && val <= value);
+                    seg.classList.toggle('is-hover', hover && val <= hover);
+                });
+            };
+
+            const renderSizeScale = () => {
+                if (!poopModalRefs.sizeScale) return;
+                poopModalRefs.sizeScale.querySelectorAll('[data-size]').forEach((seg) => {
+                    const val = Number(seg.dataset.size);
+                    seg.classList.toggle('is-active', poopSizeValue && val <= poopSizeValue);
+                    seg.classList.toggle('is-hover', poopSizeHover && val <= poopSizeHover);
+                });
+                if (poopModalRefs.sizeValueLabel) poopModalRefs.sizeValueLabel.textContent = poopSizeValue ? String(poopSizeValue) : '—';
+            };
+
+            const setEaseValue = (val) => {
+                const num = Number(val);
+                poopEaseValue = Number.isFinite(num) && num > 0 ? num : null;
+                renderEmojiScale(poopModalRefs.easeScale, poopEaseValue, poopEaseHover);
+                if (poopModalRefs.easeValueLabel) poopModalRefs.easeValueLabel.textContent = poopEaseValue ? String(poopEaseValue) : '—';
+            };
+
+            const setSatisfactionValue = (val) => {
+                const num = Number(val);
+                poopSatisfactionValue = Number.isFinite(num) && num > 0 ? num : null;
+                renderEmojiScale(poopModalRefs.satisfactionScale, poopSatisfactionValue, poopSatisfactionHover);
+                if (poopModalRefs.satisfactionValueLabel) poopModalRefs.satisfactionValueLabel.textContent = poopSatisfactionValue ? String(poopSatisfactionValue) : '—';
+            };
+
+            const setSizeValue = (val) => {
+                const num = Number(val);
+                poopSizeValue = Number.isFinite(num) && num > 0 ? num : null;
+                renderSizeScale();
+            };
+
+            const renderBristolOptions = () => {
+                if (!poopModalRefs.bristolOptions) return;
+                poopModalRefs.bristolOptions.innerHTML = '';
+                Object.entries(BRISTOL).forEach(([value, meta]) => {
+                    const item = document.createElement('label');
+                    item.className = 'bristol-option';
+                    item.innerHTML = `
+                        <input class="sr-only" type="radio" name="bristol" value="${value}">
+                        <span class="bristol-icon">${meta.icon}</span>
+                        <span>
+                            <strong>Тип ${value}</strong><br>
+                            <span>${meta.title}</span>
+                        </span>
+                    `;
+                    item.addEventListener('click', () => {
+                        poopModalRefs.bristolOptions.querySelectorAll('.bristol-option').forEach((opt) => opt.classList.remove('is-active'));
+                        item.classList.add('is-active');
+                    });
+                    poopModalRefs.bristolOptions.appendChild(item);
+                });
+            };
+
+            const initScaleInteractions = () => {
+                const bindScale = (scaleEl, setter, hoverSetter) => {
+                    if (!scaleEl) return;
+                    scaleEl.querySelectorAll('[data-scale-value]').forEach((seg) => {
+                        seg.addEventListener('pointerenter', () => {
+                            if (hoverSetter) hoverSetter(Number(seg.dataset.scaleValue));
+                        });
+                        seg.addEventListener('pointerleave', () => {
+                            if (hoverSetter) hoverSetter(0);
+                        });
+                        seg.addEventListener('click', () => setter(Number(seg.dataset.scaleValue)));
+                    });
+                };
+                bindScale(poopModalRefs.easeScale, setEaseValue, (val) => {
+                    poopEaseHover = val;
+                    renderEmojiScale(poopModalRefs.easeScale, poopEaseValue, poopEaseHover);
+                });
+                bindScale(poopModalRefs.satisfactionScale, setSatisfactionValue, (val) => {
+                    poopSatisfactionHover = val;
+                    renderEmojiScale(poopModalRefs.satisfactionScale, poopSatisfactionValue, poopSatisfactionHover);
+                });
+                if (poopModalRefs.sizeScale) {
+                    poopModalRefs.sizeScale.querySelectorAll('[data-size]').forEach((seg) => {
+                        seg.addEventListener('pointerenter', () => {
+                            poopSizeHover = Number(seg.dataset.size);
+                            renderSizeScale();
+                        });
+                        seg.addEventListener('pointerleave', () => {
+                            poopSizeHover = 0;
+                            renderSizeScale();
+                        });
+                        seg.addEventListener('click', () => setSizeValue(Number(seg.dataset.size)));
+                    });
+                }
+            };
+
+            const initDrawing = () => {
+                const canvas = poopModalRefs.drawingCanvas;
+                if (!canvas) return;
+                poopDrawingCtx = canvas.getContext('2d');
+                if (!poopDrawingCtx) return;
+                poopDrawingCtx.lineCap = 'round';
+                poopDrawingCtx.lineJoin = 'round';
+                poopDrawingCtx.fillStyle = '#000';
+                poopDrawingCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const setTool = (tool) => {
+                    poopDrawingTool = tool;
+                };
+                const setColor = (color) => {
+                    poopDrawingColor = color;
+                };
+                poopModalRefs.drawingToolButtons?.forEach((btn) => {
+                    btn.addEventListener('click', () => setTool(btn.dataset.drawingTool));
+                });
+                poopModalRefs.drawingColorButtons?.forEach((btn) => {
+                    btn.addEventListener('click', () => setColor(btn.dataset.color));
+                });
+                if (poopModalRefs.drawingClear) {
+                    poopModalRefs.drawingClear.addEventListener('click', () => {
+                        poopDrawingCtx.clearRect(0, 0, canvas.width, canvas.height);
+                        poopDrawingCtx.fillStyle = '#000';
+                        poopDrawingCtx.fillRect(0, 0, canvas.width, canvas.height);
+                        poopDrawingHasContent = false;
+                    });
+                }
+
+                const startDraw = (x, y) => {
+                    if (!poopDrawingCtx) return;
+                    poopDrawingActive = true;
+                    poopDrawingCtx.beginPath();
+                    poopDrawingCtx.moveTo(x, y);
+                };
+                const draw = (x, y) => {
+                    if (!poopDrawingActive || !poopDrawingCtx) return;
+                    if (poopDrawingTool === 'fill') {
+                        poopDrawingCtx.fillStyle = poopDrawingColor;
+                        poopDrawingCtx.fillRect(0, 0, canvas.width, canvas.height);
+                        poopDrawingHasContent = true;
+                        poopDrawingActive = false;
+                        return;
+                    }
+                    if (poopDrawingTool === 'eraser') {
+                        poopDrawingCtx.globalCompositeOperation = 'destination-out';
+                        poopDrawingCtx.lineWidth = poopEraserSize;
+                        poopDrawingCtx.strokeStyle = 'rgba(0,0,0,1)';
+                    } else {
+                        poopDrawingCtx.globalCompositeOperation = 'source-over';
+                        const width = poopDrawingTool === 'marker' ? 10 : 4;
+                        const opacity = poopDrawingTool === 'marker' ? 0.7 : 1;
+                        poopDrawingCtx.lineWidth = width;
+                        poopDrawingCtx.strokeStyle = poopDrawingColor;
+                        poopDrawingCtx.globalAlpha = opacity;
+                    }
+                    poopDrawingCtx.lineTo(x, y);
+                    poopDrawingCtx.stroke();
+                    poopDrawingHasContent = true;
+                };
+                const endDraw = () => {
+                    if (!poopDrawingCtx) return;
+                    poopDrawingCtx.globalCompositeOperation = 'source-over';
+                    poopDrawingCtx.globalAlpha = 1;
+                    poopDrawingActive = false;
+                };
+                poopModalRefs.drawingStart = startDraw;
+                poopModalRefs.drawingMove = draw;
+                poopModalRefs.drawingEnd = endDraw;
+
+                const getPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    return {
+                        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+                        y: (e.clientY - rect.top) * (canvas.height / rect.height)
+                    };
+                };
+                canvas.addEventListener('pointerdown', (e) => {
+                    const pos = getPos(e);
+                    startDraw(pos.x, pos.y);
+                    e.preventDefault();
+                });
+                canvas.addEventListener('pointermove', (e) => {
+                    if (!poopDrawingActive) return;
+                    const pos = getPos(e);
+                    draw(pos.x, pos.y);
+                    e.preventDefault();
+                });
+                canvas.addEventListener('pointerup', endDraw);
+                canvas.addEventListener('pointerleave', endDraw);
+                canvas.addEventListener('pointercancel', endDraw);
+            };
+
+            const bristolIconSvg = (type) => {
+                const base = 'stroke="rgba(245,158,11,0.7)" fill="rgba(245,158,11,0.35)" stroke-width="1.5"';
+                switch (type) {
+                    case '1': return `<svg viewBox="0 0 48 28"><circle cx="12" cy="16" r="6" ${base}/><circle cx="23" cy="12" r="5.5" ${base}/><circle cx="32" cy="17" r="5.5" ${base}/></svg>`;
+                    case '2': return `<svg viewBox="0 0 48 28"><rect x="10" y="9" width="28" height="12" rx="6" ${base}/><path d="M16 11c2 2 0 5 3 6" ${base}/><path d="M30 12c-1 2 2 4 0 6" ${base}/></svg>`;
+                    case '3': return `<svg viewBox="0 0 48 28"><rect x="8" y="9" width="32" height="12" rx="6" ${base}/><path d="M16 11l3 5M26 10l-2 7M34 12l-1 6" ${base}/></svg>`;
+                    case '4': return `<svg viewBox="0 0 48 28"><rect x="8" y="8" width="32" height="12" rx="6" ${base.replace('0.35','0.45')}/></svg>`;
+                    case '5': return `<svg viewBox="0 0 48 28"><circle cx="15" cy="14" r="6" ${base}/><circle cx="25" cy="12" r="5" ${base}/><circle cx="32" cy="15" r="5.5" ${base}/></svg>`;
+                    case '6': return `<svg viewBox="0 0 48 28"><circle cx="8" cy="16" r="3" ${base}/><circle cx="14" cy="12" r="2.5" ${base}/><circle cx="20" cy="16" r="3" ${base}/><circle cx="26" cy="11" r="2.5" ${base}/><circle cx="30" cy="16" r="3" ${base}/><circle cx="36" cy="12" r="2.5" ${base}/><circle cx="40" cy="17" r="2.5" ${base}/><circle cx="23" cy="20" r="2.5" ${base}/></svg>`;
+                    case '7': return `<svg viewBox="0 0 48 28"><path d="M8 15c4-5 10 1 14-1s7-5 12-2 6 7 1 8-9-4-14-2-10 4-13-3z" ${base.replace('0.35','0.25')}/></svg>`;
+                    default: return '';
+                }
+            };
+
+            function bristolIcon(type) {
+                return bristolIconSvg(type);
+            }
+
+            const BRISTOL = {
+                1: { title: 'Отдельные твёрдые комки', icon: bristolIcon('1') },
+                2: { title: 'Колбаска с буграми', icon: bristolIcon('2') },
+                3: { title: 'Колбаска с трещинами', icon: bristolIcon('3') },
+                4: { title: 'Гладкая мягкая колбаска', icon: bristolIcon('4') },
+                5: { title: 'Мягкие кусочки', icon: bristolIcon('5') },
+                6: { title: 'Кашицеобразные кусочки', icon: bristolIcon('6') },
+                7: { title: 'Водянистый', icon: bristolIcon('7') }
+            };
+
+            renderBristolOptions();
+            buildTimeWheel();
+            buildTimeSelectOptions();
+            buildDurationWheel();
+            buildPaperWheel();
+            initScaleInteractions();
+            initDrawing();
+
+            poopModalRefs.setTime = setTime;
+            poopModalRefs.setTimeInputMode = setTimeInputMode;
+            poopModalRefs.setDurationSeconds = setDurationSeconds;
+            poopModalRefs.setPaperValue = setPaperValue;
+            poopModalRefs.setEaseValue = setEaseValue;
+            poopModalRefs.setSatisfactionValue = setSatisfactionValue;
+            poopModalRefs.setSizeValue = setSizeValue;
+            poopModalRefs.defaultTime = defaultTime;
+
+            setTimeInputMode(poopTimeInputMode);
+            setTime(defaultTime());
+            setDurationSeconds(0);
+            setPaperValue(1);
+            setEaseValue(null);
+            setSatisfactionValue(null);
+            setSizeValue(null);
+
+            if (poopModalRefs.timeModeToggle) {
+                poopModalRefs.timeModeToggle.addEventListener('click', () => {
+                    const next = poopTimeInputMode === 'list' ? 'wheel' : 'list';
+                    setTimeInputMode(next);
+                });
+            }
+            poopModalRefs.drawingToggle?.addEventListener('click', () => {
+                const open = !poopModalRefs.drawingPanel.classList.contains('open');
+                poopModalRefs.drawingPanel.classList.toggle('open', open);
+            });
+            poopModalRefs.closeBtn?.addEventListener('click', closePoopAddModal3D);
+            poopModalRefs.cancelBtn?.addEventListener('click', closePoopAddModal3D);
+            poopModalRefs.anonToggle?.addEventListener('click', () => {
+                poopAnonymityOn = !poopAnonymityOn;
+                poopModalRefs.anonToggle.classList.toggle('toggle-on', poopAnonymityOn);
+            });
+            poopModalRefs.form?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                addPoopFrom3DModal();
+            });
+        }
+
+        function resetPoopAddModalForm() {
+            if (!poopModalRefs?.form) return;
+            poopModalRefs.form.reset();
+            poopTimeValue = '';
+            poopDurationValue = 0;
+            poopPaperValue = 1;
+            poopSizeValue = null;
+            poopEaseValue = null;
+            poopSatisfactionValue = null;
+            poopSizeHover = 0;
+            poopEaseHover = 0;
+            poopSatisfactionHover = 0;
+            poopAnonymityOn = false;
+            poopModalRefs.anonToggle?.classList.remove('toggle-on');
+            poopModalRefs.drawingPanel?.classList.remove('open');
+            poopModalRefs.root?.querySelectorAll('.cs.open').forEach((node) => {
+                node.classList.remove('open');
+                const btn = node.querySelector('.cs-btn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            });
+            if (poopModalRefs.drawingInput) poopModalRefs.drawingInput.value = '';
+            if (poopDrawingCtx && poopModalRefs.drawingCanvas) {
+                poopDrawingCtx.clearRect(0, 0, poopModalRefs.drawingCanvas.width, poopModalRefs.drawingCanvas.height);
+                poopDrawingCtx.fillStyle = '#000';
+                poopDrawingCtx.fillRect(0, 0, poopModalRefs.drawingCanvas.width, poopModalRefs.drawingCanvas.height);
+            }
+            poopDrawingHasContent = false;
+            poopModalRefs.setTimeInputMode?.(poopTimeInputMode);
+            poopModalRefs.setTime?.(poopModalRefs.defaultTime?.() || '');
+            poopModalRefs.setDurationSeconds?.(0);
+            poopModalRefs.setPaperValue?.(1);
+            poopModalRefs.setEaseValue?.(null);
+            poopModalRefs.setSatisfactionValue?.(null);
+            poopModalRefs.setSizeValue?.(null);
+        }
+
+        function addPoopFrom3DModal() {
+            if (!poopModalRefs?.form) return;
+            if (poopModalRefs.drawingInput && poopModalRefs.drawingCanvas) {
+                if (poopDrawingHasContent) {
+                    poopModalRefs.drawingInput.value = poopModalRefs.drawingCanvas.toDataURL('image/png');
+                } else {
+                    poopModalRefs.drawingInput.value = '';
+                }
+            }
+            const formData = new FormData(poopModalRefs.form);
+            const durationSeconds = Number(formData.get('durationSeconds') || 0);
+            const sizeVal = Number(formData.get('size') || 0);
+            if (!durationSeconds) {
+                alert('Укажи продолжительность покака.');
+                return;
+            }
+            if (!sizeVal) {
+                alert('Укажи размер покака.');
+                return;
+            }
+            const dateKey = (() => {
+                const now = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+            })();
+            const currentUser = (() => {
+                try {
+                    return JSON.parse(localStorage.getItem('currentUser') || '{}');
+                } catch (_) {
+                    return {};
+                }
+            })();
+            const entry = {
+                time: formData.get('time') || '',
+                duration: Math.floor(durationSeconds / 60),
+                durationSeconds,
+                paper: Number(formData.get('paper') || 0),
+                ease: Number(formData.get('ease') || 0),
+                satisfaction: Number(formData.get('satisfaction') || 0),
+                size: sizeVal,
+                bristol: Number(formData.get('bristol') || 0),
+                comment: (formData.get('comment') || '').trim(),
+                drawing: formData.get('drawing') || '',
+                createdAt: new Date().toISOString(),
+                author: currentUser?.username || '',
+                authorName: poopAnonymityOn ? 'Аноним' : (currentUser?.name || currentUser?.username || 'Аноним')
+            };
+            if (!firebase?.database) {
+                alert('Сеть недоступна, попробуй позже.');
+                return;
+            }
+            firebase.database().ref(`poopSchedule/${dateKey}`).push(entry);
+            closePoopAddModal3D();
+        }
+
+        function positionPoopAddModalInFront() {
+            if (!poopAddAnchor || !camera) return;
+            const cameraWorld = new THREE.Vector3();
+            camera.getWorldPosition(cameraWorld);
+            const forward = new THREE.Vector3();
+            camera.getWorldDirection(forward);
+            const target = poopModalAnchorPos ? poopModalAnchorPos.clone() : cameraWorld.clone().addScaledVector(forward, 1.6);
+            let yaw = yawObject?.rotation?.y || 0;
+            if (poopModalAnchorPos && poopModalAnchorYaw !== null) {
+                yaw = poopModalAnchorYaw;
+            } else if (!poopModalAnchorPos) {
+                const toCam = cameraWorld.clone().sub(target);
+                toCam.y = 0;
+                yaw = toCam.lengthSq() > 1e-4 ? Math.atan2(toCam.x, toCam.z) : yaw;
+            }
+            poopAddAnchor.position.copy(target);
+            poopAddAnchor.rotation.set(0, yaw, 0);
+            if (poopAddHitMesh) {
+                poopAddHitMesh.position.copy(target);
+                poopAddHitMesh.rotation.set(0, yaw, 0);
+            }
+        }
+
+        function setPoopModalAnchorFromToilet() {
+            if (!toiletData || !camera) {
+                poopModalAnchorPos = null;
+                poopModalAnchorYaw = null;
+                return;
+            }
+            const forward = toiletData.forward ? toiletData.forward.clone() : new THREE.Vector3(0, 0, 1);
+            const dist = ((toiletData.radius || 0.5) + 2.0) * 3;
+            const target = toiletData.position.clone().addScaledVector(forward, dist);
+            target.y = toiletData.topY + eyeHeight * 0.25;
+            const back = forward.clone().multiplyScalar(-1);
+            poopModalAnchorYaw = Math.atan2(back.x, back.z);
+            poopModalAnchorPos = target;
+        }
+
+        function setupPoopAddModal3D() {
+            if (poopAddObject || !ensureCssRenderer()) return;
+            const el = buildPoopAddModalElement();
+            poopAddObject = new THREE.CSS3DObject(el);
+            poopAddObject.scale.set(0.01, 0.01, 0.01);
+            poopAddAnchor = new THREE.Group();
+            poopAddAnchor.add(poopAddObject);
+            cssScene.add(poopAddAnchor);
+            if (!poopAddHitMesh) {
+                const hitGeo = new THREE.PlaneGeometry(POOP_MODAL_WIDTH, POOP_MODAL_HEIGHT);
+                const hitMat = new THREE.MeshBasicMaterial({
+                    transparent: true,
+                    opacity: 0,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                });
+                poopAddHitMesh = new THREE.Mesh(hitGeo, hitMat);
+                poopAddHitMesh.visible = false;
+                scene.add(poopAddHitMesh);
+            } else {
+                const nextGeo = new THREE.PlaneGeometry(POOP_MODAL_WIDTH, POOP_MODAL_HEIGHT);
+                poopAddHitMesh.geometry.dispose();
+                poopAddHitMesh.geometry = nextGeo;
+            }
+            positionPoopAddModalInFront();
+        }
+
+        function openPoopAddModal3D() {
+            setupPoopAddModal3D();
+            if (!poopAddObject) return;
+            initPoopAddModalUI();
+            isPoopAddOpen = true;
+            poopModalSuppressed = false;
+            setPoopModalAnchorFromToilet();
+            positionPoopAddModalInFront();
+            poopAddObject.element.classList.add('open');
+            if (poopAddHitMesh) poopAddHitMesh.visible = true;
+            updateBeerAddPointerEvents();
+            const active = document.activeElement;
+            if (active && active.blur) active.blur();
+            document.body.classList.add('poop-ui-active');
+            reticleFollow = false;
+            if (reticleEl) {
+                reticleEl.style.left = '50%';
+                reticleEl.style.top = '50%';
+                reticleEl.style.transform = '';
+            }
+            moveState.forward = false;
+            moveState.back = false;
+            moveState.left = false;
+            moveState.right = false;
+            moveState.fast = false;
+            resetPoopAddModalForm();
+            requestAnimationFrame(() => {
+                if (!isPoopAddOpen) return;
+                poopModalRefs?.setTime?.(poopModalRefs.defaultTime?.() || '');
+                poopModalRefs?.setDurationSeconds?.(0);
+                poopModalRefs?.setPaperValue?.(1);
+            });
+        }
+
+        function closePoopAddModal3D() {
+            if (!poopAddObject) return;
+            isPoopAddOpen = false;
+            poopModalSuppressed = true;
+            poopModalAnchorPos = null;
+            poopModalAnchorYaw = null;
+            poopDrawingReticleActive = false;
+            poopAddObject.element.classList.remove('open');
+            if (poopAddHitMesh) poopAddHitMesh.visible = false;
+            const active = document.activeElement;
+            if (active && active.closest && active.closest('.poop-add-3d') && active.blur) {
+                active.blur();
+            }
+            updateBeerAddPointerEvents();
+            document.body.classList.remove('poop-ui-active');
+            reticleFollow = false;
+            if (reticleEl) {
+                reticleEl.style.left = '50%';
+                reticleEl.style.top = '50%';
+                reticleEl.style.transform = '';
             }
         }
 
@@ -4603,6 +6291,193 @@
             return true;
         }
 
+        function handlePoopAddLockedClick(event) {
+            if (!isPoopAddOpen || !renderer || !camera || !cssRenderer?.domElement) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const blurPoopFocus = () => {
+                const active = document.activeElement;
+                if (active && active.closest && active.closest('.poop-add-3d') && active.blur) {
+                    active.blur();
+                }
+            };
+            const px = rect.left + centerX;
+            const py = rect.top + centerY;
+            const prevPointerEvents = cssRenderer.domElement.style.pointerEvents;
+            const cameraRoot = cssRenderer.domElement.firstElementChild;
+            const prevCameraPointer = cameraRoot?.style.pointerEvents;
+            cssRenderer.domElement.style.pointerEvents = 'auto';
+            if (cameraRoot) cameraRoot.style.pointerEvents = 'auto';
+            const elements = document.elementsFromPoint
+                ? document.elementsFromPoint(px, py)
+                : [document.elementFromPoint(px, py)].filter(Boolean);
+            cssRenderer.domElement.style.pointerEvents = prevPointerEvents;
+            if (cameraRoot && prevCameraPointer !== undefined) cameraRoot.style.pointerEvents = prevCameraPointer;
+            const pick = (selector) => elements.find((el) => el?.matches?.(selector) || el?.closest?.(selector));
+            const scoped = elements.find((el) => el?.closest && el.closest('.poop-add-3d'));
+            if (!scoped) {
+                blurPoopFocus();
+                return false;
+            }
+
+            const csOption = pick('.poop-add-3d .cs-opt');
+            if (csOption) {
+                csOption.closest('.cs-opt')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+
+            const closeBtn = pick('.poop-add-3d .poop-close');
+            if (closeBtn) {
+                closeBtn.closest('button')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const toggleBtn = pick('.poop-add-3d .poop-anon-toggle, .poop-add-3d .time-mode-toggle');
+            if (toggleBtn) {
+                toggleBtn.closest('button')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const wheelItem = pick('.poop-add-3d .time-wheel-item');
+            if (wheelItem) {
+                wheelItem.closest('.time-wheel-item')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const wheelList = pick('.poop-add-3d .time-wheel-list');
+            if (wheelList) {
+                const listEl = wheelList.closest('.time-wheel-list');
+                const items = Array.from(listEl.querySelectorAll('.time-wheel-item'));
+                if (items.length) {
+                    const listRect = listEl.getBoundingClientRect();
+                    const itemHeight = items[0].getBoundingClientRect().height || 24;
+                    const index = Math.floor((py - listRect.top + listEl.scrollTop) / itemHeight);
+                    const pickItem = items[Math.max(0, Math.min(items.length - 1, index))];
+                    pickItem?.click?.();
+                    blurPoopFocus();
+                    return true;
+                }
+            }
+            const bristol = pick('.poop-add-3d .bristol-option');
+            if (bristol) {
+                bristol.closest('.bristol-option')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const sizeSeg = pick('.poop-add-3d .poop-seg');
+            if (sizeSeg) {
+                sizeSeg.closest('.poop-seg')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const emojiSeg = pick('.poop-add-3d .emoji-seg');
+            if (emojiSeg) {
+                emojiSeg.closest('.emoji-seg')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const drawBtn = pick('.poop-add-3d .drawing-tools button, .poop-add-3d .drawing-color, .poop-add-3d #poopDrawingToggle');
+            if (drawBtn) {
+                drawBtn.closest('button, .drawing-color')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const selectBtn = pick('.poop-add-3d .cs-btn');
+            if (selectBtn) {
+                selectBtn.closest('.cs-btn')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const openMenu = document.querySelector('.poop-add-3d .cs.open .cs-menu');
+            if (openMenu) {
+                const menuRect = openMenu.getBoundingClientRect();
+                if (px >= menuRect.left && px <= menuRect.right && py >= menuRect.top && py <= menuRect.bottom) {
+                    const opts = Array.from(openMenu.querySelectorAll('.cs-opt'));
+                    if (opts.length) {
+                        const optHeight = opts[0].getBoundingClientRect().height || 24;
+                        const index = Math.floor((py - menuRect.top + openMenu.scrollTop) / optHeight);
+                        const pickOpt = opts[Math.max(0, Math.min(opts.length - 1, index))];
+                        pickOpt?.click?.();
+                        blurPoopFocus();
+                        return true;
+                    }
+                }
+            }
+            const actionBtn = pick('.poop-add-3d .poop-btn');
+            if (actionBtn) {
+                actionBtn.closest('.poop-btn')?.click?.();
+                blurPoopFocus();
+                return true;
+            }
+            const input = pick('.poop-add-3d input, .poop-add-3d textarea');
+            if (input) {
+                const field = input.closest('input, textarea, select') || input;
+                field.focus?.();
+                if (field.select) field.select();
+                return true;
+            }
+            blurPoopFocus();
+            return true;
+        }
+
+        function getPoopReticleElements() {
+            if (!renderer || !cssRenderer?.domElement) return null;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const px = rect.left + rect.width / 2;
+            const py = rect.top + rect.height / 2;
+            const prevPointerEvents = cssRenderer.domElement.style.pointerEvents;
+            const cameraRoot = cssRenderer.domElement.firstElementChild;
+            const prevCameraPointer = cameraRoot?.style.pointerEvents;
+            cssRenderer.domElement.style.pointerEvents = 'auto';
+            if (cameraRoot) cameraRoot.style.pointerEvents = 'auto';
+            const elements = document.elementsFromPoint
+                ? document.elementsFromPoint(px, py)
+                : [document.elementFromPoint(px, py)].filter(Boolean);
+            cssRenderer.domElement.style.pointerEvents = prevPointerEvents;
+            if (cameraRoot && prevCameraPointer !== undefined) cameraRoot.style.pointerEvents = prevCameraPointer;
+            return { elements, px, py };
+        }
+
+        function getPoopCanvasReticlePos() {
+            const hit = getPoopReticleElements();
+            if (!hit) return null;
+            const canvasEl = hit.elements.find((el) => el?.id === 'poopDrawingCanvas' || el?.closest?.('#poopDrawingCanvas'));
+            const canvas = canvasEl?.id === 'poopDrawingCanvas' ? canvasEl : canvasEl?.closest?.('#poopDrawingCanvas');
+            if (!canvas) return null;
+            const rect = canvas.getBoundingClientRect();
+            let x = (hit.px - rect.left) * (canvas.width / rect.width);
+            let y = (hit.py - rect.top) * (canvas.height / rect.height);
+            x = Math.max(0, Math.min(canvas.width, x));
+            y = Math.max(0, Math.min(canvas.height, y));
+            return { canvas, x, y };
+        }
+
+        function handlePoopDrawingPointerDown(event) {
+            if (!isPoopAddOpen || !poopModalRefs?.drawingPanel?.classList.contains('open')) return false;
+            const info = getPoopCanvasReticlePos();
+            if (!info || info.canvas !== poopModalRefs.drawingCanvas) return false;
+            poopDrawingReticleActive = true;
+            poopModalRefs.drawingStart?.(info.x, info.y);
+            return true;
+        }
+
+        function handlePoopDrawingPointerMove() {
+            if (!poopDrawingReticleActive) return false;
+            const info = getPoopCanvasReticlePos();
+            if (!info || info.canvas !== poopModalRefs.drawingCanvas) return false;
+            poopModalRefs.drawingMove?.(info.x, info.y);
+            return true;
+        }
+
+        function handlePoopDrawingPointerUp() {
+            if (!poopDrawingReticleActive) return false;
+            poopDrawingReticleActive = false;
+            poopModalRefs.drawingEnd?.();
+            return true;
+        }
+
         function handleBeerBoardClick(event) {
             if ((!boardArrowMeshes.length && !boardActionMeshes.length) || !renderer || !camera) return false;
             const rect = renderer.domElement.getBoundingClientRect();
@@ -4642,6 +6517,51 @@
             const menu = document.querySelector('.beer-add-3d .cs.open .cs-menu');
             if (!menu) return false;
             menu.scrollTop += event.deltaY;
+            return true;
+        }
+
+        function handlePoopAddLockedScroll(event) {
+            if (!isPoopAddOpen || !renderer || !camera || !cssRenderer?.domElement) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const px = rect.left + centerX;
+            const py = rect.top + centerY;
+            const prevPointerEvents = cssRenderer.domElement.style.pointerEvents;
+            const cameraRoot = cssRenderer.domElement.firstElementChild;
+            const prevCameraPointer = cameraRoot?.style.pointerEvents;
+            cssRenderer.domElement.style.pointerEvents = 'auto';
+            if (cameraRoot) cameraRoot.style.pointerEvents = 'auto';
+            const elements = document.elementsFromPoint
+                ? document.elementsFromPoint(px, py)
+                : [document.elementFromPoint(px, py)].filter(Boolean);
+            cssRenderer.domElement.style.pointerEvents = prevPointerEvents;
+            if (cameraRoot && prevCameraPointer !== undefined) cameraRoot.style.pointerEvents = prevCameraPointer;
+            const scoped = elements.find((el) => el?.closest && el.closest('.poop-add-3d'));
+            if (!scoped) return false;
+            const delta = event.deltaY * 6.5;
+            const openMenu = document.querySelector('.poop-add-3d .cs.open .cs-menu');
+            if (openMenu) {
+                openMenu.scrollBy({ top: delta, behavior: 'auto' });
+                return true;
+            }
+            const activeList = document.activeElement?.closest?.('.poop-add-3d .time-wheel-list');
+            if (activeList) {
+                activeList.scrollBy({ top: delta, behavior: 'auto' });
+                return true;
+            }
+            const listEl = elements.find((el) => el?.closest && el.closest('.poop-add-3d .time-wheel-list'));
+            if (listEl) {
+                const list = listEl.closest('.time-wheel-list');
+                list.scrollBy({ top: delta, behavior: 'auto' });
+                return true;
+            }
+            const card = elements.find((el) => el?.closest && el.closest('.poop-add-3d .poop-card'));
+            if (card) {
+                const wrap = card.closest('.poop-card');
+                wrap.scrollBy({ top: delta, behavior: 'auto' });
+                return true;
+            }
             return true;
         }
 
@@ -4893,6 +6813,17 @@
                     verticalVelocity = 0;
                     isGrounded = true;
                 }
+            }
+            const onToilet = isPlayerOnToilet();
+            if (onToilet && !isPoopAddOpen && !isBeerAddOpen && !poopModalSuppressed) {
+                openPoopAddModal3D();
+            } else if (!onToilet && isPoopAddOpen) {
+                closePoopAddModal3D();
+            } else if (!onToilet && poopModalSuppressed) {
+                poopModalSuppressed = false;
+            }
+            if (isPoopAddOpen && !poopModalAnchorPos) {
+                positionPoopAddModalInFront();
             }
             sendPresenceUpdate();
             updateRemotePlayers(delta);
