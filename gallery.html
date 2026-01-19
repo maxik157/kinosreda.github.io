@@ -1309,6 +1309,11 @@
         let boardArrowMeshes = [];
         let boardActionMeshes = [];
         let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0, initialized: false };
+        let lastBoardScrollSent = 0;
+        let lastBoardScrollTarget = null;
+        let beerAddSyncTimer = null;
+        let lastBeerAddBroadcast = 0;
+        let suppressBeerAddSync = false;
         const boardRaycaster = new THREE.Raycaster();
         const boardPointer = new THREE.Vector2();
         const wallImageRaycaster = new THREE.Raycaster();
@@ -1333,6 +1338,7 @@
         let beerAddHitMesh = null;
         const beerAddTempPos = new THREE.Vector3();
         const beerAddTempDir = new THREE.Vector3();
+        const beerAddScreenVec = new THREE.Vector3();
         let poopAddAnchor = null;
         let poopAddObject = null;
         let isPoopAddOpen = false;
@@ -5042,7 +5048,9 @@
                 const key = wrap.dataset.key;
                 const options = BEER_SELECT_OPTIONS[key] || [];
                 const defValue = BEER_SELECT_DEFAULTS[key];
-                setupCustomSelect(wrap, options, defValue);
+                setupCustomSelect(wrap, options, defValue, () => {
+                    if (!suppressBeerAddSync) queueBeerAddSync();
+                });
             });
         }
 
@@ -5067,6 +5075,116 @@
             return wrap?.dataset?.value || '';
         }
 
+        function collectBeerAddFormState() {
+            const root = beerAddObject?.element;
+            if (!root) return null;
+            return {
+                name: root.querySelector('#beer3dName')?.value || '',
+                alcohol: root.querySelector('#beer3dAlcohol')?.value || '',
+                calories: root.querySelector('#beer3dCalories')?.value || '',
+                type: getBeerAddSelectValue(root, 'type'),
+                style: getBeerAddSelectValue(root, 'style'),
+                filtered: getBeerAddSelectValue(root, 'filtered'),
+                country: getBeerAddSelectValue(root, 'country'),
+                volume: getBeerAddSelectValue(root, 'volume')
+            };
+        }
+
+        function applyBeerAddFormState(state) {
+            if (!state || !beerAddObject?.element) return;
+            const root = beerAddObject.element;
+            if (typeof state.name === 'string') root.querySelector('#beer3dName').value = state.name;
+            if (typeof state.alcohol === 'string') root.querySelector('#beer3dAlcohol').value = state.alcohol;
+            if (typeof state.calories === 'string') root.querySelector('#beer3dCalories').value = state.calories;
+            if (state.type) setBeerAddSelectValue(root, 'type', state.type);
+            if (state.style) setBeerAddSelectValue(root, 'style', state.style);
+            if (state.filtered) setBeerAddSelectValue(root, 'filtered', state.filtered);
+            if (state.country) setBeerAddSelectValue(root, 'country', state.country);
+            if (state.volume) setBeerAddSelectValue(root, 'volume', state.volume);
+        }
+
+        function queueBeerAddSync() {
+            if (!wsConnected || suppressBeerAddSync || !isBeerAddOpen) return;
+            if (beerAddSyncTimer) return;
+            beerAddSyncTimer = setTimeout(() => {
+                beerAddSyncTimer = null;
+                const now = performance.now();
+                if (now - lastBeerAddBroadcast < 80) return;
+                lastBeerAddBroadcast = now;
+                sendRealtime({ type: 'beer_add', open: isBeerAddOpen, data: collectBeerAddFormState() });
+            }, 60);
+        }
+
+        function syncBeerAddOpenState(open, data) {
+            suppressBeerAddSync = true;
+            if (open) {
+                openBeerAddModal3D(true);
+                applyBeerAddFormState(data);
+            } else if (isBeerAddOpen) {
+                closeBeerAddModal3D(true);
+            }
+            suppressBeerAddSync = false;
+        }
+
+        function projectToScreenPoint(worldPos, rect) {
+            if (!camera) return null;
+            beerAddScreenVec.copy(worldPos).project(camera);
+            if (beerAddScreenVec.z < -1 || beerAddScreenVec.z > 1) return null;
+            return {
+                x: rect.left + (beerAddScreenVec.x * 0.5 + 0.5) * rect.width,
+                y: rect.top + (-beerAddScreenVec.y * 0.5 + 0.5) * rect.height
+            };
+        }
+
+        function getBeerAddScreenRect(x, y, z) {
+            if (!renderer || !camera) return null;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const halfW = 2.1;
+            const halfH = 3.2;
+            const corners = [
+                new THREE.Vector3(x - halfW, y - halfH, z),
+                new THREE.Vector3(x + halfW, y - halfH, z),
+                new THREE.Vector3(x + halfW, y + halfH, z),
+                new THREE.Vector3(x - halfW, y + halfH, z)
+            ];
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+            for (const corner of corners) {
+                const p = projectToScreenPoint(corner, rect);
+                if (!p) continue;
+                minX = Math.min(minX, p.x);
+                maxX = Math.max(maxX, p.x);
+                minY = Math.min(minY, p.y);
+                maxY = Math.max(maxY, p.y);
+            }
+            if (!Number.isFinite(minX)) return null;
+            return { minX, maxX, minY, maxY, rect };
+        }
+
+        function isBeerAddOverlappingRemotePlayers(screenRect) {
+            if (!screenRect || remotePlayers.size === 0) return false;
+            for (const player of remotePlayers.values()) {
+                const group = player.group;
+                if (!group || !group.visible) continue;
+                const height = group.userData?.avatarHeight || AVATAR_TARGET_HEIGHT;
+                const pos = group.position.clone();
+                pos.y += height * 0.6;
+                const point = projectToScreenPoint(pos, screenRect.rect);
+                if (!point) continue;
+                if (
+                    point.x >= screenRect.minX &&
+                    point.x <= screenRect.maxX &&
+                    point.y >= screenRect.minY &&
+                    point.y <= screenRect.maxY
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         function syncBeerAddModalPosition() {
             if (!beerAddAnchor || !boardGroup?.userData?.boardPos) return;
             if (beerAddAnchor.userData.hasCustomPosition) return;
@@ -5074,9 +5192,21 @@
             const height = boardGroup.userData.boardHeight || 7.4;
             const width = boardGroup.userData.boardWidth || room.width * 0.7;
             const offsetX = width / 2 + 4.4;
-            const targetX = pos.x + offsetX;
+            let targetX = pos.x + offsetX;
             const targetY = pos.y + height * 0.05;
             const targetZ = pos.z + 0.9;
+            if (isBeerAddOpen && renderer && camera && remotePlayers.size > 0) {
+                const shiftStep = 2.4;
+                const candidates = [0, shiftStep, -shiftStep, shiftStep * 2, -shiftStep * 2, shiftStep * 3, -shiftStep * 3];
+                for (const shift of candidates) {
+                    const rect = getBeerAddScreenRect(targetX + shift, targetY, targetZ);
+                    if (!rect) continue;
+                    if (!isBeerAddOverlappingRemotePlayers(rect)) {
+                        targetX = targetX + shift;
+                        break;
+                    }
+                }
+            }
             beerAddAnchor.position.set(targetX, targetY, targetZ);
             beerAddAnchor.rotation.set(0, 0, 0);
             if (beerAddHitMesh) {
@@ -5113,6 +5243,16 @@
             const cancelBtn = el.querySelector('#beer3dCancel');
             if (submitBtn) submitBtn.addEventListener('click', addBeerFrom3DModal);
             if (cancelBtn) cancelBtn.addEventListener('click', closeBeerAddModal3D);
+
+            const nameInput = el.querySelector('#beer3dName');
+            const alcoholInput = el.querySelector('#beer3dAlcohol');
+            const caloriesInput = el.querySelector('#beer3dCalories');
+            [nameInput, alcoholInput, caloriesInput].forEach((input) => {
+                if (!input) return;
+                input.addEventListener('input', () => {
+                    if (!suppressBeerAddSync) queueBeerAddSync();
+                });
+            });
         }
 
         function resetBeerAddModalForm() {
@@ -5128,7 +5268,8 @@
             root.querySelector('#beer3dCalories').value = '';
         }
 
-        function openBeerAddModal3D() {
+        function openBeerAddModal3D(fromRemote = false) {
+            const isRemote = fromRemote === true;
             setupBeerAddModal3D();
             if (!beerAddObject) return;
             isBeerAddOpen = true;
@@ -5142,14 +5283,25 @@
             moveState.left = false;
             moveState.right = false;
             moveState.fast = false;
+            if (!isRemote && !suppressBeerAddSync) {
+                sendRealtime({ type: 'beer_add', open: true, data: collectBeerAddFormState() });
+            }
         }
 
-        function closeBeerAddModal3D() {
+        function closeBeerAddModal3D(fromRemote = false) {
+            const isRemote = fromRemote === true;
             if (!beerAddObject) return;
             isBeerAddOpen = false;
             beerAddObject.element.classList.remove('open');
             if (beerAddHitMesh) beerAddHitMesh.visible = false;
             updateBeerAddPointerEvents();
+            if (beerAddSyncTimer) {
+                clearTimeout(beerAddSyncTimer);
+                beerAddSyncTimer = null;
+            }
+            if (!isRemote && !suppressBeerAddSync) {
+                sendRealtime({ type: 'beer_add', open: false, data: null });
+            }
         }
 
         async function addBeerFrom3DModal() {
@@ -6208,6 +6360,35 @@
             });
         }
 
+        function applyRemoteBoardScroll(target) {
+            const maxOffset = boardScrollState.maxOffset || 0;
+            const clamp = (value) => Math.max(-maxOffset, Math.min(maxOffset, value));
+            const next = Number.isFinite(target) ? Number(target) : 0;
+            const clamped = maxOffset ? clamp(next) : next;
+            boardScrollState.target = clamped;
+            if (!boardScrollState.initialized) {
+                boardScrollState.offset = clamped;
+                boardScrollState.initialized = true;
+            }
+            lastBoardScrollTarget = clamped;
+            lastBoardScrollSent = performance.now();
+            updateBeerBoardArrows();
+        }
+
+        function sendBoardScrollUpdate(force = false) {
+            if (!wsConnected) return;
+            const now = performance.now();
+            const target = Number.isFinite(boardScrollState.target) ? boardScrollState.target : 0;
+            const delta = Math.abs(target - (lastBoardScrollTarget ?? 0));
+            if (!force) {
+                if (now - lastBoardScrollSent < 120 && delta < 0.02) return;
+                if (delta < 0.002) return;
+            }
+            lastBoardScrollSent = now;
+            lastBoardScrollTarget = target;
+            sendRealtime({ type: 'board_scroll', target });
+        }
+
         function scrollBeerBoard(direction) {
             if (!boardContentGroup) return;
             const step = boardScrollState.step || 0;
@@ -6216,16 +6397,19 @@
             const maxOffset = boardScrollState.maxOffset || 0;
             boardScrollState.target = Math.max(-maxOffset, Math.min(maxOffset, next));
             updateBeerBoardArrows();
+            sendBoardScrollUpdate(true);
         }
 
         function startBoardScrollHold(direction) {
             boardScrollState.holdDir = direction;
             boardScrollState.speed = 8.5;
+            sendBoardScrollUpdate(true);
         }
 
         function stopBoardScrollHold() {
             boardScrollState.holdDir = 0;
             boardScrollState.speed = 0;
+            sendBoardScrollUpdate(true);
         }
 
         function handleBeerAddLockedClick(event) {
@@ -6651,6 +6835,12 @@
                             }
                         });
                     }
+                    if (data.boardScroll && Number.isFinite(data.boardScroll.target)) {
+                        applyRemoteBoardScroll(Number(data.boardScroll.target));
+                    }
+                    if (data.beerAdd && typeof data.beerAdd.open === 'boolean') {
+                        syncBeerAddOpenState(Boolean(data.beerAdd.open), data.beerAdd.data || null);
+                    }
                     return;
                 }
                 if (data.type === 'user_join' && data.user) {
@@ -6665,6 +6855,14 @@
                 }
                 if (data.type === 'ladder') {
                     upsertRemoteLadder(data);
+                    return;
+                }
+                if (data.type === 'board_scroll' && Number.isFinite(data.target)) {
+                    applyRemoteBoardScroll(Number(data.target));
+                    return;
+                }
+                if (data.type === 'beer_add') {
+                    syncBeerAddOpenState(Boolean(data.open), data.data || null);
                     return;
                 }
                 if (data.type === 'presence' && data.user) {
@@ -6792,6 +6990,7 @@
                     boardContentGroup.position.x = boardScrollState.offset;
                 }
             }
+            sendBoardScrollUpdate();
             const currentBottom = yawObject.position.y - eyeHeight;
             const groundY = getSofaGroundHeight(yawObject.position.x, yawObject.position.z, currentBottom);
             if (yawObject.position.y > groundY + 0.02) {
@@ -6815,7 +7014,7 @@
                 }
             }
             const onToilet = isPlayerOnToilet();
-            if (onToilet && !isPoopAddOpen && !isBeerAddOpen && !poopModalSuppressed) {
+            if (onToilet && !isPoopAddOpen && !poopModalSuppressed) {
                 openPoopAddModal3D();
             } else if (!onToilet && isPoopAddOpen) {
                 closePoopAddModal3D();
