@@ -1354,7 +1354,7 @@
         const WALL_TEXTURE_URL = 'brick-wall.jpg';
         const CEILING_TEXTURE_URL = 'ceiling-armstrong.jpg';
         const AVATAR_MODEL_URL = 'soldier.glb';
-        const AVATAR_MODEL_FALLBACK_URL = 'https://threejs.org/examples/models/gltf/Soldier.glb';
+        const AVATAR_MODEL_FALLBACK_URL = '';
         const REALTIME_WS_URL = 'wss://kinosreda-realtime.maxik157.workers.dev/ws';
         const REALTIME_ROOM = 'beer-shelf';
         const WALL_IMAGES_LS_KEY = 'beerShelfWallImages';
@@ -3671,8 +3671,12 @@
             applyUserColorToAvatar(avatar, bodyColor);
             const box = new THREE.Box3().setFromObject(avatar);
             const size = box.getSize(new THREE.Vector3());
-            const height = Math.max(size.y, 0.0001);
-            const scale = AVATAR_TARGET_HEIGHT / height;
+            if (!Number.isFinite(size.y) || size.y <= 0.05 || size.y > 10) {
+                return null;
+            }
+            let scale = AVATAR_TARGET_HEIGHT / size.y;
+            if (!Number.isFinite(scale) || scale <= 0) return null;
+            scale = Math.min(Math.max(scale, 0.1), 10);
             avatar.scale.setScalar(scale);
             avatar.updateMatrixWorld(true);
             const adjustedBox = new THREE.Box3().setFromObject(avatar);
@@ -3709,6 +3713,72 @@
             return avatar;
         }
 
+        function createAvatarPlaceholder(bodyColor) {
+            const placeholder = new THREE.Group();
+            const shirtMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.7, metalness: 0.1 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8, metalness: 0.05 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: 0.5, metalness: 0.05 });
+            const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.8, 6, 12), shirtMat);
+            torso.position.y = 1.2;
+            placeholder.add(torso);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), skinMat);
+            head.position.y = 1.85;
+            placeholder.add(head);
+            const armLength = 0.65;
+            const armGeo = new THREE.CylinderGeometry(0.1, 0.11, armLength, 10);
+            const armLeftGroup = new THREE.Group();
+            const armLeft = new THREE.Mesh(armGeo, shirtMat);
+            armLeft.position.y = -armLength / 2;
+            armLeftGroup.position.set(-0.38, 1.66, 0.08);
+            armLeftGroup.rotation.z = 0.02;
+            armLeftGroup.rotation.x = 0.38;
+            armLeftGroup.add(armLeft);
+            const armRightGroup = new THREE.Group();
+            const armRight = new THREE.Mesh(armGeo, shirtMat);
+            armRight.position.y = -armLength / 2;
+            armRightGroup.position.set(0.38, 1.66, 0.08);
+            armRightGroup.rotation.z = -0.02;
+            armRightGroup.rotation.x = 0.38;
+            armRightGroup.add(armRight);
+            placeholder.add(armLeftGroup, armRightGroup);
+
+            const legLength = 0.75;
+            const legGeo = new THREE.CylinderGeometry(0.15, 0.17, legLength, 10);
+            const legLeftGroup = new THREE.Group();
+            const legLeft = new THREE.Mesh(legGeo, pantsMat);
+            legLeft.position.y = -legLength / 2;
+            legLeftGroup.position.set(-0.22, 0.75, 0);
+            legLeftGroup.add(legLeft);
+            const legRightGroup = new THREE.Group();
+            const legRight = new THREE.Mesh(legGeo, pantsMat);
+            legRight.position.y = -legLength / 2;
+            legRightGroup.position.set(0.22, 0.75, 0);
+            legRightGroup.add(legRight);
+            placeholder.add(legLeftGroup, legRightGroup);
+            placeholder.userData.limbs = {
+                armLeft: armLeftGroup,
+                armRight: armRightGroup,
+                legLeft: legLeftGroup,
+                legRight: legRightGroup
+            };
+            armLeftGroup.userData.baseRotZ = armLeftGroup.rotation.z;
+            armLeftGroup.userData.baseRotX = armLeftGroup.rotation.x;
+            armRightGroup.userData.baseRotZ = armRightGroup.rotation.z;
+            armRightGroup.userData.baseRotX = armRightGroup.rotation.x;
+            const placeholderBox = new THREE.Box3().setFromObject(placeholder);
+            const placeholderSize = placeholderBox.getSize(new THREE.Vector3());
+            let placeholderScale = AVATAR_TARGET_HEIGHT / Math.max(placeholderSize.y, 0.0001);
+            if (!Number.isFinite(placeholderScale) || placeholderScale <= 0) {
+                placeholderScale = 1;
+            }
+            placeholderScale = Math.min(Math.max(placeholderScale, 0.1), 10);
+            placeholder.scale.setScalar(placeholderScale);
+            placeholder.updateMatrixWorld(true);
+            const adjustedBox = new THREE.Box3().setFromObject(placeholder);
+            placeholder.position.y -= adjustedBox.min.y;
+            return { placeholder, height: adjustedBox.getSize(new THREE.Vector3()).y };
+        }
+
         function setAvatarAction(group, name) {
             const actions = group?.userData?.actions;
             if (!actions || !actions[name]) return;
@@ -3723,78 +3793,32 @@
             const bodyColor = getUserBodyColor(user);
             const group = new THREE.Group();
             if (avatarTemplate) {
-                setupAvatar(group, bodyColor);
+                const avatar = setupAvatar(group, bodyColor);
+                if (!avatar) {
+                    const fallback = createAvatarPlaceholder(bodyColor);
+                    group.add(fallback.placeholder);
+                    group.userData.placeholder = fallback.placeholder;
+                    group.userData.avatarHeight = fallback.height;
+                }
             } else {
                 loadAvatarModel().then((model) => {
                     if (!model) return;
                     if (!group.userData.avatar) {
                         const placeholder = group.userData.placeholder;
                         if (placeholder) group.remove(placeholder);
-                        setupAvatar(group, bodyColor);
+                        const avatar = setupAvatar(group, bodyColor);
+                        if (!avatar) {
+                            const fallback = createAvatarPlaceholder(bodyColor);
+                            group.add(fallback.placeholder);
+                            group.userData.placeholder = fallback.placeholder;
+                            group.userData.avatarHeight = fallback.height;
+                        }
                     }
                 });
-                const placeholder = new THREE.Group();
-                const shirtMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.7, metalness: 0.1 });
-                const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8, metalness: 0.05 });
-                const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: 0.5, metalness: 0.05 });
-                    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.8, 6, 12), shirtMat);
-                torso.position.y = 1.2;
-                placeholder.add(torso);
-                    const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), skinMat);
-                head.position.y = 1.85;
-                placeholder.add(head);
-                const armLength = 0.65;
-                const armGeo = new THREE.CylinderGeometry(0.1, 0.11, armLength, 10);
-                const armLeftGroup = new THREE.Group();
-                const armLeft = new THREE.Mesh(armGeo, shirtMat);
-                armLeft.position.y = -armLength / 2;
-                armLeftGroup.position.set(-0.38, 1.66, 0.08);
-                armLeftGroup.rotation.z = 0.02;
-                armLeftGroup.rotation.x = 0.38;
-                armLeftGroup.add(armLeft);
-                const armRightGroup = new THREE.Group();
-                const armRight = new THREE.Mesh(armGeo, shirtMat);
-                armRight.position.y = -armLength / 2;
-                armRightGroup.position.set(0.38, 1.66, 0.08);
-                armRightGroup.rotation.z = -0.02;
-                armRightGroup.rotation.x = 0.38;
-                armRightGroup.add(armRight);
-                placeholder.add(armLeftGroup, armRightGroup);
-
-                const legLength = 0.75;
-                const legGeo = new THREE.CylinderGeometry(0.15, 0.17, legLength, 10);
-                const legLeftGroup = new THREE.Group();
-                const legLeft = new THREE.Mesh(legGeo, pantsMat);
-                legLeft.position.y = -legLength / 2;
-                legLeftGroup.position.set(-0.22, 0.75, 0);
-                legLeftGroup.add(legLeft);
-                const legRightGroup = new THREE.Group();
-                const legRight = new THREE.Mesh(legGeo, pantsMat);
-                legRight.position.y = -legLength / 2;
-                legRightGroup.position.set(0.22, 0.75, 0);
-                legRightGroup.add(legRight);
-                placeholder.add(legLeftGroup, legRightGroup);
-                placeholder.userData.limbs = {
-                    armLeft: armLeftGroup,
-                    armRight: armRightGroup,
-                    legLeft: legLeftGroup,
-                    legRight: legRightGroup
-                };
-                armLeftGroup.userData.baseRotZ = armLeftGroup.rotation.z;
-                armLeftGroup.userData.baseRotX = armLeftGroup.rotation.x;
-                armRightGroup.userData.baseRotZ = armRightGroup.rotation.z;
-                armRightGroup.userData.baseRotX = armRightGroup.rotation.x;
-                group.add(placeholder);
-                group.userData.placeholder = placeholder;
-                const placeholderBox = new THREE.Box3().setFromObject(placeholder);
-                const placeholderSize = placeholderBox.getSize(new THREE.Vector3());
-                const placeholderHeight = Math.max(placeholderSize.y, 0.0001);
-                const placeholderScale = AVATAR_TARGET_HEIGHT / placeholderHeight;
-                placeholder.scale.setScalar(placeholderScale);
-                placeholder.updateMatrixWorld(true);
-                const adjustedBox = new THREE.Box3().setFromObject(placeholder);
-                placeholder.position.y -= adjustedBox.min.y;
-                group.userData.avatarHeight = adjustedBox.getSize(new THREE.Vector3()).y;
+                const fallback = createAvatarPlaceholder(bodyColor);
+                group.add(fallback.placeholder);
+                group.userData.placeholder = fallback.placeholder;
+                group.userData.avatarHeight = fallback.height;
             }
             const label = createNameSprite(user.name || 'Guest');
             label.position.set(0, (group.userData.avatarHeight || AVATAR_TARGET_HEIGHT) + LABEL_OFFSET, 0);
@@ -4429,13 +4453,16 @@
             return group;
         }
 
+        const WALL_IMAGE_WALL_OFFSET = 0.0;
+        const WALL_IMAGE_SURFACE_OFFSET = -1.4;
+
         function setupWallSurfaces(backWall, frontWall, leftWall, rightWall) {
             wallImageGroup = new THREE.Group();
             scene.add(wallImageGroup);
             const makeSurface = (id, mesh, width, height) => {
                 const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(mesh.quaternion);
                 const anchor = new THREE.Group();
-                anchor.position.copy(mesh.position).addScaledVector(normal, 0.12);
+                anchor.position.copy(mesh.position).addScaledVector(normal, WALL_IMAGE_WALL_OFFSET);
                 anchor.rotation.copy(mesh.rotation);
                 wallImageGroup.add(anchor);
                 return { id, mesh, anchor, cssAnchor: null, normal, width, height };
@@ -4499,9 +4526,15 @@
         }
 
         function applyWallImageTransform(mesh) {
-            const scale = mesh.userData.scale || 1;
-            const baseW = mesh.userData.baseW || 2;
-            const baseH = mesh.userData.baseH || 2;
+            let scale = Number.isFinite(mesh.userData.scale) ? mesh.userData.scale : 1;
+            scale = Math.min(6, Math.max(0.35, scale));
+            let baseW = Number.isFinite(mesh.userData.baseW) ? mesh.userData.baseW : 2;
+            let baseH = Number.isFinite(mesh.userData.baseH) ? mesh.userData.baseH : 2;
+            baseW = Math.min(10, Math.max(0.4, baseW));
+            baseH = Math.min(10, Math.max(0.4, baseH));
+            mesh.userData.scale = scale;
+            mesh.userData.baseW = baseW;
+            mesh.userData.baseH = baseH;
             mesh.scale.set(baseW * scale, baseH * scale, 1);
             if (mesh.userData.outline) {
                 mesh.userData.outline.scale.set(1, 1, 1);
@@ -4566,15 +4599,20 @@
             if (!wall) return null;
             const mesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(1, 1),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
+                new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0,
+                    depthWrite: false
+                })
             );
             mesh.position.set(data.x || 0, data.y || 0, 0);
             mesh.userData.id = data.id;
             mesh.userData.url = data.url || '';
             mesh.userData.wallId = data.wallId;
-            mesh.userData.scale = data.scale || 1;
-            mesh.userData.baseW = data.baseW || 2;
-            mesh.userData.baseH = data.baseH || 2;
+            mesh.userData.scale = Number.isFinite(data.scale) ? data.scale : 1;
+            mesh.userData.baseW = Number.isFinite(data.baseW) ? data.baseW : 2;
+            mesh.userData.baseH = Number.isFinite(data.baseH) ? data.baseH : 2;
             mesh.userData.frame = Boolean(data.frame);
             mesh.userData.labelText = String(data.labelText || '');
             if (!Number.isFinite(data.layer)) {
@@ -4582,7 +4620,7 @@
             } else {
                 wallImageLayerCounter = Math.max(wallImageLayerCounter, data.layer + 1);
             }
-            mesh.position.z = (data.layer || 0) * 0.002;
+            mesh.position.z = WALL_IMAGE_SURFACE_OFFSET + (data.layer || 0) * 0.002;
             mesh.renderOrder = 30 + (data.layer || 0);
             const outline = new THREE.LineSegments(
                 new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
@@ -4638,7 +4676,9 @@
             updateWallImageCss(mesh);
 
             img.addEventListener('load', () => {
-                const aspect = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+                let aspect = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+                if (!Number.isFinite(aspect) || aspect <= 0) aspect = 1;
+                aspect = Math.min(4, Math.max(0.25, aspect));
                 mesh.userData.baseH = 2;
                 mesh.userData.baseW = 2 * aspect;
                 const heightPx = Math.round(600 / Math.max(0.2, aspect));
@@ -4655,6 +4695,11 @@
         function updateWallImageCss(mesh) {
             const cssObj = mesh?.userData?.cssObject;
             if (!cssObj) return;
+            const wall = wallSurfaces.find((s) => s.id === mesh.userData.wallId);
+            if (wall?.cssAnchor) {
+                wall.cssAnchor.position.copy(wall.anchor.position);
+                wall.cssAnchor.rotation.copy(wall.anchor.rotation);
+            }
             const widthPx = mesh.userData.cssWidthPx || 600;
             const heightPx = mesh.userData.cssHeightPx || 600;
             cssObj.position.copy(mesh.position);
@@ -4857,7 +4902,7 @@
             } else {
                 mesh.userData.layer = wallImageLayerCounter++;
             }
-            mesh.position.z = mesh.userData.layer * 0.002;
+            mesh.position.z = WALL_IMAGE_SURFACE_OFFSET + mesh.userData.layer * 0.002;
             mesh.renderOrder = 30 + mesh.userData.layer;
             syncWallImageData(mesh);
             queueWallImagesSave();
