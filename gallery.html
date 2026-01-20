@@ -1289,6 +1289,7 @@
         const WALL_IMAGES_DB_PATH = 'beerShelfWallImages';
         const WALL_IMAGES_META_PATH = 'beerShelfWallImagesMeta';
         const WALL_IMAGES_META_TS_KEY = 'beerShelfWallImagesMetaTs';
+        const IMAGE_PROXY_CONCURRENCY = 6;
 
         let beerData = [];
         let selectedBeerId = null;
@@ -2203,8 +2204,7 @@
             if (!rugMesh || !rugTextureLoader || !url) return;
             if (rugUrl === url) return;
             rugUrl = url;
-            const safeUrl = toSafeImageUrl(url);
-            rugTextureLoader.load(safeUrl, (texture) => {
+            loadTextureWithProxy(url, rugTextureLoader, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
                 texture.minFilter = THREE.LinearFilter;
@@ -4257,9 +4257,8 @@
             mesh.position.set(0, height / 2, 0.02);
             group.add(mesh);
             const url = (beer.imageUrl || '').trim();
-            if (url && !/^data:image/i.test(url)) {
-                const safe = toSafeImageUrl(url);
-                bottleTextureLoader.load(safe, (texture) => {
+            if (url) {
+                loadTextureWithProxy(url, bottleTextureLoader, (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.minFilter = THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;
@@ -4431,8 +4430,7 @@
             wall.anchor.add(mesh);
             wallImageMeshMap.set(String(data.id), mesh);
             if (data.url) {
-                const safeUrl = data.url.startsWith('data:image') ? data.url : toSafeImageUrl(data.url);
-                wallImageTextureLoader.load(safeUrl, (texture) => {
+                loadTextureWithProxy(data.url, wallImageTextureLoader, (texture) => {
                     texture.colorSpace = THREE.SRGBColorSpace;
                     texture.minFilter = THREE.LinearFilter;
                     texture.magFilter = THREE.LinearFilter;
@@ -6775,8 +6773,93 @@
         function toSafeImageUrl(url) {
             if (!url) return '';
             if (url.startsWith('data:image')) return url;
-            const clean = url.replace(/^https?:\/\//i, '');
-            return `https://images.weserv.nl/?url=${encodeURIComponent(clean)}&output=png`;
+            const trimmed = url.trim();
+            if (/^https?:\/\//i.test(trimmed)) return trimmed;
+            return `https://${trimmed}`;
+        }
+
+        const proxyTextureCache = new Map();
+        const proxyTextureQueue = [];
+        let proxyTextureActive = 0;
+
+        function fetchProxyImageBlob(url) {
+            const proxyUrl = new URL(LOCAL_IMAGE_PROXY_ENDPOINT);
+            proxyUrl.searchParams.set('url', url);
+            return fetch(proxyUrl.toString(), { cache: 'force-cache' }).then((response) => {
+                if (!response.ok) throw new Error('proxy_failed');
+                return response.blob();
+            });
+        }
+
+        function drainProxyTextureQueue() {
+            while (proxyTextureActive < IMAGE_PROXY_CONCURRENCY && proxyTextureQueue.length) {
+                const task = proxyTextureQueue.shift();
+                proxyTextureActive += 1;
+                fetchProxyImageBlob(task.url)
+                    .then((blob) => {
+                        const objectUrl = URL.createObjectURL(blob);
+                        task.loader.load(
+                            objectUrl,
+                            (texture) => {
+                                URL.revokeObjectURL(objectUrl);
+                                task.resolve(texture);
+                            },
+                            undefined,
+                            (err) => {
+                                URL.revokeObjectURL(objectUrl);
+                                task.reject(err || new Error('proxy_load_failed'));
+                            }
+                        );
+                    })
+                    .catch((err) => task.reject(err))
+                    .finally(() => {
+                        proxyTextureActive -= 1;
+                        drainProxyTextureQueue();
+                    });
+            }
+        }
+
+        function loadTextureViaProxyQueue(url, loader, onLoad) {
+            const cached = proxyTextureCache.get(url);
+            if (cached) {
+                cached.then(onLoad).catch(() => loader.load(url, onLoad));
+                return;
+            }
+            const promise = new Promise((resolve, reject) => {
+                proxyTextureQueue.push({ url, loader, resolve, reject });
+                drainProxyTextureQueue();
+            });
+            proxyTextureCache.set(url, promise);
+            promise
+                .then(onLoad)
+                .catch(() => {
+                    proxyTextureCache.delete(url);
+                    loader.load(url, onLoad);
+                });
+        }
+
+        function loadTextureWithProxy(url, loader, onLoad) {
+            if (!url || !loader) return;
+            if (/^data:/i.test(url)) {
+                loader.load(url, onLoad);
+                return;
+            }
+            const resolved = new URL(url, location.href).href;
+            const isCrossOrigin = (() => {
+                try {
+                    return new URL(resolved).origin !== location.origin;
+                } catch (_) {
+                    return false;
+                }
+            })();
+            const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const localProxyIsLocal = isLocalEndpoint(LOCAL_IMAGE_PROXY_ENDPOINT);
+            const useProxy = isCrossOrigin && LOCAL_IMAGE_PROXY_ENDPOINT && (canUseLocal || !localProxyIsLocal);
+            if (!useProxy) {
+                loader.load(resolved, onLoad);
+                return;
+            }
+            loadTextureViaProxyQueue(resolved, loader, onLoad);
         }
 
         function truncateText(ctx, text, maxWidth) {
