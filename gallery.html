@@ -1289,7 +1289,9 @@
         const WALL_IMAGES_DB_PATH = 'beerShelfWallImages';
         const WALL_IMAGES_META_PATH = 'beerShelfWallImagesMeta';
         const WALL_IMAGES_META_TS_KEY = 'beerShelfWallImagesMetaTs';
-        const IMAGE_PROXY_CONCURRENCY = 6;
+        const IMAGE_PROXY_CONCURRENCY = 3;
+        const IMAGE_PROXY_TIMEOUT_MS = 12000;
+        const IMAGE_PROXY_MAX_RETRIES = 1;
 
         let beerData = [];
         let selectedBeerId = null;
@@ -1303,6 +1305,11 @@
         let boardGroup = null;
         let neonSignGroup = null;
         let beerRatingSignGroup = null;
+        let basePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        let currentPixelRatio = basePixelRatio;
+        let perfSampleTime = 0;
+        let perfSampleFrames = 0;
+        let perfLowMode = false;
         let rugMesh = null;
         let rugTextureLoader = null;
         let rugUrl = '';
@@ -1315,6 +1322,7 @@
         let beerAddSyncTimer = null;
         let lastBeerAddBroadcast = 0;
         let suppressBeerAddSync = false;
+        let presenceHeartbeatId = null;
         const boardRaycaster = new THREE.Raycaster();
         const boardPointer = new THREE.Vector2();
         const wallImageRaycaster = new THREE.Raycaster();
@@ -3111,7 +3119,9 @@
             scene.add(yawObject);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, stencil: true });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            basePixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+            currentPixelRatio = basePixelRatio;
+            renderer.setPixelRatio(currentPixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.localClippingEnabled = true;
@@ -3420,8 +3430,31 @@
                 camera.aspect = window.innerWidth / window.innerHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(currentPixelRatio);
                 if (cssRenderer) cssRenderer.setSize(window.innerWidth, window.innerHeight);
             });
+        }
+
+        function applyRendererPixelRatio(next) {
+            if (!renderer) return;
+            const clamped = Math.max(0.75, Math.min(next, basePixelRatio));
+            if (Math.abs(clamped - currentPixelRatio) < 0.01) return;
+            currentPixelRatio = clamped;
+            renderer.setPixelRatio(currentPixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function monitorPerformance(delta) {
+            perfSampleTime += delta;
+            perfSampleFrames += 1;
+            if (perfSampleTime < 2) return;
+            const avgMs = (perfSampleTime / Math.max(1, perfSampleFrames)) * 1000;
+            perfSampleTime = 0;
+            perfSampleFrames = 0;
+            if (avgMs > 42 && !perfLowMode && currentPixelRatio > 1) {
+                perfLowMode = true;
+                applyRendererPixelRatio(1);
+            }
         }
 
         function createNameSprite(text) {
@@ -6723,7 +6756,11 @@
             if (cameraRoot && prevCameraPointer !== undefined) cameraRoot.style.pointerEvents = prevCameraPointer;
             const scoped = elements.find((el) => el?.closest && el.closest('.poop-add-3d'));
             if (!scoped) return false;
-            const delta = event.deltaY * 6.5;
+            let delta = event.deltaY;
+            if (event.deltaMode === 1) delta *= 16;
+            if (event.deltaMode === 2) delta *= 120;
+            const maxStep = 48;
+            delta = Math.max(-maxStep, Math.min(maxStep, delta));
             const openMenu = document.querySelector('.poop-add-3d .cs.open .cs-menu');
             if (openMenu) {
                 openMenu.scrollBy({ top: delta, behavior: 'auto' });
@@ -6782,20 +6819,45 @@
         const proxyTextureQueue = [];
         let proxyTextureActive = 0;
 
-        function fetchProxyImageBlob(url) {
+        async function fetchProxyImageBlob(url) {
             const proxyUrl = new URL(LOCAL_IMAGE_PROXY_ENDPOINT);
             proxyUrl.searchParams.set('url', url);
-            return fetch(proxyUrl.toString(), { cache: 'force-cache' }).then((response) => {
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_PROXY_TIMEOUT_MS);
+            try {
+                const response = await fetch(proxyUrl.toString(), {
+                    cache: 'force-cache',
+                    signal: controller.signal
+                });
                 if (!response.ok) throw new Error('proxy_failed');
-                return response.blob();
-            });
+                return await response.blob();
+            } finally {
+                window.clearTimeout(timeoutId);
+            }
+        }
+
+        async function fetchProxyImageBlobWithRetry(url) {
+            let attempt = 0;
+            let lastError = null;
+            while (attempt <= IMAGE_PROXY_MAX_RETRIES) {
+                try {
+                    return await fetchProxyImageBlob(url);
+                } catch (err) {
+                    lastError = err;
+                    attempt += 1;
+                    if (attempt <= IMAGE_PROXY_MAX_RETRIES) {
+                        await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+                    }
+                }
+            }
+            throw lastError || new Error('proxy_failed');
         }
 
         function drainProxyTextureQueue() {
             while (proxyTextureActive < IMAGE_PROXY_CONCURRENCY && proxyTextureQueue.length) {
                 const task = proxyTextureQueue.shift();
                 proxyTextureActive += 1;
-                fetchProxyImageBlob(task.url)
+                fetchProxyImageBlobWithRetry(task.url)
                     .then((blob) => {
                         const objectUrl = URL.createObjectURL(blob);
                         task.loader.load(
@@ -6997,9 +7059,17 @@
             });
         }
 
+        function startPresenceHeartbeat() {
+            if (presenceHeartbeatId) return;
+            presenceHeartbeatId = window.setInterval(() => {
+                sendPresenceUpdate();
+            }, 220);
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
+            monitorPerformance(delta);
             const speed = moveState.fast ? 12 : 6;
             const t = clock.getElapsedTime();
             if (neonSignGroup?.userData?.neon) {
@@ -7125,6 +7195,7 @@
             initBeerRatingFeed();
             initWallImagesFeed();
             connectRealtime();
+            startPresenceHeartbeat();
             const db = firebase.database();
             const cachedBeer = readCache(BEER_CACHE_KEY);
             const hasCachedBeer = Array.isArray(cachedBeer) || (cachedBeer && typeof cachedBeer === 'object');
