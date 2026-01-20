@@ -421,6 +421,30 @@
         .beer-add-3d .cs-opt {
             font-family: inherit;
         }
+        .board-css-mask {
+            position: relative;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .board-css-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            will-change: transform;
+            pointer-events: none;
+        }
+        .board-css-item {
+            position: absolute;
+            pointer-events: none;
+        }
+        .board-css-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+        }
         .poop-add-3d {
             width: 920px;
             height: 820px;
@@ -1229,25 +1253,69 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/geometries/TextGeometry.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/geometries/RoundedBoxGeometry.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/utils/SkeletonUtils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
             }
         }
     </script>
     <script type="module">
-        import { CSS3DRenderer, CSS3DObject } from 'https://unpkg.com/three@0.160.0/examples/jsm/renderers/CSS3DRenderer.js';
+        import { CSS3DRenderer, CSS3DObject } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS3DRenderer.js';
+        import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+        import { SkeletonUtils } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js';
+        import { RoundedBoxGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js';
+        import { FontLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/FontLoader.js';
+        import { TextGeometry } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js';
+
         window.THREE = window.THREE || {};
-        window.THREE.CSS3DRenderer = CSS3DRenderer;
-        window.THREE.CSS3DObject = CSS3DObject;
+        Object.assign(window.THREE, {
+            CSS3DRenderer,
+            CSS3DObject,
+            GLTFLoader,
+            SkeletonUtils,
+            RoundedBoxGeometry,
+            FontLoader,
+            TextGeometry
+        });
+    </script>
+    <script>
+        async function ensureCssModules() {
+            if (window.THREE?.CSS3DRenderer && window.THREE?.CSS3DObject) return true;
+            try {
+                const [
+                    css,
+                    gltf,
+                    skel,
+                    rounded,
+                    font,
+                    text
+                ] = await Promise.all([
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS3DRenderer.js'),
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js'),
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js'),
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js'),
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/FontLoader.js'),
+                    import('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/TextGeometry.js')
+                ]);
+                window.THREE = window.THREE || {};
+                Object.assign(window.THREE, {
+                    CSS3DRenderer: css.CSS3DRenderer,
+                    CSS3DObject: css.CSS3DObject,
+                    GLTFLoader: gltf.GLTFLoader,
+                    SkeletonUtils: skel.SkeletonUtils,
+                    RoundedBoxGeometry: rounded.RoundedBoxGeometry,
+                    FontLoader: font.FontLoader,
+                    TextGeometry: text.TextGeometry
+                });
+                return true;
+            } catch (err) {
+                console.warn('css3d module load failed', err);
+                return false;
+            }
+        }
     </script>
     <script>
         const firebaseConfig = {
@@ -1269,8 +1337,8 @@
         const FALLBACK_IMAGE_PROXY_ENDPOINTS = [
             'https://kinosreda1.maxik157.workers.dev/fetch-image'
         ];
-        const POSTIMAGES_API_KEY = '6d207e02198a847aa98d0a2a901485a5';
-        const POSTIMAGES_API_ENDPOINT = 'https://freeimage.host/api/1/upload';
+        const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
+        const POSTIMAGES_API_ENDPOINT = 'https://api.imageban.ru/v1';
         const POSTIMAGES_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/upload-image';
         const IMAGE_OUTPUT_SCALE = 3;
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
@@ -1281,7 +1349,7 @@
         const RUG_CACHE_TS_KEY = 'beerShelfRugCacheTs';
         const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
         const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-        const DEFAULT_RUG_URL = 'https://ir.ozone.ru/s3/multimedia-3/c1000/6669779151.jpg';
+        const DEFAULT_RUG_URL = 'carpet.jpg';
         const FLOOR_TEXTURE_URL = 'wood-floor.jpg';
         const WALL_TEXTURE_URL = 'brick-wall.jpg';
         const CEILING_TEXTURE_URL = 'ceiling-armstrong.jpg';
@@ -1301,6 +1369,10 @@
         let beerData = [];
         let selectedBeerId = null;
         let scene, camera, renderer, cssRenderer, cssScene, yawObject, pitchObject, clock;
+        let cssWallHandlersBound = false;
+        let wallImagePickSuppressUntil = 0;
+        let wallImageSelectedOnPointerDown = false;
+        let cssInitRetryId = null;
         let reticleEl = null;
         let reticleFollow = false;
         let shelvesGroup = null;
@@ -1319,6 +1391,10 @@
         let rugTextureLoader = null;
         let rugUrl = '';
         let boardContentGroup = null;
+        let boardCssGroup = null;
+        let boardCssMaskObject = null;
+        let boardCssMaskEl = null;
+        let boardCssContentEl = null;
         let boardArrowMeshes = [];
         let boardActionMeshes = [];
         let boardScrollState = { offset: 0, maxOffset: 0, step: 0, target: 0, holdDir: 0, speed: 0, initialized: false };
@@ -1674,6 +1750,10 @@
             }
             const link =
                 payload?.url ||
+                payload?.data?.[0]?.link ||
+                payload?.data?.[0]?.short_link ||
+                payload?.data?.[0]?.url ||
+                payload?.data?.[0]?.image_url ||
                 payload?.data?.url ||
                 payload?.data?.link ||
                 payload?.data?.display_url ||
@@ -2085,6 +2165,14 @@
                     if (event.target.closest && event.target.closest('.poop-add-3d')) return;
                     exitPoopAddEditing(event);
                 }
+                if (!isLocked) {
+                    const now = performance.now();
+                    if (now < wallImagePickSuppressUntil) return;
+                    if (event.target.closest && (event.target.closest('.wall-image-toolbar') || event.target.closest('.wall-image-css'))) {
+                        return;
+                    }
+                    if (selectedWallImageId) setSelectedWallImage(null);
+                }
             }, true);
             document.getElementById('imageModal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'imageModal') closeImageModal();
@@ -2099,6 +2187,9 @@
             */
             const scaleInput = document.getElementById('wallImageScale');
             if (scaleInput) {
+                scaleInput.addEventListener('pointerdown', () => {
+                    wallImagePickSuppressUntil = performance.now() + 300;
+                });
                 scaleInput.addEventListener('input', () => {
                     const mesh = getSelectedWallImageMesh();
                     if (!mesh) return;
@@ -2107,6 +2198,7 @@
                     applyWallImageTransform(mesh);
                     syncWallImageData(mesh);
                     queueWallImagesSave();
+                    wallImagePickSuppressUntil = performance.now() + 300;
                 });
             }
             const frameInput = document.getElementById('wallImageFrame');
@@ -2117,6 +2209,7 @@
                     setWallImageFrameVisible(mesh, frameInput.checked);
                     syncWallImageData(mesh);
                     queueWallImagesSave();
+                    wallImagePickSuppressUntil = performance.now() + 300;
                 });
             }
             const labelInput = document.getElementById('wallImageLabel');
@@ -2131,6 +2224,7 @@
                     if (document.pointerLockElement) {
                         document.exitPointerLock();
                     }
+                    wallImagePickSuppressUntil = performance.now() + 500;
                 });
                 labelInput.addEventListener('focus', () => {
                     isWallLabelEditing = true;
@@ -2142,6 +2236,7 @@
                     if (document.pointerLockElement) {
                         document.exitPointerLock();
                     }
+                    wallImagePickSuppressUntil = performance.now() + 500;
                 });
                 labelInput.addEventListener('blur', () => {
                     isWallLabelEditing = false;
@@ -2153,6 +2248,7 @@
                     updateWallImageLabel(mesh);
                     syncWallImageData(mesh);
                     queueWallImagesSave();
+                    wallImagePickSuppressUntil = performance.now() + 300;
                 });
             }
             const deleteBtn = document.getElementById('wallImageDeleteBtn');
@@ -2234,37 +2330,15 @@
             return texture;
         }
 
-        function createRugPlaceholderTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 800;
-            canvas.height = 800;
-            const ctx = canvas.getContext('2d');
-            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            gradient.addColorStop(0, '#6f1e2c');
-            gradient.addColorStop(1, '#3b141f');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.globalAlpha = 0.18;
-            ctx.fillStyle = '#000';
-            for (let i = 0; i < 6000; i++) {
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height;
-                ctx.fillRect(x, y, 1, 1);
-            }
-            ctx.globalAlpha = 1;
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
-            texture.colorSpace = THREE.SRGBColorSpace;
-            return texture;
-        }
-
         function applyRugTexture(url) {
             if (!rugMesh || !rugTextureLoader || !url) return;
             if (rugUrl === url) return;
             rugUrl = url;
-            loadTextureWithProxy(url, rugTextureLoader, (texture) => {
+            const resolved = new URL(url, location.href).href;
+            rugTextureLoader.load(resolved, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
-                texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(1, 1);
                 texture.minFilter = THREE.LinearFilter;
                 texture.magFilter = THREE.LinearFilter;
                 rugMesh.material.map = texture;
@@ -3208,7 +3282,7 @@
             floor.rotation.x = -Math.PI / 2;
             floor.position.y = 0;
             scene.add(floor);
-            const rugTex = createRugPlaceholderTexture();
+            const rugTex = loadRepeatTexture(DEFAULT_RUG_URL, 1, 1);
             const rugMat = new THREE.MeshStandardMaterial({ map: rugTex, roughness: 0.95, metalness: 0 });
             const rugGeo = new THREE.PlaneGeometry(room.width * 0.6, room.depth * 0.6);
             rugMesh = new THREE.Mesh(rugGeo, rugMat);
@@ -3289,6 +3363,9 @@
             createBeerRatingSign();
             placeCornerPoop();
             setupWallSurfaces(backWall, frontWall, leftWall, rightWall);
+            if (ensureCssRenderer()) {
+                refreshCssContentAfterInit();
+            }
             setupControls();
             animate();
             loadAvatarModel();
@@ -3370,6 +3447,9 @@
             document.addEventListener('pointerlockchange', () => {
                 const locked = document.pointerLockElement === dom || document.pointerLockElement === cssRenderer?.domElement;
                 isLocked = locked;
+                if (!isLocked) {
+                    wallImagePickSuppressUntil = performance.now() + 800;
+                }
                 document.body.classList.toggle('pointer-locked', isLocked);
                 if (!isLocked) stopBoardScrollHold();
                 updateBeerAddPointerEvents();
@@ -4339,27 +4419,12 @@
             const width = 1.35;
             const height = 2.5;
             const planeGeo = new THREE.PlaneGeometry(width, height);
-            const mat = new THREE.MeshBasicMaterial({ transparent: true, color: 0xffffff });
+            const mat = new THREE.MeshBasicMaterial({ transparent: true, color: 0xffffff, opacity: 0 });
             applyBoardStencil(mat);
             const mesh = new THREE.Mesh(planeGeo, mat);
             mesh.position.set(0, height / 2, 0.02);
+            mesh.visible = false;
             group.add(mesh);
-            const url = (beer.imageUrl || '').trim();
-            if (url) {
-                loadTextureWithProxy(url, bottleTextureLoader, (texture) => {
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    texture.minFilter = THREE.LinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    mesh.material.map = texture;
-                    mesh.material.needsUpdate = true;
-                    const img = texture.image;
-                    if (img && img.width && img.height) {
-                        const aspect = img.width / img.height;
-                        const targetWidth = height * aspect;
-                        mesh.scale.x = targetWidth / width;
-                    }
-                });
-            }
             group.userData.mesh = mesh;
             return group;
         }
@@ -4373,7 +4438,7 @@
                 anchor.position.copy(mesh.position).addScaledVector(normal, 0.12);
                 anchor.rotation.copy(mesh.rotation);
                 wallImageGroup.add(anchor);
-                return { id, mesh, anchor, normal, width, height };
+                return { id, mesh, anchor, cssAnchor: null, normal, width, height };
             };
             wallSurfaces = [
                 makeSurface('back', backWall, room.width, room.height),
@@ -4381,8 +4446,21 @@
                 makeSurface('left', leftWall, room.depth, room.height),
                 makeSurface('right', rightWall, room.depth, room.height)
             ];
+            wallSurfaces.forEach((wall) => ensureWallCssAnchor(wall));
             const stored = loadWallImagesFromStorage();
             if (stored.length) applyWallImages(stored, { cache: false });
+        }
+
+        function ensureWallCssAnchor(wall) {
+            if (!wall) return null;
+            if (wall.cssAnchor) return wall.cssAnchor;
+            if (!ensureCssRenderer()) return null;
+            const cssAnchor = new THREE.Group();
+            cssAnchor.position.copy(wall.anchor.position);
+            cssAnchor.rotation.copy(wall.anchor.rotation);
+            cssScene.add(cssAnchor);
+            wall.cssAnchor = cssAnchor;
+            return cssAnchor;
         }
 
         function addWallImage(url) {
@@ -4436,6 +4514,7 @@
             }
             const wall = wallSurfaces.find((s) => s.id === mesh.userData.wallId);
             if (wall) clampWallImagePosition(mesh, wall);
+            updateWallImageCss(mesh);
         }
 
         function clampWallImagePosition(mesh, wall) {
@@ -4472,6 +4551,9 @@
             if (idx !== -1) wallImages.splice(idx, 1);
             const mesh = wallImageMeshMap.get(String(id));
             if (mesh && mesh.parent) mesh.parent.remove(mesh);
+            if (mesh?.userData?.cssObject?.parent) {
+                mesh.userData.cssObject.parent.remove(mesh.userData.cssObject);
+            }
             wallImageMeshMap.delete(String(id));
             if (selectedWallImageId && String(selectedWallImageId) === String(id)) {
                 setSelectedWallImage(null);
@@ -4484,10 +4566,11 @@
             if (!wall) return null;
             const mesh = new THREE.Mesh(
                 new THREE.PlaneGeometry(1, 1),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1 })
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
             );
             mesh.position.set(data.x || 0, data.y || 0, 0);
             mesh.userData.id = data.id;
+            mesh.userData.url = data.url || '';
             mesh.userData.wallId = data.wallId;
             mesh.userData.scale = data.scale || 1;
             mesh.userData.baseW = data.baseW || 2;
@@ -4518,24 +4601,70 @@
             wall.anchor.add(mesh);
             wallImageMeshMap.set(String(data.id), mesh);
             if (data.url) {
-                loadTextureWithProxy(data.url, wallImageTextureLoader, (texture) => {
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    texture.minFilter = THREE.LinearFilter;
-                    texture.magFilter = THREE.LinearFilter;
-                    mesh.material.map = texture;
-                    mesh.material.needsUpdate = true;
-                    const img = texture.image;
-                    if (img && img.width && img.height) {
-                        const aspect = img.width / img.height;
-                        mesh.userData.baseH = 2;
-                        mesh.userData.baseW = 2 * aspect;
-                        applyWallImageTransform(mesh);
-                        syncWallImageData(mesh);
-                        saveWallImagesToStorage();
-                    }
-                });
+                setupWallImageCss(mesh, data.url, wall);
             }
             return mesh;
+        }
+
+        function setupWallImageCss(mesh, url, wall) {
+            if (!mesh || !url) return;
+            const cssAnchor = ensureWallCssAnchor(wall);
+            if (!cssAnchor) return;
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = '';
+            img.decoding = 'async';
+            img.loading = 'eager';
+            img.style.display = 'block';
+            img.style.width = '600px';
+            img.style.height = 'auto';
+            img.style.objectFit = 'contain';
+            img.style.pointerEvents = 'auto';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'wall-image-css';
+            wrapper.dataset.wallImageId = String(mesh.userData.id || '');
+            wrapper.style.width = '600px';
+            wrapper.style.height = 'auto';
+            wrapper.style.pointerEvents = 'auto';
+            wrapper.appendChild(img);
+            img.dataset.wallImageId = String(mesh.userData.id || '');
+
+            const cssObj = new THREE.CSS3DObject(wrapper);
+            mesh.userData.cssObject = cssObj;
+            mesh.userData.cssWidthPx = 600;
+            mesh.userData.cssHeightPx = 600;
+            cssAnchor.add(cssObj);
+            updateWallImageCss(mesh);
+
+            img.addEventListener('load', () => {
+                const aspect = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+                mesh.userData.baseH = 2;
+                mesh.userData.baseW = 2 * aspect;
+                const heightPx = Math.round(600 / Math.max(0.2, aspect));
+                mesh.userData.cssHeightPx = heightPx;
+                wrapper.style.height = `${heightPx}px`;
+                img.style.height = `${heightPx}px`;
+                updateWallImageCss(mesh);
+                applyWallImageTransform(mesh);
+                syncWallImageData(mesh);
+                saveWallImagesToStorage();
+            });
+        }
+
+        function updateWallImageCss(mesh) {
+            const cssObj = mesh?.userData?.cssObject;
+            if (!cssObj) return;
+            const widthPx = mesh.userData.cssWidthPx || 600;
+            const heightPx = mesh.userData.cssHeightPx || 600;
+            cssObj.position.copy(mesh.position);
+            cssObj.rotation.copy(mesh.rotation);
+            cssObj.scale.set(
+                mesh.scale.x / widthPx,
+                mesh.scale.y / heightPx,
+                1
+            );
+            cssObj.renderOrder = mesh.renderOrder;
         }
 
         function ensureWallImageFrame(mesh) {
@@ -4743,37 +4872,55 @@
         }
 
         function handleWallImagePointerDown(event) {
-            if (isLocked || !wallImageGroup) return false;
+            if (!wallImageGroup) return false;
+            if (isLocked) return false;
+            if (performance.now() < wallImagePickSuppressUntil) return false;
+            wallImageSelectedOnPointerDown = false;
             const rect = renderer.domElement.getBoundingClientRect();
-            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const clientX = isLocked ? rect.left + rect.width / 2 : event.clientX;
+            const clientY = isLocked ? rect.top + rect.height / 2 : event.clientY;
+            const domPicked = pickWallImageByDomPoint(clientX, clientY);
+            wallImagePointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
             wallImageRaycaster.setFromCamera(wallImagePointer, camera);
-            const hits = wallImageRaycaster.intersectObjects(wallImageGroup.children, true);
-            if (!hits.length) return false;
-            const mesh = hits[0].object;
-            const root = mesh.userData?.id ? mesh : mesh.parent;
-            if (!root || !root.userData?.id) return false;
-            const wall = wallSurfaces.find((s) => s.id === root.userData.wallId);
-            if (!wall) return false;
-            const wallHit = wallImageRaycaster.intersectObject(wall.mesh, false)[0];
+            const hits = getWallImageHits();
+            const wallHit = wallImageRaycaster.intersectObjects(wallSurfaces.map((s) => s.mesh), false)[0];
             if (!wallHit) return false;
-            const local = wall.anchor.worldToLocal(wallHit.point.clone());
+            const wall = wallSurfaces.find((s) => s.mesh === wallHit.object);
+            const root = getWallImageRootFromHits(hits);
+            const domOk = domPicked && domPicked.userData?.wallId === wall?.id ? domPicked : null;
+            const rootOk = root && root.userData?.wallId === wall?.id ? root : null;
+            const picked = domOk || rootOk;
+            if (!picked) return false;
+            const pickedWall = wall;
+            if (!pickedWall) {
+                setSelectedWallImage(picked);
+                return true;
+            }
+            const local = pickedWall.anchor.worldToLocal(wallHit.point.clone());
             wallImageDrag.active = true;
-            wallImageDrag.mesh = root;
-            wallImageDrag.wall = wall;
-            wallImageDrag.offset.set(local.x - root.position.x, local.y - root.position.y);
+            wallImageDrag.mesh = picked;
+            wallImageDrag.wall = pickedWall;
+            wallImageDrag.offset.set(local.x - picked.position.x, local.y - picked.position.y);
             wallImageDrag.moved = false;
             wallImageDrag.suppressClick = false;
-            setSelectedWallImage(root);
-            renderer.domElement.setPointerCapture(event.pointerId);
+            setSelectedWallImage(picked);
+            wallImageSelectedOnPointerDown = true;
+            if (event?.target?.setPointerCapture) {
+                event.target.setPointerCapture(event.pointerId);
+            } else if (renderer?.domElement?.setPointerCapture) {
+                renderer.domElement.setPointerCapture(event.pointerId);
+            }
             return true;
         }
 
         function handleWallImagePointerMove(event) {
             if (!wallImageDrag.active || !wallImageDrag.mesh || !wallImageDrag.wall) return;
             const rect = renderer.domElement.getBoundingClientRect();
-            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const clientX = isLocked ? rect.left + rect.width / 2 : event.clientX;
+            const clientY = isLocked ? rect.top + rect.height / 2 : event.clientY;
+            wallImagePointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
             wallImageRaycaster.setFromCamera(wallImagePointer, camera);
             const wallHit = wallImageRaycaster.intersectObject(wallImageDrag.wall.mesh, false)[0];
             if (!wallHit) return;
@@ -4788,13 +4935,16 @@
             wallImageDrag.mesh.position.x = nextX;
             wallImageDrag.mesh.position.y = nextY;
             clampWallImagePosition(wallImageDrag.mesh, wallImageDrag.wall);
+            updateWallImageCss(wallImageDrag.mesh);
             syncWallImageData(wallImageDrag.mesh);
         }
 
         function handleWallImagePointerUp(event) {
             if (!wallImageDrag.active) return;
             wallImageDrag.active = false;
-            if (event && renderer?.domElement && renderer.domElement.hasPointerCapture?.(event.pointerId)) {
+            if (event?.target?.hasPointerCapture?.(event.pointerId)) {
+                event.target.releasePointerCapture(event.pointerId);
+            } else if (event && renderer?.domElement && renderer.domElement.hasPointerCapture?.(event.pointerId)) {
                 renderer.domElement.releasePointerCapture(event.pointerId);
             }
             if (wallImageDrag.moved) wallImageDrag.suppressClick = true;
@@ -4805,27 +4955,202 @@
         }
 
         function handleWallImageClick(event) {
-            if (isLocked || !wallImageGroup) return false;
+            if (!wallImageGroup) return false;
+            if (isLocked) return false;
+            if (performance.now() < wallImagePickSuppressUntil) return false;
+            if (wallImageSelectedOnPointerDown) {
+                wallImageSelectedOnPointerDown = false;
+                return true;
+            }
             if (wallImageDrag.suppressClick) {
                 wallImageDrag.suppressClick = false;
                 return true;
             }
             const rect = renderer.domElement.getBoundingClientRect();
-            wallImagePointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            wallImagePointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const clientX = isLocked ? rect.left + rect.width / 2 : event.clientX;
+            const clientY = isLocked ? rect.top + rect.height / 2 : event.clientY;
+            const domPicked = pickWallImageByDomPoint(clientX, clientY);
+            wallImagePointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            wallImagePointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
             wallImageRaycaster.setFromCamera(wallImagePointer, camera);
-            const hits = wallImageRaycaster.intersectObjects(wallImageGroup.children, true);
-            if (!hits.length) {
+            const hits = getWallImageHits();
+            const wallHit = wallImageRaycaster.intersectObjects(wallSurfaces.map((s) => s.mesh), false)[0];
+            if (!wallHit) {
+                if (selectedWallImageId) setSelectedWallImage(null);
+                return false;
+            }
+            const wall = wallSurfaces.find((s) => s.mesh === wallHit.object);
+            const root = getWallImageRootFromHits(hits);
+            const domOk = domPicked && domPicked.userData?.wallId === wall?.id ? domPicked : null;
+            const rootOk = root && root.userData?.wallId === wall?.id ? root : null;
+            const picked = domOk || rootOk;
+            if (!picked) {
                 if (selectedWallImageId) {
                     setSelectedWallImage(null);
-                    return true;
                 }
                 return false;
             }
-            const mesh = hits[0].object.userData?.id ? hits[0].object : hits[0].object.parent;
-            if (!mesh || !mesh.userData?.id) return false;
-            setSelectedWallImage(mesh);
+            setSelectedWallImage(picked);
             return true;
+        }
+
+        function getWallImageHits() {
+            const meshes = wallImageMeshMap.size ? [...wallImageMeshMap.values()] : wallImageGroup?.children || [];
+            return wallImageRaycaster.intersectObjects(meshes, true);
+        }
+
+        function getWallImageRootFromHits(hits) {
+            if (!hits || !hits.length) return null;
+            const obj = hits[0].object;
+            const root = obj?.userData?.id ? obj : obj?.parent;
+            return root && root.userData?.id ? root : null;
+        }
+
+        function pickWallImageByWallHit(wall, wallHit) {
+            if (!wall || !wallHit || !wallImageMeshMap.size) return null;
+            const local = wall.anchor.worldToLocal(wallHit.point.clone());
+            let best = null;
+            let bestDist = Infinity;
+            wallImageMeshMap.forEach((mesh) => {
+                if (!mesh || mesh.userData?.wallId !== wall.id) return;
+                const baseW = mesh.userData.baseW || 2;
+                const baseH = mesh.userData.baseH || 2;
+                const scale = mesh.userData.scale || 1;
+                const halfW = (baseW * scale) / 2;
+                const halfH = (baseH * scale) / 2;
+                const dx = local.x - mesh.position.x;
+                const dy = local.y - mesh.position.y;
+                const inside = Math.abs(dx) <= halfW && Math.abs(dy) <= halfH;
+                const dist = Math.hypot(dx, dy);
+                if (inside && dist < bestDist) {
+                    best = mesh;
+                    bestDist = dist;
+                }
+            });
+            return best;
+        }
+
+        function pickWallImageByScreenRect(wall, x, y, rect, strict = false) {
+            if (!wallImageMeshMap.size || !rect) return null;
+            let best = null;
+            let bestScore = Infinity;
+            wallImageMeshMap.forEach((mesh) => {
+                if (!mesh) return;
+                if (wall && mesh.userData?.wallId !== wall.id) return;
+                const bounds = getWallImageScreenRect(mesh, rect);
+                if (!bounds) return;
+                if (x < bounds.minX || x > bounds.maxX || y < bounds.minY || y > bounds.maxY) return;
+                if (strict) {
+                    const inset = 6;
+                    if (x < bounds.minX + inset || x > bounds.maxX - inset || y < bounds.minY + inset || y > bounds.maxY - inset) {
+                        return;
+                    }
+                }
+                const area = Math.max(1, (bounds.maxX - bounds.minX) * (bounds.maxY - bounds.minY));
+                const dist = camera ? camera.position.distanceTo(mesh.getWorldPosition(new THREE.Vector3())) : 0;
+                const score = dist * 1000 + area;
+                if (score < bestScore) {
+                    bestScore = score;
+                    best = mesh;
+                }
+            });
+            return best;
+        }
+
+        function pickWallImageByDomPoint(x, y) {
+            const prevPointer = cssRenderer?.domElement?.style?.pointerEvents;
+            if (cssRenderer?.domElement) cssRenderer.domElement.style.pointerEvents = 'auto';
+            const list = document.elementsFromPoint
+                ? document.elementsFromPoint(x, y)
+                : [document.elementFromPoint(x, y)].filter(Boolean);
+            if (cssRenderer?.domElement) cssRenderer.domElement.style.pointerEvents = prevPointer || 'none';
+            const element = list.find((node) => node?.closest?.('.wall-image-css'));
+            const wrapper = element?.closest?.('.wall-image-css');
+            const id = wrapper?.dataset?.wallImageId;
+            if (!id) return null;
+            return wallImageMeshMap.get(String(id)) || null;
+        }
+
+        function getWallImageScreenRect(mesh, rect) {
+            if (!mesh || !rect) return null;
+            const cssEl = mesh.userData?.cssObject?.element;
+            if (cssEl && cssEl.getBoundingClientRect) {
+                const imgEl = cssEl.querySelector('img');
+                const bounds = (imgEl || cssEl).getBoundingClientRect();
+                const pad = mesh.userData?.frame ? 14 : 6;
+                let minX = bounds.left - pad;
+                let maxX = bounds.right + pad;
+                let minY = bounds.top - pad;
+                let maxY = bounds.bottom + pad;
+                const labelMesh = mesh.userData?.labelMesh;
+                if (labelMesh && labelMesh.visible) {
+                    labelMesh.updateWorldMatrix(true, false);
+                    const labelCorners = [
+                        new THREE.Vector3(-0.5, -0.5, 0),
+                        new THREE.Vector3(0.5, -0.5, 0),
+                        new THREE.Vector3(0.5, 0.5, 0),
+                        new THREE.Vector3(-0.5, 0.5, 0)
+                    ];
+                    for (const corner of labelCorners) {
+                        const world = labelMesh.localToWorld(corner.clone());
+                        const point = projectToScreenPoint(world, rect);
+                        if (!point) continue;
+                        minX = Math.min(minX, point.x);
+                        maxX = Math.max(maxX, point.x);
+                        minY = Math.min(minY, point.y);
+                        maxY = Math.max(maxY, point.y);
+                    }
+                }
+                return { minX, maxX, minY, maxY };
+            }
+            if (mesh.updateWorldMatrix) mesh.updateWorldMatrix(true, false);
+            const scaleX = Math.max(0.001, mesh.scale.x || 1);
+            const scaleY = Math.max(0.001, mesh.scale.y || 1);
+            const padWorld = mesh.userData?.frame ? 0.22 : 0.08;
+            const padLocalX = padWorld / scaleX;
+            const padLocalY = padWorld / scaleY;
+            const halfW = 0.5 + padLocalX;
+            const halfH = 0.5 + padLocalY;
+            const corners = [
+                new THREE.Vector3(-halfW, -halfH, 0),
+                new THREE.Vector3(halfW, -halfH, 0),
+                new THREE.Vector3(halfW, halfH, 0),
+                new THREE.Vector3(-halfW, halfH, 0)
+            ];
+            let minX = Infinity;
+            let maxX = -Infinity;
+            let minY = Infinity;
+            let maxY = -Infinity;
+            for (const corner of corners) {
+                const world = mesh.localToWorld(corner.clone());
+                const point = projectToScreenPoint(world, rect);
+                if (!point) return null;
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            }
+            const labelMesh = mesh.userData?.labelMesh;
+            if (labelMesh && labelMesh.visible) {
+                const labelCorners = [
+                    new THREE.Vector3(-0.5, -0.5, 0),
+                    new THREE.Vector3(0.5, -0.5, 0),
+                    new THREE.Vector3(0.5, 0.5, 0),
+                    new THREE.Vector3(-0.5, 0.5, 0)
+                ];
+                labelMesh.updateWorldMatrix(true, false);
+                for (const corner of labelCorners) {
+                    const world = labelMesh.localToWorld(corner.clone());
+                    const point = projectToScreenPoint(world, rect);
+                    if (!point) continue;
+                    minX = Math.min(minX, point.x);
+                    maxX = Math.max(maxX, point.x);
+                    minY = Math.min(minY, point.y);
+                    maxY = Math.max(maxY, point.y);
+                }
+            }
+            if (!Number.isFinite(minX) || !Number.isFinite(minY)) return null;
+            return { minX, maxX, minY, maxY };
         }
 
         function createBeerBoard() {
@@ -4833,6 +5158,16 @@
             boardArrowMeshes = [];
             boardActionMeshes = [];
             boardContentGroup = new THREE.Group();
+            if (boardCssGroup?.parent) {
+                boardCssGroup.parent.remove(boardCssGroup);
+            }
+            boardCssGroup = null;
+            boardCssMaskObject = null;
+            boardCssMaskEl = null;
+            boardCssContentEl = null;
+            if (cssRenderer?.domElement) {
+                cssRenderer.domElement.querySelectorAll('.board-css-mask').forEach((node) => node.remove());
+            }
 
             const boardWidth = room.width * 0.7;
             const boardHeight = 7.4;
@@ -4861,6 +5196,7 @@
 
             boardContentGroup.position.set(0, boardMesh.position.y + boardHeight * 0.015, boardMesh.position.z + 0.18);
             boardGroup.add(boardContentGroup);
+            ensureBoardCssGroup();
 
             const arrowMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6, metalness: 0.2 });
             const arrowGeo = new THREE.ConeGeometry(0.5, 1.05, 3);
@@ -4919,8 +5255,16 @@
         }
 
         function ensureCssRenderer() {
+            if (!window.THREE?.CSS3DRenderer || !window.THREE?.CSS3DObject) {
+                if (typeof ensureCssModules === 'function') {
+                    ensureCssModules();
+                }
+            }
             if (cssRenderer && cssScene) return true;
-            if (!window.THREE?.CSS3DRenderer || !window.THREE?.CSS3DObject) return false;
+            if (!window.THREE?.CSS3DRenderer || !window.THREE?.CSS3DObject) {
+                scheduleCssRendererRetry();
+                return false;
+            }
             cssScene = new THREE.Scene();
             cssRenderer = new THREE.CSS3DRenderer();
             cssRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -4952,7 +5296,76 @@
                 }
             }, { passive: false });
             document.getElementById('scene').appendChild(cssRenderer.domElement);
+            if (!cssWallHandlersBound) {
+                cssWallHandlersBound = true;
+                const shouldSkip = (event) => {
+                    if (isPoopAddOpen || isBeerAddOpen) return true;
+                    const target = event?.target;
+                    if (target?.closest?.('.beer-add-3d') || target?.closest?.('.poop-add-3d')) return true;
+                    return false;
+                };
+                cssRenderer.domElement.addEventListener('pointerdown', (event) => {
+                    if (shouldSkip(event)) return;
+                    if (handleWallImagePointerDown(event)) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                });
+                cssRenderer.domElement.addEventListener('pointermove', (event) => {
+                    if (shouldSkip(event)) return;
+                    handleWallImagePointerMove(event);
+                });
+                const endHandler = (event) => {
+                    if (shouldSkip(event)) return;
+                    handleWallImagePointerUp(event);
+                };
+                cssRenderer.domElement.addEventListener('pointerup', endHandler);
+                cssRenderer.domElement.addEventListener('pointerleave', endHandler);
+                cssRenderer.domElement.addEventListener('pointercancel', endHandler);
+                cssRenderer.domElement.addEventListener('click', (event) => {
+                    if (shouldSkip(event)) return;
+                    if (handleWallImageClick(event)) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return;
+                    }
+                    if (!isLocked && renderer?.domElement?.requestPointerLock) {
+                        const target = event?.target;
+                        if (target?.closest?.('.wall-image-toolbar') || target?.closest?.('.wall-image-css')) return;
+                        renderer.domElement.requestPointerLock();
+                    }
+                });
+            }
             return true;
+        }
+
+        function scheduleCssRendererRetry() {
+            if (cssInitRetryId) return;
+            cssInitRetryId = window.setTimeout(() => {
+                cssInitRetryId = null;
+                if (ensureCssRenderer()) {
+                    refreshCssContentAfterInit();
+                } else {
+                    scheduleCssRendererRetry();
+                }
+            }, 120);
+        }
+
+        function refreshCssContentAfterInit() {
+            if (wallSurfaces.length) {
+                wallSurfaces.forEach((wall) => ensureWallCssAnchor(wall));
+            }
+            if (wallImageMeshMap.size) {
+                wallImageMeshMap.forEach((mesh) => {
+                    if (mesh?.userData?.cssObject) return;
+                    const wall = wallSurfaces.find((s) => s.id === mesh.userData.wallId);
+                    const url = mesh.userData.url || wallImages.find((img) => String(img.id) === String(mesh.userData.id))?.url || '';
+                    if (url && wall) setupWallImageCss(mesh, url, wall);
+                });
+            }
+            if (boardGroup && beerData.length) {
+                updateBeerBoard();
+            }
         }
 
         function updateBeerAddPointerEvents() {
@@ -4966,7 +5379,7 @@
                 return;
             }
             if (!isBeerAddOpen && !isPoopAddOpen) {
-                cssRenderer.domElement.style.pointerEvents = 'none';
+                cssRenderer.domElement.style.pointerEvents = isLocked ? 'none' : 'auto';
                 if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
                 cssRenderer.domElement.style.cursor = '';
                 if (renderer?.domElement) renderer.domElement.style.cursor = '';
@@ -6332,13 +6745,22 @@
             if (!boardGroup) return;
             if (!beerData.length) {
                 boardContentGroup.clear();
+                if (boardCssContentEl) {
+                    boardCssContentEl.innerHTML = '';
+                    boardCssContentEl.style.transform = 'translateX(0px)';
+                }
                 return;
             }
             const prevTarget = boardScrollState.target;
             const prevOffset = boardScrollState.offset;
             boardContentGroup.clear();
+            ensureBoardCssGroup();
+            if (boardCssContentEl) {
+                boardCssContentEl.innerHTML = '';
+            }
             const boardWidth = boardGroup.userData.boardWidth || room.width * 0.7;
             const innerWidth = boardGroup.userData.innerWidth || (boardWidth - 4.4);
+            const innerHeight = boardGroup.userData.innerHeight || 6;
             const gap = 0.2;
             const itemWidth = Math.min(2.6, Math.max(1.9, innerWidth / Math.min(beerData.length, 22)));
             const titleAspect = BEER_TITLE_CANVAS.width / BEER_TITLE_CANVAS.height;
@@ -6363,6 +6785,11 @@
                 boardScrollState.initialized = true;
             }
             boardContentGroup.position.x = boardScrollState.offset;
+            if (boardCssContentEl) {
+                const pxPerUnit = boardCssGroup?.userData?.pxPerUnit || 120;
+                boardCssContentEl.style.width = `${Math.max(200, Math.round(totalWidth * pxPerUnit))}px`;
+                boardCssContentEl.style.transform = `translateX(${boardScrollState.offset * pxPerUnit}px)`;
+            }
 
             const startX = -totalWidth / 2 + itemWidth / 2;
             beerData.forEach((beer, i) => {
@@ -6372,6 +6799,32 @@
                 const bottleYOffset = 0.25;
                 bottle.position.set(0, bottleYOffset, 0);
                 group.add(bottle);
+                if (boardCssContentEl) {
+                    const pxPerUnit = boardCssGroup?.userData?.pxPerUnit || 120;
+                    const imgWidthUnits = 1.35;
+                    const imgHeightUnits = 2.5;
+                    const imgWidthPx = imgWidthUnits * pxPerUnit;
+                    const imgHeightPx = imgHeightUnits * pxPerUnit;
+                    const offsetX = group.position.x;
+                    const offsetY = bottleYOffset;
+                    const leftPx = (offsetX + innerWidth / 2) * pxPerUnit - imgWidthPx / 2;
+                    const topPx = (innerHeight / 2 - offsetY) * pxPerUnit - imgHeightPx / 2;
+
+                    const item = document.createElement('div');
+                    item.className = 'board-css-item';
+                    item.style.width = `${imgWidthPx}px`;
+                    item.style.height = `${imgHeightPx}px`;
+                    item.style.left = `${leftPx}px`;
+                    item.style.top = `${topPx}px`;
+
+                    const img = document.createElement('img');
+                    img.src = (beer?.imageUrl || '').trim();
+                    img.alt = '';
+                    img.decoding = 'async';
+                    img.loading = 'eager';
+                    item.appendChild(img);
+                    boardCssContentEl.appendChild(item);
+                }
 
                 const bottleBottom = bottleYOffset - 1.25;
                 const titleGap = 0.16;
@@ -6446,6 +6899,73 @@
                     arrow.visible = offset > -maxOffset + 0.05;
                 }
             });
+        }
+
+        function ensureBoardCssGroup() {
+            if (!boardContentGroup) return null;
+            if (!ensureCssRenderer()) return null;
+            if (cssRenderer?.domElement) {
+                const masks = Array.from(cssRenderer.domElement.querySelectorAll('.board-css-mask'));
+                if (masks.length > 1) {
+                    masks.forEach((node) => node.remove());
+                    boardCssGroup = null;
+                    boardCssMaskObject = null;
+                    boardCssMaskEl = null;
+                    boardCssContentEl = null;
+                } else if (masks.length === 1 && boardCssMaskEl && masks[0] !== boardCssMaskEl) {
+                    boardCssMaskEl = masks[0];
+                    boardCssContentEl = boardCssMaskEl.querySelector('.board-css-content');
+                }
+            }
+            if (cssScene) {
+                const removeTargets = cssScene.children.filter((child) => child?.userData?.boardCss && child !== boardCssGroup);
+                removeTargets.forEach((child) => {
+                    cssScene.remove(child);
+                    const maskEl = child.userData?.maskEl;
+                    if (maskEl && maskEl.parentNode) {
+                        maskEl.parentNode.removeChild(maskEl);
+                    }
+                });
+            }
+            if (!boardCssGroup) {
+                boardCssGroup = new THREE.Group();
+                const maskEl = document.createElement('div');
+                maskEl.className = 'board-css-mask';
+                const contentEl = document.createElement('div');
+                contentEl.className = 'board-css-content';
+                maskEl.appendChild(contentEl);
+                boardCssMaskEl = maskEl;
+                boardCssContentEl = contentEl;
+                boardCssMaskObject = new THREE.CSS3DObject(maskEl);
+                boardCssGroup.add(boardCssMaskObject);
+                boardCssGroup.userData.boardCss = true;
+                boardCssGroup.userData.maskEl = maskEl;
+                cssScene.add(boardCssGroup);
+            }
+            const boardWidth = boardGroup?.userData?.innerWidth || 20;
+            const boardHeight = boardGroup?.userData?.innerHeight || 6;
+            const pxPerUnit = 120;
+            boardCssGroup.userData.pxPerUnit = pxPerUnit;
+            const widthPx = Math.max(200, Math.round(boardWidth * pxPerUnit));
+            const heightPx = Math.max(200, Math.round(boardHeight * pxPerUnit));
+            if (boardCssMaskEl) {
+                boardCssMaskEl.style.width = `${widthPx}px`;
+                boardCssMaskEl.style.height = `${heightPx}px`;
+            }
+            if (boardCssContentEl) {
+                boardCssContentEl.style.width = `${Math.max(widthPx, Math.round(boardWidth * pxPerUnit))}px`;
+                boardCssContentEl.style.height = `${heightPx}px`;
+            }
+            if (boardCssMaskObject) {
+                boardCssMaskObject.scale.set(1 / pxPerUnit, 1 / pxPerUnit, 1);
+            }
+            boardCssGroup.position.set(
+                0,
+                boardContentGroup.position.y,
+                boardContentGroup.position.z
+            );
+            boardCssGroup.rotation.copy(boardContentGroup.rotation);
+            return boardCssGroup;
         }
 
         function applyRemoteBoardScroll(target) {
@@ -7011,6 +7531,16 @@
             loadTextureViaProxyQueue(resolved, loader, onLoad, endpoints, isLocalDev);
         }
 
+        function loadTextureDirect(url, loader, onLoad) {
+            if (!url || !loader) return;
+            if (/^data:/i.test(url)) {
+                loader.load(url, onLoad);
+                return;
+            }
+            const resolved = new URL(url, location.href).href;
+            loader.load(resolved, onLoad);
+        }
+
         function truncateText(ctx, text, maxWidth) {
             if (!text) return '';
             if (ctx.measureText(text).width <= maxWidth) return text;
@@ -7230,6 +7760,10 @@
                 } else if (Math.abs(diff) > 0) {
                     boardScrollState.offset = boardScrollState.target;
                     boardContentGroup.position.x = boardScrollState.offset;
+                }
+                if (boardCssContentEl) {
+                    const pxPerUnit = boardCssGroup?.userData?.pxPerUnit || 120;
+                    boardCssContentEl.style.transform = `translateX(${boardScrollState.offset * pxPerUnit}px)`;
                 }
             }
             sendBoardScrollUpdate();
