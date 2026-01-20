@@ -1266,7 +1266,12 @@
         const REMOVE_BG_PROXY_URL = '';
         const LOCAL_BG_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
         const LOCAL_IMAGE_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/fetch-image';
-        const IMGBB_API_KEY = '098e096c756627e49db6fe75d6ddb03e';
+        const FALLBACK_IMAGE_PROXY_ENDPOINTS = [
+            'https://kinosreda1.maxik157.workers.dev/fetch-image'
+        ];
+        const POSTIMAGES_API_KEY = '6d207e02198a847aa98d0a2a901485a5';
+        const POSTIMAGES_API_ENDPOINT = 'https://freeimage.host/api/1/upload';
+        const POSTIMAGES_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/upload-image';
         const IMAGE_OUTPUT_SCALE = 3;
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
         const BEER_CACHE_KEY = 'beerShelfBeerCache';
@@ -1627,19 +1632,62 @@
             return parts.length > 1 ? parts[1] : '';
         }
 
-        async function uploadToImgbb(dataUrl) {
-            const imageBase64 = dataUrlToBase64(dataUrl);
-            if (!imageBase64) throw new Error('imgbb_invalid');
+        function dataUrlToBlob(dataUrl) {
+            const parts = String(dataUrl || '').split(',');
+            if (parts.length < 2) return null;
+            const header = parts[0];
+            const base64 = parts[1];
+            const match = header.match(/data:(.*?);base64/i);
+            const mime = match ? match[1] : 'image/png';
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i += 1) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new Blob([bytes], { type: mime });
+        }
+
+        function getPostimagesProxyEndpoint() {
+            if (typeof window.POSTIMAGES_PROXY_ENDPOINT === 'string' && window.POSTIMAGES_PROXY_ENDPOINT.trim()) {
+                return window.POSTIMAGES_PROXY_ENDPOINT.trim();
+            }
+            return POSTIMAGES_PROXY_ENDPOINT;
+        }
+
+        async function uploadToPostimages(imageBlob) {
+            if (!imageBlob) throw new Error('postimages_invalid');
+            if (!POSTIMAGES_API_KEY) throw new Error('postimages_key_missing');
             const formData = new FormData();
-            formData.append('image', imageBase64);
-            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            formData.append('key', POSTIMAGES_API_KEY);
+            formData.append('image', imageBlob, 'image.png');
+            const response = await fetch(getPostimagesProxyEndpoint(), {
                 method: 'POST',
                 body: formData
             });
-            if (!response.ok) throw new Error('imgbb_failed');
-            const result = await response.json();
-            const link = result?.data?.url || result?.data?.display_url;
-            if (!link) throw new Error('imgbb_no_url');
+            if (!response.ok) throw new Error('postimages_failed');
+            const rawText = await response.text();
+            let payload = null;
+            try {
+                payload = JSON.parse(rawText);
+            } catch (_) {
+                payload = null;
+            }
+            const link =
+                payload?.url ||
+                payload?.data?.url ||
+                payload?.data?.link ||
+                payload?.data?.display_url ||
+                payload?.data?.image?.url ||
+                payload?.data?.image?.display_url ||
+                payload?.result?.url ||
+                payload?.result?.link ||
+                payload?.image?.url ||
+                payload?.direct_url ||
+                payload?.image_url ||
+                (typeof rawText === 'string'
+                    ? rawText.match(/https?:\/\/[^\s\"']+/)?.[0]
+                    : '');
+            if (!link) throw new Error('postimages_no_url');
             return link;
         }
 
@@ -1693,7 +1741,7 @@
             const img = await loadImage(cropped);
             const srcW = img.naturalWidth || img.width;
             const srcH = img.naturalHeight || img.height;
-            if (!srcW || !srcH) return dataUrl;
+            if (!srcW || !srcH) return dataUrlToBlob(cropped);
             const targetW = Math.max(1, Math.round(boxW * scaleFactor));
             const targetH = Math.max(1, Math.round(boxH * scaleFactor));
             const scale = targetH / srcH;
@@ -1702,7 +1750,7 @@
             canvas.width = targetW;
             canvas.height = targetH;
             const ctx = canvas.getContext('2d');
-            if (!ctx) return dataUrl;
+            if (!ctx) return dataUrlToBlob(cropped);
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.clearRect(0, 0, targetW, targetH);
@@ -1710,7 +1758,9 @@
             const drawH = targetH;
             const dx = (targetW - drawW) / 2;
             ctx.drawImage(img, 0, 0, srcW, srcH, dx, 0, drawW, drawH);
-            return canvas.toDataURL('image/png');
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob || dataUrlToBlob(cropped)), 'image/png', 0.95);
+            });
         }
 
         function isLocalEndpoint(url) {
@@ -1845,7 +1895,7 @@
             if (status) status.style.display = 'block';
             try {
                 const processed = await processImageUrl(url);
-                const hostedUrl = await uploadToImgbb(processed);
+                const hostedUrl = await uploadToPostimages(processed);
                 const updated = beerData.map((beer) => {
                     if (String(beer.id) !== String(selectedBeerId)) return beer;
                     return { ...beer, imageUrl: hostedUrl || url };
@@ -3454,6 +3504,11 @@
             if (avgMs > 42 && !perfLowMode && currentPixelRatio > 1) {
                 perfLowMode = true;
                 applyRendererPixelRatio(1);
+                return;
+            }
+            if (avgMs < 28 && perfLowMode) {
+                perfLowMode = false;
+                applyRendererPixelRatio(basePixelRatio);
             }
         }
 
@@ -6819,13 +6874,35 @@
         const proxyTextureQueue = [];
         let proxyTextureActive = 0;
 
-        async function fetchProxyImageBlob(url) {
-            const proxyUrl = new URL(LOCAL_IMAGE_PROXY_ENDPOINT);
-            proxyUrl.searchParams.set('url', url);
+        function getImageProxyEndpoints() {
+            const endpoints = [];
+            if (Array.isArray(window.IMAGE_PROXY_ENDPOINTS)) {
+                window.IMAGE_PROXY_ENDPOINTS.forEach((item) => {
+                    if (typeof item === 'string' && item.trim()) endpoints.push(item.trim());
+                });
+            }
+            if (LOCAL_IMAGE_PROXY_ENDPOINT) endpoints.push(LOCAL_IMAGE_PROXY_ENDPOINT);
+            FALLBACK_IMAGE_PROXY_ENDPOINTS.forEach((item) => {
+                if (typeof item === 'string' && item.trim()) endpoints.push(item.trim());
+            });
+            return Array.from(new Set(endpoints));
+        }
+
+        function buildProxyFetchUrl(endpoint, targetUrl) {
+            if (endpoint.includes('{url}')) {
+                return endpoint.replace('{url}', encodeURIComponent(targetUrl));
+            }
+            const proxyUrl = new URL(endpoint);
+            proxyUrl.searchParams.set('url', targetUrl);
+            return proxyUrl.toString();
+        }
+
+        async function fetchProxyImageBlob(endpoint, targetUrl) {
+            const proxyUrl = buildProxyFetchUrl(endpoint, targetUrl);
             const controller = new AbortController();
             const timeoutId = window.setTimeout(() => controller.abort(), IMAGE_PROXY_TIMEOUT_MS);
             try {
-                const response = await fetch(proxyUrl.toString(), {
+                const response = await fetch(proxyUrl, {
                     cache: 'force-cache',
                     signal: controller.signal
                 });
@@ -6836,17 +6913,19 @@
             }
         }
 
-        async function fetchProxyImageBlobWithRetry(url) {
-            let attempt = 0;
+        async function fetchProxyImageBlobWithRetry(targetUrl, endpoints) {
             let lastError = null;
-            while (attempt <= IMAGE_PROXY_MAX_RETRIES) {
-                try {
-                    return await fetchProxyImageBlob(url);
-                } catch (err) {
-                    lastError = err;
-                    attempt += 1;
-                    if (attempt <= IMAGE_PROXY_MAX_RETRIES) {
-                        await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+            for (const endpoint of endpoints) {
+                let attempt = 0;
+                while (attempt <= IMAGE_PROXY_MAX_RETRIES) {
+                    try {
+                        return await fetchProxyImageBlob(endpoint, targetUrl);
+                    } catch (err) {
+                        lastError = err;
+                        attempt += 1;
+                        if (attempt <= IMAGE_PROXY_MAX_RETRIES) {
+                            await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+                        }
                     }
                 }
             }
@@ -6857,7 +6936,7 @@
             while (proxyTextureActive < IMAGE_PROXY_CONCURRENCY && proxyTextureQueue.length) {
                 const task = proxyTextureQueue.shift();
                 proxyTextureActive += 1;
-                fetchProxyImageBlobWithRetry(task.url)
+                fetchProxyImageBlobWithRetry(task.url, task.endpoints)
                     .then((blob) => {
                         const objectUrl = URL.createObjectURL(blob);
                         task.loader.load(
@@ -6881,14 +6960,16 @@
             }
         }
 
-        function loadTextureViaProxyQueue(url, loader, onLoad) {
+        function loadTextureViaProxyQueue(url, loader, onLoad, endpoints, allowDirectFallback = false) {
             const cached = proxyTextureCache.get(url);
             if (cached) {
-                cached.then(onLoad).catch(() => loader.load(url, onLoad));
+                cached.then(onLoad).catch(() => {
+                    if (allowDirectFallback) loader.load(url, onLoad);
+                });
                 return;
             }
             const promise = new Promise((resolve, reject) => {
-                proxyTextureQueue.push({ url, loader, resolve, reject });
+                proxyTextureQueue.push({ url, loader, resolve, reject, endpoints });
                 drainProxyTextureQueue();
             });
             proxyTextureCache.set(url, promise);
@@ -6896,7 +6977,7 @@
                 .then(onLoad)
                 .catch(() => {
                     proxyTextureCache.delete(url);
-                    loader.load(url, onLoad);
+                    if (allowDirectFallback) loader.load(url, onLoad);
                 });
         }
 
@@ -6914,14 +6995,20 @@
                     return false;
                 }
             })();
-            const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const canUseLocal = location.protocol === 'http:' || isLocalDev;
             const localProxyIsLocal = isLocalEndpoint(LOCAL_IMAGE_PROXY_ENDPOINT);
-            const useProxy = isCrossOrigin && LOCAL_IMAGE_PROXY_ENDPOINT && (canUseLocal || !localProxyIsLocal);
+            const endpoints = getImageProxyEndpoints().filter((endpoint) => {
+                if (!endpoint) return false;
+                if (endpoint === LOCAL_IMAGE_PROXY_ENDPOINT && localProxyIsLocal && !canUseLocal) return false;
+                return true;
+            });
+            const useProxy = isCrossOrigin && endpoints.length > 0;
             if (!useProxy) {
                 loader.load(resolved, onLoad);
                 return;
             }
-            loadTextureViaProxyQueue(resolved, loader, onLoad);
+            loadTextureViaProxyQueue(resolved, loader, onLoad, endpoints, isLocalDev);
         }
 
         function truncateText(ctx, text, maxWidth) {
