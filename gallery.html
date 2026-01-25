@@ -1666,6 +1666,7 @@
         const REMOVE_BG_PROXY_URL = '';
         const LOCAL_BG_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
         const LOCAL_IMAGE_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/fetch-image';
+        const WALL_IMAGE_PROXY_ENDPOINT = 'https://realtime.киносреда.рф/fetch-image';
         const FALLBACK_IMAGE_PROXY_ENDPOINTS = [];
         const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
         const POSTIMAGES_API_ENDPOINT = 'https://api.imageban.ru/v1';
@@ -1721,6 +1722,7 @@
         let wallTextEditorEl = null;
         let wallDrawSelected = null;
         let wallDrawSelectedGroup = null;
+        let wallDrawPendingState = null;
         let wallTextDrag = { active: false, moved: false, wallId: null, textId: null, offsetX: 0, offsetY: 0 };
         let wallStrokeDrag = { active: false, moved: false, wallId: null, strokeId: null, startX: 0, startY: 0, origin: null };
         let wallSelectDrag = { active: false, wallId: null, startX: 0, startY: 0, endX: 0, endY: 0 };
@@ -6284,6 +6286,11 @@
             ];
             wallSurfaces.forEach((wall) => ensureWallCssAnchor(wall));
             ensureWallDrawLayers();
+            if (wallDrawPendingState) {
+                const pending = wallDrawPendingState;
+                wallDrawPendingState = null;
+                applyWallDrawState(pending);
+            }
             const stored = loadWallImagesFromStorage();
             if (stored.length) applyWallImages(stored, { cache: false });
         }
@@ -6567,7 +6574,7 @@
                 applyWallImageTransform(mesh);
                 syncWallImageData(mesh);
                 saveWallImagesToStorage();
-            });
+            }, [WALL_IMAGE_PROXY_ENDPOINT]);
         }
 
         function updateWallImageCss(mesh) {
@@ -7698,6 +7705,10 @@
 
         function applyWallDrawState(payload) {
             if (!payload) return;
+            if (!wallSurfaces.length) {
+                wallDrawPendingState = payload;
+                return;
+            }
             ensureWallDrawLayers();
             clearAllWallDrawings();
             const strokes = payload.strokes || {};
@@ -11402,14 +11413,19 @@
         const proxyTextureQueue = [];
         let proxyTextureActive = 0;
 
-        function getImageProxyEndpoints() {
+        function getImageProxyEndpoints(overrideEndpoints = null) {
             const endpoints = [];
+            if (Array.isArray(overrideEndpoints)) {
+                overrideEndpoints.forEach((item) => {
+                    if (typeof item === 'string' && item.trim()) endpoints.push(item.trim());
+                });
+            }
             if (Array.isArray(window.IMAGE_PROXY_ENDPOINTS)) {
                 window.IMAGE_PROXY_ENDPOINTS.forEach((item) => {
                     if (typeof item === 'string' && item.trim()) endpoints.push(item.trim());
                 });
             }
-            if (LOCAL_IMAGE_PROXY_ENDPOINT) endpoints.push(LOCAL_IMAGE_PROXY_ENDPOINT);
+            if (LOCAL_IMAGE_PROXY_ENDPOINT && !overrideEndpoints) endpoints.push(LOCAL_IMAGE_PROXY_ENDPOINT);
             FALLBACK_IMAGE_PROXY_ENDPOINTS.forEach((item) => {
                 if (typeof item === 'string' && item.trim()) endpoints.push(item.trim());
             });
@@ -11509,7 +11525,7 @@
                 });
         }
 
-        function loadTextureWithProxy(url, loader, onLoad) {
+        function loadTextureWithProxy(url, loader, onLoad, overrideEndpoints = null) {
             if (!url || !loader) return;
             if (/^data:/i.test(url)) {
                 loader.load(url, onLoad);
@@ -11526,7 +11542,7 @@
             const isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
             const canUseLocal = location.protocol === 'http:' || isLocalDev;
             const localProxyIsLocal = isLocalEndpoint(LOCAL_IMAGE_PROXY_ENDPOINT);
-            const endpoints = getImageProxyEndpoints().filter((endpoint) => {
+            const endpoints = getImageProxyEndpoints(overrideEndpoints).filter((endpoint) => {
                 if (!endpoint) return false;
                 if (endpoint === LOCAL_IMAGE_PROXY_ENDPOINT && localProxyIsLocal && !canUseLocal) return false;
                 return true;
