@@ -3830,6 +3830,7 @@
             const sofa = createSofa();
             sofa.scale.setScalar(PLAYER_SCALE);
             sofa.position.set(0, 0, 4.5);
+            sofa.rotation.y = Math.PI;
             scene.add(sofa);
             sofaColliders = buildSofaColliders(sofa);
 
@@ -10647,7 +10648,9 @@
                 group.add(infoMesh);
 
                 const ratingOpen = isBeerRatingOpen(beer.id);
-                const toggleTex = createBeerRatingToggleTexture(ratingOpen);
+                const summary = getRatingsSummary(beer);
+                const hasRated = Number.isFinite(summary.my);
+                const toggleTex = createBeerRatingToggleTexture(hasRated);
                 const toggleMat = new THREE.MeshBasicMaterial({ map: toggleTex, transparent: true });
                 applyBoardStencil(toggleMat);
                 const toggleAspect = 140 / 140;
