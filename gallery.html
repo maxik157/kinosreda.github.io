@@ -418,44 +418,9 @@
             font-family: 'Comfortaa', cursive;
             letter-spacing: 0.02em;
             text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-            pointer-events: none;
+            pointer-events: auto;
             opacity: 0.7;
             transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease;
-        }
-        .voice-speakers {
-            position: fixed;
-            left: 16px;
-            bottom: 64px;
-            z-index: 19;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-width: 320px;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(4px);
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-        .voice-speakers.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .voice-speaker-chip {
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(15, 23, 42, 0.85);
-            color: #f8fafc;
-            font-size: 11px;
-            font-family: 'Comfortaa', cursive;
-            letter-spacing: 0.01em;
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
-            white-space: nowrap;
-        }
-        .voice-speaker-chip.local {
-            background: rgba(245, 158, 11, 0.9);
-            color: #1f2937;
-            font-weight: 700;
         }
         .voice-hud.active {
             background: rgba(245, 158, 11, 0.9);
@@ -472,6 +437,53 @@
             border: 1px solid rgba(255, 255, 255, 0.16);
             background: rgba(255, 255, 255, 0.1);
             font-size: 10px;
+        }
+        .voice-mode-toggle {
+            margin-left: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.08);
+            color: inherit;
+            font-family: inherit;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .online-users {
+            position: fixed;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 19;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .online-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(12, 14, 20, 0.75);
+            color: #f8fafc;
+            font-size: 12px;
+            font-family: 'Comfortaa', cursive;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+        }
+        .online-user.speaking {
+            background: rgba(245, 158, 11, 0.9);
+            color: #1f2937;
+            font-weight: 700;
+        }
+        .online-user img {
+            width: 32px;
+            height: 32px;
+            border-radius: 999px;
+            object-fit: cover;
+            flex: 0 0 auto;
         }
         .player-name-css {
             padding: 0;
@@ -1642,12 +1654,13 @@
             <div class="wall-draw-colors" id="wallDrawColors"></div>
         </div>
     </div>
-    <div class="voice-speakers" id="voiceSpeakers"></div>
+    <div class="online-users" id="onlineUsers"></div>
     <div class="voice-hud" id="voiceHud" aria-live="polite">
         <span aria-hidden="true">🎙️</span>
         <span>Голос</span>
         <span class="voice-hud-state" id="voiceHudState">OFF</span>
         <span class="voice-hud-key">F</span>
+        <button class="voice-mode-toggle" id="voiceModeToggle" type="button">PTT</button>
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -1809,10 +1822,14 @@
         let voiceTalking = false;
         let voiceInitPromise = null;
         let voicePeers = new Map();
-        let voiceSpeakersEl = null;
         let voiceAudioContext = null;
         let voiceActivityTimer = null;
         let voiceRemoteSpeaking = new Map();
+        let onlineUsersEl = null;
+        const onlineUsers = new Map();
+        let voiceMode = 'hold';
+        const VOICE_ICON_SILENT = './voice-cat.png';
+        const VOICE_ICON_TALK = './voice-cat.gif';
         let wallTextDrag = { active: false, moved: false, wallId: null, textId: null, offsetX: 0, offsetY: 0 };
         let wallStrokeDrag = { active: false, moved: false, wallId: null, strokeId: null, startX: 0, startY: 0, origin: null };
         let wallSelectDrag = { active: false, wallId: null, startX: 0, startY: 0, endX: 0, endY: 0 };
@@ -4112,7 +4129,15 @@
                 }
                 if (event.code === 'KeyF') {
                     if (!event.repeat) {
-                        startVoiceTalk();
+                        if (voiceMode === 'toggle') {
+                            if (voiceTalking) {
+                                stopVoiceTalk();
+                            } else {
+                                startVoiceTalk();
+                            }
+                        } else {
+                            startVoiceTalk();
+                        }
                     }
                     return;
                 }
@@ -4138,7 +4163,9 @@
                     return;
                 }
                 if (event.code === 'KeyF') {
-                    stopVoiceTalk();
+                    if (voiceMode === 'hold') {
+                        stopVoiceTalk();
+                    }
                     return;
                 }
                 if (event.code === 'KeyW') moveState.forward = false;
@@ -6253,6 +6280,7 @@
 
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2 + 16;
+            const hasMyRating = Number.isFinite(summary.my) && summary.my > 0;
 
             ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
             ctx.fillText(text, centerX, centerY + 2);
@@ -6271,12 +6299,13 @@
                 ctx.restore();
             }
 
-            ctx.font = '700 36px Comfortaa, sans-serif';
-            ctx.fillStyle = 'rgba(248, 250, 252, 0.95)';
-            const label = ratingValue > 0 ? `${formatNumber(ratingValue, 1)}` : '—';
-            ctx.textBaseline = 'top';
-            ctx.fillText(label, centerX, 6);
-            ctx.textBaseline = 'middle';
+            if (hasMyRating) {
+                ctx.font = '700 30px Comfortaa, sans-serif';
+                ctx.fillStyle = 'rgba(248, 250, 252, 0.95)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(formatNumber(summary.my, 1), centerX, centerY - 52);
+            }
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -6299,6 +6328,7 @@
 
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2 + 16;
+            const hasValue = ratingValue > 0;
 
             ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
             ctx.fillText(text, centerX, centerY + 2);
@@ -6317,30 +6347,38 @@
                 ctx.restore();
             }
 
-            ctx.font = '700 36px Comfortaa, sans-serif';
-            ctx.fillStyle = 'rgba(248, 250, 252, 0.95)';
-            const label = ratingValue > 0 ? `${formatNumber(ratingValue, 1)}` : '—';
-            ctx.textBaseline = 'top';
-            ctx.fillText(label, centerX, 6);
-            ctx.textBaseline = 'middle';
+            if (hasValue) {
+                ctx.font = '700 30px Comfortaa, sans-serif';
+                ctx.fillStyle = 'rgba(248, 250, 252, 0.95)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(formatNumber(ratingValue, 1), centerX, centerY - 52);
+            }
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
             return texture;
         }
 
-        function createBeerRatingToggleTexture(active = false) {
+        function createBeerRatingToggleTexture(active = false, value = null) {
             const canvas = document.createElement('canvas');
-            canvas.width = 140;
+            canvas.width = 260;
             canvas.height = 140;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             ctx.font = 'bold 72px "Segoe UI Symbol", "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
             ctx.fillStyle = active ? 'rgba(245, 158, 11, 0.98)' : 'rgba(226, 232, 240, 0.9)';
-            ctx.textAlign = 'center';
+            ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText(active ? '★' : '☆', canvas.width / 2, canvas.height / 2 + 2);
+            ctx.fillText(active ? '★' : '☆', 44, canvas.height / 2 + 2);
+
+            const ratingValue = Number.isFinite(value) ? value : 0;
+            ctx.font = '700 56px Comfortaa, sans-serif';
+            ctx.fillStyle = 'rgba(248, 250, 252, 0.98)';
+            const label = ratingValue > 0 ? `${formatNumber(ratingValue, 1)}` : '—';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, 128, canvas.height / 2 + 2);
 
             const texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
@@ -10691,11 +10729,12 @@
                 const ratingOpen = isBeerRatingOpen(beer.id);
                 const summary = getRatingsSummary(beer);
                 const hasRated = Number.isFinite(summary.my);
-                const toggleTex = createBeerRatingToggleTexture(hasRated);
+                const ratingValue = Number.isFinite(summary.avg) ? summary.avg : 0;
+                const toggleTex = createBeerRatingToggleTexture(hasRated, ratingValue);
                 const toggleMat = new THREE.MeshBasicMaterial({ map: toggleTex, transparent: true });
                 applyBoardStencil(toggleMat);
-                const toggleAspect = 140 / 140;
-                const toggleWidth = Math.min(itemWidth * 0.28, infoWidth * 0.28);
+                const toggleAspect = 260 / 140;
+                const toggleWidth = Math.min(itemWidth * 0.42, infoWidth * 0.42);
                 const toggleHeight = toggleWidth / toggleAspect;
                 const infoBottom = infoY - infoHeight / 2;
                 const toggleY = infoBottom - toggleHeight / 2 - 0.02;
@@ -11696,10 +11735,24 @@
         function initVoiceHud() {
             voiceHudEl = document.getElementById('voiceHud');
             voiceHudStateEl = document.getElementById('voiceHudState');
-            voiceSpeakersEl = document.getElementById('voiceSpeakers');
+            onlineUsersEl = document.getElementById('onlineUsers');
+            const savedMode = localStorage.getItem('voiceMode');
+            if (savedMode === 'toggle') voiceMode = 'toggle';
             setVoiceHud('OFF', false);
+            updateVoiceModeUi();
             if (!voiceActivityTimer) {
                 voiceActivityTimer = window.setInterval(updateVoiceActivity, 120);
+            }
+            const toggleBtn = document.getElementById('voiceModeToggle');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    voiceMode = voiceMode === 'toggle' ? 'hold' : 'toggle';
+                    localStorage.setItem('voiceMode', voiceMode);
+                    if (voiceMode === 'hold' && voiceTalking) {
+                        stopVoiceTalk();
+                    }
+                    updateVoiceModeUi();
+                });
             }
         }
 
@@ -11707,6 +11760,60 @@
             if (!voiceHudEl || !voiceHudStateEl) return;
             voiceHudStateEl.textContent = state;
             voiceHudEl.classList.toggle('active', Boolean(active));
+        }
+
+        function updateVoiceModeUi() {
+            const toggleBtn = document.getElementById('voiceModeToggle');
+            if (toggleBtn) {
+                toggleBtn.textContent = voiceMode === 'toggle' ? 'TOGGLE' : 'PTT';
+            }
+        }
+
+        function updateOnlineUsers(list, localId) {
+            onlineUsers.clear();
+            if (localId) {
+                onlineUsers.set(String(localId), {
+                    id: String(localId),
+                    name: getCurrentUserName() || 'Я'
+                });
+            }
+            if (Array.isArray(list)) {
+                list.forEach((user) => {
+                    if (!user?.id) return;
+                    if (user.id === localId) return;
+                    onlineUsers.set(String(user.id), {
+                        id: String(user.id),
+                        name: user.name || 'Гость'
+                    });
+                });
+            }
+            renderOnlineUsers();
+        }
+
+        function upsertOnlineUser(user, localId) {
+            if (!user?.id) return;
+            if (user.id === localId) return;
+            onlineUsers.set(String(user.id), { id: String(user.id), name: user.name || 'Гость' });
+            renderOnlineUsers();
+        }
+
+        function removeOnlineUser(id) {
+            if (!id) return;
+            onlineUsers.delete(String(id));
+            renderOnlineUsers();
+        }
+
+        function renderOnlineUsers() {
+            if (!onlineUsersEl) return;
+            const localId = getLocalClientId();
+            const items = Array.from(onlineUsers.values());
+            items.sort((a, b) => (a.id === localId ? -1 : 0) - (b.id === localId ? -1 : 0));
+            onlineUsersEl.innerHTML = items.map((entry) => {
+                const speaking = (entry.id === localId && voiceTalking) || voiceRemoteSpeaking.get(entry.id);
+                const icon = speaking ? VOICE_ICON_TALK : VOICE_ICON_SILENT;
+                const cls = speaking ? 'online-user speaking' : 'online-user';
+                return `<div class="${cls}"><img src="${icon}" alt=""><span>${entry.name}</span></div>`;
+            }).join('');
         }
 
         function shouldOfferVoice(remoteId) {
@@ -11902,28 +12009,10 @@
             return fallback;
         }
 
-        function renderVoiceSpeakers(list) {
-            if (!voiceSpeakersEl) return;
-            if (!list.length) {
-                voiceSpeakersEl.classList.remove('active');
-                voiceSpeakersEl.innerHTML = '';
-                return;
-            }
-            voiceSpeakersEl.classList.add('active');
-            const chips = list.map((entry) => {
-                const name = getUserNameById(entry.id, entry.local ? 'Я' : 'Гость');
-                const cls = entry.local ? 'voice-speaker-chip local' : 'voice-speaker-chip';
-                return `<div class="${cls}">${name}</div>`;
-            }).join('');
-            voiceSpeakersEl.innerHTML = chips;
-        }
+        function renderVoiceSpeakers() {}
 
         function updateVoiceSpeakerUI() {
-            if (!voiceSpeakersEl) return;
-            if (!voiceTalking && voicePeers.size === 0) {
-                voiceSpeakersEl.classList.remove('active');
-                voiceSpeakersEl.innerHTML = '';
-            }
+            return;
         }
 
         async function sendVoiceOffer(remoteId) {
@@ -12019,6 +12108,7 @@
             if (voiceTrack) voiceTrack.enabled = true;
             setVoiceHud('ON', true);
             sendVoiceTalkingState(true);
+            renderOnlineUsers();
             const localId = getLocalClientId();
             remotePlayers.forEach((_, id) => {
                 if (id === localId) return;
@@ -12033,6 +12123,7 @@
             if (voiceTrack) voiceTrack.enabled = false;
             setVoiceHud(voiceStream ? 'READY' : 'OFF', false);
             sendVoiceTalkingState(false);
+            renderOnlineUsers();
         }
 
         function sendVoiceTalkingState(isSpeaking) {
@@ -12052,6 +12143,7 @@
             if (data.type === 'user_join' && data.user) {
                 if (data.user.id === localId) return;
                 upsertRemotePlayer(data.user);
+                upsertOnlineUser(data.user, localId);
                 if (voiceStream && shouldOfferVoice(String(data.user.id))) {
                     sendVoiceOffer(String(data.user.id));
                 }
@@ -12062,6 +12154,7 @@
                 removeRemotePlayer(data.id);
                 closeVoicePeer(String(data.id));
                 voiceRemoteSpeaking.delete(String(data.id));
+                removeOnlineUser(String(data.id));
                 return;
             }
             if (data.type === 'ladder') {
@@ -12095,11 +12188,13 @@
                 if (!speakerId || speakerId === localId) return;
                 voiceRemoteSpeaking.set(speakerId, Boolean(data.speaking));
                 updateVoiceActivity();
+                renderOnlineUsers();
                 return;
             }
             if (data.type === 'presence' && data.user) {
                 if (data.user.id === localId) return;
                 upsertRemotePlayer(data.user);
+                upsertOnlineUser(data.user, localId);
                 if (voiceStream && shouldOfferVoice(String(data.user.id))) {
                     sendVoiceOffer(String(data.user.id));
                 }
@@ -12316,6 +12411,7 @@
                     if (user?.id === localId) return;
                     upsertRemotePlayer(user);
                 });
+                updateOnlineUsers(data.users, localId);
                 syncVoicePeersFromUsers(data.users, localId);
             }
             if (Array.isArray(data.ladders)) {
