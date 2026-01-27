@@ -365,6 +365,111 @@
             font-family: inherit;
             font-size: 11px;
         }
+        .wall-draw-color-input {
+            width: 100%;
+            height: 28px;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: transparent;
+        }
+        .light-switch {
+            width: 44px;
+            height: 70px;
+            border-radius: 10px;
+            background: #f8f9fb;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .light-switch .light-toggle {
+            width: 26px;
+            height: 36px;
+            border-radius: 6px;
+            background: linear-gradient(180deg, #ffffff, #dfe3ea);
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            position: relative;
+            transition: transform 0.18s ease;
+        }
+        .light-switch.on .light-toggle {
+            transform: translateY(6px);
+        }
+        .light-modal {
+            width: 220px;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(8, 12, 18, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+            color: var(--text);
+            font-family: 'Comfortaa', cursive;
+            pointer-events: auto;
+        }
+        .light-modal-floating {
+            position: fixed;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1200;
+        }
+        .light-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .light-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .light-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .light-toggle button {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .light-toggle button.active {
+            border-color: rgba(245, 158, 11, 0.8);
+            background: rgba(245, 158, 11, 0.2);
+        }
+        .light-toggle-btn {
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .light-toggle-btn.off {
+            border-color: rgba(245, 158, 11, 0.8);
+            background: rgba(245, 158, 11, 0.2);
+        }
+        .light-modal-close {
+            border: none;
+            background: transparent;
+            color: var(--text);
+            font-size: 14px;
+            cursor: pointer;
+        }
         .wall-text-editor {
             min-width: 48px;
             min-height: 24px;
@@ -452,8 +557,7 @@
         .online-users {
             position: fixed;
             left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
+            bottom: 64px;
             z-index: 19;
             display: flex;
             flex-direction: column;
@@ -1394,6 +1498,46 @@
             color: var(--text);
             margin-bottom: 12px;
         }
+        .modal-field[type="color"] {
+            height: 42px;
+            padding: 4px 6px;
+        }
+        #avatarPreviewBtn {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .avatar-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: -6px;
+            margin-bottom: 10px;
+        }
+        .avatar-layout {
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 14px;
+            align-items: start;
+        }
+        .avatar-form {
+            min-width: 0;
+        }
+        .avatar-preview {
+            width: 180px;
+            height: 240px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08), rgba(0,0,0,0.55));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .avatar-preview canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
         .modal-actions {
             display: flex;
             justify-content: flex-end;
@@ -1567,6 +1711,7 @@
                 <div class="tools-menu" id="toolsMenu" role="menu" aria-hidden="true">
                     <button class="tools-item" id="toolsBeerBtn" type="button">Фото пива</button>
                     <button class="tools-item" id="toolsWallBtn" type="button">Картина на стене</button>
+                    <button class="tools-item" id="toolsAvatarBtn" type="button">Облик</button>
                 </div>
             </div>
             <a href="profile.html" class="nav-pill profile-btn" title="Профиль">
@@ -1601,6 +1746,34 @@
             <div class="modal-actions">
                 <button class="btn" type="button" onclick="closeImageModal()">Отмена</button>
                 <button class="btn primary" type="button" onclick="saveImageUrl()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="avatarModal" role="dialog" aria-modal="true">
+        <div class="modal-card">
+            <div class="modal-title">Облик персонажа</div>
+            <div class="avatar-layout">
+                <div class="avatar-form">
+                    <label class="modal-label" for="avatarModelSelect">Модель</label>
+                    <select class="modal-field" id="avatarModelSelect">
+                        <option value="placeholder">Схематичный</option>
+                        <option value="humanoid">Человекоподобный</option>
+                    </select>
+
+                    <label class="modal-label" for="avatarColor">Цвет</label>
+                    <input class="modal-field" type="color" id="avatarColor" value="#f59e0b">
+
+                    <label class="modal-label" for="avatarTextureUrl">Текстура (URL)</label>
+                    <input class="modal-field" type="url" id="avatarTextureUrl" placeholder="https://.../texture.png">
+                    <button class="btn" type="button" id="avatarPreviewBtn">Примерить</button>
+                </div>
+                <div class="avatar-preview" id="avatarPreview"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn" type="button" id="avatarCancelBtn">Отмена</button>
+                <button class="btn primary" type="button" id="avatarSaveBtn">Сохранить</button>
             </div>
         </div>
     </div>
@@ -1653,6 +1826,7 @@
             <label class="wall-draw-label">Цвет</label>
             <div class="wall-draw-colors" id="wallDrawColors"></div>
         </div>
+        <!-- Light controls moved to wall switch modal -->
     </div>
     <div class="online-users" id="onlineUsers"></div>
     <div class="voice-hud" id="voiceHud" aria-live="polite">
@@ -1740,6 +1914,74 @@
                 return false;
             }
         }
+
+        async function ensureColladaLoader() {
+            if (window.THREE?.ColladaLoader) return window.THREE.ColladaLoader;
+            try {
+                const tryImport = async (urls) => {
+                    let lastErr = null;
+                    for (const url of urls) {
+                        try {
+                            return await import(url);
+                        } catch (err) {
+                            lastErr = err;
+                        }
+                    }
+                    if (lastErr) throw lastErr;
+                    return null;
+                };
+                const mod = await tryImport([
+                    './ColladaLoader.js',
+                    './vendor/three/examples/jsm/loaders/ColladaLoader.js',
+                    'https://threejs.org/examples/jsm/loaders/ColladaLoader.js'
+                ]);
+                if (mod?.ColladaLoader) {
+                    window.THREE = window.THREE || {};
+                    window.THREE.ColladaLoader = mod.ColladaLoader;
+                    if (window.THREE.ColorManagement?.toWorkingColorSpace
+                        && !window.THREE.ColorManagement.colorSpaceToWorking) {
+                        // r160 compatibility for newer ColladaLoader
+                        window.THREE.ColorManagement.colorSpaceToWorking =
+                            window.THREE.ColorManagement.toWorkingColorSpace;
+                    }
+                    return mod.ColladaLoader;
+                }
+            } catch (err) {
+                console.warn('collada module load failed', err);
+            }
+            return null;
+        }
+
+        async function ensureObjLoader() {
+            if (window.THREE?.OBJLoader) return window.THREE.OBJLoader;
+            try {
+                const tryImport = async (urls) => {
+                    let lastErr = null;
+                    for (const url of urls) {
+                        try {
+                            return await import(url);
+                        } catch (err) {
+                            lastErr = err;
+                        }
+                    }
+                    if (lastErr) throw lastErr;
+                    return null;
+                };
+                const mod = await tryImport([
+                    './OBJLoader.js',
+                    './vendor/three/examples/jsm/loaders/OBJLoader.js',
+                    'https://threejs.org/examples/jsm/loaders/OBJLoader.js'
+                ]);
+                if (mod?.OBJLoader) {
+                    window.THREE = window.THREE || {};
+                    window.THREE.OBJLoader = mod.OBJLoader;
+                    return mod.OBJLoader;
+                }
+            } catch (err) {
+                console.warn('obj module load failed', err);
+            }
+            return null;
+        }
     </script>
     <script>
         const firebaseConfig = {
@@ -1772,12 +2014,15 @@
         const RUG_CACHE_TS_KEY = 'beerShelfRugCacheTs';
         const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
         const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+        const AVATAR_PRESENCE_PATH = 'avatarPresence';
         const DEFAULT_RUG_URL = 'carpet.jpg';
         const FLOOR_TEXTURE_URL = 'wood-floor.jpg';
         const WALL_TEXTURE_URL = 'brick-wall.jpg';
         const CEILING_TEXTURE_URL = 'ceiling-armstrong.jpg';
-        const AVATAR_MODEL_URL = '';
-        const AVATAR_MODEL_FALLBACK_URL = '';
+        const AVATAR_PREFS_KEY = 'kinosreda_avatar_prefs_v1';
+        const LIGHT_PREFS_KEY = 'kinosreda_light_prefs_v1';
+        const LIGHT_SETTINGS_PATH = 'lightSettings';
+        const USE_FIREBASE_LIGHT = true;
         const REALTIME_WS_URLS = ['wss://realtime.киносреда.рф/ws'];
         const REALTIME_HTTP_BASE = 'https://realtime.киносреда.рф';
         const REALTIME_ROOM = 'beer-shelf';
@@ -1815,6 +2060,46 @@
         let wallDrawSelected = null;
         let wallDrawSelectedGroup = null;
         let wallDrawPendingState = null;
+        let ceilingLight = null;
+        let ceilingLamp = null;
+        let ceilingLightTarget = null;
+        let ambientLight = null;
+        let dirLight = null;
+        let ceilingBeam = null;
+        let ceilingBeamRadius = 0.6;
+        let ceilingBeamHeight = 0;
+        let lightSyncMuted = false;
+        let lightSwitchObject = null;
+        let lightSwitchEl = null;
+        let lightControlObject = null;
+        let lightControlEl = null;
+        let isLightControlOpen = false;
+        let lightControlsBound = false;
+        let lightStateBootstrapped = false;
+        let lightFirebaseMuted = false;
+        let lightPendingLocalUntil = 0;
+        let lightToggleLockUntil = 0;
+        let lightFirebaseLastTs = 0;
+        let lightState = {
+            color: '#f5c15c',
+            intensity: 3.2,
+            spread: 0.85,
+            off: false,
+            updatedAt: 0
+        };
+        let hasLocalLightPrefs = false;
+        if (!USE_FIREBASE_LIGHT) {
+            try {
+                const savedLight = JSON.parse(localStorage.getItem(LIGHT_PREFS_KEY) || 'null');
+                if (savedLight && typeof savedLight === 'object') {
+                    lightState = { ...lightState, ...savedLight };
+                    if (!Number.isFinite(lightState.updatedAt)) {
+                        lightState.updatedAt = Date.now();
+                    }
+                    hasLocalLightPrefs = true;
+                }
+            } catch (_) {}
+        }
         let voiceHudEl = null;
         let voiceHudStateEl = null;
         let voiceStream = null;
@@ -1827,6 +2112,8 @@
         let voiceRemoteSpeaking = new Map();
         let onlineUsersEl = null;
         const onlineUsers = new Map();
+        const onlineUserNodes = new Map();
+        const avatarPresenceCache = new Map();
         let voiceMode = 'hold';
         const VOICE_ICON_SILENT = './voice-cat.png';
         const VOICE_ICON_TALK = './voice-cat.gif';
@@ -1839,6 +2126,22 @@
         const wallTextMeasureCanvas = document.createElement('canvas');
         const wallTextMeasureCtx = wallTextMeasureCanvas.getContext('2d');
         let cssInitRetryId = null;
+        let slotMachineGroup = null;
+        let slotMachineActionMeshes = [];
+        let slotReels = [];
+        let slotSpinState = null;
+        let slotLeverPivot = null;
+        let slotLeverAxis = 'x';
+        let slotLeverRestAngle = 0.65;
+        let slotLeverDownAngle = -0.55;
+        const SLOT_SYMBOLS = [
+            { label: 'CHERRY', color: '#ef4444' },
+            { label: 'LEMON', color: '#f59e0b' },
+            { label: 'BAR', color: '#f8fafc' },
+            { label: '7', color: '#fde047' },
+            { label: 'DIAMOND', color: '#38bdf8' },
+            { label: 'BELL', color: '#fcd34d' }
+        ];
         let reticleEl = null;
         let reticleFollow = false;
         let shelvesGroup = null;
@@ -2016,9 +2319,15 @@
         let lastPresenceState = { x: 0, y: 0, z: 0, yaw: 0 };
         const remotePlayers = new Map();
         const remoteLadders = new Map();
-        let avatarTemplate = null;
-        let avatarClips = [];
-        let avatarLoadPromise = null;
+        const avatarTextureCache = new Map();
+        let localAvatarPrefs = null;
+        let avatarPresenceDirty = false;
+        let avatarPreviewRenderer = null;
+        let avatarPreviewScene = null;
+        let avatarPreviewCamera = null;
+        let avatarPreviewRoot = null;
+        let avatarPreviewFrame = null;
+        let avatarPreviewActive = false;
         const userColorCache = new Map();
         let verticalVelocity = 0;
         let isGrounded = true;
@@ -2624,6 +2933,7 @@
             const toolsMenu = document.getElementById('toolsMenu');
             const toolsBeerBtn = document.getElementById('toolsBeerBtn');
             const toolsWallBtn = document.getElementById('toolsWallBtn');
+            const toolsAvatarBtn = document.getElementById('toolsAvatarBtn');
 
             const setToolsOpen = (open) => {
                 if (!toolsPanel || !toolsToggle || !toolsMenu) return;
@@ -2649,6 +2959,12 @@
                 toolsWallBtn.addEventListener('click', () => {
                     setToolsOpen(false);
                     openWallImageModal();
+                });
+            }
+            if (toolsAvatarBtn) {
+                toolsAvatarBtn.addEventListener('click', () => {
+                    setToolsOpen(false);
+                    openAvatarModal();
                 });
             }
             // Video controls are now on the wall panel.
@@ -2805,6 +3121,74 @@
                     removeWallImageById(mesh.userData.id);
                 });
             }
+            const avatarModal = document.getElementById('avatarModal');
+            const avatarModelSelect = document.getElementById('avatarModelSelect');
+            const avatarColor = document.getElementById('avatarColor');
+            const avatarTextureUrl = document.getElementById('avatarTextureUrl');
+            const avatarCancelBtn = document.getElementById('avatarCancelBtn');
+            const avatarSaveBtn = document.getElementById('avatarSaveBtn');
+            const avatarPreviewBtn = document.getElementById('avatarPreviewBtn');
+
+            window.openAvatarModal = () => {
+                if (!avatarModal) return;
+                const prefs = getLocalAvatarPrefs();
+                if (avatarModelSelect) avatarModelSelect.value = prefs.model || 'placeholder';
+                if (avatarColor) avatarColor.value = prefs.color || '#f59e0b';
+                if (avatarTextureUrl) avatarTextureUrl.value = prefs.textureUrl || '';
+                avatarModal.classList.add('open');
+                window.requestAnimationFrame(() => {
+                    initAvatarPreview();
+                    buildAvatarPreview(prefs);
+                    startAvatarPreviewLoop();
+                });
+            };
+            window.closeAvatarModal = () => {
+                if (avatarModal) avatarModal.classList.remove('open');
+                stopAvatarPreviewLoop();
+            };
+            if (avatarCancelBtn) {
+                avatarCancelBtn.addEventListener('click', window.closeAvatarModal);
+            }
+            if (avatarSaveBtn) {
+                avatarSaveBtn.addEventListener('click', () => {
+                    const next = normalizeAvatarPrefs({
+                        model: avatarModelSelect?.value || 'placeholder',
+                        color: avatarColor?.value || '#f59e0b',
+                        textureUrl: avatarTextureUrl?.value || ''
+                    });
+                    const saved = saveAvatarPrefs(next);
+                    avatarPresenceDirty = true;
+                    lastPresenceSent = 0;
+                    sendPresenceUpdate();
+                    pushLocalAvatarToFirebase(saved);
+                    sendRealtime({
+                        type: 'presence',
+                        id: getLocalClientId(),
+                        name: getCurrentUserName(),
+                        x: yawObject?.position?.x || 0,
+                        y: yawObject?.position?.y || 0,
+                        z: yawObject?.position?.z || 0,
+                        yaw: yawObject?.rotation?.y || 0,
+                        avatar: getShareableAvatarPrefs()
+                    });
+                    window.closeAvatarModal();
+                });
+            }
+            const updateAvatarPreviewFromInputs = (withTexture = false) => {
+                const prefs = normalizeAvatarPrefs({
+                    model: avatarModelSelect?.value || 'placeholder',
+                    color: avatarColor?.value || '#f59e0b',
+                    textureUrl: withTexture ? (avatarTextureUrl?.value || '') : ''
+                });
+                initAvatarPreview();
+                buildAvatarPreview(prefs);
+            };
+            avatarModelSelect?.addEventListener('change', () => updateAvatarPreviewFromInputs(false));
+            avatarColor?.addEventListener('input', () => updateAvatarPreviewFromInputs(false));
+            avatarPreviewBtn?.addEventListener('click', () => updateAvatarPreviewFromInputs(true));
+            avatarModal?.addEventListener('click', (event) => {
+                if (event.target && event.target.id === 'avatarModal') window.closeAvatarModal();
+            });
             initWallDrawPanel();
             updateWallDrawUi();
             document.addEventListener('click', () => {
@@ -3199,6 +3583,561 @@
             }
 
             return group;
+        }
+
+        function createSlotReelTexture() {
+            const symbolCount = SLOT_SYMBOLS.length;
+            const width = 256;
+            const cellHeight = 220;
+            const height = cellHeight * symbolCount;
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0b0f16';
+            ctx.fillRect(0, 0, width, height);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 46px "Comfortaa", sans-serif';
+            for (let i = 0; i < symbolCount; i += 1) {
+                const symbol = SLOT_SYMBOLS[i];
+                const top = i * cellHeight;
+                const centerY = top + cellHeight / 2;
+                const pad = 10;
+                const gradient = ctx.createLinearGradient(0, top, width, top + cellHeight);
+                gradient.addColorStop(0, 'rgba(255,255,255,0.05)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0.2)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(pad, top + pad, width - pad * 2, cellHeight - pad * 2);
+                ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(pad, top + pad, width - pad * 2, cellHeight - pad * 2);
+                ctx.fillStyle = symbol.color;
+                if (symbol.label === 'CHERRY') {
+                    ctx.beginPath();
+                    ctx.arc(width * 0.43, centerY + 20, 26, 0, Math.PI * 2);
+                    ctx.arc(width * 0.57, centerY + 20, 26, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#14532d';
+                    ctx.lineWidth = 5;
+                    ctx.beginPath();
+                    ctx.moveTo(width * 0.43, centerY - 4);
+                    ctx.lineTo(width * 0.48, centerY - 34);
+                    ctx.lineTo(width * 0.53, centerY - 10);
+                    ctx.stroke();
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.ellipse(width * 0.5, centerY - 36, 18, 10, -0.3, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (symbol.label === 'LEMON') {
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath();
+                    ctx.ellipse(width / 2, centerY + 10, 52, 32, 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#16a34a';
+                    ctx.beginPath();
+                    ctx.ellipse(width / 2 + 34, centerY - 20, 18, 8, 0.4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (symbol.label === 'DIAMOND') {
+                    ctx.fillStyle = symbol.color;
+                    ctx.beginPath();
+                    ctx.moveTo(width / 2, centerY - 50);
+                    ctx.lineTo(width / 2 + 55, centerY);
+                    ctx.lineTo(width / 2, centerY + 60);
+                    ctx.lineTo(width / 2 - 55, centerY);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                    ctx.lineWidth = 4;
+                    ctx.stroke();
+                } else if (symbol.label === 'BELL') {
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(width / 2, centerY + 15, 52, Math.PI, 0, false);
+                    ctx.lineTo(width / 2 + 52, centerY + 35);
+                    ctx.arc(width / 2, centerY + 35, 52, 0, Math.PI, false);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#b45309';
+                    ctx.beginPath();
+                    ctx.arc(width / 2, centerY + 38, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (symbol.label === 'BAR') {
+                    ctx.fillStyle = '#111827';
+                    ctx.fillRect(width / 2 - 68, centerY - 32, 136, 64);
+                    ctx.strokeStyle = '#f8fafc';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(width / 2 - 68, centerY - 32, 136, 64);
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.font = 'bold 40px "Rubik Wet Paint", sans-serif';
+                    ctx.fillText('BAR', width / 2, centerY + 4);
+                } else {
+                    ctx.fillStyle = symbol.color;
+                    ctx.font = 'bold 84px "Rubik Wet Paint", sans-serif';
+                    ctx.fillText(symbol.label, width / 2, centerY + 10);
+                }
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 1);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+            texture.userData.symbolCount = symbolCount;
+            return texture;
+        }
+
+        function createSlotSignTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#991b1b');
+            gradient.addColorStop(1, '#7f1d1d');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(16, 16, canvas.width - 32, canvas.height - 32);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 82px "Rubik Wet Paint", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SLOT 777', canvas.width / 2, canvas.height / 2 + 6);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            return texture;
+        }
+
+        function createSlotMachine() {
+            const group = new THREE.Group();
+            slotMachineActionMeshes = [];
+            slotReels = [];
+
+            const bodyMat = new THREE.MeshStandardMaterial({
+                color: 0x111827,
+                roughness: 0.55,
+                metalness: 0.25
+            });
+            const panelMat = new THREE.MeshStandardMaterial({
+                color: 0x1f2937,
+                roughness: 0.4,
+                metalness: 0.2
+            });
+            const chromeMat = new THREE.MeshStandardMaterial({
+                color: 0xe5e7eb,
+                roughness: 0.2,
+                metalness: 0.8
+            });
+            const accentMat = new THREE.MeshStandardMaterial({
+                color: 0x7f1d1d,
+                roughness: 0.4,
+                metalness: 0.3
+            });
+
+            const body = new THREE.Mesh(createRoundedBox(2.4, 3.4, 1.5, 0.2), bodyMat);
+            body.position.y = 1.7;
+            group.add(body);
+
+            const top = new THREE.Mesh(createRoundedBox(2.6, 0.9, 1.6, 0.22), accentMat);
+            top.position.y = 3.9;
+            group.add(top);
+
+            const signTex = createSlotSignTexture();
+            const sign = new THREE.Mesh(
+                new THREE.PlaneGeometry(2.2, 0.7),
+                new THREE.MeshStandardMaterial({ map: signTex, transparent: false })
+            );
+            sign.position.set(0, 3.9, 0.82);
+            group.add(sign);
+
+            const frontPanel = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.9, 0.08), panelMat);
+            frontPanel.position.set(0, 2.0, 0.78);
+            group.add(frontPanel);
+
+            const windowFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.2, 0.12), chromeMat);
+            windowFrame.position.set(0, 2.25, 0.84);
+            group.add(windowFrame);
+
+            const windowBack = new THREE.Mesh(new THREE.PlaneGeometry(1.68, 1.05), new THREE.MeshStandardMaterial({ color: 0x0b0f16 }));
+            windowBack.position.set(0, 2.25, 0.81);
+            group.add(windowBack);
+
+            const reelTextureBase = createSlotReelTexture();
+            const reelWidth = 0.45;
+            const reelHeight = 0.88;
+            const reelGap = 0.06;
+            const reelX = [-reelWidth - reelGap, 0, reelWidth + reelGap];
+            reelX.forEach((x) => {
+                const reelTexture = reelTextureBase.clone();
+                reelTexture.needsUpdate = true;
+                const reelMat = new THREE.MeshStandardMaterial({
+                    map: reelTexture,
+                    roughness: 0.3,
+                    metalness: 0.05
+                });
+                const reel = new THREE.Mesh(new THREE.PlaneGeometry(reelWidth, reelHeight), reelMat);
+                reel.position.set(x, 2.25, 0.87);
+                group.add(reel);
+                slotReels.push({
+                    mesh: reel,
+                    texture: reelTexture,
+                    symbolCount: SLOT_SYMBOLS.length,
+                    speed: 0,
+                    spinning: false,
+                    targetOffset: 0,
+                    stopAt: 0,
+                    stopStart: 0,
+                    stopping: false
+                });
+            });
+
+            const buttonMat = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b,
+                roughness: 0.35,
+                metalness: 0.3
+            });
+            const buttonBase = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.06, 20), chromeMat);
+            buttonBase.position.set(0, 1.15, 0.82);
+            const button = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 20), buttonMat);
+            button.position.set(0, 1.19, 0.85);
+            group.add(buttonBase, button);
+            button.userData.action = 'slot-spin';
+            slotMachineActionMeshes.push(button);
+
+            const leverPivot = new THREE.Object3D();
+            leverPivot.position.set(1.45, 2.6, 0.45);
+            group.add(leverPivot);
+            const leverRod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.1, 12), chromeMat);
+            leverRod.position.y = -0.55;
+            leverPivot.add(leverRod);
+            const leverKnob = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), buttonMat);
+            leverKnob.position.y = -1.1;
+            leverPivot.add(leverKnob);
+            leverPivot.rotation.z = slotLeverRestAngle;
+            leverKnob.userData.action = 'slot-spin';
+            leverRod.userData.action = 'slot-spin';
+            slotMachineActionMeshes.push(leverKnob, leverRod);
+            slotLeverPivot = leverPivot;
+
+            const basePlate = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.15, 1.7), chromeMat);
+            basePlate.position.set(0, 0.07, 0);
+            group.add(basePlate);
+
+            group.userData.depth = 1.6;
+            return group;
+        }
+
+        function setupSlotMachineOverlay(slotRoot, bounds) {
+            slotMachineActionMeshes = [];
+            slotReels = [];
+            slotLeverPivot = null;
+
+            const size = new THREE.Vector3();
+            bounds.getSize(size);
+            if (!size.x || !size.y || !size.z) return;
+
+            const reelTextureBase = createSlotReelTexture();
+            const reelWidth = Math.max(0.18, size.x * 0.18);
+            const reelHeight = Math.max(0.22, size.y * 0.18);
+            const reelGap = reelWidth * 0.18;
+            const totalWidth = reelWidth * 3 + reelGap * 2;
+            const startX = -totalWidth / 2 + reelWidth / 2;
+            const reelY = bounds.min.y + size.y * 0.6;
+            const reelZ = bounds.max.z + 0.02;
+
+            for (let i = 0; i < 3; i += 1) {
+                const reelTexture = reelTextureBase.clone();
+                reelTexture.needsUpdate = true;
+                const reelMat = new THREE.MeshStandardMaterial({
+                    map: reelTexture,
+                    roughness: 0.3,
+                    metalness: 0.05
+                });
+                const reel = new THREE.Mesh(new THREE.PlaneGeometry(reelWidth, reelHeight), reelMat);
+                reel.position.set(startX + i * (reelWidth + reelGap), reelY, reelZ);
+                slotRoot.add(reel);
+                slotReels.push({
+                    mesh: reel,
+                    texture: reelTexture,
+                    symbolCount: SLOT_SYMBOLS.length,
+                    speed: 0,
+                    spinning: false,
+                    targetOffset: 0,
+                    stopAt: 0,
+                    stopStart: 0,
+                    stopping: false
+                });
+            }
+        }
+
+        async function loadSlotMachineModel() {
+            const ColladaLoader = await ensureColladaLoader();
+            if (!ColladaLoader) return null;
+            return await new Promise((resolve) => {
+                const loader = new ColladaLoader();
+                const slotPath = `./${encodeURIComponent('Slot Machine 2')}/`;
+                loader.setPath(slotPath);
+                loader.setResourcePath(slotPath);
+                loader.load('Skel_SlotMachine.dae', (collada) => {
+                    resolve(collada?.scene || null);
+                }, undefined, (err) => {
+                    console.warn('[slot] Collada load failed', err);
+                    resolve(null);
+                });
+            });
+        }
+
+        async function loadSlotMachineObjModel() {
+            const OBJLoader = await ensureObjLoader();
+            if (!OBJLoader) return null;
+            const loader = new OBJLoader();
+            const basePath = `./${encodeURIComponent('Slot Machine 2')}/`;
+            const textureLoader = new THREE.TextureLoader();
+            const diffuse = textureLoader.load(`${basePath}SlotMachine_Dif.png`);
+            diffuse.colorSpace = THREE.SRGBColorSpace;
+            const normal = textureLoader.load(`${basePath}SlotMachine_Nrm.png`);
+            const gloss = textureLoader.load(`${basePath}glossiness.png`);
+            const mat = new THREE.MeshStandardMaterial({
+                map: diffuse,
+                normalMap: normal,
+                roughnessMap: gloss,
+                roughness: 0.9,
+                metalness: 0.05
+            });
+            const group = new THREE.Group();
+            const parts = [];
+            for (let i = 0; i <= 25; i += 1) {
+                parts.push(`${basePath}model_${i}.obj`);
+            }
+            for (const part of parts) {
+                try {
+                    const obj = await new Promise((resolve, reject) => {
+                        loader.load(part, resolve, undefined, reject);
+                    });
+                    obj.name = part.split('/').pop() || part;
+                    obj.traverse((child) => {
+                        if (child.isMesh) {
+                            child.material = mat;
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    group.add(obj);
+                } catch (err) {
+                    console.warn('[slot] obj load failed', part, err);
+                    return null;
+                }
+            }
+            return group;
+        }
+
+        function placeSlotMachineUnderLogo() {
+            loadSlotMachineObjModel().then((model) => {
+                if (!model) {
+                    return loadSlotMachineModel();
+                }
+                return model;
+            }).then((model) => {
+                if (!model) {
+                    console.warn('[slot] Slot machine model not loaded. Add OBJLoader.js or ColladaLoader.js to project root.');
+                    return;
+                }
+                model.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        if (child.material.map) {
+                            child.material.map.colorSpace = THREE.SRGBColorSpace;
+                            child.material.map.needsUpdate = true;
+                        }
+                        child.material.needsUpdate = true;
+                    }
+                });
+                const findSlotLever = () => {
+                    const candidates = [];
+                    model.traverse((child) => {
+                        if (!child.isMesh) return;
+                        const name = (child.name || '').toLowerCase();
+                        if (name.includes('lever') || name.includes('handle') || name.includes('arm') || name.includes('stick') || name.includes('rod')) {
+                            candidates.push(child);
+                            return;
+                        }
+                        const box = new THREE.Box3().setFromObject(child);
+                        const size = new THREE.Vector3();
+                        box.getSize(size);
+                        const dims = [size.x, size.y, size.z].filter((v) => v > 0.001);
+                        if (dims.length < 2) return;
+                        dims.sort((a, b) => a - b);
+                        const slender = dims[dims.length - 1] / dims[0];
+                        const volume = size.x * size.y * size.z;
+                        if (slender > 4 && volume < 1) {
+                            candidates.push(child);
+                        }
+                    });
+                    if (!candidates.length) return null;
+                    candidates.sort((a, b) => {
+                        const boxA = new THREE.Box3().setFromObject(a);
+                        const boxB = new THREE.Box3().setFromObject(b);
+                        const sizeA = new THREE.Vector3();
+                        const sizeB = new THREE.Vector3();
+                        boxA.getSize(sizeA);
+                        boxB.getSize(sizeB);
+                        const slenderA = Math.max(sizeA.x, sizeA.y, sizeA.z) / Math.max(0.0001, Math.min(sizeA.x, sizeA.y, sizeA.z));
+                        const slenderB = Math.max(sizeB.x, sizeB.y, sizeB.z) / Math.max(0.0001, Math.min(sizeB.x, sizeB.y, sizeB.z));
+                        return slenderB - slenderA;
+                    });
+                    return candidates[0];
+                };
+                const attachLeverPivot = (leverMesh) => {
+                    const parent = leverMesh.parent;
+                    if (!parent) return null;
+                    const pivot = new THREE.Object3D();
+                    pivot.position.copy(leverMesh.position);
+                    pivot.quaternion.copy(leverMesh.quaternion);
+                    pivot.scale.copy(leverMesh.scale);
+                    parent.add(pivot);
+                    pivot.add(leverMesh);
+                    leverMesh.position.set(0, 0, 0);
+                    leverMesh.quaternion.identity();
+                    leverMesh.scale.set(1, 1, 1);
+                    return pivot;
+                };
+                const slotRoot = new THREE.Group();
+                // Bake rotation into model geometry to force upright orientation.
+                const bake = new THREE.Matrix4();
+                model.applyMatrix4(bake);
+                model.updateMatrixWorld(true);
+                slotRoot.add(model);
+                slotRoot.rotation.set(0, 0, 0);
+                slotRoot.updateMatrixWorld(true);
+
+                const box = new THREE.Box3().setFromObject(slotRoot);
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                const targetHeight = 4.75;
+                const scale = size.y > 0 ? targetHeight / size.y : 1;
+                slotRoot.scale.setScalar(scale);
+                slotRoot.updateMatrixWorld(true);
+                const scaledBox = new THREE.Box3().setFromObject(slotRoot);
+                if (Number.isFinite(scaledBox.min.y)) {
+                    slotRoot.position.y -= scaledBox.min.y;
+                }
+                setupSlotMachineOverlay(slotRoot, scaledBox);
+                const leverMesh = findSlotLever();
+                if (leverMesh) {
+                    const pivot = attachLeverPivot(leverMesh);
+                    if (pivot) {
+                        slotLeverPivot = pivot;
+                        slotLeverPivot.rotation[slotLeverAxis] = slotLeverRestAngle;
+                        leverMesh.userData.action = 'slot-spin';
+                        slotMachineActionMeshes.push(leverMesh);
+                    }
+                } else {
+                    console.warn('[slot] Lever mesh not found in model. Rename lever mesh or split OBJ.');
+                    model.traverse((child) => {
+                        if (!child.isMesh) return;
+                        const box = new THREE.Box3().setFromObject(child);
+                        const size = new THREE.Vector3();
+                        box.getSize(size);
+                        console.log('[slot] mesh', child.name || '(unnamed)', size);
+                    });
+                }
+                slotRoot.position.x = -room.width / 2 + 1.4;
+                slotRoot.position.z = 0;
+                slotRoot.rotation.y = Math.PI * 2;
+                scene.add(slotRoot);
+                slotMachineGroup = slotRoot;
+                sofaColliders = sofaColliders.concat(buildMeshColliders(slotRoot));
+            });
+        }
+
+        function triggerSlotSpin() {
+            if (slotSpinState?.active) return;
+            if (!slotReels.length) return;
+            const now = performance.now();
+            slotSpinState = {
+                active: true,
+                start: now,
+                reels: slotReels.map((reel, index) => {
+                    reel.spinning = true;
+                    reel.stopping = false;
+                    reel.speed = 5 + Math.random() * 4;
+                    const stopDelay = 950 + index * 420 + Math.random() * 120;
+                    const targetIndex = Math.floor(Math.random() * reel.symbolCount);
+                    return {
+                        reel,
+                        stopAt: now + stopDelay,
+                        targetIndex,
+                        stopDuration: 320,
+                        stopStart: 0,
+                        targetOffset: 0
+                    };
+                })
+            };
+            if (slotLeverPivot) {
+                slotLeverPivot.userData.animTime = 0;
+                slotLeverPivot.userData.animActive = true;
+            }
+        }
+
+        function updateSlotMachine(delta) {
+            if (slotLeverPivot?.userData?.animActive) {
+                const speed = 2.6;
+                slotLeverPivot.userData.animTime += delta * speed;
+                const t = slotLeverPivot.userData.animTime;
+                const downPhase = 0.35;
+                let angle;
+                if (t <= downPhase) {
+                    const k = Math.min(1, t / downPhase);
+                    angle = slotLeverRestAngle + (slotLeverDownAngle - slotLeverRestAngle) * (1 - Math.pow(1 - k, 2));
+                } else {
+                    const k = Math.min(1, (t - downPhase) / (1 - downPhase));
+                    angle = slotLeverDownAngle + (slotLeverRestAngle - slotLeverDownAngle) * (1 - Math.pow(1 - k, 3));
+                }
+                slotLeverPivot.rotation[slotLeverAxis] = angle;
+                if (t >= 1) {
+                    slotLeverPivot.userData.animActive = false;
+                    slotLeverPivot.rotation[slotLeverAxis] = slotLeverRestAngle;
+                }
+            }
+
+            if (!slotSpinState?.active) return;
+            const now = performance.now();
+            let finished = true;
+            slotSpinState.reels.forEach((spin) => {
+                const reel = spin.reel;
+                if (!reel || !reel.texture) return;
+                if (!spin.stopStart && now >= spin.stopAt) {
+                    spin.stopStart = now;
+                    const symbolHeight = 1 / reel.symbolCount;
+                    let targetOffset = 1 - (spin.targetIndex + 0.5) * symbolHeight;
+                    targetOffset = (targetOffset % 1 + 1) % 1;
+                    spin.targetOffset = targetOffset;
+                    reel.stopping = true;
+                }
+                if (!reel.stopping) {
+                    reel.texture.offset.y = (reel.texture.offset.y + reel.speed * delta * 0.35) % 1;
+                    finished = false;
+                    return;
+                }
+                const t = Math.min(1, (now - spin.stopStart) / spin.stopDuration);
+                const slow = (1 - t) * reel.speed * 0.2;
+                reel.texture.offset.y = (reel.texture.offset.y + slow * delta) % 1;
+                if (t >= 1) {
+                    reel.texture.offset.y = spin.targetOffset;
+                    reel.spinning = false;
+                    reel.stopping = false;
+                } else {
+                    finished = false;
+                }
+            });
+            if (finished) {
+                slotSpinState.active = false;
+            }
         }
 
         function buildMeshColliders(root) {
@@ -3825,11 +4764,11 @@
             wallCssScene = null;
             wallCssRenderer = null;
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambient);
-            const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-            dir.position.set(10, 18, 8);
-            scene.add(dir);
+            ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+            scene.add(ambientLight);
+            dirLight = new THREE.DirectionalLight(0xffffff, 0.55);
+            dirLight.position.set(10, 18, 8);
+            scene.add(dirLight);
 
             const stoneTex = createStoneTexture();
             const stoneMat = new THREE.MeshStandardMaterial({ map: stoneTex, roughness: 0.9, metalness: 0 });
@@ -3862,6 +4801,55 @@
             ceiling.rotation.x = -Math.PI / 2;
             ceiling.position.y = room.height - 0.02;
             scene.add(ceiling);
+
+            const lampMat = new THREE.MeshStandardMaterial({
+                color: 0x2c2f3a,
+                roughness: 0.5,
+                metalness: 0.2,
+                emissive: 0x2a1c0b,
+                emissiveIntensity: 0.4
+            });
+            const lampBody = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.75, 0.18, 22), lampMat);
+            lampBody.position.set(0, room.height - 0.16, 0);
+            scene.add(lampBody);
+            ceilingLamp = lampBody;
+
+            ceilingLight = new THREE.SpotLight(0xf5c15c, 2.2, room.depth * 2, 0.7, 0.3, 1.0);
+            ceilingLight.position.set(0, room.height - 0.12, 0);
+            ceilingLightTarget = new THREE.Object3D();
+            ceilingLightTarget.position.set(0, 0.1, 0);
+            scene.add(ceilingLightTarget);
+            ceilingLight.target = ceilingLightTarget;
+            scene.add(ceilingLight);
+
+            ceilingBeamRadius = 0.62;
+            ceilingBeamHeight = Math.max(0.5, ceilingLight.position.y - 0.02);
+            const beamGeo = new THREE.CylinderGeometry(ceilingBeamRadius, ceilingBeamRadius + 0.6, ceilingBeamHeight, 24, 1, true);
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: 0xffe3b0,
+                transparent: true,
+                opacity: 0.16,
+                depthWrite: false,
+                depthTest: false,
+                side: THREE.DoubleSide
+            });
+            ceilingBeam = new THREE.Mesh(beamGeo, beamMat);
+            ceilingBeam.renderOrder = 5;
+            ceilingBeam.userData.height = ceilingBeamHeight;
+            ceilingBeam.position.set(0, ceilingLight.position.y - ceilingBeamHeight / 2, 0);
+            scene.add(ceilingBeam);
+            ceilingLight.userData.off = !!lightState.off;
+            if (USE_FIREBASE_LIGHT && !lightStateBootstrapped) {
+                ceilingLight.intensity = 0;
+                if (ambientLight) ambientLight.intensity = 0.12;
+                if (dirLight) dirLight.intensity = 0.18;
+                if (ceilingBeam) {
+                    ceilingBeam.material.opacity = 0;
+                    ceilingBeam.visible = false;
+                }
+            } else {
+                applyCeilingLightSettings();
+            }
 
             const wallGeo = new THREE.PlaneGeometry(room.width, room.height);
             const backWall = new THREE.Mesh(wallGeo, plasterMat);
@@ -3896,6 +4884,8 @@
             sideTable.position.set(4.6, 0, 4.2);
             scene.add(sideTable);
             sofaColliders = sofaColliders.concat(buildMeshColliders(sideTable));
+
+            placeSlotMachineUnderLogo();
 
             const toilet = createToilet();
             const toiletScale = PLAYER_SCALE * 1.6;
@@ -3936,7 +4926,6 @@
             }
             setupControls();
             animate();
-            loadAvatarModel();
         }
 
         function setupControls() {
@@ -4023,6 +5012,11 @@
                     return;
                 }
                 if (handleVideoActionClick(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+                if (handleSlotMachineClick(event)) {
                     event.preventDefault();
                     event.stopPropagation();
                     return;
@@ -4256,131 +5250,35 @@
             return label;
         }
 
-        function loadAvatarModel() {
-            if (avatarLoadPromise) return avatarLoadPromise;
-            if (!AVATAR_MODEL_URL) {
-                avatarLoadPromise = Promise.resolve(null);
-                return avatarLoadPromise;
-            }
-            if (!THREE.GLTFLoader) {
-                console.warn('GLTFLoader not available for avatar.');
-                return Promise.resolve(null);
-            }
-            const loader = new THREE.GLTFLoader();
-            avatarLoadPromise = new Promise((resolve) => {
-                const handleLoad = (gltf) => {
-                    avatarTemplate = gltf.scene;
-                    avatarClips = Array.isArray(gltf.animations) ? gltf.animations : [];
-                    resolve(avatarTemplate);
-                };
-                const handleError = (err) => {
-                    console.warn('Avatar load failed', err);
-                    if (AVATAR_MODEL_FALLBACK_URL && AVATAR_MODEL_FALLBACK_URL !== AVATAR_MODEL_URL) {
-                        loader.load(AVATAR_MODEL_FALLBACK_URL, handleLoad, undefined, (fallbackErr) => {
-                            console.warn('Avatar fallback failed', fallbackErr);
-                            resolve(null);
-                        });
-                    } else {
-                        resolve(null);
-                    }
-                };
-                loader.load(AVATAR_MODEL_URL, handleLoad, undefined, handleError);
-            });
-            return avatarLoadPromise;
-        }
-
-        function cloneAvatar() {
-            if (!avatarTemplate) return null;
-            if (THREE.SkeletonUtils && THREE.SkeletonUtils.clone) {
-                return THREE.SkeletonUtils.clone(avatarTemplate);
-            }
-            return avatarTemplate.clone(true);
-        }
-
-        function findClip(namePart) {
-            const target = String(namePart || '').toLowerCase();
-            return avatarClips.find((clip) => String(clip.name || '').toLowerCase().includes(target));
-        }
-
-        function setupAvatar(group, bodyColor) {
-            const avatar = cloneAvatar();
-            if (!avatar) return null;
-            avatar.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = false;
-                    child.receiveShadow = false;
-                    child.frustumCulled = false;
-                }
-            });
-            applyUserColorToAvatar(avatar, bodyColor);
-            const box = new THREE.Box3().setFromObject(avatar);
-            const size = box.getSize(new THREE.Vector3());
-            if (!Number.isFinite(size.y) || size.y <= 0.05 || size.y > 10) {
-                return null;
-            }
-            let scale = AVATAR_TARGET_HEIGHT / size.y;
-            if (!Number.isFinite(scale) || scale <= 0) return null;
-            scale = Math.min(Math.max(scale, 0.1), 10);
-            avatar.scale.setScalar(scale);
-            avatar.updateMatrixWorld(true);
-            const adjustedBox = new THREE.Box3().setFromObject(avatar);
-            avatar.position.y -= adjustedBox.min.y;
-            group.add(avatar);
-            const avatarHeight = adjustedBox.getSize(new THREE.Vector3()).y;
-            const mixer = new THREE.AnimationMixer(avatar);
-            const actions = {
-                idle: findClip('idle'),
-                walk: findClip('walk'),
-                run: findClip('run')
-            };
-            const actionMap = {};
-            Object.entries(actions).forEach(([key, clip]) => {
-                if (!clip) return;
-                const action = mixer.clipAction(clip);
-                action.play();
-                action.enabled = true;
-                action.weight = key === 'idle' ? 1 : 0;
-                actionMap[key] = action;
-            });
-            group.userData.avatar = avatar;
-            group.userData.avatarHeight = avatarHeight;
-            group.userData.mixer = mixer;
-            group.userData.actions = actionMap;
-            group.userData.activeAction = 'idle';
-            if (group.userData.label) {
-                group.userData.label.position.y = (avatarHeight || AVATAR_TARGET_HEIGHT) + LABEL_OFFSET;
-            }
-            if (group.userData.placeholder) {
-                group.remove(group.userData.placeholder);
-                group.userData.placeholder = null;
-            }
-            return avatar;
-        }
 
         function createAvatarPlaceholder(bodyColor) {
             const placeholder = new THREE.Group();
             const shirtMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.7, metalness: 0.1 });
             const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8, metalness: 0.05 });
             const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: 0.5, metalness: 0.05 });
-            const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, 0.8, 6, 12), shirtMat);
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.35), shirtMat);
             torso.position.y = 1.2;
+            torso.userData.avatarPart = 'body';
             placeholder.add(torso);
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 12), skinMat);
             head.position.y = 1.85;
+            head.userData.avatarPart = 'skin';
             placeholder.add(head);
             const armLength = 0.65;
             const armGeo = new THREE.CylinderGeometry(0.1, 0.11, armLength, 10);
             const armLeftGroup = new THREE.Group();
             const armLeft = new THREE.Mesh(armGeo, shirtMat);
             armLeft.position.y = -armLength / 2;
-            armLeftGroup.position.set(-0.38, 1.66, 0.08);
+            armLeft.userData.avatarPart = 'body';
+            armLeftGroup.position.set(-0.46, 1.66, 0.08);
             armLeftGroup.rotation.z = 0.02;
             armLeftGroup.rotation.x = 0.38;
             armLeftGroup.add(armLeft);
             const armRightGroup = new THREE.Group();
             const armRight = new THREE.Mesh(armGeo, shirtMat);
             armRight.position.y = -armLength / 2;
-            armRightGroup.position.set(0.38, 1.66, 0.08);
+            armRight.userData.avatarPart = 'body';
+            armRightGroup.position.set(0.46, 1.66, 0.08);
             armRightGroup.rotation.z = -0.02;
             armRightGroup.rotation.x = 0.38;
             armRightGroup.add(armRight);
@@ -4391,11 +5289,13 @@
             const legLeftGroup = new THREE.Group();
             const legLeft = new THREE.Mesh(legGeo, pantsMat);
             legLeft.position.y = -legLength / 2;
+            legLeft.userData.avatarPart = 'pants';
             legLeftGroup.position.set(-0.22, 0.75, 0);
             legLeftGroup.add(legLeft);
             const legRightGroup = new THREE.Group();
             const legRight = new THREE.Mesh(legGeo, pantsMat);
             legRight.position.y = -legLength / 2;
+            legRight.userData.avatarPart = 'pants';
             legRightGroup.position.set(0.22, 0.75, 0);
             legRightGroup.add(legRight);
             placeholder.add(legLeftGroup, legRightGroup);
@@ -4423,6 +5323,148 @@
             return { placeholder, height: adjustedBox.getSize(new THREE.Vector3()).y };
         }
 
+        function createAvatarHumanoid(bodyColor) {
+            const group = new THREE.Group();
+            const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.6, metalness: 0.1 });
+            const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8, metalness: 0.05 });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xf2c9a0, roughness: 0.45, metalness: 0.05 });
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.75, 1.05, 0.4), bodyMat);
+            torso.position.y = 1.25;
+            torso.userData.avatarPart = 'body';
+            group.add(torso);
+
+            const hips = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.35, 0.38), pantsMat);
+            hips.position.y = 0.68;
+            hips.userData.avatarPart = 'pants';
+            group.add(hips);
+
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.2, 10), skinMat);
+            neck.position.y = 1.88;
+            neck.userData.avatarPart = 'skin';
+            group.add(neck);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), skinMat);
+            head.position.y = 2.15;
+            head.userData.avatarPart = 'skin';
+            group.add(head);
+
+            const shoulderGeo = new THREE.CapsuleGeometry(0.14, 0.28, 6, 12);
+            const shoulderLeft = new THREE.Mesh(shoulderGeo, bodyMat);
+            shoulderLeft.rotation.z = Math.PI / 2;
+            shoulderLeft.position.set(-0.42, 1.68, 0.02);
+            shoulderLeft.userData.avatarPart = 'body';
+            const shoulderRight = new THREE.Mesh(shoulderGeo, bodyMat);
+            shoulderRight.rotation.z = Math.PI / 2;
+            shoulderRight.position.set(0.42, 1.68, 0.02);
+            shoulderRight.userData.avatarPart = 'body';
+            group.add(shoulderLeft, shoulderRight);
+
+            const armLen = 0.75;
+            const armGeo = new THREE.CylinderGeometry(0.11, 0.13, armLen, 14);
+            const forearmGeo = new THREE.CylinderGeometry(0.1, 0.11, 0.6, 12);
+            const handGeo = new THREE.SphereGeometry(0.12, 12, 12);
+
+            const armLeftGroup = new THREE.Group();
+            armLeftGroup.position.set(-0.58, 1.6, 0.02);
+            const armLeft = new THREE.Mesh(armGeo, bodyMat);
+            armLeft.position.y = -armLen / 2;
+            armLeft.userData.avatarPart = 'body';
+            const elbowLeftGroup = new THREE.Group();
+            elbowLeftGroup.position.y = -armLen;
+            const foreLeft = new THREE.Mesh(forearmGeo, bodyMat);
+            foreLeft.position.y = -0.3;
+            foreLeft.userData.avatarPart = 'body';
+            const handLeft = new THREE.Mesh(handGeo, skinMat);
+            handLeft.position.y = -0.62;
+            handLeft.userData.avatarPart = 'skin';
+            elbowLeftGroup.add(foreLeft, handLeft);
+            armLeftGroup.add(armLeft, elbowLeftGroup);
+
+            const armRightGroup = new THREE.Group();
+            armRightGroup.position.set(0.58, 1.6, 0.02);
+            const armRight = new THREE.Mesh(armGeo, bodyMat);
+            armRight.position.y = -armLen / 2;
+            armRight.userData.avatarPart = 'body';
+            const elbowRightGroup = new THREE.Group();
+            elbowRightGroup.position.y = -armLen;
+            const foreRight = new THREE.Mesh(forearmGeo, bodyMat);
+            foreRight.position.y = -0.3;
+            foreRight.userData.avatarPart = 'body';
+            const handRight = new THREE.Mesh(handGeo, skinMat);
+            handRight.position.y = -0.62;
+            handRight.userData.avatarPart = 'skin';
+            elbowRightGroup.add(foreRight, handRight);
+            armRightGroup.add(armRight, elbowRightGroup);
+            group.add(armLeftGroup, armRightGroup);
+
+            const legLen = 0.95;
+            const legGeo = new THREE.CylinderGeometry(0.14, 0.17, legLen, 12);
+            const calfGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.75, 12);
+            const shoeGeo = new THREE.BoxGeometry(0.3, 0.12, 0.48);
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6, metalness: 0.1 });
+
+            const legLeftGroup = new THREE.Group();
+            legLeftGroup.position.set(-0.22, 0.62, 0);
+            const legLeft = new THREE.Mesh(legGeo, pantsMat);
+            legLeft.position.y = -legLen / 2;
+            legLeft.userData.avatarPart = 'pants';
+            const kneeLeftGroup = new THREE.Group();
+            kneeLeftGroup.position.y = -legLen;
+            const calfLeft = new THREE.Mesh(calfGeo, pantsMat);
+            calfLeft.position.y = -0.28;
+            calfLeft.userData.avatarPart = 'pants';
+            const shoeLeft = new THREE.Mesh(shoeGeo, shoeMat);
+            shoeLeft.position.y = -0.78;
+            shoeLeft.position.z = -0.16;
+            shoeLeft.userData.avatarPart = 'pants';
+            kneeLeftGroup.add(calfLeft, shoeLeft);
+            legLeftGroup.add(legLeft, kneeLeftGroup);
+
+            const legRightGroup = new THREE.Group();
+            legRightGroup.position.set(0.22, 0.62, 0);
+            const legRight = new THREE.Mesh(legGeo, pantsMat);
+            legRight.position.y = -legLen / 2;
+            legRight.userData.avatarPart = 'pants';
+            const kneeRightGroup = new THREE.Group();
+            kneeRightGroup.position.y = -legLen;
+            const calfRight = new THREE.Mesh(calfGeo, pantsMat);
+            calfRight.position.y = -0.28;
+            calfRight.userData.avatarPart = 'pants';
+            const shoeRight = new THREE.Mesh(shoeGeo, shoeMat);
+            shoeRight.position.y = -0.78;
+            shoeRight.position.z = -0.16;
+            shoeRight.userData.avatarPart = 'pants';
+            kneeRightGroup.add(calfRight, shoeRight);
+            legRightGroup.add(legRight, kneeRightGroup);
+            group.add(legLeftGroup, legRightGroup);
+
+            group.userData.limbs = {
+                armLeft: armLeftGroup,
+                armRight: armRightGroup,
+                elbowLeft: elbowLeftGroup,
+                elbowRight: elbowRightGroup,
+                legLeft: legLeftGroup,
+                legRight: legRightGroup,
+                kneeLeft: kneeLeftGroup,
+                kneeRight: kneeRightGroup
+            };
+            armLeftGroup.userData.baseRotZ = armLeftGroup.rotation.z;
+            armLeftGroup.userData.baseRotX = armLeftGroup.rotation.x;
+            armRightGroup.userData.baseRotZ = armRightGroup.rotation.z;
+            armRightGroup.userData.baseRotX = armRightGroup.rotation.x;
+
+            const box = new THREE.Box3().setFromObject(group);
+            const size = box.getSize(new THREE.Vector3());
+            let scale = AVATAR_TARGET_HEIGHT / Math.max(size.y, 0.0001);
+            scale = Math.min(Math.max(scale, 0.1), 10);
+            group.scale.setScalar(scale);
+            group.updateMatrixWorld(true);
+            const adjusted = new THREE.Box3().setFromObject(group);
+            group.position.y -= adjusted.min.y;
+            return { placeholder: group, height: adjusted.getSize(new THREE.Vector3()).y };
+        }
+
         function setAvatarAction(group, name) {
             const actions = group?.userData?.actions;
             if (!actions || !actions[name]) return;
@@ -4433,37 +5475,43 @@
             group.userData.activeAction = name;
         }
 
+        function resetAvatarGroup(group) {
+            if (!group) return;
+            if (group.userData.avatar) {
+                group.remove(group.userData.avatar);
+                group.userData.avatar = null;
+                group.userData.mixer = null;
+                group.userData.actions = null;
+                group.userData.activeAction = null;
+            }
+            if (group.userData.placeholder) {
+                group.remove(group.userData.placeholder);
+                group.userData.placeholder = null;
+            }
+            if (group.userData.humanoid) {
+                group.remove(group.userData.humanoid);
+                group.userData.humanoid = null;
+            }
+        }
+
         function createRemotePlayer(user) {
-            const bodyColor = getUserBodyColor(user);
+            const prefs = getAvatarPrefsForUser(user);
+            const bodyColor = getUserBodyColor({ ...user, avatar: prefs });
             const group = new THREE.Group();
-            if (avatarTemplate) {
-                const avatar = setupAvatar(group, bodyColor);
-                if (!avatar) {
-                    const fallback = createAvatarPlaceholder(bodyColor);
-                    group.add(fallback.placeholder);
-                    group.userData.placeholder = fallback.placeholder;
-                    group.userData.avatarHeight = fallback.height;
-                }
+            group.userData.avatarPrefsKey = JSON.stringify(prefs || {});
+
+            if (prefs?.model === 'humanoid') {
+                const humanoid = createAvatarHumanoid(bodyColor);
+                group.add(humanoid.placeholder);
+                group.userData.humanoid = humanoid.placeholder;
+                group.userData.avatarHeight = humanoid.height;
             } else {
-                loadAvatarModel().then((model) => {
-                    if (!model) return;
-                    if (!group.userData.avatar) {
-                        const placeholder = group.userData.placeholder;
-                        if (placeholder) group.remove(placeholder);
-                        const avatar = setupAvatar(group, bodyColor);
-                        if (!avatar) {
-                            const fallback = createAvatarPlaceholder(bodyColor);
-                            group.add(fallback.placeholder);
-                            group.userData.placeholder = fallback.placeholder;
-                            group.userData.avatarHeight = fallback.height;
-                        }
-                    }
-                });
                 const fallback = createAvatarPlaceholder(bodyColor);
                 group.add(fallback.placeholder);
                 group.userData.placeholder = fallback.placeholder;
                 group.userData.avatarHeight = fallback.height;
             }
+            applyAvatarPrefsToGroup(group, prefs);
             const labelText = user.name || 'Guest';
             const cssLabel = createNameCssLabel(labelText);
             if (cssLabel) {
@@ -4488,6 +5536,28 @@
                 scene.add(group);
                 current = { group, target: new THREE.Vector3(), yaw: 0 };
                 remotePlayers.set(id, current);
+            }
+            const prefs = getAvatarPrefsForUser(user);
+            const prefsKey = JSON.stringify(prefs || {});
+            if (current.group.userData.avatarPrefsKey !== prefsKey) {
+                current.group.userData.avatarPrefsKey = prefsKey;
+                resetAvatarGroup(current.group);
+                const bodyColor = getUserBodyColor({ ...user, avatar: prefs });
+                if (prefs?.model === 'humanoid') {
+                    const humanoid = createAvatarHumanoid(bodyColor);
+                    current.group.add(humanoid.placeholder);
+                    current.group.userData.humanoid = humanoid.placeholder;
+                    current.group.userData.avatarHeight = humanoid.height;
+                } else {
+                    const fb = createAvatarPlaceholder(bodyColor);
+                    current.group.add(fb.placeholder);
+                    current.group.userData.placeholder = fb.placeholder;
+                    current.group.userData.avatarHeight = fb.height;
+                }
+                applyAvatarPrefsToGroup(current.group, prefs);
+                if (current.group.userData.label) {
+                    current.group.userData.label.position.y = (current.group.userData.avatarHeight || AVATAR_TARGET_HEIGHT) + LABEL_OFFSET;
+                }
             }
             current.group.userData.name = user.name || current.group.userData.name || 'Guest';
             const baseY = (Number(user.y) || eyeHeight) - eyeHeight;
@@ -4562,6 +5632,44 @@
                     } else {
                         setAvatarAction(player.group, 'idle');
                     }
+                } else if (player.group.userData.humanoid?.userData?.limbs) {
+                    const limbs = player.group.userData.humanoid.userData.limbs;
+                    const stride = Math.min(1, smoothSpeed / 1.6);
+                    if (!player.walkPhase) player.walkPhase = 0;
+                    if (smoothSpeed > 0.05) {
+                        player.walkPhase += smoothSpeed * delta * 3.2;
+                    } else {
+                        player.walkPhase *= Math.max(0, 1 - delta * 6);
+                    }
+                    const phase = player.walkPhase;
+                    const swing = Math.sin(phase) * 0.38 * stride;
+                    const sway = Math.cos(phase) * 0.06 * stride;
+                    const leftBaseX = typeof limbs.armLeft.userData.baseRotX === 'number' ? limbs.armLeft.userData.baseRotX : 0;
+                    const rightBaseX = typeof limbs.armRight.userData.baseRotX === 'number' ? limbs.armRight.userData.baseRotX : 0;
+                    limbs.armLeft.rotation.x = leftBaseX - swing;
+                    limbs.armRight.rotation.x = rightBaseX + swing;
+                    limbs.legLeft.rotation.x = swing;
+                    limbs.legRight.rotation.x = -swing;
+                    const elbowLeftBend = Math.max(0, -swing) * 1.35 + 0.08 * stride;
+                    const elbowRightBend = Math.max(0, swing) * 1.35 + 0.08 * stride;
+                    limbs.elbowLeft.rotation.x = elbowLeftBend;
+                    limbs.elbowRight.rotation.x = elbowRightBend;
+                    const kneeLeftBend = Math.max(0, swing) * 1.5 + 0.05 * stride;
+                    const kneeRightBend = Math.max(0, -swing) * 1.5 + 0.05 * stride;
+                    limbs.kneeLeft.rotation.x = kneeLeftBend;
+                    limbs.kneeRight.rotation.x = kneeRightBend;
+                    if (typeof limbs.armLeft.userData.baseRotZ === 'number') {
+                        limbs.armLeft.rotation.z = limbs.armLeft.userData.baseRotZ + sway * 0.22;
+                    } else {
+                        limbs.armLeft.rotation.z = sway * 0.22;
+                    }
+                    if (typeof limbs.armRight.userData.baseRotZ === 'number') {
+                        limbs.armRight.rotation.z = limbs.armRight.userData.baseRotZ - sway * 0.22;
+                    } else {
+                        limbs.armRight.rotation.z = -sway * 0.22;
+                    }
+                    limbs.legLeft.rotation.z = -sway * 0.12;
+                    limbs.legRight.rotation.z = sway * 0.12;
                 } else if (player.group.userData.placeholder?.userData?.limbs) {
                     const limbs = player.group.userData.placeholder.userData.limbs;
                     const stride = Math.min(1, smoothSpeed / 1.6);
@@ -5775,6 +6883,12 @@
         }
 
         function getUserBodyColor(user) {
+            const prefs = getAvatarPrefsForUser(user);
+            if (prefs?.color) {
+                try {
+                    return new THREE.Color(prefs.color);
+                } catch (_) {}
+            }
             const key = String(user?.id || user?.name || 'guest');
             if (userColorCache.has(key)) return userColorCache.get(key);
             let hash = 0;
@@ -5787,6 +6901,220 @@
             color.setHSL(hue / 360, 0.5, 0.55);
             userColorCache.set(key, color);
             return color;
+        }
+
+        function normalizeAvatarPrefs(prefs) {
+            const base = {
+                model: 'placeholder',
+                color: '#f59e0b',
+                textureUrl: '',
+                version: 0
+            };
+            if (!prefs || typeof prefs !== 'object') return { ...base };
+            const next = {
+                model: ['placeholder', 'humanoid'].includes(prefs.model) ? prefs.model : 'placeholder',
+                color: String(prefs.color || base.color),
+                textureUrl: String(prefs.textureUrl || ''),
+                version: Number.isFinite(prefs.version) ? prefs.version : base.version
+            };
+            return next;
+        }
+
+        function loadAvatarPrefs() {
+            try {
+                const raw = localStorage.getItem(AVATAR_PREFS_KEY);
+                if (raw) return normalizeAvatarPrefs(JSON.parse(raw));
+            } catch (_) {}
+            return normalizeAvatarPrefs(null);
+        }
+
+        function saveAvatarPrefs(prefs) {
+            const normalized = normalizeAvatarPrefs({ ...prefs, version: Date.now() });
+            localAvatarPrefs = normalized;
+            try {
+                localStorage.setItem(AVATAR_PREFS_KEY, JSON.stringify(normalized));
+            } catch (_) {}
+            return normalized;
+        }
+
+        function getAvatarPresenceRoomPath() {
+            return `${AVATAR_PRESENCE_PATH}/${REALTIME_ROOM}`;
+        }
+
+        function pushLocalAvatarToFirebase(prefs) {
+            if (!window.firebase) return;
+            const db = firebase.database();
+            const id = getLocalClientId();
+            if (!id) return;
+            db.ref(`${getAvatarPresenceRoomPath()}/${id}`).set({
+                id,
+                name: getCurrentUserName() || 'Guest',
+                avatar: prefs,
+                updatedAt: firebase.database.ServerValue.TIMESTAMP
+            }).catch(() => {});
+        }
+
+        function updateRemoteAvatarFromFirebase(id, prefs) {
+            if (!id) return;
+            avatarPresenceCache.set(String(id), prefs);
+            const entry = remotePlayers.get(String(id));
+            if (!entry) return;
+            const user = {
+                id: String(id),
+                name: entry.group?.userData?.name || 'Guest',
+                x: entry.target?.x || 0,
+                y: (entry.target?.y || 0) + eyeHeight,
+                z: entry.target?.z || 0,
+                yaw: entry.yaw || 0,
+                avatar: prefs
+            };
+            upsertRemotePlayer(user);
+        }
+
+        function initAvatarPresenceFeed() {
+            if (!window.firebase) return;
+            const db = firebase.database();
+            const localId = getLocalClientId();
+            const ref = db.ref(getAvatarPresenceRoomPath());
+            ref.on('child_added', (snapshot) => {
+                const payload = snapshot.val();
+                if (!payload || !payload.avatar) return;
+                const id = String(payload.id || snapshot.key || '');
+                if (!id || id === localId) return;
+                updateRemoteAvatarFromFirebase(id, payload.avatar);
+            });
+            ref.on('child_changed', (snapshot) => {
+                const payload = snapshot.val();
+                if (!payload || !payload.avatar) return;
+                const id = String(payload.id || snapshot.key || '');
+                if (!id || id === localId) return;
+                updateRemoteAvatarFromFirebase(id, payload.avatar);
+            });
+            ref.on('child_removed', (snapshot) => {
+                const id = String(snapshot.key || '');
+                if (id) avatarPresenceCache.delete(id);
+            });
+        }
+
+        function getLocalAvatarPrefs() {
+            if (!localAvatarPrefs) {
+                localAvatarPrefs = loadAvatarPrefs();
+            }
+            return localAvatarPrefs;
+        }
+
+        function getShareableAvatarPrefs() {
+            const prefs = { ...getLocalAvatarPrefs() };
+            if (prefs.textureUrl && prefs.textureUrl.startsWith('data:') && prefs.textureUrl.length > 2000) {
+                prefs.textureUrl = '';
+            }
+            return prefs;
+        }
+
+        function getAvatarPrefsForUser(user) {
+            const localId = getLocalClientId?.();
+            if (localId && user?.id && String(user.id) === String(localId)) {
+                return getLocalAvatarPrefs();
+            }
+            if (user?.avatar && typeof user.avatar === 'object') {
+                return normalizeAvatarPrefs(user.avatar);
+            }
+            if (user?.id && avatarPresenceCache.has(String(user.id))) {
+                return normalizeAvatarPrefs(avatarPresenceCache.get(String(user.id)));
+            }
+            return null;
+        }
+
+        function resolveAvatarTextureUrl(url) {
+            const normalized = String(url || '').trim();
+            if (!normalized) return '';
+            const base = REALTIME_HTTP_BASE || realtimeHttpBase;
+            if (!base) return normalized;
+            if (!/^https?:/i.test(normalized)) return normalized;
+            if (normalized.includes('/fetch-image?url=')) return normalized;
+            return `${base}/fetch-image?url=${encodeURIComponent(normalized)}`;
+        }
+
+        function loadAvatarTexture(url) {
+            const normalized = String(url || '').trim();
+            if (!normalized) return Promise.resolve(null);
+            const resolved = resolveAvatarTextureUrl(normalized);
+            if (avatarTextureCache.has(resolved)) return Promise.resolve(avatarTextureCache.get(resolved));
+            return new Promise((resolve) => {
+                const loader = new THREE.TextureLoader();
+                loader.setCrossOrigin('anonymous');
+                loader.load(resolved, (tex) => {
+                    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+                    avatarTextureCache.set(resolved, tex);
+                    resolve(tex);
+                }, undefined, (err) => {
+                    console.warn('Avatar texture load failed', err);
+                    resolve(null);
+                });
+            });
+        }
+
+        function applyTextureToMesh(mesh, texture) {
+            if (!mesh?.isMesh || !texture) return;
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.repeat.set(1, 1);
+            texture.center.set(0.5, 0.5);
+            texture.needsUpdate = true;
+            materials.forEach((mat) => {
+                if (!mat) return;
+                mat.map = texture;
+                mat.needsUpdate = true;
+            });
+        }
+
+        function applyAvatarPrefsToGroup(group, prefs) {
+            if (!group || !prefs) return;
+            group.userData.avatarPrefs = prefs;
+            const bodyColor = getUserBodyColor({ avatar: prefs, id: group.userData?.id, name: group.userData?.name });
+            if (group.userData.avatar) {
+                applyUserColorToAvatar(group.userData.avatar, bodyColor);
+            }
+            if (group.userData.placeholder || group.userData.humanoid) {
+                const target = group.userData.humanoid || group.userData.placeholder;
+                target.traverse((child) => {
+                    if (!child.isMesh) return;
+                    if (child.userData?.avatarPart !== 'body') return;
+                    if (!child.material?.color) return;
+                    child.material.color = child.material.color.clone ? child.material.color.clone() : new THREE.Color(child.material.color);
+                    child.material.color.set(bodyColor);
+                    child.material.needsUpdate = true;
+                });
+            }
+            const textureUrl = String(prefs.textureUrl || '').trim();
+            if (textureUrl) {
+                loadAvatarTexture(textureUrl).then((tex) => {
+                    if (!tex) return;
+                    if (group.userData.placeholder || group.userData.humanoid) {
+                        const target = group.userData.humanoid || group.userData.placeholder;
+                        target.traverse((child) => {
+                            if (!child.isMesh) return;
+                            if (child.userData?.avatarPart !== 'body') return;
+                            applyTextureToMesh(child, tex);
+                        });
+                    }
+                });
+            } else if (group.userData.placeholder || group.userData.humanoid) {
+                const target = group.userData.humanoid || group.userData.placeholder;
+                target.traverse((child) => {
+                    if (!child.isMesh) return;
+                    if (child.userData?.avatarPart !== 'body') return;
+                    const materials = Array.isArray(child.material) ? child.material : [child.material];
+                    materials.forEach((mat) => {
+                        if (!mat) return;
+                        if (mat.map) {
+                            mat.map = null;
+                            mat.needsUpdate = true;
+                        }
+                    });
+                });
+            }
         }
 
         function applyUserColorToAvatar(avatar, color) {
@@ -5806,6 +7134,96 @@
                     mat.needsUpdate = true;
                 });
             });
+        }
+
+        function initAvatarPreview() {
+            const container = document.getElementById('avatarPreview');
+            if (!container || !window.THREE) return;
+            const width = Math.max(120, container.clientWidth || 220);
+            const height = Math.max(120, container.clientHeight || 220);
+            if (!avatarPreviewRenderer) {
+                avatarPreviewRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                avatarPreviewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                avatarPreviewScene = new THREE.Scene();
+                avatarPreviewCamera = new THREE.PerspectiveCamera(32, width / height, 0.1, 25);
+                avatarPreviewCamera.position.set(0, 1.6, 3.2);
+                const hemi = new THREE.HemisphereLight(0xffffff, 0x1f2937, 0.85);
+                hemi.position.set(0, 2, 0);
+                avatarPreviewScene.add(hemi);
+                const dir = new THREE.DirectionalLight(0xffffff, 0.7);
+                dir.position.set(2, 3, 2);
+                avatarPreviewScene.add(dir);
+                avatarPreviewRoot = new THREE.Group();
+                avatarPreviewScene.add(avatarPreviewRoot);
+            }
+            avatarPreviewRenderer.setSize(width, height, false);
+            avatarPreviewCamera.aspect = width / height;
+            avatarPreviewCamera.updateProjectionMatrix();
+            if (!avatarPreviewRenderer.domElement.parentElement) {
+                container.innerHTML = '';
+                container.appendChild(avatarPreviewRenderer.domElement);
+            }
+        }
+
+        function buildAvatarPreview(prefs) {
+            if (!avatarPreviewRoot) return;
+            while (avatarPreviewRoot.children.length) {
+                avatarPreviewRoot.remove(avatarPreviewRoot.children[0]);
+            }
+            avatarPreviewRoot.userData.placeholder = null;
+            avatarPreviewRoot.userData.humanoid = null;
+            const bodyColor = getUserBodyColor({ avatar: prefs });
+            if (prefs?.model === 'humanoid') {
+                const humanoid = createAvatarHumanoid(bodyColor);
+                avatarPreviewRoot.add(humanoid.placeholder);
+                avatarPreviewRoot.userData.humanoid = humanoid.placeholder;
+                avatarPreviewRoot.userData.avatarHeight = humanoid.height;
+            } else {
+                const fallback = createAvatarPlaceholder(bodyColor);
+                avatarPreviewRoot.add(fallback.placeholder);
+                avatarPreviewRoot.userData.placeholder = fallback.placeholder;
+                avatarPreviewRoot.userData.avatarHeight = fallback.height;
+            }
+            applyAvatarPrefsToGroup(avatarPreviewRoot, prefs);
+            avatarPreviewRoot.rotation.y = Math.PI * 0.15;
+            avatarPreviewRoot.position.set(0, 0, 0);
+            const box = new THREE.Box3().setFromObject(avatarPreviewRoot);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.y, size.x);
+            const fov = (avatarPreviewCamera?.fov || 32) * (Math.PI / 180);
+            const dist = (maxDim / 2) / Math.tan(fov / 2);
+            if (avatarPreviewCamera) {
+                avatarPreviewCamera.position.set(center.x, center.y, dist * 1.6 + size.z * 0.4);
+                avatarPreviewCamera.lookAt(center);
+            }
+        }
+
+        function renderAvatarPreview() {
+            if (!avatarPreviewRenderer || !avatarPreviewScene || !avatarPreviewCamera) return;
+            avatarPreviewRenderer.render(avatarPreviewScene, avatarPreviewCamera);
+        }
+
+        function startAvatarPreviewLoop() {
+            if (avatarPreviewActive) return;
+            avatarPreviewActive = true;
+            const loop = () => {
+                if (!avatarPreviewActive) return;
+                if (avatarPreviewRoot) {
+                    avatarPreviewRoot.rotation.y += 0.0035;
+                }
+                renderAvatarPreview();
+                avatarPreviewFrame = requestAnimationFrame(loop);
+            };
+            loop();
+        }
+
+        function stopAvatarPreviewLoop() {
+            avatarPreviewActive = false;
+            if (avatarPreviewFrame) {
+                cancelAnimationFrame(avatarPreviewFrame);
+                avatarPreviewFrame = null;
+            }
         }
 
         function normalizeBeerData(raw) {
@@ -8296,6 +9714,408 @@
             }
         }
 
+        function applyCeilingLightSettings() {
+            if (!ceilingLight) return;
+            const beamOn = !lightState.off;
+            ceilingLight.color.set(lightState.color || '#f5c15c');
+            if (ceilingLamp && ceilingLamp.material && ceilingLamp.material.emissive) {
+                ceilingLamp.material.emissive.set(lightState.color || '#f5c15c');
+            }
+            if (ceilingBeam && ceilingBeam.material) {
+                ceilingBeam.material.color.set(lightState.color || '#f5c15c');
+            }
+            const safeIntensity = Number.isFinite(lightState.intensity) ? lightState.intensity : 1.2;
+            ceilingLight.intensity = safeIntensity;
+            if (ambientLight) ambientLight.intensity = 0.12 + safeIntensity * 1.05;
+            if (dirLight) dirLight.intensity = 0.18 + safeIntensity * 1.1;
+            if (ceilingBeam) {
+                const beamOpacity = beamOn ? Math.min(0.6, 0.12 + safeIntensity * 0.12) : 0.0;
+                ceilingBeam.material.opacity = beamOpacity;
+                ceilingBeam.visible = beamOpacity > 0;
+            }
+            const minAngle = 0.2;
+            const maxAngle = 1.3;
+            const safeAngle = Number.isFinite(lightState.spread) ? lightState.spread : 0.7;
+            const t = Math.min(1, Math.max(0, (safeAngle - minAngle) / (maxAngle - minAngle)));
+            const maxRadius = Math.min(room.width, room.depth) * 0.5 - 0.2;
+            const radiusBottom = ceilingBeamRadius + t * Math.max(0.1, (maxRadius - ceilingBeamRadius));
+            const height = ceilingBeamHeight || (ceilingBeam?.userData?.height) || room.height * 0.9;
+            ceilingLight.angle = Math.atan(radiusBottom / height);
+            if (ceilingBeam) {
+                const nextGeo = new THREE.CylinderGeometry(ceilingBeamRadius, radiusBottom, height, 24, 1, true);
+                ceilingBeam.geometry.dispose();
+                ceilingBeam.geometry = nextGeo;
+                ceilingBeam.position.set(0, ceilingLight.position.y - height / 2, 0);
+            }
+        }
+
+        function getLightStateFromInputs() {
+            const colorInput = document.getElementById('ceilingLightColor');
+            const intensityInput = document.getElementById('ceilingLightIntensity');
+            const spreadInput = document.getElementById('ceilingLightSpread');
+            const rawIntensity = intensityInput ? Number(intensityInput.value) : NaN;
+            const rawSpread = spreadInput ? Number(spreadInput.value) : NaN;
+            return {
+                color: colorInput?.value || lightState.color || '#f5c15c',
+                intensity: Number.isFinite(rawIntensity) ? rawIntensity : (Number.isFinite(lightState.intensity) ? lightState.intensity : 0),
+                spread: Number.isFinite(rawSpread) ? rawSpread : (Number.isFinite(lightState.spread) ? lightState.spread : 0.7),
+                off: !!ceilingLight?.userData?.off,
+                updatedAt: lightState.updatedAt || 0
+            };
+        }
+
+        function sendLightState() {
+            if (lightSyncMuted) return;
+            const state = getLightStateFromInputs();
+            const now = Date.now();
+            lightState = { ...lightState, ...state, updatedAt: now };
+            lightPendingLocalUntil = now + 1200;
+            try {
+                localStorage.setItem(LIGHT_PREFS_KEY, JSON.stringify(lightState));
+            } catch (_) {}
+            try {
+                console.log('[light] send', lightState);
+            } catch (_) {}
+            if (!USE_FIREBASE_LIGHT) {
+                sendRealtime({ type: 'light', state: lightState });
+            }
+            saveLightSettingsToFirebase();
+        }
+
+        function syncLightPanelUI() {
+            const colorInput = document.getElementById('ceilingLightColor');
+            const intensityInput = document.getElementById('ceilingLightIntensity');
+            const spreadInput = document.getElementById('ceilingLightSpread');
+            if (colorInput) colorInput.value = lightState.color || '#f5c15c';
+            if (intensityInput) intensityInput.value = String(lightState.intensity ?? 3.2);
+            if (spreadInput) spreadInput.value = String(lightState.spread ?? 0.85);
+            const toggleBtn = document.getElementById('lightToggleButton');
+            if (toggleBtn) {
+                toggleBtn.classList.toggle('off', lightState.off);
+                toggleBtn.textContent = lightState.off ? 'Свет: выкл' : 'Свет: вкл';
+            }
+        }
+
+        function commitLightInputs() {
+            if (!ceilingLight) return;
+            const next = getLightStateFromInputs();
+            lightState = { ...lightState, ...next, updatedAt: Date.now() };
+            lightPendingLocalUntil = lightState.updatedAt + 1200;
+            ceilingLight.userData.off = !!lightState.off;
+            applyCeilingLightSettings();
+            try {
+                localStorage.setItem(LIGHT_PREFS_KEY, JSON.stringify(lightState));
+            } catch (_) {}
+            try {
+                console.log('[light] commit', lightState);
+            } catch (_) {}
+            if (!USE_FIREBASE_LIGHT) {
+                sendRealtime({ type: 'light', state: lightState });
+            }
+            saveLightSettingsToFirebase();
+        }
+
+        function applyLightState(state, { silent = false } = {}) {
+            if (!state) return;
+            const incomingTs = Number(state.updatedAt || 0);
+            const localTs = Number(lightState.updatedAt || 0);
+            if (USE_FIREBASE_LIGHT && !incomingTs) return;
+            const shouldBootstrap = USE_FIREBASE_LIGHT ? Boolean(incomingTs) : true;
+            if (!incomingTs && hasLocalLightPrefs) {
+                try {
+                    console.log('[light] ignore server state without updatedAt');
+                } catch (_) {}
+                return;
+            }
+            if (incomingTs && localTs && incomingTs + 20 < localTs) {
+                try {
+                    console.log('[light] ignore stale', { incomingTs, localTs });
+                } catch (_) {}
+                return;
+            }
+            lightSyncMuted = true;
+            lightState = {
+                color: typeof state.color === 'string' ? state.color : lightState.color,
+                intensity: Number.isFinite(state.intensity) ? Number(state.intensity) : lightState.intensity,
+                spread: Number.isFinite(state.spread) ? Number(state.spread) : lightState.spread,
+                off: !!state.off,
+                updatedAt: incomingTs || lightState.updatedAt
+            };
+            if (!ceilingLight) {
+                lightSyncMuted = false;
+                if (shouldBootstrap) {
+                    lightStateBootstrapped = true;
+                }
+                try {
+                    localStorage.setItem(LIGHT_PREFS_KEY, JSON.stringify(lightState));
+                } catch (_) {}
+                try {
+                    console.log('[light] apply without scene', lightState);
+                } catch (_) {}
+                return;
+            }
+            ceilingLight.userData.off = !!lightState.off;
+            syncLightPanelUI();
+            applyCeilingLightSettings();
+            lightSyncMuted = false;
+            try {
+                localStorage.setItem(LIGHT_PREFS_KEY, JSON.stringify(lightState));
+            } catch (_) {}
+            try {
+                console.log('[light] apply', lightState);
+            } catch (_) {}
+            if (shouldBootstrap) {
+                lightStateBootstrapped = true;
+            }
+            if (!silent) sendLightState();
+        }
+
+        function initLightSettingsFeed() {
+            if (!firebase?.database) return;
+            const db = firebase.database();
+            db.ref(LIGHT_SETTINGS_PATH).once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data && typeof data === 'object') {
+                    applyLightState(data, { silent: true });
+                    lightStateBootstrapped = true;
+                    hasLocalLightPrefs = true;
+                }
+            }).catch((err) => {
+                try {
+                    console.warn('[light] firebase once failed', err);
+                } catch (_) {}
+            });
+            db.ref(LIGHT_SETTINGS_PATH).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data || typeof data !== 'object') {
+                    if (hasLocalLightPrefs && !lightFirebaseMuted) {
+                        saveLightSettingsToFirebase();
+                    }
+                    return;
+                }
+                if (lightFirebaseMuted) return;
+                const incomingTs = Number(data.updatedAt || 0);
+                const localTs = Number(lightState.updatedAt || 0);
+                if (!incomingTs && hasLocalLightPrefs) {
+                    return;
+                }
+                if (incomingTs && localTs && incomingTs < localTs) {
+                    return;
+                }
+                if (lightPendingLocalUntil && Date.now() < lightPendingLocalUntil && incomingTs < localTs) {
+                    return;
+                }
+                lightFirebaseLastTs = incomingTs || lightFirebaseLastTs;
+                try {
+                    console.log('[light] firebase', data);
+                } catch (_) {}
+                applyLightState(data, { silent: true });
+                lightStateBootstrapped = true;
+                hasLocalLightPrefs = true;
+            });
+        }
+
+        function saveLightSettingsToFirebase() {
+            if (!firebase?.database) return;
+            if (lightFirebaseMuted) return;
+            const db = firebase.database();
+            const now = Date.now();
+            const nextTs = Math.max(lightState.updatedAt || 0, lightFirebaseLastTs + 1, now);
+            const serverTs = firebase?.database?.ServerValue?.TIMESTAMP;
+            const payload = {
+                ...lightState,
+                updatedAt: serverTs || nextTs
+            };
+            lightFirebaseMuted = true;
+            db.ref(LIGHT_SETTINGS_PATH).set(payload)
+                .then(() => {
+                    try {
+                        console.log('[light] firebase saved', payload);
+                    } catch (_) {}
+                    lightFirebaseLastTs = nextTs || lightFirebaseLastTs;
+                })
+                .catch((err) => {
+                    try {
+                        console.warn('[light] firebase save failed', err);
+                    } catch (_) {}
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        lightFirebaseMuted = false;
+                    }, 120);
+                });
+        }
+
+        function initCeilingLightControls() {
+            if (lightControlsBound) {
+                if (!(USE_FIREBASE_LIGHT && !lightStateBootstrapped)) {
+                    applyLightState(lightState, { silent: true });
+                }
+                return;
+            }
+            const colorInput = document.getElementById('ceilingLightColor');
+            const intensityInput = document.getElementById('ceilingLightIntensity');
+            const spreadInput = document.getElementById('ceilingLightSpread');
+            syncLightPanelUI();
+            const syncInputs = () => {
+                const next = getLightStateFromInputs();
+                lightState = { ...lightState, ...next };
+                if (ceilingLight) {
+                    ceilingLight.userData.off = !!lightState.off;
+                }
+            };
+            const bindInput = (el) => {
+                if (!el) return;
+                el.addEventListener('input', () => {
+                    syncInputs();
+                    applyCeilingLightSettings();
+                    sendLightState();
+                    try {
+                        console.log('[light] input', { id: el.id, value: el.value });
+                    } catch (_) {}
+                });
+                el.addEventListener('change', () => {
+                    syncInputs();
+                    applyCeilingLightSettings();
+                    sendLightState();
+                    try {
+                        console.log('[light] change', { id: el.id, value: el.value });
+                    } catch (_) {}
+                });
+                el.addEventListener('pointerup', () => {
+                    syncInputs();
+                    applyCeilingLightSettings();
+                    sendLightState();
+                    try {
+                        console.log('[light] pointerup', { id: el.id, value: el.value });
+                    } catch (_) {}
+                });
+            };
+            bindInput(colorInput);
+            bindInput(intensityInput);
+            bindInput(spreadInput);
+            const toggleBtn = document.getElementById('lightToggleButton');
+            if (toggleBtn) {
+                const toggle = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const now = Date.now();
+                    if (now < lightToggleLockUntil) return;
+                    lightToggleLockUntil = now + 250;
+                    lightState.off = !lightState.off;
+                    if (ceilingLight) ceilingLight.userData.off = lightState.off;
+                    syncLightPanelUI();
+                    applyCeilingLightSettings();
+                    sendLightState();
+                    try {
+                        console.log('[light] toggle', { off: lightState.off });
+                    } catch (_) {}
+                };
+                toggleBtn.addEventListener('pointerdown', toggle);
+                toggleBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                });
+            }
+            lightControlsBound = true;
+            if (USE_FIREBASE_LIGHT && !lightStateBootstrapped) {
+                syncLightPanelUI();
+                return;
+            }
+            applyLightState(lightState, { silent: true });
+        }
+
+        function createLightSwitchElement() {
+            const el = document.createElement('button');
+            el.type = 'button';
+            el.className = 'light-switch';
+            el.innerHTML = '<span class="light-toggle" aria-hidden="true"></span>';
+            el.addEventListener('pointerdown', () => {
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+            });
+            el.addEventListener('click', () => toggleLightControlPanel());
+            return el;
+        }
+
+        function createLightControlPanel() {
+            const panel = document.createElement('div');
+            panel.className = 'light-modal light-modal-floating';
+            panel.innerHTML = `
+                <div class="light-modal-header">
+                    <span>Освещение</span>
+                    <button type="button" class="light-modal-close" aria-label="Закрыть">✕</button>
+                </div>
+                <div class="light-toggle-row">
+                    <span>Свет</span>
+                    <button type="button" id="lightToggleButton" class="light-toggle-btn">Свет: вкл</button>
+                </div>
+                <div class="wall-draw-row">
+                    <label class="wall-draw-label" for="ceilingLightColor">Цвет</label>
+                    <input class="wall-draw-color-input" type="color" id="ceilingLightColor" value="#f5c15c">
+                </div>
+                <div class="wall-draw-row">
+                    <label class="wall-draw-label" for="ceilingLightIntensity">Яркость</label>
+                    <input type="range" id="ceilingLightIntensity" min="0" max="6" step="0.05" value="3.2">
+                </div>
+                <div class="wall-draw-row">
+                    <label class="wall-draw-label" for="ceilingLightSpread">Ширина</label>
+                    <input type="range" id="ceilingLightSpread" min="0.2" max="1.3" step="0.01" value="0.85">
+                </div>
+            `;
+            panel.addEventListener('pointerdown', (event) => event.stopPropagation());
+            panel.addEventListener('pointerup', (event) => event.stopPropagation());
+            panel.addEventListener('click', (event) => event.stopPropagation());
+            panel.addEventListener('pointerdown', () => {
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+            });
+            const closeBtn = panel.querySelector('.light-modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => setLightControlOpen(false));
+            return panel;
+        }
+
+        function initLightSwitchPanel() {
+            if (!cssScene || lightSwitchObject) return;
+            lightSwitchEl = createLightSwitchElement();
+            lightSwitchObject = new THREE.CSS3DObject(lightSwitchEl);
+            const scale = 0.0045;
+            lightSwitchObject.scale.set(scale, scale, scale);
+            const z = -room.depth / 2 + 8.6;
+            const x = -room.width / 2 + 0.05;
+            const y = eyeHeight + 0.05;
+            lightSwitchObject.position.set(x, y, z);
+            lightSwitchObject.rotation.y = Math.PI / 2;
+            cssScene.add(lightSwitchObject);
+
+            lightControlEl = createLightControlPanel();
+            lightControlEl.style.display = 'none';
+            document.body.appendChild(lightControlEl);
+            initCeilingLightControls();
+        }
+
+        function setLightControlOpen(open) {
+            isLightControlOpen = open;
+            if (lightControlEl) lightControlEl.style.display = open ? 'block' : 'none';
+            if (lightSwitchEl) lightSwitchEl.classList.toggle('on', open);
+            updateBeerAddPointerEvents();
+            if (open) {
+                initCeilingLightControls();
+                if (!(USE_FIREBASE_LIGHT && !lightStateBootstrapped)) {
+                    applyLightState(lightState, { silent: true });
+                }
+                syncLightPanelUI();
+            } else {
+                commitLightInputs();
+            }
+        }
+
+        function toggleLightControlPanel() {
+            setLightControlOpen(!isLightControlOpen);
+        }
+
         function getWallImageScreenRect(mesh, rect) {
             if (!mesh || !rect) return null;
             const cssEl = mesh.userData?.cssObject?.element;
@@ -8519,6 +10339,8 @@
                 if (target?.closest?.('.beer-add-3d')) return;
                 if (target?.closest?.('.poop-add-3d')) return;
                 if (target?.closest?.('.wall-image-toolbar')) return;
+                if (target?.closest?.('.light-switch')) return;
+                if (target?.closest?.('.light-modal')) return;
                 renderer?.domElement?.requestPointerLock?.();
             });
             cssRenderer.domElement.addEventListener('click', (event) => {
@@ -8541,6 +10363,7 @@
             if (videoScreenGroup) {
                 ensureVideoCssOverlay();
             }
+            initLightSwitchPanel();
             bindWallImageHandlers(cssRenderer?.domElement);
             bindWallImageHandlers(wallCssRenderer?.domElement);
             bindWallImageHandlers(renderer?.domElement);
@@ -8618,7 +10441,7 @@
             wallGlobalHandlersBound = true;
             const isUiTarget = (target) => {
                 if (!target?.closest) return false;
-                return Boolean(target.closest('header, .modal, .wall-image-toolbar, .video-wall-panel, .beer-add-3d, .poop-add-3d, .tools-panel, .wall-draw-panel'));
+                return Boolean(target.closest('header, .modal, .wall-image-toolbar, .video-wall-panel, .beer-add-3d, .poop-add-3d, .tools-panel, .wall-draw-panel, .light-switch, .light-modal'));
             };
             const fromWallLayer = (event) => {
                 for (const node of wallHandlerTargets) {
@@ -9100,6 +10923,14 @@
 
         function updateBeerAddPointerEvents() {
             if (!cssRenderer?.domElement) return;
+            if (isLightControlOpen) {
+                cssRenderer.domElement.style.pointerEvents = 'auto';
+                if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
+                if (wallCssRenderer?.domElement) wallCssRenderer.domElement.style.pointerEvents = 'none';
+                cssRenderer.domElement.style.cursor = '';
+                if (renderer?.domElement) renderer.domElement.style.cursor = '';
+                return;
+            }
             if (isPoopAddOpen) {
                 cssRenderer.domElement.style.pointerEvents = 'auto';
                 if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
@@ -9110,7 +10941,7 @@
                 return;
             }
             if (!isBeerAddOpen && !isPoopAddOpen) {
-                const allowVideoPanelPointer = videoScreenOpen && !isLocked;
+                const allowVideoPanelPointer = !isLocked && (videoScreenOpen || lightSwitchObject);
                 cssRenderer.domElement.style.pointerEvents = allowVideoPanelPointer ? 'auto' : 'none';
                 if (renderer?.domElement) renderer.domElement.style.pointerEvents = 'auto';
                 if (wallCssRenderer?.domElement) {
@@ -11384,6 +13215,24 @@
             return true;
         }
 
+        function handleSlotMachineClick(event) {
+            if (!slotMachineActionMeshes.length || !renderer || !camera) return false;
+            const rect = renderer.domElement.getBoundingClientRect();
+            let x = rect.width / 2;
+            let y = rect.height / 2;
+            if (!isLocked && event) {
+                x = event.clientX - rect.left;
+                y = event.clientY - rect.top;
+            }
+            boardPointer.x = (x / rect.width) * 2 - 1;
+            boardPointer.y = -(y / rect.height) * 2 + 1;
+            boardRaycaster.setFromCamera(boardPointer, camera);
+            const hits = boardRaycaster.intersectObjects(slotMachineActionMeshes, true);
+            if (!hits.length) return false;
+            triggerSlotSpin();
+            return true;
+        }
+
         function handleBeerAddLockedScroll(event) {
             if (!isBeerAddOpen || !isLocked) return false;
             const menu = document.querySelector('.beer-add-3d .cs.open .cs-menu');
@@ -11808,12 +13657,43 @@
             const localId = getLocalClientId();
             const items = Array.from(onlineUsers.values());
             items.sort((a, b) => (a.id === localId ? -1 : 0) - (b.id === localId ? -1 : 0));
-            onlineUsersEl.innerHTML = items.map((entry) => {
-                const speaking = (entry.id === localId && voiceTalking) || voiceRemoteSpeaking.get(entry.id);
+            const ordered = [];
+            const alive = new Set();
+            items.forEach((entry) => {
+                const id = String(entry.id);
+                alive.add(id);
+                let node = onlineUserNodes.get(id);
+                if (!node) {
+                    node = document.createElement('div');
+                    node.className = 'online-user';
+                    const img = document.createElement('img');
+                    img.alt = '';
+                    const name = document.createElement('span');
+                    node.appendChild(img);
+                    node.appendChild(name);
+                    onlineUserNodes.set(id, node);
+                }
+                const speaking = (id === localId && voiceTalking) || voiceRemoteSpeaking.get(id);
+                node.classList.toggle('speaking', Boolean(speaking));
+                const img = node.querySelector('img');
+                const name = node.querySelector('span');
                 const icon = speaking ? VOICE_ICON_TALK : VOICE_ICON_SILENT;
-                const cls = speaking ? 'online-user speaking' : 'online-user';
-                return `<div class="${cls}"><img src="${icon}" alt=""><span>${entry.name}</span></div>`;
-            }).join('');
+                if (img && img.dataset.icon !== icon) {
+                    img.dataset.icon = icon;
+                    img.src = icon;
+                }
+                if (name && name.textContent !== entry.name) {
+                    name.textContent = entry.name;
+                }
+                ordered.push(node);
+            });
+            onlineUserNodes.forEach((node, id) => {
+                if (!alive.has(id)) {
+                    node.remove();
+                    onlineUserNodes.delete(id);
+                }
+            });
+            onlineUsersEl.replaceChildren(...ordered);
         }
 
         function shouldOfferVoice(remoteId) {
@@ -12173,6 +14053,13 @@
                 applyRemoteVideoState(data.state);
                 return;
             }
+            if (data.type === 'light' && data.state) {
+                if (USE_FIREBASE_LIGHT) return;
+                if (!hasLocalLightPrefs && !lightStateBootstrapped) {
+                    applyLightState(data.state, { silent: true });
+                }
+                return;
+            }
             if (data.type === 'wall_draw') {
                 if (data.clientId && data.clientId === localId) return;
                 applyWallDrawEvent(data);
@@ -12216,7 +14103,8 @@
             return {
                 boardScroll: { target: boardScrollState.target },
                 beerAdd: { open: isBeerAddOpen, data: collectBeerAddFormState?.() || null },
-                video: videoState
+                video: videoState,
+                light: getLightStateFromInputs()
             };
         }
 
@@ -12322,8 +14210,8 @@
             const dyaw = yawObject.rotation.y - (lastPresenceState.yaw || 0);
             const moved = (dx * dx + dy * dy + dz * dz) > 0.0025;
             const rotated = Math.abs(dyaw) > 0.02;
-            if (now - lastPresenceSent < 180) return;
-            if (!moved && !rotated && now - lastPresenceSent < 2000) return;
+            if (!avatarPresenceDirty && now - lastPresenceSent < 180) return;
+            if (!avatarPresenceDirty && !moved && !rotated && now - lastPresenceSent < 2000) return;
             lastPresenceSent = now;
             lastPresenceState = { x: pos.x, y: pos.y, z: pos.z, yaw: yawObject.rotation.y };
             if (moved || rotated) {
@@ -12336,8 +14224,10 @@
                 x: pos.x,
                 y: pos.y,
                 z: pos.z,
-                yaw: yawObject.rotation.y
+                yaw: yawObject.rotation.y,
+                avatar: getShareableAvatarPrefs()
             });
+            avatarPresenceDirty = false;
         }
 
         function getRealtimeHttpBase() {
@@ -12435,6 +14325,12 @@
             }
             if (data.video) {
                 applyRemoteVideoState(data.video);
+            }
+            if (data.light) {
+                if (USE_FIREBASE_LIGHT) return;
+                if (!hasLocalLightPrefs && !lightStateBootstrapped) {
+                    applyLightState(data.light, { silent: true });
+                }
             }
             if (data.wallDraw) {
                 applyWallDrawState(data.wallDraw);
@@ -12640,6 +14536,7 @@
             }
             sendPresenceUpdate();
             updateRemotePlayers(delta);
+            updateSlotMachine(delta);
             if (wallCssRenderer && wallCssScene) {
                 wallCssRenderer.render(wallCssScene, camera);
             }
@@ -12653,9 +14550,11 @@
             if (!ensureAuth()) return;
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             initUI();
+            initLightSettingsFeed();
             initScene();
             initBeerRatingFeed();
             initWallImagesFeed();
+            initAvatarPresenceFeed();
             connectRealtime();
             window.addEventListener('message', handleRutubeMessage);
             startPresenceHeartbeat();
