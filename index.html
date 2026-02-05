@@ -1407,6 +1407,9 @@
             gap: 10px;
             color: var(--accent-400);
             text-decoration: none;
+            width: 170px;
+            max-width: 100%;
+            min-width: 0;
         }
         .sidebar-logo-icon {
             width: 34px;
@@ -1425,7 +1428,17 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--accent-400);
-            text-shadow: 0 0 12px var(--glow-text-2);
+            text-shadow: none;
+            white-space: nowrap;
+            overflow: hidden;
+            min-width: 0;
+            flex: 1 1 auto;
+            display: block;
+        }
+        .sidebar-logo-text-inner {
+            display: inline-block;
+            transform-origin: left center;
+            will-change: transform;
         }
         .sidebar-mug-link {
             display: inline-flex;
@@ -1784,6 +1797,7 @@
             align-items: center;
             text-decoration: none;
             min-width: 0;
+            width: clamp(140px, 45vw, 200px);
         }
         .mobile-brand-icon {
             width: 40px;
@@ -1807,6 +1821,15 @@
             text-shadow: 0 0 10px var(--glow-text-2);
             font-family: var(--logo-font, 'Rubik Wet Paint');
             white-space: nowrap;
+            overflow: hidden;
+            min-width: 0;
+            display: block;
+            flex: 1 1 auto;
+        }
+        .mobile-brand-text-inner {
+            display: inline-block;
+            transform-origin: left center;
+            will-change: transform;
         }
         .mobile-mug-link {
             display: inline-flex;
@@ -2545,7 +2568,7 @@
             </button>
             <div class="mobile-brand" aria-label="Киносреда">
                 <a href="index.html" class="mobile-brand-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
-                    <span class="mobile-brand-text text-glow">Киносреда</span>
+                    <span class="mobile-brand-text text-glow"><span class="mobile-brand-text-inner">Киносреда</span></span>
                 </a>
                 <a href="roulette.html" class="mobile-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
                     <span class="mobile-brand-icon pulse-glow" aria-hidden="true">
@@ -2731,7 +2754,7 @@
             <div class="sidebar-inner">
                 <div class="sidebar-logo-wrap">
                     <a href="index.html" class="sidebar-logo-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
-                        <span class="sidebar-logo-text logo-text">Киносреда</span>
+                        <span class="sidebar-logo-text logo-text"><span class="sidebar-logo-text-inner">Киносреда</span></span>
                     </a>
                     <a href="roulette.html" class="sidebar-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
                         <span class="sidebar-logo-icon" aria-hidden="true">
@@ -4188,6 +4211,7 @@
             if (persist) {
                 localStorage.setItem(SIDEBAR_COLLAPSE_LS_KEY, collapsed ? '1' : '0');
             }
+            scheduleSidebarLogoFit(60);
         }
 
         function getScrollContainer() {
@@ -4324,6 +4348,7 @@
             }
             const savedPage = localStorage.getItem(PAGE_LS_KEY) || 'calendar';
             setActivePage(savedPage, { scroll: false });
+            scheduleSidebarLogoFit(60);
         }
 
         function openSidebarPage(page) {
@@ -4483,6 +4508,83 @@
             }
             const mug = document.getElementById('logoMug');
             if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
+            scheduleSidebarLogoFit(60);
+            if (document.fonts && document.fonts.load) {
+                document.fonts.load(`1em "${preset.family}"`).then(
+                    () => scheduleSidebarLogoFit(),
+                    () => scheduleSidebarLogoFit()
+                );
+            }
+        }
+
+        let sidebarLogoFitTimer = null;
+        let logoFitObserver = null;
+        function fitSidebarLogoText() {
+            const link = document.querySelector('.sidebar-logo-link');
+            const text = link ? link.querySelector('.sidebar-logo-text') : null;
+            const inner = text ? text.querySelector('.sidebar-logo-text-inner') : null;
+            if (!link || !text || !inner) return;
+            if (document.body.classList.contains('sidebar-collapsed')) return;
+            text.style.fontSize = '';
+            inner.style.transform = 'scaleX(1)';
+            const linkRect = link.getBoundingClientRect();
+            if (!linkRect.width) return;
+            const icon = link.querySelector('.sidebar-logo-icon');
+            const iconWidth = icon ? icon.getBoundingClientRect().width : 0;
+            const styles = getComputedStyle(link);
+            const gap = parseFloat(styles.gap || styles.columnGap || 0) || 0;
+            const available = Math.max(0, linkRect.width - iconWidth - gap);
+            if (!available) return;
+
+            const rawWidth = inner.scrollWidth;
+            if (!rawWidth) return;
+
+            const ratio = available / rawWidth;
+            inner.style.transform = `scaleX(${ratio})`;
+        }
+
+        function fitMobileLogoText() {
+            const link = document.querySelector('.mobile-brand-link');
+            const text = link ? link.querySelector('.mobile-brand-text') : null;
+            const inner = text ? text.querySelector('.mobile-brand-text-inner') : null;
+            if (!link || !text || !inner) return;
+            text.style.fontSize = '';
+            inner.style.transform = 'scaleX(1)';
+            const linkRect = link.getBoundingClientRect();
+            const available = linkRect.width;
+            if (!available) return;
+
+            const rawWidth = inner.scrollWidth;
+            if (!rawWidth) return;
+
+            const ratio = available / rawWidth;
+            inner.style.transform = `scaleX(${ratio})`;
+        }
+
+        function initLogoFitObserver() {
+            if (!('ResizeObserver' in window)) return;
+            if (logoFitObserver) logoFitObserver.disconnect();
+            logoFitObserver = new ResizeObserver(() => scheduleSidebarLogoFit());
+            const sidebarInner = document.querySelector('.sidebar-logo-text-inner');
+            if (sidebarInner) logoFitObserver.observe(sidebarInner);
+            const mobileInner = document.querySelector('.mobile-brand-text-inner');
+            if (mobileInner) logoFitObserver.observe(mobileInner);
+        }
+
+        function scheduleSidebarLogoFit(delay = 0) {
+            if (sidebarLogoFitTimer) {
+                clearTimeout(sidebarLogoFitTimer);
+                sidebarLogoFitTimer = null;
+            }
+            const run = () => requestAnimationFrame(() => {
+                fitSidebarLogoText();
+                fitMobileLogoText();
+            });
+            if (delay > 0) {
+                sidebarLogoFitTimer = setTimeout(run, delay);
+            } else {
+                run();
+            }
         }
 
         function refreshHeaderOffset() {
@@ -4552,6 +4654,10 @@
 
             // Apply logo font selection
             applyLogoSettings();
+            initLogoFitObserver();
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(() => scheduleSidebarLogoFit());
+            }
 
             // Beer columns visibility init
             beerColumnsVisible = loadBeerColumnsVisible();
