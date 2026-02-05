@@ -359,6 +359,12 @@
                 --poop-page-pad-bottom: calc(2rem + env(safe-area-inset-bottom, 0px) + 24px);
             }
         }
+        html.ios-safari #poopModal {
+            --modal-pad-bottom: calc(env(safe-area-inset-bottom, 0px) + 164px);
+        }
+        html.ios-safari .poop-page-main {
+            padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px) + 48px) !important;
+        }
         #poopModal .modal-card {
             width: 100%;
             max-width: 720px;
@@ -368,6 +374,9 @@
             overflow-y: auto;
             min-height: 0;
             -webkit-overflow-scrolling: touch;
+        }
+        html.ios-safari #poopModal .modal-card {
+            scroll-padding-bottom: 24px;
         }
         .poop-page-main {
             padding-bottom: var(--poop-page-pad-bottom) !important;
