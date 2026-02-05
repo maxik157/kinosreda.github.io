@@ -2102,10 +2102,16 @@
         }
         html.ios-safari.iframe-keyboard-open body.layout-sidebar.page-service-active header.header-shell {
             position: fixed;
-            top: 0;
+            top: env(safe-area-inset-top, 0px);
             left: 0;
             right: 0;
             z-index: 120;
+        }
+        html.ios-safari.iframe-keyboard-open body.layout-sidebar.page-service-active {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
         html.ios-safari.iframe-keyboard-open body.layout-sidebar.page-service-active .content-shell {
             height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
@@ -4317,6 +4323,12 @@
             }
         }
 
+        function isServiceIframeFocused() {
+            const active = document.activeElement;
+            if (!active || active.tagName !== 'IFRAME') return false;
+            return !!active.closest('.page-service');
+        }
+
         function moveControlBlocks() {
             const snowBlock = document.getElementById('snowToggleBlock');
             const isSidebar = document.body.classList.contains('layout-sidebar');
@@ -4824,6 +4836,23 @@
                     window.visualViewport.addEventListener('resize', updateViewportVars);
                     window.visualViewport.addEventListener('scroll', updateViewportVars);
                 }
+                document.addEventListener('focusin', () => {
+                    if (isServiceIframeFocused()) {
+                        setIframeKeyboardOverride(true);
+                    }
+                });
+                document.addEventListener('focusout', () => {
+                    setTimeout(() => {
+                        if (!isServiceIframeFocused()) {
+                            setIframeKeyboardOverride(false);
+                        }
+                    }, 80);
+                });
+                document.addEventListener('touchstart', (e) => {
+                    if (!e.target || !e.target.closest || !e.target.closest('.page-service')) {
+                        setIframeKeyboardOverride(false);
+                    }
+                }, { passive: true });
             }
             initLogoFitObserver();
             if (document.fonts && document.fonts.ready) {
