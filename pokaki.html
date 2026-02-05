@@ -326,19 +326,16 @@
         .comment-card.comment-editing .comment-actions { display: none; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; }
-        @media (min-width: 769px) {
-            body.modal-open { position: fixed; width: 100%; }
-        }
-        @media (max-width: 768px) {
-            body.modal-open { position: static; width: auto; }
-        }
         #poopModal {
             overscroll-behavior: contain;
+            position: fixed;
+            top: var(--modal-top, 0px);
+            bottom: var(--modal-bottom, 0px);
+            left: 0;
+            right: 0;
             align-items: stretch;
             justify-content: center;
-            padding: env(safe-area-inset-top, 0px) 12px calc(env(safe-area-inset-bottom, 0px) + 24px);
-            height: var(--modal-vh, 100dvh);
-            max-height: var(--modal-vh, 100dvh);
+            padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             transform: translateZ(0);
@@ -349,17 +346,14 @@
             backdrop-filter: none;
             contain: paint;
         }
-        html.keyboard-open #poopModal {
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
-        }
         #poopModal .modal-card {
             width: 100%;
             max-width: 720px;
+            margin: 0 auto;
             height: auto;
             max-height: none;
             overflow: visible;
             min-height: 0;
-            align-self: stretch;
         }
         #poopExportModal {
             overscroll-behavior: contain;
@@ -1318,6 +1312,7 @@
                 return typeof value === 'string' && value.startsWith('data:image/');
             }
             let parentKeyboardState = null;
+            let parentViewportHeight = null;
             function notifyParentKeyboard(isOpen){
                 try {
                     if (window.parent && window.parent !== window) {
@@ -1332,21 +1327,36 @@
                     }
                 } catch (_) {}
             }
+            function notifyParentViewport(height){
+                try {
+                    if (window.parent && window.parent !== window) {
+                        if (!height || !Number.isFinite(height)) return;
+                        if (parentViewportHeight === height) return;
+                        parentViewportHeight = height;
+                        window.parent.postMessage({
+                            type: 'iframe:viewport',
+                            height
+                        }, window.location.origin);
+                    }
+                } catch (_) {}
+            }
             function updateModalVh(){
                 const vv = window.visualViewport;
                 const h = vv ? vv.height : window.innerHeight;
-                const isIosSafari = document.documentElement.classList.contains('ios-safari');
-                const offset = isIosSafari ? 0 : (vv ? Math.max(0, vv.offsetTop) : 0);
-            document.documentElement.style.setProperty('--modal-vh', `${h}px`);
-            document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
-            const keyboardGap = 120;
-            const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
-            const active = document.activeElement;
-            const focusedInModal = active && active.closest && active.closest('#poopModal');
-            const isOpen = keyboardOpen || !!focusedInModal;
-            document.documentElement.classList.toggle('keyboard-open', isOpen);
-            notifyParentKeyboard(isOpen);
-        }
+                const top = vv ? Math.max(0, vv.offsetTop) : 0;
+                const bottom = vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0;
+                document.documentElement.style.setProperty('--modal-vh', `${h}px`);
+                document.documentElement.style.setProperty('--modal-top', `${top}px`);
+                document.documentElement.style.setProperty('--modal-bottom', `${bottom}px`);
+                const keyboardGap = 120;
+                const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
+                const active = document.activeElement;
+                const focusedInModal = active && active.closest && active.closest('#poopModal');
+                const isOpen = keyboardOpen || !!focusedInModal;
+                document.documentElement.classList.toggle('keyboard-open', isOpen);
+                notifyParentKeyboard(isOpen);
+                notifyParentViewport(h);
+            }
             function roundRectPath(ctx, x, y, w, h, r){
                 const radius = Math.min(r, w / 2, h / 2);
                 if (ctx.roundRect) {

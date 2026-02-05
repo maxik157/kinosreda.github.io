@@ -4958,6 +4958,11 @@
                     } else if (data.state === 'close') {
                         setIframeKeyboardOverride(false);
                     }
+                    return;
+                }
+                if (data.type === 'iframe:viewport' && typeof data.height === 'number') {
+                    document.documentElement.style.setProperty('--vvh', `${data.height}px`);
+                    refreshHeaderOffset();
                 }
             });
 
