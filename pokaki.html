@@ -319,11 +319,7 @@
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         html.keyboard-open body.modal-open { position: relative; width: auto; }
-        html.keyboard-open #poopModal {
-            position: absolute;
-            inset: 0;
-            padding-top: env(safe-area-inset-top, 16px);
-        }
+        html.keyboard-open #poopModal { padding-top: env(safe-area-inset-top, 16px); }
         html.keyboard-open #poopModal .modal-card { max-height: none; }
         @media (max-width: 640px) {
             body.modal-open { position: relative; width: auto; }
@@ -333,6 +329,7 @@
             overscroll-behavior: contain;
             align-items: flex-start;
             padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
+            height: var(--modal-vh, 100dvh);
             transform: translateZ(0);
             backface-visibility: hidden;
             isolation: isolate;
@@ -1297,12 +1294,14 @@
             function updateModalVh(){
                 const vv = window.visualViewport;
                 const h = vv ? vv.height : window.innerHeight;
-                const offset = vv ? vv.offsetTop : 0;
+                const offset = vv ? Math.max(0, vv.offsetTop) : 0;
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
                 document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
                 const keyboardGap = 120;
                 const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
-                document.documentElement.classList.toggle('keyboard-open', keyboardOpen);
+                const active = document.activeElement;
+                const focusedInModal = active && active.closest && active.closest('#poopModal');
+                document.documentElement.classList.toggle('keyboard-open', keyboardOpen || !!focusedInModal);
             }
             function roundRectPath(ctx, x, y, w, h, r){
                 const radius = Math.min(r, w / 2, h / 2);
@@ -3107,6 +3106,7 @@
                 if (satisfactionValueLabel) satisfactionValueLabel.textContent = '—';
                 if (sizeValueLabel) sizeValueLabel.textContent = '—';
                 document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('keyboard-open');
             }
 
             function stabilizeWheelSelections(){
@@ -3858,6 +3858,21 @@
             window.addEventListener('resize', updateModalVh);
             window.addEventListener('focusin', updateModalVh);
             window.addEventListener('focusout', updateModalVh);
+            document.addEventListener('focusin', (e) => {
+                if (e.target && e.target.closest && e.target.closest('#poopModal')) {
+                    document.documentElement.classList.add('keyboard-open');
+                }
+            });
+            document.addEventListener('focusout', (e) => {
+                if (e.target && e.target.closest && e.target.closest('#poopModal')) {
+                    setTimeout(() => {
+                        const active = document.activeElement;
+                        if (!active || !active.closest || !active.closest('#poopModal')) {
+                            updateModalVh();
+                        }
+                    }, 50);
+                }
+            });
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', updateModalVh);
                 window.visualViewport.addEventListener('scroll', updateModalVh);
