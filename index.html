@@ -2110,14 +2110,14 @@
             }
             body.layout-sidebar.layout-sidebar-mobile .content-shell {
                 padding-top: var(--header-offset, 0px);
-                height: calc(100dvh - var(--header-offset, 0px));
+                height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
                 box-sizing: border-box;
             }
             body.layout-sidebar.page-service-active .content-shell {
                 padding-top: var(--header-offset, 0px);
-                height: calc(100dvh - var(--header-offset, 0px));
+                height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
                 overflow: hidden;
                 box-sizing: border-box;
             }
@@ -2131,7 +2131,7 @@
         }
         html.ios-safari body.layout-sidebar.layout-sidebar-mobile .content-shell {
             padding-top: var(--header-offset, 0px);
-            height: calc(100dvh - var(--header-offset, 0px));
+            height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -4326,6 +4326,7 @@
             const vv = window.visualViewport;
             const h = vv ? vv.height : window.innerHeight;
             document.documentElement.style.setProperty('--vvh', `${h}px`);
+            refreshHeaderOffset();
             syncIframeKeyboardClass();
         }
         function detectKeyboardOpenFromViewport() {
@@ -4863,14 +4864,14 @@
 
             // Apply logo font selection
             applyLogoSettings();
+            updateViewportVars();
+            window.addEventListener('resize', updateViewportVars);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateViewportVars);
+                window.visualViewport.addEventListener('scroll', updateViewportVars);
+            }
             if (isIOSSafari()) {
                 document.documentElement.classList.add('ios-safari');
-                updateViewportVars();
-                window.addEventListener('resize', updateViewportVars);
-                if (window.visualViewport) {
-                    window.visualViewport.addEventListener('resize', updateViewportVars);
-                    window.visualViewport.addEventListener('scroll', updateViewportVars);
-                }
                 document.addEventListener('focusin', () => {
                     if (isServiceIframeFocused()) {
                         setIframeKeyboardOverride(true);
