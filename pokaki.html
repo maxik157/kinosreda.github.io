@@ -32,6 +32,14 @@
                 }
             } catch(_) {}
         })();
+        (function(){
+            try {
+                const ua = navigator.userAgent || '';
+                const isIOS = /iP(ad|hone|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                const isSafari = isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+                if (isSafari) document.documentElement.classList.add('ios-safari');
+            } catch(_) {}
+        })();
     </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -321,6 +329,12 @@
         html.keyboard-open body.modal-open { position: relative; width: auto; }
         html.keyboard-open #poopModal { padding-top: env(safe-area-inset-top, 16px); }
         html.keyboard-open #poopModal .modal-card { max-height: none; }
+        html.ios-safari body.modal-open { position: relative; width: auto; }
+        html.ios-safari #poopModal {
+            height: 100dvh;
+            padding-top: env(safe-area-inset-top, 16px);
+        }
+        html.ios-safari #poopModal .modal-card { max-height: none; overflow: visible; }
         @media (max-width: 640px) {
             body.modal-open { position: relative; width: auto; }
             #poopModal .modal-card { max-height: none; overflow: visible; }
@@ -1294,7 +1308,8 @@
             function updateModalVh(){
                 const vv = window.visualViewport;
                 const h = vv ? vv.height : window.innerHeight;
-                const offset = vv ? Math.max(0, vv.offsetTop) : 0;
+                const isIosSafari = document.documentElement.classList.contains('ios-safari');
+                const offset = isIosSafari ? 0 : (vv ? Math.max(0, vv.offsetTop) : 0);
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
                 document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
                 const keyboardGap = 120;
