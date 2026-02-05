@@ -1932,6 +1932,28 @@
             flex-direction: column;
             gap: 8px;
         }
+        .service-frame--gallery .service-mobile-block {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            padding: 28px 22px;
+            border-radius: 18px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(8, 12, 18, 0.85);
+            color: var(--accent-200);
+            text-align: center;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        @media (max-width: 1023px) {
+            .service-frame--gallery .service-mobile-block {
+                display: flex;
+            }
+            .service-frame--gallery iframe {
+                display: none !important;
+            }
+        }
         .mobile-sidebar-section-title {
             font-size: 10px;
             text-transform: uppercase;
@@ -3297,7 +3319,10 @@
             </div>
         </div>
         <div id="svc_gallery" data-page="svc_gallery" class="page page-service max-w-7xl mx-auto">
-            <div class="service-frame">
+            <div class="service-frame service-frame--gallery">
+                <div class="service-mobile-block">
+                    Галерея недоступна на мобильных устройствах из-за высокой нагрузки. Откройте страницу с компьютера.
+                </div>
                 <iframe title="Галерея" data-src="gallery.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
             </div>
         </div>
@@ -4233,6 +4258,10 @@
         function ensureServiceFrame(section) {
             if (!section || !section.classList.contains('page-service')) return;
             const frame = section.querySelector('iframe[data-src]');
+            if (section.id === 'svc_gallery' && !isDesktopLayout()) {
+                if (frame) frame.removeAttribute('src');
+                return;
+            }
             if (!frame || frame.getAttribute('src')) return;
             const src = frame.getAttribute('data-src');
             if (src) frame.setAttribute('src', src);
