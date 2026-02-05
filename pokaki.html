@@ -327,12 +327,16 @@
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         html.keyboard-open body.modal-open { position: relative; width: auto; }
-        html.keyboard-open #poopModal { padding-top: env(safe-area-inset-top, 16px); }
+        html.keyboard-open #poopModal {
+            padding-top: env(safe-area-inset-top, 16px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 120px);
+        }
         html.keyboard-open #poopModal .modal-card { max-height: none; }
         html.ios-safari body.modal-open { position: relative; width: auto; }
         html.ios-safari #poopModal {
             height: 100dvh;
             padding-top: env(safe-area-inset-top, 16px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
         }
         html.ios-safari #poopModal .modal-card { max-height: none; overflow: visible; }
         @media (max-width: 640px) {
@@ -343,6 +347,7 @@
             overscroll-behavior: contain;
             align-items: flex-start;
             padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
+            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
             height: var(--modal-vh, 100dvh);
             transform: translateZ(0);
             backface-visibility: hidden;
@@ -363,6 +368,15 @@
             -webkit-backdrop-filter: none;
             backdrop-filter: none;
             contain: paint;
+        }
+        .modal-actions {
+            position: sticky;
+            bottom: 0;
+            padding-top: 12px;
+            padding-bottom: 4px;
+            margin-top: 8px;
+            background: linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.85) 40%, rgba(5,5,5,0.95) 100%);
+            z-index: 2;
         }
         .modal-card {
             max-height: calc(var(--modal-vh, 100vh) - 2rem);
@@ -906,7 +920,7 @@
                         <p class="text-[11px] text-gray-400 text-right">Сохрани рисунок, чтобы можно было показать друзьям.</p>
                     </div>
                 </div>
-                <div class="flex justify-end gap-3 pt-2">
+                <div class="flex justify-end gap-3 pt-2 modal-actions">
                     <button type="button" id="cancelModalBtn" class="px-4 py-3 rounded-xl border border-amber-500/20 text-gray-300 hover:text-white hover:border-amber-500/40 transition">Отмена</button>
                     <button type="submit" class="px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-100 hover:text-white hover:bg-amber-500/30 transition font-semibold">Сохранить покак</button>
                 </div>
