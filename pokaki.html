@@ -326,6 +326,9 @@
         .comment-card.comment-editing .comment-actions { display: none; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; }
+        :root {
+            --poop-page-pad-bottom: 2rem;
+        }
         #poopModal {
             overscroll-behavior: contain;
             position: fixed;
@@ -350,7 +353,10 @@
         }
         @media (max-width: 768px) {
             #poopModal {
-                --modal-pad-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+                --modal-pad-bottom: calc(env(safe-area-inset-bottom, 0px) + 128px);
+            }
+            :root {
+                --poop-page-pad-bottom: calc(2rem + env(safe-area-inset-bottom, 0px) + 24px);
             }
         }
         #poopModal .modal-card {
@@ -362,6 +368,9 @@
             overflow-y: auto;
             min-height: 0;
             -webkit-overflow-scrolling: touch;
+        }
+        .poop-page-main {
+            padding-bottom: var(--poop-page-pad-bottom) !important;
         }
         #poopExportModal {
             overscroll-behavior: contain;
@@ -574,7 +583,7 @@
             </div>
         </header>
 
-        <main class="px-4 pb-8 pt-3 flex-1 w-full">
+        <main class="px-4 pb-8 pt-3 flex-1 w-full poop-page-main">
             <div class="grid gap-5 lg:grid-cols-2 items-stretch">
                 <section class="card glow p-5 self-start">
                     <div class="flex items-center justify-between gap-3 flex-wrap">
