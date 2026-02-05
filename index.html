@@ -2116,17 +2116,10 @@
                 box-sizing: border-box;
             }
             body.layout-sidebar.page-service-active .content-shell {
-                padding-top: 0;
+                padding-top: var(--header-offset, 0px);
                 height: var(--vvh, 100dvh);
                 overflow: hidden;
                 box-sizing: border-box;
-            }
-            body.layout-sidebar.page-service-active .page-service {
-                height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
-                margin-top: var(--header-offset, 0px);
-            }
-            body.layout-sidebar.page-service-active .service-frame {
-                height: 100%;
             }
         }
         html.ios-safari body.layout-sidebar.layout-sidebar-mobile header.header-shell {
@@ -4331,7 +4324,9 @@
         }
         function updateViewportVars() {
             const vv = window.visualViewport;
-            const h = vv ? vv.height : window.innerHeight;
+            const fallback = window.innerHeight;
+            const raw = vv && typeof vv.height === 'number' ? vv.height : fallback;
+            const h = raw && raw > 200 ? raw : fallback;
             document.documentElement.style.setProperty('--vvh', `${h}px`);
             refreshHeaderOffset();
             syncIframeKeyboardClass();
@@ -4966,10 +4961,6 @@
                         setIframeKeyboardOverride(false);
                     }
                     return;
-                }
-                if (data.type === 'iframe:viewport' && typeof data.height === 'number') {
-                    document.documentElement.style.setProperty('--vvh', `${data.height}px`);
-                    refreshHeaderOffset();
                 }
             });
 

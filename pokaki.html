@@ -335,8 +335,10 @@
             right: 0;
             align-items: stretch;
             justify-content: center;
-            padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
-            overflow-y: auto;
+            --modal-pad-top: calc(env(safe-area-inset-top, 0px) + 12px);
+            --modal-pad-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+            padding: var(--modal-pad-top) 12px var(--modal-pad-bottom);
+            overflow: hidden;
             -webkit-overflow-scrolling: touch;
             transform: translateZ(0);
             backface-visibility: hidden;
@@ -348,7 +350,7 @@
         }
         @media (max-width: 768px) {
             #poopModal {
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+                --modal-pad-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
             }
         }
         #poopModal .modal-card {
@@ -356,9 +358,10 @@
             max-width: 720px;
             margin: 0 auto;
             height: auto;
-            max-height: none;
-            overflow: visible;
+            max-height: calc(var(--modal-vh, 100vh) - var(--modal-pad-top, 0px) - var(--modal-pad-bottom, 0px));
+            overflow-y: auto;
             min-height: 0;
+            -webkit-overflow-scrolling: touch;
         }
         #poopExportModal {
             overscroll-behavior: contain;
@@ -1348,8 +1351,8 @@
             function updateModalVh(){
                 const vv = window.visualViewport;
                 const h = vv ? vv.height : window.innerHeight;
-                const top = vv ? Math.max(0, vv.offsetTop) : 0;
-                const bottom = vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0;
+                const top = 0;
+                const bottom = 0;
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
                 document.documentElement.style.setProperty('--modal-top', `${top}px`);
                 document.documentElement.style.setProperty('--modal-bottom', `${bottom}px`);
