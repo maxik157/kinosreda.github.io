@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Планирование — Киносреда</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+
+    <script>
+        // Auth gate
+        (function () {
+            try {
+                const cu = localStorage.getItem('currentUser');
+                if (!cu) {
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+            } catch (e) {
+                location.replace('login.html');
+            }
+        })();
+        // Theme gate
+        (function(){
+            try { document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer'; } catch(_) {}
+        })();
+    </script>
+    <style>
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+        html:not(.authed) body { visibility: hidden; }
+    
+        @media (max-width: 520px) {
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            input[type="date"],
+            input[type="time"],
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <!-- Logo font: load selected font from Google Fonts (per-user) -->
+    <script>
+        (function(){
+            const html = document.documentElement;
+            const KEY = 'logoFontFamily';
+            const DEFAULT = 'Rubik Wet Paint';
+            const LINK_ID = 'logoFontGF';
+
+            function familyToHref(fam){
+                const q = encodeURIComponent(fam).replace(/%20/g, '+');
+                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
+            }
+
+            function ensureStylesheet(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return;
+                const href = familyToHref(family);
+                let link = document.getElementById(LINK_ID);
+                if (!link) {
+                    link = document.createElement('link');
+                    link.id = LINK_ID;
+                    link.rel = 'stylesheet';
+                    document.head.appendChild(link);
+                }
+                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+            }
+
+            function markReady(){
+                html.classList.add('logo-font-ready');
+                html.classList.remove('logo-font-loading');
+            }
+
+            function waitForFont(fam){
+                const family = (fam || DEFAULT).trim();
+                if (!family) return markReady();
+
+                ensureStylesheet(family);
+
+                html.classList.add('logo-font-loading');
+                html.classList.remove('logo-font-ready');
+                try {
+                    if (document.fonts && document.fonts.load) {
+                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
+                    } else {
+                        setTimeout(markReady, 1);
+                    }
+                } catch (_) {
+                    markReady();
+                }
+            }
+
+            try {
+                const fam = localStorage.getItem(KEY) || DEFAULT;
+                html.style.setProperty('--logo-font', `'${fam}'`);
+                waitForFont(fam);
+            } catch(_) {
+                markReady();
+            }
+        })();
+    </script>
+
+    <style>
+        html:not(.logo-font-ready) .logo-text { opacity: 0; }
+        .logo-text { transition: opacity 0.15s ease; }
+
+        html, body {
+            background: #000;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+        }
+        html { overflow-y: hidden; }
+        body { overflow-y: auto; }
+        body {
+            font-family: 'Comfortaa', cursive;
+            color: #fff;
+            min-height: 100vh;
+        }
+        @font-face {
+            font-family: 'Egyptian Bold Extended';
+            src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        :root {
+            --logo-font: 'Rubik Wet Paint';
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --logo-glow-1: rgba(245,158,11,0.50);
+            --logo-glow-2: rgba(245,158,11,0.80);
+            --logo-glow-3: rgba(245,158,11,0.40);
+            --accent-border-10: rgba(245,158,11,0.10);
+            --accent-border-20: rgba(245,158,11,0.20);
+            --accent-border-25: rgba(245,158,11,0.25);
+            --accent-border-30: rgba(245,158,11,0.30);
+            --accent-border-50: rgba(245,158,11,0.50);
+            --accent-soft: rgba(245,158,11,0.12);
+        }
+        html[data-theme="white"] {
+            --accent-200: #ffffff;
+            --accent-300: #e5e7eb;
+            --accent-400: #ffffff;
+            --accent-500: #ffffff;
+            --logo-glow-1: rgba(255,255,255,0.45);
+            --logo-glow-2: rgba(255,255,255,0.75);
+            --logo-glow-3: rgba(255,255,255,0.35);
+            --accent-border-10: rgba(255,255,255,0.18);
+            --accent-border-20: rgba(255,255,255,0.26);
+            --accent-border-25: rgba(255,255,255,0.30);
+            --accent-border-30: rgba(255,255,255,0.34);
+            --accent-border-50: rgba(255,255,255,0.55);
+            --accent-soft: rgba(255,255,255,0.10);
+        }
+        .text-amber-400 { color: var(--accent-400) !important; }
+        .text-amber-300 { color: var(--accent-300) !important; }
+        .text-amber-200 { color: var(--accent-200) !important; }
+        .text-amber-500 { color: var(--accent-500) !important; }
+        .border-amber-500\/10 { border-color: var(--accent-border-10) !important; }
+        .border-amber-500\/20 { border-color: var(--accent-border-20) !important; }
+        .border-amber-500\/25 { border-color: var(--accent-border-25) !important; }
+        .border-amber-500\/30 { border-color: var(--accent-border-30) !important; }
+        .border-amber-500\/50 { border-color: var(--accent-border-50) !important; }
+        .bg-amber-500\/10 { background-color: var(--accent-soft) !important; }
+        .hover\\:bg-amber-500\\/10:hover { background-color: var(--accent-soft) !important; }
+        #logoText { fill: var(--accent-500) !important; }
+
+        .logo-text { font-family: var(--logo-font), 'Comfortaa', cursive; font-weight: 400; letter-spacing: 0.02em; }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 5px var(--logo-glow-1)); }
+            50% { filter: drop-shadow(0 0 15px var(--logo-glow-2)) drop-shadow(0 0 30px var(--logo-glow-3)); }
+        }
+        .pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        .bg-dark { background: #000; position: relative; }
+        .bg-dark::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 15% 0%, rgba(245, 158, 11, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 85% 100%, rgba(245, 158, 11, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow {
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.12), 0 18px 50px rgba(245,158,11,0.08);
+        }
+        .card {
+            background: rgba(8, 8, 8, 0.75);
+            border: 1px solid var(--accent-border-20);
+            border-radius: 18px;
+            backdrop-filter: blur(8px);
+        }
+        .card-flat {
+            border: 0;
+            box-shadow: none;
+        }
+        .event-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .event-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 35px rgba(245,158,11,0.14);
+        }
+        .event-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--accent-200);
+        }
+        .event-meta {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+        }
+        .modal.active { display: flex; }
+        .modal-card {
+            width: min(92vw, 420px);
+            background: rgba(8,8,8,0.95);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .modal-input {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: #fff;
+            outline: none;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .participant-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .participant-action-btn {
+            flex: 1;
+            font-size: 11px;
+            padding: 3px 6px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-border-20);
+            color: var(--accent-200);
+            background: rgba(245,158,11,0.08);
+        }
+        .participant-action-btn:hover {
+            background: rgba(245,158,11,0.18);
+            border-color: var(--accent-border-50);
+        }
+        .participant-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0,0,0,0.35);
+            margin-top: 10px;
+        }
+        .participant-add {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .participant-add .modal-input {
+            flex: 1;
+        }
+        .participant-add-btn {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            color: var(--accent-200);
+            background: rgba(245,158,11,0.12);
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        .participant-add-btn:hover {
+            background: rgba(245,158,11,0.22);
+            border-color: var(--accent-border-50);
+        }
+        .participant-opt {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            text-align: left;
+            padding: 6px 8px;
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.4);
+        }
+        .participant-opt:hover {
+            background: rgba(245,158,11,0.12);
+            color: var(--accent-200);
+        }
+        .participant-note {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body class="bg-dark min-h-screen">
+    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8">
+        <section class="p-0">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <h2 class="text-lg md:text-xl font-semibold text-amber-200">Мероприятия</h2>
+                <div class="flex items-center gap-3">
+                    <span id="eventCount" class="text-xs text-gray-400">0 мероприятий</span>
+                    <button id="addEventBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition">
+                        + Добавить мероприятие
+                    </button>
+                </div>
+            </div>
+            <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="emptyState" class="text-gray-400 text-sm mt-4 hidden">Пока нет мероприятий. Добавьте первое событие справа сверху.</div>
+        </section>
+    </main>
+
+    <div class="modal" id="addEventModal" role="dialog" aria-modal="true" aria-labelledby="addEventTitle">
+        <div class="modal-card">
+            <h3 id="addEventTitle" class="text-lg font-semibold text-amber-200">Новое мероприятие</h3>
+            <p class="text-xs text-gray-400 mt-1">Введите название события.</p>
+            <input id="eventNameInput" class="modal-input mt-4" type="text" placeholder="Название мероприятия" />
+            <div class="mt-4">
+                <div class="text-xs text-gray-400 mb-2">Участники</div>
+                <div class="participant-actions">
+                    <button type="button" class="participant-action-btn" data-event-participants-action="all">Выбрать всех</button>
+                    <button type="button" class="participant-action-btn" data-event-participants-action="clear">Сбросить</button>
+                </div>
+                <div id="eventParticipantsList" class="participant-list"></div>
+                <div class="participant-add">
+                    <input id="eventParticipantsCustomInput" class="modal-input" type="text" placeholder="Добавить участника вручную" />
+                    <button type="button" id="addEventParticipantBtn" class="participant-add-btn">Добавить</button>
+                </div>
+                <div class="participant-note">Если никого не выбрать — участвуют все пользователи сайта.</div>
+            </div>
+            <div class="modal-actions">
+                <button id="cancelEventBtn" class="flex-1 px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-amber-400 transition">Отмена</button>
+                <button id="createEventBtn" class="flex-1 px-4 py-2 rounded-xl bg-amber-500/20 text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition font-semibold">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        let db = null;
+        let eventsCache = [];
+        let currentUserLogin = '';
+        let usersList = [];
+        let eventCustomParticipants = [];
+        let editingEventId = null;
+
+        function initFirebase() {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.database();
+
+            db.ref('planning/events').on('value', (snapshot) => {
+                const val = snapshot.val() || {};
+                let events = [];
+                if (Array.isArray(val)) {
+                    events = val.filter(Boolean).map((ev, idx) => ({ ...ev, id: ev.id || String(idx) }));
+                } else {
+                    events = Object.entries(val).map(([id, ev]) => ({ id, ...ev }));
+                }
+                events.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                eventsCache = events;
+                renderEvents();
+            });
+        }
+
+        function initUsers() {
+            if (!db) return;
+            db.ref('users').on('value', (snapshot) => {
+                const val = snapshot.val() || {};
+                usersList = Object.values(val).map(user => user && user.name).filter(Boolean);
+                usersList.sort((a, b) => a.localeCompare(b, 'ru'));
+                const modal = document.getElementById('addEventModal');
+                const selected = modal && modal.classList.contains('active')
+                    ? getSelectedEventParticipantsFromModal()
+                    : null;
+                renderEventParticipantsList(selected);
+            });
+        }
+
+        function formatDate(ts) {
+            try {
+                const d = new Date(ts);
+                return d.toLocaleDateString('ru-RU');
+            } catch (_) {
+                return '—';
+            }
+        }
+
+        function renderEvents() {
+            const list = document.getElementById('eventsList');
+            const empty = document.getElementById('emptyState');
+            const count = document.getElementById('eventCount');
+
+            list.innerHTML = '';
+            count.textContent = `${eventsCache.length} мероприятий`;
+
+            if (!eventsCache.length) {
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            eventsCache.forEach(event => {
+                const canDelete = currentUserLogin === 'max';
+                const card = document.createElement('a');
+                card.href = `planning-event.html?id=${encodeURIComponent(event.id)}`;
+                card.className = 'card event-card p-4';
+                card.innerHTML = `
+                    <div>
+                        <div class="event-title">${event.name}</div>
+                        <div class="event-meta">Создано: ${formatDate(event.createdAt)}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="text-amber-300 hover:text-amber-200 text-lg px-2" data-edit-event="${event.id}" title="Редактировать">✎</button>
+                        ${canDelete ? `<button type="button" class="text-red-300 hover:text-red-200 text-lg px-2" data-delete-event="${event.id}" title="Удалить">🗑️</button>` : ''}
+                        <div class="text-amber-300 text-lg">→</div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function renderEventParticipantsList(selected) {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return;
+            list.innerHTML = '';
+            const baseList = usersList.slice();
+            const extra = eventCustomParticipants.filter(name => !baseList.includes(name));
+            const listNames = baseList.concat(extra);
+            if (!listNames.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-gray-400 px-2 py-1';
+                empty.textContent = 'Нет пользователей';
+                list.appendChild(empty);
+                return;
+            }
+            const selectedSet = Array.isArray(selected) ? new Set(selected) : null;
+            listNames.forEach(name => {
+                const label = document.createElement('label');
+                label.className = 'participant-opt';
+                const checked = selectedSet ? selectedSet.has(name) : true;
+                label.innerHTML = `
+                    <input type="checkbox" ${checked ? 'checked' : ''} data-event-participant="${name}" />
+                    <span>${name}</span>
+                `;
+                list.appendChild(label);
+            });
+        }
+
+        function addCustomParticipantToEventModal() {
+            const input = document.getElementById('eventParticipantsCustomInput');
+            if (!input) return;
+            const raw = input.value.trim();
+            if (!raw) return;
+            const normalized = raw.toLowerCase();
+            const selected = getSelectedEventParticipantsFromModal() || [];
+            const existsInUsers = usersList.some(name => name.toLowerCase() === normalized);
+            const existsInCustom = eventCustomParticipants.some(name => name.toLowerCase() === normalized);
+            if (!existsInUsers && !existsInCustom) {
+                eventCustomParticipants.push(raw);
+            }
+            if (!selected.some(name => name.toLowerCase() === normalized)) {
+                selected.push(raw);
+            }
+            renderEventParticipantsList(selected);
+            input.value = '';
+        }
+
+        function setEventModalMode(mode) {
+            const title = document.getElementById('addEventTitle');
+            const btn = document.getElementById('createEventBtn');
+            if (!title || !btn) return;
+            if (mode === 'edit') {
+                title.textContent = 'Редактировать мероприятие';
+                btn.textContent = 'Сохранить';
+            } else {
+                title.textContent = 'Новое мероприятие';
+                btn.textContent = 'Создать';
+            }
+        }
+
+        function getSelectedEventParticipantsFromModal() {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return null;
+            const inputs = list.querySelectorAll('input[data-event-participant]');
+            if (!inputs.length) return null;
+            return Array.from(inputs)
+                .filter(input => input.checked)
+                .map(input => input.dataset.eventParticipant);
+        }
+
+        function setEventParticipantsSelection(checked) {
+            const list = document.getElementById('eventParticipantsList');
+            if (!list) return;
+            list.querySelectorAll('input[data-event-participant]').forEach(input => {
+                input.checked = checked;
+            });
+        }
+
+        function openAddEventModal() {
+            const modal = document.getElementById('addEventModal');
+            const input = document.getElementById('eventNameInput');
+            if (!modal || !input) return;
+            editingEventId = null;
+            setEventModalMode('add');
+            input.value = '';
+            eventCustomParticipants = [];
+            renderEventParticipantsList(null);
+            const customInput = document.getElementById('eventParticipantsCustomInput');
+            if (customInput) customInput.value = '';
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 0);
+        }
+
+        function openEditEventModal(event) {
+            const modal = document.getElementById('addEventModal');
+            const input = document.getElementById('eventNameInput');
+            if (!modal || !input || !event) return;
+            editingEventId = event.id;
+            setEventModalMode('edit');
+            input.value = event.name || '';
+            const storedCustom = Array.isArray(event.participantsCustom) ? event.participantsCustom : [];
+            const storedParticipants = Array.isArray(event.participants) ? event.participants : [];
+            const inferredCustom = storedParticipants.filter(name => !usersList.includes(name));
+            eventCustomParticipants = Array.from(new Set(storedCustom.concat(inferredCustom)));
+            renderEventParticipantsList(storedParticipants.length ? storedParticipants : null);
+            const customInput = document.getElementById('eventParticipantsCustomInput');
+            if (customInput) customInput.value = '';
+            modal.classList.add('active');
+            setTimeout(() => input.focus(), 0);
+        }
+
+        function closeAddEventModal() {
+            const modal = document.getElementById('addEventModal');
+            if (modal) modal.classList.remove('active');
+            editingEventId = null;
+            setEventModalMode('add');
+        }
+
+        function createEvent() {
+            const input = document.getElementById('eventNameInput');
+            if (!input) return;
+            const trimmed = input.value.trim();
+            if (!trimmed || !db) return;
+            const selected = getSelectedEventParticipantsFromModal();
+            const participants = Array.isArray(selected) ? selected : [];
+            const hasCustom = participants.some(name => !usersList.includes(name));
+            const customParticipants = participants.filter(name => !usersList.includes(name));
+
+            if (editingEventId) {
+                const update = { name: trimmed };
+                if (participants.length && (hasCustom || participants.length < usersList.length)) {
+                    update.participants = participants;
+                } else {
+                    update.participants = null;
+                }
+                if (customParticipants.length) {
+                    update.participantsCustom = customParticipants;
+                } else {
+                    update.participantsCustom = null;
+                }
+                db.ref(`planning/events/${editingEventId}`).update(update);
+            } else {
+                const payload = {
+                    name: trimmed,
+                    createdAt: Date.now()
+                };
+                if (participants.length && (hasCustom || participants.length < usersList.length)) {
+                    payload.participants = participants;
+                }
+                if (customParticipants.length) {
+                    payload.participantsCustom = customParticipants;
+                }
+                const ref = db.ref('planning/events').push(payload);
+                if (ref && ref.key) {
+                    db.ref(`planning/data/${ref.key}`).set({ sections: [] });
+                }
+            }
+            closeAddEventModal();
+        }
+
+        function initProfileName() {
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                const nameEl = document.getElementById('profileName');
+                if (currentUser && currentUser.username) currentUserLogin = currentUser.username;
+                if (nameEl && currentUser && currentUser.name) nameEl.textContent = currentUser.name;
+            } catch (_) {}
+        }
+
+        function deleteEvent(id) {
+            if (!db || !id) return;
+            if (currentUserLogin !== 'max') return;
+            if (!confirm('Удалить мероприятие и все данные?')) return;
+            db.ref(`planning/events/${id}`).remove();
+            db.ref(`planning/data/${id}`).remove();
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
+        document.getElementById('eventsList').addEventListener('click', (e) => {
+            const editBtn = e.target.closest('[data-edit-event]');
+            if (editBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const event = eventsCache.find(item => item.id === editBtn.dataset.editEvent);
+                if (event) openEditEventModal(event);
+                return;
+            }
+            const btn = e.target.closest('[data-delete-event]');
+            if (!btn) return;
+            e.preventDefault();
+            e.stopPropagation();
+            deleteEvent(btn.dataset.deleteEvent);
+        });
+        document.getElementById('cancelEventBtn').addEventListener('click', closeAddEventModal);
+        document.getElementById('createEventBtn').addEventListener('click', createEvent);
+        document.getElementById('addEventParticipantBtn').addEventListener('click', addCustomParticipantToEventModal);
+        document.getElementById('addEventModal').addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('[data-event-participants-action]');
+            if (actionBtn) {
+                const action = actionBtn.dataset.eventParticipantsAction;
+                setEventParticipantsSelection(action === 'all');
+                return;
+            }
+            if (e.target.id === 'addEventModal') closeAddEventModal();
+        });
+        document.getElementById('eventNameInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createEvent();
+            if (e.key === 'Escape') closeAddEventModal();
+        });
+        document.getElementById('eventParticipantsCustomInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') addCustomParticipantToEventModal();
+            if (e.key === 'Escape') closeAddEventModal();
+        });
+        initProfileName();
+        initFirebase();
+        initUsers();
+    </script>
+</body>
+</html>
