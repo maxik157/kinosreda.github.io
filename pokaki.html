@@ -1305,19 +1305,36 @@
             function isDrawingData(value){
                 return typeof value === 'string' && value.startsWith('data:image/');
             }
+            let parentKeyboardState = null;
+            function notifyParentKeyboard(isOpen){
+                try {
+                    if (window.parent && window.parent !== window) {
+                        const next = isOpen ? 'open' : 'close';
+                        if (parentKeyboardState === next) return;
+                        parentKeyboardState = next;
+                        window.parent.postMessage({
+                            type: 'iframe:keyboard',
+                            state: next,
+                            source: 'pokaki'
+                        }, window.location.origin);
+                    }
+                } catch (_) {}
+            }
             function updateModalVh(){
                 const vv = window.visualViewport;
                 const h = vv ? vv.height : window.innerHeight;
                 const isIosSafari = document.documentElement.classList.contains('ios-safari');
                 const offset = isIosSafari ? 0 : (vv ? Math.max(0, vv.offsetTop) : 0);
-                document.documentElement.style.setProperty('--modal-vh', `${h}px`);
-                document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
-                const keyboardGap = 120;
-                const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
-                const active = document.activeElement;
-                const focusedInModal = active && active.closest && active.closest('#poopModal');
-                document.documentElement.classList.toggle('keyboard-open', keyboardOpen || !!focusedInModal);
-            }
+            document.documentElement.style.setProperty('--modal-vh', `${h}px`);
+            document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
+            const keyboardGap = 120;
+            const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
+            const active = document.activeElement;
+            const focusedInModal = active && active.closest && active.closest('#poopModal');
+            const isOpen = keyboardOpen || !!focusedInModal;
+            document.documentElement.classList.toggle('keyboard-open', isOpen);
+            notifyParentKeyboard(isOpen);
+        }
             function roundRectPath(ctx, x, y, w, h, r){
                 const radius = Math.min(r, w / 2, h / 2);
                 if (ctx.roundRect) {
@@ -3122,6 +3139,7 @@
                 if (sizeValueLabel) sizeValueLabel.textContent = '—';
                 document.body.classList.remove('modal-open');
                 document.documentElement.classList.remove('keyboard-open');
+                notifyParentKeyboard(false);
             }
 
             function stabilizeWheelSelections(){
@@ -3876,6 +3894,7 @@
             document.addEventListener('focusin', (e) => {
                 if (e.target && e.target.closest && e.target.closest('#poopModal')) {
                     document.documentElement.classList.add('keyboard-open');
+                    notifyParentKeyboard(true);
                 }
             });
             document.addEventListener('focusout', (e) => {

@@ -2100,6 +2100,19 @@
             overflow: hidden;
             height: calc(100vh - var(--header-offset, 0px));
         }
+        html.ios-safari.iframe-keyboard-open body.layout-sidebar.page-service-active header.header-shell {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 120;
+        }
+        html.ios-safari.iframe-keyboard-open body.layout-sidebar.page-service-active .content-shell {
+            height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-top: var(--header-offset, 0px);
+        }
 
         @media (min-width: 1024px) {
             body.layout-sidebar #calendarSection {
@@ -4197,6 +4210,8 @@
         const PAGE_LS_KEY = 'indexActivePage';
         const PAGE_URL_PARAM = 'page';
         const PLANNING_EVENT_PARAM = 'planningEvent';
+        let iframeKeyboardOverride = null;
+        let iframeKeyboardOverrideTimer = null;
         const PAGE_IDS = {
             calendar: 'calendarSection',
             backlog: 'backlogSection',
@@ -4256,6 +4271,50 @@
 
         function isDesktopLayout() {
             return window.matchMedia('(min-width: 1024px)').matches;
+        }
+        function isIOSSafari() {
+            try {
+                const ua = navigator.userAgent || '';
+                const isIOS = /iP(ad|hone|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                return isIOS && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+            } catch (_) {
+                return false;
+            }
+        }
+        function updateViewportVars() {
+            const vv = window.visualViewport;
+            const h = vv ? vv.height : window.innerHeight;
+            document.documentElement.style.setProperty('--vvh', `${h}px`);
+            syncIframeKeyboardClass();
+        }
+        function detectKeyboardOpenFromViewport() {
+            const vv = window.visualViewport;
+            if (!vv) return false;
+            const keyboardGap = 120;
+            return (window.innerHeight - vv.height) > keyboardGap;
+        }
+        function syncIframeKeyboardClass() {
+            if (!document.documentElement.classList.contains('ios-safari')) return;
+            const open = iframeKeyboardOverride !== null
+                ? iframeKeyboardOverride
+                : detectKeyboardOpenFromViewport();
+            document.documentElement.classList.toggle('iframe-keyboard-open', !!open);
+        }
+        function setIframeKeyboardOverride(val) {
+            if (iframeKeyboardOverrideTimer) {
+                clearTimeout(iframeKeyboardOverrideTimer);
+                iframeKeyboardOverrideTimer = null;
+            }
+            iframeKeyboardOverride = val;
+            syncIframeKeyboardClass();
+            if (val === false) {
+                iframeKeyboardOverrideTimer = setTimeout(() => {
+                    if (iframeKeyboardOverride === false) {
+                        iframeKeyboardOverride = null;
+                        syncIframeKeyboardClass();
+                    }
+                }, 500);
+            }
         }
 
         function moveControlBlocks() {
@@ -4757,6 +4816,15 @@
 
             // Apply logo font selection
             applyLogoSettings();
+            if (isIOSSafari()) {
+                document.documentElement.classList.add('ios-safari');
+                updateViewportVars();
+                window.addEventListener('resize', updateViewportVars);
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', updateViewportVars);
+                    window.visualViewport.addEventListener('scroll', updateViewportVars);
+                }
+            }
             initLogoFitObserver();
             if (document.fonts && document.fonts.ready) {
                 document.fonts.ready.then(() => scheduleSidebarLogoFit());
@@ -4806,15 +4874,25 @@
 
             window.addEventListener('message', (e) => {
                 const data = e && e.data ? e.data : null;
-                if (!data || data.type !== 'planning:route') return;
-                const currentPage = getPageFromUrl() || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
-                const currentPlanningId = getPlanningEventIdFromUrl();
-                if (data.view === 'event' && data.eventId) {
-                    if (currentPage === 'svc_planning' && currentPlanningId === data.eventId) return;
-                    setActivePage('svc_planning', { scroll: false, push: true, planningEventId: data.eventId });
-                } else if (data.view === 'list') {
-                    if (currentPage === 'svc_planning' && !currentPlanningId) return;
-                    setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
+                if (!data || !data.type) return;
+                if (data.type === 'planning:route') {
+                    const currentPage = getPageFromUrl() || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
+                    const currentPlanningId = getPlanningEventIdFromUrl();
+                    if (data.view === 'event' && data.eventId) {
+                        if (currentPage === 'svc_planning' && currentPlanningId === data.eventId) return;
+                        setActivePage('svc_planning', { scroll: false, push: true, planningEventId: data.eventId });
+                    } else if (data.view === 'list') {
+                        if (currentPage === 'svc_planning' && !currentPlanningId) return;
+                        setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
+                    }
+                    return;
+                }
+                if (data.type === 'iframe:keyboard') {
+                    if (data.state === 'open') {
+                        setIframeKeyboardOverride(true);
+                    } else if (data.state === 'close') {
+                        setIframeKeyboardOverride(false);
+                    }
                 }
             });
 
