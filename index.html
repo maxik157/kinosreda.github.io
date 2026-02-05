@@ -2100,6 +2100,21 @@
             overflow: hidden;
             height: calc(100vh - var(--header-offset, 0px));
         }
+        @media (max-width: 1023px) {
+            body.layout-sidebar.layout-sidebar-mobile header.header-shell {
+                position: fixed;
+                top: env(safe-area-inset-top, 0px);
+                left: 0;
+                right: 0;
+                z-index: 120;
+            }
+            body.layout-sidebar.layout-sidebar-mobile .content-shell {
+                padding-top: var(--header-offset, 0px);
+                height: calc(100dvh - var(--header-offset, 0px));
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
         html.ios-safari body.layout-sidebar.layout-sidebar-mobile header.header-shell {
             position: fixed;
             top: env(safe-area-inset-top, 0px);
