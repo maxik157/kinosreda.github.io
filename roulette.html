@@ -137,12 +137,18 @@
     .logo-text { transition: opacity 0.15s ease; }
 
     html { scrollbar-gutter: stable; }
-    html, body { background: #000; }
+    html, body {
+      background: #000;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+      overscroll-behavior-y: auto;
+      height: 100%;
+    }
+    html { overflow-y: hidden; }
     body {
       font-family: 'Comfortaa', cursive;
-      overflow-x: hidden;
-      overflow-y: scroll;
-      overscroll-behavior: none;
+      margin: 0;
+      overflow-y: auto;
       color: #fff;
     }
 
@@ -261,6 +267,28 @@
     .beerListScroll { max-height: min(55vh, 520px); overflow: auto; }
     @media (min-width: 1024px) {
       .beerListScroll { max-height: min(70vh, 640px); }
+    }
+    @media (max-width: 768px) {
+      .roulette-main { padding: 18px 14px 24px !important; }
+      .wheel-wrap { width: min(320px, 100%); max-width: 320px; }
+      .pointer { border-left-width: 10px; border-right-width: 10px; border-top-width: 14px; }
+      .spin-btn { width: 90px; height: 90px; }
+      .spin-btn .label { font-size: 11px; letter-spacing: 0.05em; }
+      .beerListScroll { max-height: min(45vh, 360px); }
+    }
+    @media (max-width: 480px) {
+      .roulette-title { font-size: 20px; }
+      .roulette-subtitle { font-size: 18px; }
+    }
+    .roulette-divider {
+      display: none;
+      height: 1px;
+      width: 100%;
+      background: rgba(245, 158, 11, 0.28);
+      margin: 10px 0 14px;
+    }
+    @media (max-width: 1023px) {
+      .roulette-divider { display: block; }
     }
 
     /* Pointer: DOWN */
@@ -452,79 +480,13 @@
   <div class="particles" id="particles"></div>
   <div class="snow hidden" id="snow"></div>
 
-  <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-    <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-      <div class="flex items-center gap-3 pl-2">
-          <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
-            <defs>
-              <linearGradient id="beerGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#fcd34d"/>
-                <stop offset="50%" style="stop-color:#fbbf24"/>
-                <stop offset="100%" style="stop-color:#d97706"/>
-              </linearGradient>
-              <linearGradient id="foamGradRoulette" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#ffffff"/>
-                <stop offset="100%" style="stop-color:#fef3c7"/>
-              </linearGradient>
-              <clipPath id="mugClipRoulette"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
-              <filter id="glowRoulette"><feGaussianBlur stdDeviation="2" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            </defs>
-
-            <a href="index.html" aria-label="На главную" style="cursor:pointer;">
-              <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowRoulette)">КИНОСРЕДА</text>
-            </a>
-
-            <g id="logoMug" transform="translate(438, 2)">
-              <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" class="mug-stroke" stroke-width="3"/>
-              <g clip-path="url(#mugClipRoulette)" transform="translate(0, 30)">
-                <rect x="0" y="55" height="0" width="50" fill="url(#beerGradRoulette)">
-                  <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
-                  <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
-                </rect>
-              </g>
-              <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
-                <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradRoulette)"/>
-                <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
-                <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
-                <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
-              </g>
-              <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-            </g>
-          </svg>
-
-        <!-- Snow toggle (same as main) -->
-        <div class="snow-toggle ml-1">
-          <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
-            <input type="checkbox" id="snowToggle" aria-label="Снежинки">
-            <div class="snow-thumb"><span class="snow-icon">❄</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-1 md:gap-3 flex-nowrap whitespace-nowrap justify-center">
-        <a href="index.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-          <span>←</span> <span class="hidden sm:inline">На главную</span>
-        </a>
-        <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Планирование">
-          <span>🌴</span>
-        </a>
-        <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Профиль">
-          <span>👤</span> <span id="profileName" class="hidden sm:inline"></span>
-        </a>
-        <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
-          <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6">
+  <main class="roulette-main relative z-10 w-full px-3 md:px-6 py-6 md:py-8">
     <div class="flex flex-col lg:flex-row gap-6 items-stretch">
       <!-- Left: Wheel -->
       <section class="w-full lg:w-1/2 flex">
-        <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 glow w-full flex flex-col">
+        <div class="w-full flex flex-col">
           <div class="flex items-center justify-between mb-2">
-            <h1 class="text-xl md:text-2xl font-bold text-amber-400">🎯 Пивная рулетка</h1>
+            <h1 class="roulette-title text-xl md:text-2xl font-bold text-amber-400">🎯 Пивная рулетка</h1>
           </div>
 
           <div class="flex justify-center flex-1 items-center py-3">
@@ -555,11 +517,13 @@
         </div>
       </section>
 
+      <div class="roulette-divider" aria-hidden="true"></div>
+
       <!-- Right: Beer list -->
       <section class="w-full lg:w-1/2 flex">
-        <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 w-full flex flex-col">
+        <div class="w-full flex flex-col">
           <div class="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h2 class="text-lg md:text-xl font-bold text-amber-400">🍺 Список пива</h2>
+            <h2 class="roulette-subtitle text-lg md:text-xl font-bold text-amber-400">🍺 Список пива</h2>
             <input id="search" type="search" placeholder="Поиск…" class="w-full sm:w-56 px-3 py-2 rounded-xl bg-gray-900/70 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 text-sm" oninput="renderBeerList()" />
           </div>
 
@@ -568,10 +532,6 @@
       </section>
     </div>
   </main>
-
-  <footer class="text-center py-6 text-gray-700 text-xs relative z-10">
-    <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
-  </footer>
 
   <script>
     // -----------------
@@ -680,13 +640,15 @@
 
     function setSnowUI(enabled) {
       const snow = document.getElementById('snow');
+      if (!snow) return;
       const sw = document.getElementById('snowSwitch');
       const cb = document.getElementById('snowToggle');
-      if (!snow || !sw || !cb) return;
 
-      cb.checked = !!enabled;
-      sw.classList.toggle('on', !!enabled);
-      sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+      if (cb) cb.checked = !!enabled;
+      if (sw) {
+        sw.classList.toggle('on', !!enabled);
+        sw.setAttribute('aria-checked', enabled ? 'true' : 'false');
+      }
 
       if (enabled) { snow.classList.remove('hidden'); startSnow(); }
       else { stopSnow(); snow.classList.add('hidden'); }
@@ -784,6 +746,8 @@
     let wheelItems = [];
     let isSpinning = false;
     let currentRotation = 0;
+    const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+    let beerRatingMetaTs = null;
 
     // Utils
     const collator = new Intl.Collator(['ru','en'], { sensitivity: 'base', numeric: false, ignorePunctuation: true });
@@ -1134,10 +1098,18 @@
       }, (dur * 1000) + 80);
     }
 
-    // Load beers from Firebase
-    db.ref('beerRating').on('value', (snap) => {
-      allBeers = normalizeBeerList(snap.val());
-      renderBeerList();
+    // Load beers from Firebase (meta-driven to reduce downloads)
+    function fetchBeerRatingOnce() {
+      return db.ref('beerRating').once('value').then((snap) => {
+        allBeers = normalizeBeerList(snap.val());
+        renderBeerList();
+      });
+    }
+    db.ref(BEER_RATING_META_PATH).on('value', (snap) => {
+      const ts = snap.val();
+      if (ts && ts === beerRatingMetaTs && allBeers.length) return;
+      if (ts) beerRatingMetaTs = ts;
+      fetchBeerRatingOnce().catch(() => {});
     });
 
     // Init

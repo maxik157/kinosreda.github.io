@@ -121,7 +121,14 @@
         html, body {
             background: #000;
             overflow-x: hidden;
-            overscroll-behavior: none;
+            overscroll-behavior-x: none;
+            overscroll-behavior-y: auto;
+            height: 100%;
+        }
+        html { overflow-y: hidden; }
+        body {
+            margin: 0;
+            overflow-y: auto;
         }
         body {
             font-family: 'Comfortaa', cursive;
@@ -586,12 +593,21 @@
             top: calc(100% + 8px);
             right: 0;
             width: 220px;
+            max-width: calc(100vw - 24px);
+            box-sizing: border-box;
             background: rgba(8,8,8,0.96);
             border: 1px solid var(--accent-border-30);
             border-radius: 12px;
             padding: 8px;
             z-index: 80;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        @media (max-width: 640px) {
+            .section-menu {
+                right: auto;
+                left: 0;
+                width: min(240px, calc(100vw - 24px));
+            }
         }
         .section-menu button {
             width: 100%;
@@ -975,78 +991,17 @@
     </style>
 </head>
 <body class="bg-dark min-h-screen">
-    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-            <div class="flex items-center gap-3 pl-2">
-                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
-                    <defs>
-                        <linearGradient id="beerGradPlanEvent" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#fcd34d"/>
-                            <stop offset="50%" style="stop-color:#fbbf24"/>
-                            <stop offset="100%" style="stop-color:#d97706"/>
-                        </linearGradient>
-                        <linearGradient id="foamGradPlanEvent" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#ffffff"/>
-                            <stop offset="100%" style="stop-color:#fef3c7"/>
-                        </linearGradient>
-                        <clipPath id="mugClipPlanEvent"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
-                        <filter id="glowPlanEvent">
-                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                            <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                        </filter>
-                    </defs>
-
-                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
-                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowPlanEvent)">КИНОСРЕДА</text>
-                    </a>
-
-                    <g id="logoMug" transform="translate(438, 2)">
-                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" stroke-width="3"/>
-                        <g clip-path="url(#mugClipPlanEvent)" transform="translate(0, 30)">
-                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradPlanEvent)">
-                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
-                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
-                            </rect>
-                        </g>
-                        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
-                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradPlanEvent)"/>
-                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
-                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
-                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
-                        </g>
-                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-                    </g>
-                </svg>
-            </div>
-
-            <div class="flex items-center gap-1 md:gap-3 flex-nowrap whitespace-nowrap justify-center">
-                <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-                    <span>←</span> <span class="hidden sm:inline">К списку</span>
-                </a>
-                <a href="planning.html" class="text-amber-400 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Планирование">
-                    <span>🌴</span>
-                </a>
-                <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Профиль">
-                    <span>👤</span> <span id="profileName" class="hidden sm:inline"></span>
-                </a>
-                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
-                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6 md:py-8">
+    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div>
-                <div class="text-gray-400 text-xs">Мероприятие</div>
-                <h1 id="eventTitle" class="text-2xl md:text-3xl font-bold text-amber-400">—</h1>
-                <p class="text-gray-400 text-sm mt-1">Собирайте список вещей по разделам.</p>
+            <div class="flex items-center gap-4">
+                <a href="planning.html" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-2 rounded-xl text-xs font-semibold transition whitespace-nowrap">
+                    ← Назад к списку
+                </a>
+                <div>
+                    <h1 id="eventTitle" class="text-2xl md:text-3xl font-bold text-amber-400">—</h1>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 <button id="editParticipantsBtn" class="expense-toggle" type="button">
                     👥 Участники
                 </button>
@@ -1255,6 +1210,8 @@
         let currentUserName = '';
         let usersList = [];
         let beerList = [];
+        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+        let beerRatingMetaTs = null;
         let saveTimer = null;
         let suppressNextSnapshot = false;
         let activeOwnerTarget = null;
@@ -3392,17 +3349,25 @@
 
         function initBeerList() {
             if (!db) return;
-            db.ref('beerRating').on('value', (snapshot) => {
-                const val = snapshot.val() || [];
-                let list = [];
-                if (Array.isArray(val)) list = val;
-                else list = Object.values(val);
-                beerList = list.filter(Boolean).sort((a, b) => {
-                    const an = (a.name || '').toString();
-                    const bn = (b.name || '').toString();
-                    return an.localeCompare(bn, 'ru');
+            const fetchBeerRatingOnce = () => {
+                return db.ref('beerRating').once('value').then((snapshot) => {
+                    const val = snapshot.val() || [];
+                    let list = [];
+                    if (Array.isArray(val)) list = val;
+                    else list = Object.values(val);
+                    beerList = list.filter(Boolean).sort((a, b) => {
+                        const an = (a.name || '').toString();
+                        const bn = (b.name || '').toString();
+                        return an.localeCompare(bn, 'ru');
+                    });
+                    renderSections();
                 });
-                renderSections();
+            };
+            db.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
+                const ts = snapshot.val();
+                if (ts && ts === beerRatingMetaTs && beerList.length) return;
+                if (ts) beerRatingMetaTs = ts;
+                fetchBeerRatingOnce().catch(() => {});
             });
         }
 
@@ -3414,6 +3379,30 @@
                 return;
             }
             menu.classList.toggle('hidden');
+            if (!menu.classList.contains('hidden')) {
+                requestAnimationFrame(positionSectionMenu);
+            }
+        }
+
+        function positionSectionMenu() {
+            const menu = document.getElementById('sectionMenu');
+            if (!menu || menu.classList.contains('hidden')) return;
+            menu.style.left = '';
+            menu.style.right = '';
+            menu.style.transform = '';
+            menu.style.maxWidth = 'calc(100vw - 24px)';
+            menu.style.width = '';
+
+            const rect = menu.getBoundingClientRect();
+            const vw = document.documentElement.clientWidth;
+            if (rect.right > vw - 12) {
+                menu.style.right = '0';
+                menu.style.left = 'auto';
+            }
+            if (rect.left < 12) {
+                menu.style.left = '0';
+                menu.style.right = 'auto';
+            }
         }
 
         function init() {
@@ -3492,6 +3481,10 @@
             document.getElementById('addSectionBtn').addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleSectionMenu();
+            });
+            window.addEventListener('resize', () => {
+                const menu = document.getElementById('sectionMenu');
+                if (menu && !menu.classList.contains('hidden')) positionSectionMenu();
             });
 
             document.getElementById('sectionMenu').addEventListener('click', (e) => {

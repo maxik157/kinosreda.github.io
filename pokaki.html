@@ -24,6 +24,14 @@
                 document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
             } catch(_) {}
         })();
+        (function(){
+            try {
+                const params = new URLSearchParams(location.search);
+                if (params.get('embed') === '1') {
+                    document.documentElement.classList.add('embed-poop');
+                }
+            } catch(_) {}
+        })();
     </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -125,6 +133,30 @@
             border: 1px solid var(--accent-border-20);
             border-radius: 22px;
             backdrop-filter: blur(8px);
+        }
+        html.embed-poop body {
+            background: transparent;
+            overflow: hidden;
+        }
+        html.embed-poop .backdrop,
+        html.embed-poop #app {
+            display: none !important;
+        }
+        html.embed-poop #poopModal {
+            position: absolute !important;
+            inset: 0 !important;
+            display: flex !important;
+            padding: 0 !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+        }
+        html.embed-poop #poopModal.hidden {
+            display: flex !important;
+        }
+        html.embed-poop #poopModal .modal-card {
+            max-width: none !important;
+            width: 100% !important;
+            height: 100% !important;
         }
         .time-wheel {
             position: relative;
@@ -270,6 +302,8 @@
         .time-mode-thumb { top: 50%; transform: translateY(-50%); }
         .toggle-on .time-mode-thumb { transform: translate(20px, -50%); background: rgba(245,158,11,0.8); }
         #timeModeToggle.toggle-on { background: rgba(0,0,0,0.6) !important; border-color: rgba(245,158,11,0.3) !important; }
+        #durationModeToggle.toggle-on,
+        #paperModeToggle.toggle-on { background: rgba(0,0,0,0.6) !important; border-color: rgba(245,158,11,0.3) !important; }
         .reaction-menu { box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
         .modal-scroll { -webkit-overflow-scrolling: touch; }
         .comment-card { position: relative; }
@@ -426,9 +460,21 @@
         @media (max-width: 520px) {
             .flex, .grid { min-width: 0; max-width: 100%; }
             .card, .container { max-width: 100%; }
-            .calendar-controls { flex-wrap: wrap; justify-content: flex-start; }
+            .calendar-controls { flex-wrap: nowrap; justify-content: flex-start; gap: 6px; }
             .calendar-controls > * { min-width: 0; }
             .author-filter { min-width: 0; max-width: 100%; }
+            #prevRangeBtn,
+            #nextRangeBtn {
+                padding: 6px 8px;
+                font-size: 11px;
+                border-radius: 10px;
+                white-space: nowrap;
+            }
+            #weekModeBtn,
+            #monthModeBtn {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
         }
         @media (max-width: 520px) {
             .container { padding-left: 16px !important; padding-right: 16px !important; max-width: 100%; box-sizing: border-box; }
@@ -470,37 +516,31 @@
 <body class="relative">
     <div class="backdrop"></div>
     <div class="relative z-10 min-h-screen flex flex-col">
-        <header class="container mx-auto px-4 pt-6">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-                <div class="flex items-center gap-3">
-                    <a href="index.html" class="inline-flex items-center gap-2 text-sm text-amber-300 hover:text-amber-200 transition px-3 py-2 rounded-xl border border-amber-500/20 bg-amber-500/10">
-                        <span class="text-lg">←</span>
-                        <span>На главную</span>
-                    </a>
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-amber-400 mt-1">График покаков</h1>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 header-actions">
-                    <button id="poopExportBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-sm">
+        <header class="px-4 pt-4 pb-2">
+            <div class="flex items-center justify-end gap-2 flex-wrap header-actions">
+                <div class="inline-flex items-center gap-1 rounded-xl border border-amber-500/20 bg-black/50 p-1">
+                    <button id="poopExportBtn" type="button" aria-label="Выгрузка" title="Выгрузка"
+                        class="inline-flex items-center justify-center w-9 h-9 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-lg transition text-sm">
                         <span class="text-base">📤</span>
-                        <span class="font-semibold header-action-label">Выгрузка</span>
                     </button>
-                    <button id="poopGameBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-xl transition text-sm">
+                    <div class="w-px h-6 bg-amber-500/20"></div>
+                    <button id="poopGameBtn" type="button" aria-label="Говноид" title="Говноид"
+                        class="inline-flex items-center justify-center w-9 h-9 text-amber-200 hover:text-white hover:bg-amber-500/10 rounded-lg transition text-sm">
                         <span class="text-base">🕹️</span>
-                        <span class="font-semibold header-action-label">Говноид</span>
                     </button>
-                    <span class="text-xs text-gray-400">Анонимность</span>
-                    <button id="anonToggle" type="button" class="relative inline-flex items-center w-14 h-8 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none">
-                        <span class="absolute left-1 anon-thumb w-6 h-6 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
+                </div>
+                <div class="inline-flex items-center gap-2 rounded-xl border border-amber-500/20 bg-black/50 px-2 py-1">
+                    <span class="text-[11px] text-gray-400">Анонимность</span>
+                    <button id="anonToggle" type="button" class="relative inline-flex items-center w-12 h-7 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none">
+                        <span class="absolute left-1 anon-thumb w-5 h-5 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-8 flex-1 w-full">
-            <div class="grid gap-6 lg:grid-cols-[1.1fr_1fr] items-start">
-                <section class="card glow p-5">
+        <main class="px-4 pb-8 pt-3 flex-1 w-full">
+            <div class="grid gap-5 lg:grid-cols-2 items-stretch">
+                <section class="card glow p-5 self-start">
                     <div class="flex items-center justify-between gap-3 flex-wrap">
                         <div>
                             <p class="text-sm text-gray-400">Выбери день, чтобы посмотреть историю</p>
@@ -521,7 +561,7 @@
                     <div id="calendarGrid" class="grid grid-cols-4 sm:grid-cols-7 gap-3 mt-3"></div>
                 </section>
 
-                <section class="card glow p-5" id="dayPanel">
+                <section class="card glow p-5 h-full" id="dayPanel">
                     <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
                         <div>
                             <p class="text-sm text-gray-400">Выбранный день</p>
@@ -596,32 +636,58 @@
                         </div>
                     </div>
                     <div class="block text-sm text-gray-300">
-                        <span class="block mb-2">Продолжительность</span>
+                        <div class="time-field-header mb-2">
+                            <span class="time-field-title">Продолжительность</span>
+                            <div class="time-field-toggle text-[11px] text-gray-400">
+                                <span id="durationModeLabel">Колесо</span>
+                                <button id="durationModeToggle" type="button" class="relative inline-flex items-center w-11 h-6 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none" aria-label="Переключить режим продолжительности">
+                                    <span class="absolute left-1 time-mode-thumb w-4 h-4 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
+                                </button>
+                            </div>
+                        </div>
                         <div class="grid gap-3">
                             <input type="hidden" name="duration" id="durationInput">
                             <input type="hidden" name="durationSeconds" id="durationSecondsInput">
-                            <div id="durationWheel" class="time-wheel" aria-label="Выбор продолжительности">
-                                <div class="time-wheel-col" data-part="minute" aria-label="Минуты">
-                                    <span class="time-wheel-static">Минуты</span>
-                                    <div class="time-wheel-list"></div>
+                            <div id="durationWheelWrap" class="grid gap-3">
+                                <div id="durationWheel" class="time-wheel" aria-label="Выбор продолжительности">
+                                    <div class="time-wheel-col" data-part="minute" aria-label="Минуты">
+                                        <span class="time-wheel-static">Минуты</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
+                                    <div class="time-wheel-col" data-part="second" aria-label="Секунды">
+                                        <span class="time-wheel-static">Секунды</span>
+                                        <div class="time-wheel-list"></div>
+                                    </div>
                                 </div>
-                                <div class="time-wheel-col" data-part="second" aria-label="Секунды">
-                                    <span class="time-wheel-static">Секунды</span>
-                                    <div class="time-wheel-list"></div>
-                                </div>
+                            </div>
+                            <div id="durationInputWrap" class="grid gap-3 hidden">
+                                <input id="durationManualInput" type="number" inputmode="numeric" min="0" max="180" step="1" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="Минуты">
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                     <div class="block text-sm text-gray-300">
-                        <span class="block mb-2">Кол-во кусков бумаги, шт</span>
+                        <div class="time-field-header mb-2">
+                            <span class="time-field-title">Кол-во кусков бумаги, шт</span>
+                            <div class="time-field-toggle text-[11px] text-gray-400">
+                                <span id="paperModeLabel">Колесо</span>
+                                <button id="paperModeToggle" type="button" class="relative inline-flex items-center w-11 h-6 rounded-full border border-amber-500/30 bg-black/60 transition focus:outline-none" aria-label="Переключить режим бумаги">
+                                    <span class="absolute left-1 time-mode-thumb w-4 h-4 rounded-full bg-amber-500/40 border border-amber-500/40 transition-transform"></span>
+                                </button>
+                            </div>
+                        </div>
                         <div class="grid gap-3">
                             <input type="hidden" name="paper" id="paperInput">
-                            <div id="paperWheel" class="time-wheel time-wheel--single" aria-label="Количество бумаги">
-                                <div class="time-wheel-col" data-part="paper" aria-label="Бумага">
-                                    <div class="time-wheel-list time-wheel-list--nolabel"></div>
+                            <div id="paperWheelWrap" class="grid gap-3">
+                                <div id="paperWheel" class="time-wheel time-wheel--single" aria-label="Количество бумаги">
+                                    <div class="time-wheel-col" data-part="paper" aria-label="Бумага">
+                                        <div class="time-wheel-list time-wheel-list--nolabel"></div>
+                                    </div>
                                 </div>
+                            </div>
+                            <div id="paperInputWrap" class="grid gap-3 hidden">
+                                <input id="paperManualInput" type="number" inputmode="numeric" min="0" max="100" step="1" class="w-full px-4 py-3 bg-black/60 border border-amber-500/30 rounded-xl focus:border-amber-500/60 focus:outline-none text-amber-100" placeholder="Кол-во, шт">
                             </div>
                         </div>
                     </div>
@@ -1015,9 +1081,19 @@
             const timeSelect = document.getElementById('timeSelect');
             const timeModeToggle = document.getElementById('timeModeToggle');
             const timeModeLabel = document.getElementById('timeModeLabel');
+            const durationModeToggle = document.getElementById('durationModeToggle');
+            const durationModeLabel = document.getElementById('durationModeLabel');
+            const durationWheelWrap = document.getElementById('durationWheelWrap');
+            const durationInputWrap = document.getElementById('durationInputWrap');
+            const durationManualInput = document.getElementById('durationManualInput');
             const durationInput = document.getElementById('durationInput');
             const durationSecondsInput = document.getElementById('durationSecondsInput');
             const durationWheel = document.getElementById('durationWheel');
+            const paperModeToggle = document.getElementById('paperModeToggle');
+            const paperModeLabel = document.getElementById('paperModeLabel');
+            const paperWheelWrap = document.getElementById('paperWheelWrap');
+            const paperInputWrap = document.getElementById('paperInputWrap');
+            const paperManualInput = document.getElementById('paperManualInput');
             const paperInput = document.getElementById('paperInput');
             const paperWheel = document.getElementById('paperWheel');
             const easeScale = document.getElementById('easeScale');
@@ -1066,6 +1142,8 @@
             const ANON_LS_KEY = 'gpAnonMode';
             const VIEW_MODE_LS_KEY = 'gpViewMode';
             const TIME_MODE_LS_KEY = 'gpTimeMode';
+            const DURATION_MODE_LS_KEY = 'gpDurationMode';
+            const PAPER_MODE_LS_KEY = 'gpPaperMode';
             const firebaseConfig = {
                 apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
                 authDomain: "kinosreda-ce8ef.firebaseapp.com",
@@ -1116,6 +1194,8 @@
             let selectedAuthor = loadSelectedAuthor();
             let anonymityOn = loadAnonMode();
             let timeInputMode = loadTimeInputMode();
+            let durationInputMode = loadDurationInputMode();
+            let paperInputMode = loadPaperInputMode();
             const CHAT_REACTIONS = ['👍','😂','😍','😮','😢','🔥','🤮','🤓','👊','😎','😨','👀','🙏','🤝','🫡','🍺'];
             const TIME_WHEEL_ITEM_HEIGHT = 48;
             const DURATION_MAX_MINUTES = 180;
@@ -1736,6 +1816,62 @@
                 setTime(next);
                 saveTimeInputMode(timeInputMode);
             }
+            function sanitizeIntegerInput(el){
+                if (!el) return null;
+                const raw = String(el.value || '').replace(/[^\d]/g, '');
+                if (raw !== el.value) el.value = raw;
+                if (!raw) return null;
+                return parseInt(raw, 10);
+            }
+            function setDurationInputMode(mode){
+                durationInputMode = mode === 'input' ? 'input' : 'wheel';
+                if (durationModeToggle) {
+                    durationModeToggle.classList.toggle('toggle-on', durationInputMode === 'input');
+                }
+                if (durationModeLabel) {
+                    durationModeLabel.textContent = durationInputMode === 'input' ? 'Ввод' : 'Колесо';
+                }
+                if (durationWheelWrap) {
+                    durationWheelWrap.classList.toggle('hidden', durationInputMode === 'input');
+                }
+                if (durationInputWrap) {
+                    durationInputWrap.classList.toggle('hidden', durationInputMode !== 'input');
+                }
+                const totalSeconds = Number(durationSecondsInput?.value || durationValue || 0);
+                const minutes = Math.max(0, Math.min(DURATION_MAX_MINUTES, Math.floor(totalSeconds / 60)));
+                if (durationManualInput) durationManualInput.value = String(minutes);
+                if (durationInputMode === 'wheel') {
+                    setDurationSeconds(totalSeconds);
+                } else {
+                    if (durationSecondsInput) durationSecondsInput.value = String(minutes * 60);
+                    if (durationInput) durationInput.value = String(minutes);
+                }
+                saveDurationInputMode(durationInputMode);
+            }
+            function setPaperInputMode(mode){
+                paperInputMode = mode === 'input' ? 'input' : 'wheel';
+                if (paperModeToggle) {
+                    paperModeToggle.classList.toggle('toggle-on', paperInputMode === 'input');
+                }
+                if (paperModeLabel) {
+                    paperModeLabel.textContent = paperInputMode === 'input' ? 'Ввод' : 'Колесо';
+                }
+                if (paperWheelWrap) {
+                    paperWheelWrap.classList.toggle('hidden', paperInputMode === 'input');
+                }
+                if (paperInputWrap) {
+                    paperInputWrap.classList.toggle('hidden', paperInputMode !== 'input');
+                }
+                const current = Number(paperInput?.value || paperValue || 1);
+                const safe = Number.isFinite(current) ? Math.max(0, Math.min(PAPER_MAX_COUNT, Math.round(current))) : 1;
+                if (paperManualInput) paperManualInput.value = String(safe);
+                if (paperInputMode === 'wheel') {
+                    setPaperValue(safe);
+                } else {
+                    if (paperInput) paperInput.value = String(safe);
+                }
+                savePaperInputMode(paperInputMode);
+            }
             function syncDurationFromWheel(){
                 if (!durationWheel) return;
                 const minuteCol = durationWheel.querySelector('[data-part="minute"]');
@@ -1779,6 +1915,9 @@
                 durationValue = safeSeconds;
                 if (durationSecondsInput) durationSecondsInput.value = String(safeSeconds);
                 if (durationInput) durationInput.value = String(m);
+                if (durationManualInput && durationInputMode === 'input') {
+                    durationManualInput.value = String(m);
+                }
             }
             function getDurationSeconds(entry){
                 const rawSeconds = Number(entry?.durationSeconds);
@@ -1859,6 +1998,9 @@
                 }
                 paperValue = safe;
                 if (paperInput) paperInput.value = String(safe);
+                if (paperManualInput && paperInputMode === 'input') {
+                    paperManualInput.value = String(safe);
+                }
             }
             function setSizeValue(val){
                 const num = Number(val);
@@ -2059,6 +2201,20 @@
             }
             function saveTimeInputMode(mode){
                 try { localStorage.setItem(TIME_MODE_LS_KEY, mode); } catch(_) {}
+            }
+            function loadDurationInputMode(){
+                try { return localStorage.getItem(DURATION_MODE_LS_KEY) === 'input' ? 'input' : 'wheel'; }
+                catch(_) { return 'wheel'; }
+            }
+            function saveDurationInputMode(mode){
+                try { localStorage.setItem(DURATION_MODE_LS_KEY, mode); } catch(_) {}
+            }
+            function loadPaperInputMode(){
+                try { return localStorage.getItem(PAPER_MODE_LS_KEY) === 'input' ? 'input' : 'wheel'; }
+                catch(_) { return 'wheel'; }
+            }
+            function savePaperInputMode(mode){
+                try { localStorage.setItem(PAPER_MODE_LS_KEY, mode); } catch(_) {}
             }
             function setAnonUI(){
                 if (!anonToggle) return;
@@ -3282,9 +3438,78 @@
                     setTimeInputMode(next);
                 });
             }
+            if (durationModeToggle) {
+                durationModeToggle.addEventListener('click', () => {
+                    const next = durationInputMode === 'input' ? 'wheel' : 'input';
+                    setDurationInputMode(next);
+                });
+            }
+            if (paperModeToggle) {
+                paperModeToggle.addEventListener('click', () => {
+                    const next = paperInputMode === 'input' ? 'wheel' : 'input';
+                    setPaperInputMode(next);
+                });
+            }
             if (timeSelect) {
                 timeSelect.addEventListener('change', () => {
                     if (timeSelect.value) setTime(timeSelect.value);
+                });
+            }
+            if (durationManualInput) {
+                durationManualInput.addEventListener('input', () => {
+                    const raw = sanitizeIntegerInput(durationManualInput);
+                    if (raw === null) {
+                        if (durationSecondsInput) durationSecondsInput.value = '';
+                        if (durationInput) durationInput.value = '';
+                        durationValue = 0;
+                        return;
+                    }
+                    const safe = Math.max(0, Math.min(DURATION_MAX_MINUTES, Math.floor(raw)));
+                    durationManualInput.value = String(safe);
+                    if (durationSecondsInput) durationSecondsInput.value = String(safe * 60);
+                    if (durationInput) durationInput.value = String(safe);
+                    durationValue = safe * 60;
+                });
+                durationManualInput.addEventListener('blur', () => {
+                    const raw = sanitizeIntegerInput(durationManualInput);
+                    if (raw === null) {
+                        durationManualInput.value = '0';
+                        if (durationSecondsInput) durationSecondsInput.value = '0';
+                        if (durationInput) durationInput.value = '0';
+                        durationValue = 0;
+                        return;
+                    }
+                    const safe = Math.max(0, Math.min(DURATION_MAX_MINUTES, Math.floor(raw)));
+                    durationManualInput.value = String(safe);
+                    if (durationSecondsInput) durationSecondsInput.value = String(safe * 60);
+                    if (durationInput) durationInput.value = String(safe);
+                    durationValue = safe * 60;
+                });
+            }
+            if (paperManualInput) {
+                paperManualInput.addEventListener('input', () => {
+                    const raw = sanitizeIntegerInput(paperManualInput);
+                    if (raw === null) {
+                        if (paperInput) paperInput.value = '';
+                        return;
+                    }
+                    const safe = Math.max(0, Math.min(PAPER_MAX_COUNT, Math.round(raw)));
+                    paperManualInput.value = String(safe);
+                    if (paperInput) paperInput.value = String(safe);
+                    paperValue = safe;
+                });
+                paperManualInput.addEventListener('blur', () => {
+                    const raw = sanitizeIntegerInput(paperManualInput);
+                    if (raw === null) {
+                        paperManualInput.value = '1';
+                        if (paperInput) paperInput.value = '1';
+                        paperValue = 1;
+                        return;
+                    }
+                    const safe = Math.max(0, Math.min(PAPER_MAX_COUNT, Math.round(raw)));
+                    paperManualInput.value = String(safe);
+                    if (paperInput) paperInput.value = String(safe);
+                    paperValue = safe;
                 });
             }
             if (exportBtn) exportBtn.addEventListener('click', openExportModal);
@@ -3380,6 +3605,16 @@
                 renderCalendar();
             });
             addPoopBtn.addEventListener('click', () => openModal());
+            const handleAddPoopDeepLink = () => {
+                if (location.hash === '#add-poop' || new URLSearchParams(location.search).get('addPoop') === '1') {
+                    requestAnimationFrame(() => openModal());
+                    setTimeout(() => openModal(), 0);
+                    history.replaceState(null, '', location.pathname + location.search);
+                }
+            };
+            handleAddPoopDeepLink();
+            window.addEventListener('hashchange', handleAddPoopDeepLink);
+            window.addEventListener('pageshow', handleAddPoopDeepLink);
             document.getElementById('closeModalBtn').addEventListener('click', closeModal);
             document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
             if (drawingToggle && drawingPanel) {
@@ -3596,6 +3831,8 @@
             const normalizedInitTime = timeInputMode === 'list' ? snapTimeToQuarter(initTime) : initTime;
             setTime(normalizedInitTime);
             setTimeInputMode(timeInputMode);
+            setDurationInputMode(durationInputMode);
+            setPaperInputMode(paperInputMode);
             setDurationSeconds(0);
             setPaperValue(1);
             requestAnimationFrame(() => setTime(normalizedInitTime));

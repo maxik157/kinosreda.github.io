@@ -224,6 +224,31 @@
         }
         .time-dropdown::-webkit-scrollbar { width: 8px; }
         .time-dropdown::-webkit-scrollbar-thumb { background: var(--accent-400); border-radius: 999px; }
+        .beer-picker-dropdown {
+            max-height: 320px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+        .beer-picker-dropdown::-webkit-scrollbar { width: 8px; }
+        .beer-picker-dropdown::-webkit-scrollbar-thumb { background: var(--accent-400); border-radius: 999px; }
+        .beer-picker-thumb img,
+        .beer-preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .beer-option-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .attendee-beer-dropdown {
+            left: 100%;
+            top: 0;
+            margin-left: 8px;
+        }
 
         /* White theme: override amber gradient elements (Tailwind gradients don't follow CSS vars) */
         html[data-theme="white"] .wednesday.bg-gradient-to-br {
@@ -746,6 +771,17 @@
             object-fit: contain;
             display: block;
         }
+        .beer-table-head {
+            overflow-x: auto;
+            overflow-y: hidden;
+            position: relative;
+            z-index: 90;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .beer-table-head::-webkit-scrollbar {
+            height: 0;
+        }
         .beer-table-scroll {
             overflow-x: auto;
             overflow-y: visible;
@@ -764,75 +800,75 @@
             -webkit-backdrop-filter: blur(12px);
             z-index: 60;
         }
-        #beerTable {
+        .beer-table {
             table-layout: fixed;
             width: 100%;
             font-size: 0.82rem;
         }
-        #beerTable th,
-        #beerTable td {
+        .beer-table th,
+        .beer-table td {
             padding: 0.45rem 0.5rem;
             white-space: nowrap;
         }
-        #beerTable td {
+        .beer-table td {
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        #beerTable th:first-child,
-        #beerTable td:first-child {
+        .beer-table th:first-child,
+        .beer-table td:first-child {
             width: 170px;
             max-width: 170px;
             padding-left: 8px;
             overflow: visible;
         }
-        #beerTable th:nth-child(2),
-        #beerTable td:nth-child(2) {
+        .beer-table th:nth-child(2),
+        .beer-table td:nth-child(2) {
             width: 90px;
             max-width: 90px;
         }
-        #beerTable th:nth-child(3),
-        #beerTable td:nth-child(3) {
+        .beer-table th:nth-child(3),
+        .beer-table td:nth-child(3) {
             width: 90px;
             max-width: 90px;
         }
-        #beerTable th:nth-child(4),
-        #beerTable td:nth-child(4) {
+        .beer-table th:nth-child(4),
+        .beer-table td:nth-child(4) {
             width: 110px;
             max-width: 110px;
         }
-        #beerTable th:nth-child(5),
-        #beerTable td:nth-child(5),
-        #beerTable th:nth-child(6),
-        #beerTable td:nth-child(6) {
+        .beer-table th:nth-child(5),
+        .beer-table td:nth-child(5),
+        .beer-table th:nth-child(6),
+        .beer-table td:nth-child(6) {
             width: 80px;
             max-width: 80px;
         }
-        #beerTable th:nth-child(7),
-        #beerTable td:nth-child(7) {
+        .beer-table th:nth-child(7),
+        .beer-table td:nth-child(7) {
             width: 120px;
             max-width: 120px;
         }
-        #beerTable th:nth-child(8),
-        #beerTable td:nth-child(8),
-        #beerTable th:nth-child(9),
-        #beerTable td:nth-child(9) {
+        .beer-table th:nth-child(8),
+        .beer-table td:nth-child(8),
+        .beer-table th:nth-child(9),
+        .beer-table td:nth-child(9) {
             width: 90px;
             max-width: 90px;
         }
-        #beerTable th:nth-child(6),
-        #beerTable td:nth-child(6) {
+        .beer-table th:nth-child(6),
+        .beer-table td:nth-child(6) {
             width: 90px;
             max-width: 90px;
         }
-        #beerTable th:nth-child(7),
-        #beerTable td:nth-child(7),
-        #beerTable th:nth-child(8),
-        #beerTable td:nth-child(8) {
+        .beer-table th:nth-child(7),
+        .beer-table td:nth-child(7),
+        .beer-table th:nth-child(8),
+        .beer-table td:nth-child(8) {
             padding-left: 0.35rem;
             padding-right: 0.35rem;
         }
-        #beerTable th:last-child,
-        #beerTable td:last-child {
+        .beer-table th:last-child,
+        .beer-table td:last-child {
             width: 90px;
             max-width: 90px;
         }
@@ -870,13 +906,13 @@
             align-items: flex-start;
             gap: 4px;
         }
-        #beerTable th:last-child,
-        #beerTable td:last-child {
+        .beer-table th:last-child,
+        .beer-table td:last-child {
             width: 90px;
             max-width: 90px;
         }
-        #beerTable th:first-child,
-        #beerTable td:first-child {
+        .beer-table th:first-child,
+        .beer-table td:first-child {
             width: 190px;
             max-width: 190px;
         }
@@ -1150,8 +1186,9 @@
             min-width: 0;
             text-align: left;
             white-space: nowrap;
-            line-height: 1.1;
+            line-height: 1;
         }
+        .nav-pill > span { display: inline-flex; align-items: center; line-height: 1; }
         .nav-pill:hover {
             background: rgba(245, 158, 11, 0.12);
             border-color: var(--accent-border-30);
@@ -1236,6 +1273,981 @@
         .logo-block {
             flex-shrink: 0;
         }
+
+        :root {
+            --sidebar-width: 248px;
+            --sidebar-collapsed-width: 64px;
+            --sidebar-bg: rgba(8, 10, 14, 0.98);
+            --layout-top-pad: 0px;
+            --layout-bottom-pad: 0px;
+        }
+
+        .layout-shell {
+            display: block;
+            transition: grid-template-columns 0.28s ease;
+            box-sizing: border-box;
+        }
+
+        .sidebar {
+            display: none;
+        }
+
+        .header-main { display: none; }
+
+        .layout-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(17, 24, 39, 0.65);
+            color: var(--accent-200);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+        .layout-toggle-btn:hover {
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--accent-200);
+        }
+        .layout-toggle { display: none !important; }
+
+        @media (max-width: 1023px) {
+            .layout-toggle-btn { display: none; }
+        }
+
+        @media (min-width: 1024px) {
+            body.layout-sidebar header {
+                display: none;
+            }
+            body.layout-sidebar .layout-shell {
+                display: grid;
+                grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+                gap: 0;
+                padding: 0;
+                align-items: stretch;
+                height: 100%;
+                min-height: 0;
+            }
+            body.layout-sidebar.sidebar-collapsed .layout-shell {
+                grid-template-columns: 0 minmax(0, 1fr);
+            }
+            body.layout-sidebar .sidebar {
+                display: block;
+                position: sticky;
+                top: 0;
+                height: 100%;
+                z-index: 20;
+            }
+            body.layout-sidebar .content-shell {
+                max-width: none !important;
+                min-width: 0;
+                padding: 12px 26px 24px;
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+                box-sizing: border-box;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+            }
+            body.layout-sidebar .page {
+                display: none !important;
+                max-width: none !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                margin-top: 0 !important;
+                height: 100%;
+            }
+            body.layout-sidebar .page.is-active {
+                display: block !important;
+                min-height: 0;
+                flex: 1 1 auto;
+            }
+            body.layout-sidebar .page .max-w-7xl {
+                max-width: none !important;
+            }
+            body.layout-sidebar .page-backlog,
+            body.layout-sidebar .page-beer {
+                margin-top: 0 !important;
+            }
+        }
+
+        .sidebar {
+            position: relative;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--accent-border-20);
+            border-radius: 0;
+            box-shadow: none;
+            transition: width 0.28s ease;
+            width: var(--sidebar-width);
+        }
+        .sidebar-inner {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 18px 14px 16px 16px;
+            overflow: hidden;
+        }
+        .sidebar-logo-wrap {
+            padding: 6px 4px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 4px;
+        }
+        .sidebar-logo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent-400);
+            text-decoration: none;
+        }
+        .sidebar-logo-icon {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-logo-icon svg {
+            width: 34px;
+            height: 34px;
+            display: block;
+        }
+        .sidebar-logo-text {
+            font-size: 20px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent-400);
+            text-shadow: 0 0 12px var(--glow-text-2);
+        }
+        .sidebar-mug-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            transition: transform 0.2s ease;
+            margin-left: 2px;
+        }
+        .sidebar-mug-link:hover {
+            transform: translateY(-1px);
+        }
+
+        .sidebar-collapse-btn {
+            position: absolute;
+            top: 44px;
+            right: -14px;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(15, 23, 42, 0.95);
+            color: var(--accent-200);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+            z-index: 5;
+        }
+        .sidebar-collapse-btn:hover {
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.15);
+            transform: translateX(1px);
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(226, 232, 240, 0.92);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .sidebar-link:hover {
+            border-color: var(--accent-border-30);
+            background: rgba(255,255,255,0.04);
+            color: var(--accent-200);
+        }
+        .sidebar-link.active {
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fff7ed;
+            box-shadow: inset 3px 0 0 var(--accent-400);
+        }
+        .sidebar-link--danger {
+            color: rgba(248, 113, 113, 0.92);
+        }
+        .sidebar-link--danger:hover {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+            color: rgba(252, 165, 165, 1);
+        }
+        .sidebar-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .sidebar-section {
+            margin-top: 6px;
+            padding-top: 10px;
+            border-top: 1px solid var(--accent-border-10);
+        }
+        .sidebar-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(148, 163, 184, 0.7);
+            margin-bottom: 8px;
+            padding-left: 2px;
+        }
+        .sidebar-spacer {
+            flex: 1 1 auto;
+        }
+        .sidebar-bottom {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--accent-border-10);
+        }
+        .sidebar-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-profile-row #snowSlotSidebar {
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-profile-row .sidebar-nav {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .sidebar-profile-row .sidebar-link--compact {
+            padding: 9px 12px;
+            border-radius: 8px;
+            gap: 10px;
+            max-width: none;
+            width: 100%;
+        }
+        .sidebar-profile-row .sidebar-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .sidebar-profile-row .snow-toggle {
+            margin-left: 0 !important;
+            flex: 0 0 auto;
+            transform: scale(0.92);
+            transform-origin: right center;
+        }
+        .sidebar-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sidebar-controls .layout-toggle-btn {
+            width: 100%;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        .sidebar-controls .snow-toggle {
+            justify-content: center;
+        }
+        .sidebar-controls .snow-toggle,
+        .sidebar-controls .layout-toggle {
+            margin-left: 0 !important;
+        }
+
+        body.sidebar-collapsed .sidebar-inner {
+            padding: 16px 8px;
+        }
+        body.sidebar-collapsed .sidebar {
+            width: 0;
+            border-right: none;
+        }
+        body.sidebar-collapsed .sidebar-inner {
+            display: none;
+        }
+        body.sidebar-collapsed .sidebar-logo-text,
+        body.sidebar-collapsed .sidebar-label,
+        body.sidebar-collapsed .sidebar-section-title {
+            display: none;
+        }
+        body.sidebar-collapsed .sidebar-logo-link {
+            justify-content: center;
+        }
+        body.sidebar-collapsed .sidebar-logo-wrap {
+            justify-content: center;
+        }
+        body.sidebar-collapsed .sidebar-mug-link {
+            display: none;
+        }
+        body.sidebar-collapsed .sidebar-link {
+            justify-content: center;
+        }
+        body.sidebar-collapsed .sidebar-link .sidebar-icon {
+            width: 32px;
+            height: 32px;
+        }
+        body.sidebar-collapsed .sidebar-controls .layout-toggle-btn .layout-label {
+            display: none;
+        }
+        body.sidebar-collapsed .sidebar-collapse-btn {
+            right: auto;
+            left: 0;
+        }
+
+        body.layout-sidebar .content-shell {
+            max-width: none !important;
+            width: 100%;
+            margin: 0;
+        }
+        body.layout-sidebar #calendarSection,
+        body.layout-sidebar #backlogSection,
+        body.layout-sidebar #beerSection {
+            max-width: none !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+        body.layout-sidebar #backlogSection,
+        body.layout-sidebar #beerSection {
+            margin-top: 0 !important;
+        }
+        body.layout-sidebar #backlogSection .backlog-wrapper,
+        body.layout-sidebar #beerSection .beer-wrapper {
+            padding: 0.85rem !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+        }
+        body.layout-sidebar #backlogSection h2,
+        body.layout-sidebar #beerSection h2 {
+            display: none;
+        }
+        body.layout-sidebar .page-backlog {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        body.layout-sidebar .page-backlog > .backlog-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        body.layout-sidebar .page-backlog .backlog-board {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        body.layout-sidebar .page-backlog .column-cards {
+            min-height: 0;
+        }
+        body.layout-sidebar .backlog-column {
+            height: 100%;
+            max-height: 100%;
+        }
+        body.layout-sidebar #beerSticky {
+            top: 0;
+            border: 1px solid var(--accent-border-10);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+            border-radius: 12px;
+            background: rgba(8, 10, 14, 0.96);
+            margin: 0 0 0.6rem;
+            padding: 0.35rem 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+        body.layout-sidebar #beerSticky::after {
+            display: none;
+        }
+        body.layout-sidebar .page-service {
+            width: 100%;
+            max-width: none !important;
+            margin: 0 !important;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        body.layout-sidebar .service-frame {
+            flex: 1 1 auto;
+            min-height: 0;
+            width: 100%;
+            height: 100%;
+        }
+        body.layout-sidebar .service-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+            background: transparent;
+        }
+        body.layout-sidebar.page-backlog-active .content-shell {
+            height: calc(100vh - var(--header-offset, 0px));
+            overflow: hidden;
+        }
+
+        .mobile-sidebar-bar,
+        .mobile-sidebar {
+            display: none;
+        }
+        .mobile-sidebar-bar {
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr) 48px;
+            align-items: center;
+            gap: 12px;
+            padding: 0.4rem 1rem;
+            justify-items: center;
+        }
+        .mobile-burger {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(15, 23, 42, 0.85);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 4px;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+            position: relative;
+        }
+        .mobile-burger:hover {
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.12);
+        }
+        .mobile-burger:active {
+            transform: scale(0.97);
+        }
+        .mobile-burger .burger-line {
+            display: block;
+            width: 20px;
+            height: 2.5px;
+            border-radius: 999px;
+            background: rgba(245, 158, 11, 0.95);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform-origin: center;
+        }
+        .mobile-burger .burger-line:nth-child(1) { transform: translate(-50%, -8px); }
+        .mobile-burger .burger-line:nth-child(2) { transform: translate(-50%, -50%); }
+        .mobile-burger .burger-line:nth-child(3) { transform: translate(-50%, 6px); }
+        .mobile-burger.is-open .burger-line:nth-child(1) {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        .mobile-burger.is-open .burger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .mobile-burger.is-open .burger-line:nth-child(3) {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        .mobile-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            justify-self: center;
+            justify-content: center;
+        }
+        .mobile-brand-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            min-width: 0;
+        }
+        .mobile-brand-icon {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 10px rgba(245,158,11,0.45));
+            transform: translateY(2px);
+        }
+        .mobile-brand-icon svg {
+            width: 40px;
+            height: 40px;
+            display: block;
+        }
+        .mobile-brand-text {
+            font-size: clamp(20px, 6.5vw, 26px);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent-400);
+            text-shadow: 0 0 10px var(--glow-text-2);
+            font-family: var(--logo-font, 'Rubik Wet Paint');
+            white-space: nowrap;
+        }
+        .mobile-mug-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        .mobile-mug-link:hover .mobile-brand-icon {
+            filter: drop-shadow(0 0 14px rgba(245,158,11,0.7));
+        }
+        .mobile-bar-spacer {
+            width: 40px;
+            height: 40px;
+        }
+
+        .mobile-sidebar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: var(--header-offset, 0px);
+            z-index: 60;
+            pointer-events: none;
+        }
+        .mobile-sidebar-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.6);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+        .mobile-sidebar-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: min(320px, 86vw);
+            max-width: 86vw;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--accent-border-20);
+            border-radius: 0 18px 18px 0;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+            transform: translateX(-105%);
+            transition: transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .mobile-sidebar.is-open {
+            pointer-events: auto;
+        }
+        .mobile-sidebar.is-open .mobile-sidebar-backdrop {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .mobile-sidebar.is-open .mobile-sidebar-panel {
+            transform: translateX(0);
+        }
+        body.mobile-menu-open {
+            overflow: hidden;
+        }
+        .mobile-sidebar-scroll {
+            padding: 16px 12px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1 1 auto;
+        }
+        .mobile-sidebar-bottom {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .mobile-sidebar-bottom .mobile-sidebar-section {
+            gap: 6px;
+        }
+        .mobile-profile-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mobile-profile-row .mobile-nav-list {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        #snowSlotMobile .snow-toggle {
+            transform: scale(0.9);
+            transform-origin: right center;
+        }
+        .mobile-sidebar-bottom .mobile-nav-list {
+            gap: 4px;
+        }
+        .mobile-sidebar-bottom .mobile-nav-list + .mobile-nav-list {
+            margin-top: 4px;
+        }
+        .mobile-sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .mobile-sidebar-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: rgba(148, 163, 184, 0.7);
+            padding-left: 4px;
+        }
+        .mobile-nav-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .mobile-nav-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(226, 232, 240, 0.92);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .mobile-nav-link:hover {
+            border-color: var(--accent-border-30);
+            background: rgba(255,255,255,0.04);
+            color: var(--accent-200);
+        }
+        .mobile-nav-link.active {
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.12);
+            color: #fff7ed;
+            box-shadow: inset 3px 0 0 var(--accent-400);
+        }
+        .mobile-nav-link--danger {
+            color: rgba(248, 113, 113, 0.92);
+        }
+        .mobile-nav-link--danger:hover {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+            color: rgba(252, 165, 165, 1);
+        }
+        .mobile-nav-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+        .mobile-nav-label {
+            min-width: 0;
+        }
+        .mobile-nav-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .mobile-nav-controls .layout-toggle-btn {
+            display: inline-flex;
+            width: 100%;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        .mobile-nav-controls .snow-toggle {
+            justify-content: center;
+        }
+
+        @media (max-width: 1023px) {
+            body.layout-sidebar header.header-shell {
+                padding-top: 0.35rem;
+                padding-bottom: 0.35rem;
+                z-index: 70;
+            }
+            body.layout-sidebar .mobile-sidebar-bar {
+                display: flex;
+            }
+            body.layout-sidebar .header-main {
+                display: none;
+            }
+            body.layout-sidebar .mobile-sidebar {
+                display: block;
+            }
+            body.layout-sidebar .content-shell {
+                padding: 12px 16px 20px;
+                min-height: calc(100vh - var(--header-offset, 0px));
+                box-sizing: border-box;
+            }
+            body.layout-sidebar.page-service-active .content-shell {
+                padding: 0;
+            }
+            body.layout-sidebar #beerSticky,
+            body.layout-classic #beerSticky {
+                position: static;
+                top: auto;
+                border: none;
+                box-shadow: none;
+                background: transparent;
+                padding: 0;
+            }
+            .beer-table-head {
+                position: sticky;
+                top: var(--header-offset, 0px);
+                z-index: 110;
+                background: rgba(8, 10, 14, 0.96);
+                border: 1px solid var(--accent-border-10);
+                border-radius: 10px;
+                box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+            }
+            .beer-table th,
+            .beer-table td {
+                padding-left: 0.6rem;
+                padding-right: 0.6rem;
+            }
+            .beer-table th:nth-child(9),
+            .beer-table td:nth-child(9) {
+                width: 120px;
+                max-width: 120px;
+            }
+            .beer-table th:last-child,
+            .beer-table td:last-child {
+                width: 130px;
+                max-width: 130px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            body.layout-sidebar #beerSticky,
+            body.layout-classic #beerSticky {
+                border: none;
+                box-shadow: none;
+                background: transparent;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+                border-radius: 0;
+                padding: 0;
+                margin: 0 0 0.6rem;
+            }
+        }
+
+        body.layout-sidebar.page-service-active .content-shell {
+            padding: 0;
+            overflow: hidden;
+            height: calc(100vh - var(--header-offset, 0px));
+        }
+
+        @media (min-width: 1024px) {
+            body.layout-sidebar #calendarSection {
+                gap: 18px;
+                display: grid !important;
+                grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+                align-items: stretch !important;
+            }
+            body.layout-sidebar .calendar-left,
+            body.layout-sidebar .calendar-right {
+                max-width: none !important;
+                width: auto !important;
+            }
+            body.layout-sidebar .page-calendar {
+                height: auto;
+            }
+            body.layout-sidebar #calendarSection .bg-black\\/60 {
+                padding: 1rem !important;
+            }
+            body.layout-sidebar #calendarSection .rounded-2xl {
+                border-radius: 14px;
+            }
+            body.layout-sidebar #backlogSection .backlog-wrapper {
+                padding: 0.85rem !important;
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+                min-height: 0;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .page-backlog .backlog-board {
+                min-height: 0;
+                height: var(--backlog-board-height, 100%);
+                width: 100%;
+                gap: 1.25rem;
+                padding-bottom: 0;
+                align-items: stretch;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .backlog-column {
+                min-width: 320px;
+                max-width: 320px;
+                height: 100%;
+                max-height: 100%;
+                min-height: 0;
+                background: transparent;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .page-backlog {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            body.layout-sidebar .page-backlog > .backlog-wrapper {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                min-height: 0;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .page-backlog .backlog-board {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+            body.layout-sidebar .page-backlog .column-cards {
+                overflow-y: auto;
+                min-height: 0;
+            }
+            body.layout-sidebar.page-backlog-active .content-shell {
+                overflow: hidden;
+            }
+            body.layout-sidebar.page-beer-active .content-shell {
+                overflow: hidden;
+            }
+            body.layout-sidebar.page-service-active .content-shell {
+                overflow: hidden;
+            }
+            body.page-service-active .content-shell {
+                overflow: hidden;
+            }
+            body.layout-sidebar.page-backlog-active .page-backlog,
+            body.layout-sidebar.page-backlog-active .page-backlog > .backlog-wrapper {
+                height: 100%;
+            }
+            body.layout-sidebar.page-backlog-active .page-backlog {
+                overflow: hidden;
+            }
+            body.layout-sidebar.page-backlog-active .page-backlog .backlog-board {
+                height: var(--backlog-board-height, 100%);
+                overflow-y: hidden;
+            }
+            body.layout-sidebar #beerSection .beer-wrapper {
+                padding: 0.85rem !important;
+            }
+            body.layout-sidebar #backlogSection h2,
+            body.layout-sidebar #beerSection h2 {
+                display: none;
+            }
+            body.layout-sidebar #beerSticky {
+                top: 0;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+                background: transparent;
+                margin: 0 0 0.6rem;
+                padding: 0;
+                backdrop-filter: none;
+                -webkit-backdrop-filter: none;
+            }
+            body.layout-sidebar #beerSticky::after {
+                display: none;
+            }
+            body.layout-sidebar .page-beer {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            body.layout-sidebar #beerSection .beer-wrapper {
+                height: 100%;
+                display: grid;
+                grid-template-rows: auto auto 1fr;
+                row-gap: 6px;
+                min-height: 0;
+            }
+            body.layout-sidebar #beerSection .beer-controls-row {
+                margin-bottom: 0.45rem;
+            }
+            body.layout-sidebar #beerSection .beer-table-head {
+                margin: 0;
+            }
+            body.layout-sidebar #beerFiltersPanel {
+                margin-bottom: 0.5rem;
+            }
+            body.layout-sidebar .beer-table-scroll {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                margin-top: 0;
+                padding-top: 0;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .beer-table-head thead th,
+            body.layout-sidebar .beer-table-head thead tr {
+                background: transparent;
+            }
+            body.layout-sidebar .page-service {
+                height: 100%;
+            }
+            body.layout-sidebar .page-service .service-frame {
+                margin: 0;
+            }
+            body.layout-sidebar .sidebar-collapse-btn {
+                pointer-events: auto;
+            }
+        }
+
+        body.layout-classic #backlogSection .backlog-wrapper,
+        body.layout-classic #beerSection .beer-wrapper {
+            border: 1px solid var(--accent-border-20);
+        }
+
+        body.page-service-active {
+            overflow: hidden;
+        }
+        html.page-service-active {
+            overflow: hidden;
+        }
+
+        @media (min-width: 1024px) {
+            body.layout-sidebar {
+                overflow: hidden;
+                height: 100vh;
+                padding-top: var(--layout-top-pad);
+                padding-bottom: var(--layout-bottom-pad);
+                box-sizing: border-box;
+            }
+            body.layout-sidebar .layout-shell {
+                height: 100%;
+            }
+        }
+
+        .services-dropdown { display: block; }
+        .services-flat { display: none; }
 
         /* Snow mode */
         .snow {
@@ -1516,7 +2528,7 @@
         }
     </style>
 </head>
-<body class="bg-dark min-h-screen text-white">
+<body class="bg-dark min-h-screen text-white layout-sidebar">
     <div class="particles" id="particles"></div>
     <div class="snow hidden" id="snow"></div>
     <div id="condemnOverlay" class="condemn-overlay" aria-hidden="true">
@@ -1525,7 +2537,56 @@
 
     <!-- Header with Logo and Navigation -->
     <header class="py-3 md:py-4 relative z-50 sticky top-0 header-shell backdrop-blur-sm">
-        <div class="container mx-auto px-3 md:px-4 max-w-7xl">
+        <div class="mobile-sidebar-bar">
+            <button id="mobileSidebarToggle" type="button" class="mobile-burger" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobileSidebar">
+                <span class="burger-line"></span>
+                <span class="burger-line"></span>
+                <span class="burger-line"></span>
+            </button>
+            <div class="mobile-brand" aria-label="Киносреда">
+                <a href="index.html" class="mobile-brand-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
+                    <span class="mobile-brand-text text-glow">Киносреда</span>
+                </a>
+                <a href="roulette.html" class="mobile-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
+                    <span class="mobile-brand-icon pulse-glow" aria-hidden="true">
+                    <svg viewBox="0 0 80 80">
+                        <defs>
+                            <linearGradient id="mobileBeerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#fcd34d"/>
+                                <stop offset="50%" style="stop-color:#fbbf24"/>
+                                <stop offset="100%" style="stop-color:#d97706"/>
+                            </linearGradient>
+                            <linearGradient id="mobileFoamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ffffff"/>
+                                <stop offset="100%" style="stop-color:#fef3c7"/>
+                            </linearGradient>
+                            <clipPath id="mobileMugClip">
+                                <rect x="18" y="18" width="30" height="38" rx="4"/>
+                            </clipPath>
+                        </defs>
+                        <rect x="16" y="16" width="34" height="44" rx="6" fill="none" stroke="#b45309" stroke-width="3"/>
+                        <g clip-path="url(#mobileMugClip)" transform="translate(0, 6)">
+                            <rect x="18" y="52" width="30" height="0" fill="url(#mobileBeerGrad)">
+                                <animate attributeName="height" from="0" to="34" dur="2.2s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                <animate attributeName="y" from="52" to="18" dur="2.2s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                            </rect>
+                        </g>
+                        <rect x="20" y="22" width="6" height="36" rx="3" fill="rgba(255,255,255,0.35)" opacity="0.6"/>
+                        <g opacity="0">
+                            <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.6s" fill="freeze"/>
+                            <ellipse cx="33" cy="20" rx="18" ry="7" fill="url(#mobileFoamGrad)"/>
+                            <circle cx="24" cy="18" r="4" fill="white" opacity="0.92"/>
+                            <circle cx="34" cy="16" r="3.5" fill="white" opacity="0.9"/>
+                            <circle cx="42" cy="19" r="3.5" fill="white" opacity="0.9"/>
+                        </g>
+                        <path d="M50 26 Q64 26 64 38 Q64 52 50 52" fill="none" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                    </span>
+                </a>
+            </div>
+            <span class="mobile-bar-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="container mx-auto px-3 md:px-4 max-w-7xl header-main">
             <div class="flex flex-col md:flex-row md:items-center items-start gap-3">
                 <!-- Logo -->
                 <div class="flex items-center gap-3 pl-2 logo-block">
@@ -1554,8 +2615,8 @@
                 
                 <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glow)">КИНОСРЕДА</text>
                 
-                <a href="roulette.html" target="_self" aria-label="Пивная рулетка">
-                <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); location.assign('roulette.html');">
+                <a href="roulette.html" target="_self" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
+                <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;">
                     <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
                     <g clip-path="url(#mugClip)" transform="translate(0, 30)">
                         <rect x="0" y="55" height="0" width="50" fill="url(#beerGrad)">
@@ -1582,13 +2643,17 @@
                 </a>
             </svg>
                 
-                <!-- Snow toggle -->
-                <div class="snow-toggle ml-1">
-                    <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
-                        <input type="checkbox" id="snowToggle" aria-label="Снежинки">
-                        <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+                <div id="snowSlotHeader">
+                    <!-- Snow toggle -->
+                    <div class="snow-toggle ml-1" id="snowToggleBlock">
+                        <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
+                            <input type="checkbox" id="snowToggle" aria-label="Снежинки">
+                            <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+                        </div>
                     </div>
                 </div>
+
+
 
                 </div>
 
@@ -1617,12 +2682,136 @@
         </div>
     </header>
 
+    <div id="mobileSidebar" class="mobile-sidebar" aria-hidden="true">
+        <div class="mobile-sidebar-backdrop" data-mobile-menu-close="1"></div>
+        <div class="mobile-sidebar-panel" role="dialog" aria-modal="true" aria-label="Навигация">
+            <div class="mobile-sidebar-scroll">
+                <div class="mobile-sidebar-section">
+                    <div class="mobile-sidebar-section-title">Разделы</div>
+                    <div id="mobileNavSections" class="mobile-nav-list">
+                        <button type="button" class="mobile-nav-link" data-page-link="calendar" onclick="openSidebarPage('calendar')">
+                            <span class="mobile-nav-icon">📅</span>
+                            <span class="mobile-nav-label">Календарь</span>
+                        </button>
+                        <button type="button" class="mobile-nav-link" data-page-link="backlog" onclick="openSidebarPage('backlog')">
+                            <span class="mobile-nav-icon">🎥</span>
+                            <span class="mobile-nav-label">Бэклог фильмов</span>
+                        </button>
+                        <button type="button" class="mobile-nav-link" data-page-link="beer" onclick="openSidebarPage('beer')">
+                            <span class="mobile-nav-icon">🍺</span>
+                            <span class="mobile-nav-label">Рейтинг пива</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mobile-sidebar-section">
+                    <div class="mobile-sidebar-section-title">Сервисы</div>
+                    <div id="mobileNavServices" class="mobile-nav-list"></div>
+                </div>
+
+                <div class="mobile-sidebar-bottom">
+                    <div class="mobile-sidebar-section">
+                        <div class="mobile-sidebar-section-title">Профиль</div>
+                        <div class="mobile-profile-row">
+                            <div id="mobileNavProfile" class="mobile-nav-list"></div>
+                            <div id="snowSlotMobile"></div>
+                        </div>
+                        <div id="mobileNavLogout" class="mobile-nav-list"></div>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-6 relative z-10">
-        <div id="calendarSection" class="flex flex-col lg:flex-row lg:flex-nowrap lg:items-start gap-6 max-w-7xl mx-auto scroll-mt-24">
+    <div class="layout-shell" id="layoutShell">
+        <aside id="sidebar" class="sidebar" aria-label="Навигация">
+            <div class="sidebar-inner">
+                <div class="sidebar-logo-wrap">
+                    <a href="index.html" class="sidebar-logo-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
+                        <span class="sidebar-logo-text logo-text">Киносреда</span>
+                    </a>
+                    <a href="roulette.html" class="sidebar-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
+                        <span class="sidebar-logo-icon" aria-hidden="true">
+                            <svg viewBox="0 0 80 80">
+                                <defs>
+                                    <linearGradient id="sidebarBeerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#fcd34d"/>
+                                        <stop offset="50%" style="stop-color:#fbbf24"/>
+                                        <stop offset="100%" style="stop-color:#d97706"/>
+                                    </linearGradient>
+                                    <linearGradient id="sidebarFoamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#ffffff"/>
+                                        <stop offset="100%" style="stop-color:#fef3c7"/>
+                                    </linearGradient>
+                                    <clipPath id="sidebarMugClip">
+                                        <rect x="18" y="18" width="30" height="38" rx="4"/>
+                                    </clipPath>
+                                </defs>
+                                <rect x="16" y="16" width="34" height="44" rx="6" fill="none" stroke="#b45309" stroke-width="3"/>
+                                <g clip-path="url(#sidebarMugClip)" transform="translate(0, 6)">
+                                    <rect x="18" y="52" width="30" height="0" fill="url(#sidebarBeerGrad)">
+                                        <animate attributeName="height" from="0" to="34" dur="2.4s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                        <animate attributeName="y" from="52" to="18" dur="2.4s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+                                    </rect>
+                                </g>
+                                <rect x="20" y="22" width="6" height="36" rx="3" fill="rgba(255,255,255,0.35)" opacity="0.6"/>
+                                <g opacity="0">
+                                    <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.8s" fill="freeze"/>
+                                    <ellipse cx="33" cy="20" rx="18" ry="7" fill="url(#sidebarFoamGrad)"/>
+                                    <circle cx="24" cy="18" r="4" fill="white" opacity="0.92"/>
+                                    <circle cx="34" cy="16" r="3.5" fill="white" opacity="0.9"/>
+                                    <circle cx="42" cy="19" r="3.5" fill="white" opacity="0.9"/>
+                                </g>
+                                <path d="M50 26 Q64 26 64 38 Q64 52 50 52" fill="none" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                    </a>
+                </div>
+
+                <nav class="sidebar-nav" aria-label="Разделы">
+                    <button type="button" class="sidebar-link" data-page-link="calendar" onclick="openSidebarPage('calendar')" title="Календарь">
+                        <span class="sidebar-icon">📅</span>
+                        <span class="sidebar-label">Календарь</span>
+                    </button>
+                    <button type="button" class="sidebar-link" data-page-link="backlog" onclick="openSidebarPage('backlog')" title="Бэклог фильмов">
+                        <span class="sidebar-icon">🎥</span>
+                        <span class="sidebar-label">Бэклог фильмов</span>
+                    </button>
+                    <button type="button" class="sidebar-link" data-page-link="beer" onclick="openSidebarPage('beer')" title="Рейтинг пива">
+                        <span class="sidebar-icon">🍺</span>
+                        <span class="sidebar-label">Рейтинг пива</span>
+                    </button>
+                </nav>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Сервисы</div>
+                    <div id="servicesNavSidebar" class="sidebar-nav" aria-label="Сервисы"></div>
+                </div>
+
+                <div class="sidebar-spacer"></div>
+
+                <div class="sidebar-bottom">
+                    <div class="sidebar-profile-row">
+                        <div id="profileNavSidebar" class="sidebar-nav" aria-label="Профиль"></div>
+                        <div id="snowSlotSidebar"></div>
+                    </div>
+                    <div id="logoutNavSidebar" class="sidebar-nav" aria-label="Выход"></div>
+                    <div class="sidebar-controls"></div>
+                </div>
+            </div>
+            <button id="sidebarCollapseBtn" type="button" class="sidebar-collapse-btn" title="Свернуть сайдбар" aria-pressed="false">
+                ❮
+            </button>
+        </aside>
+
+        <main class="container mx-auto px-4 py-6 relative z-10 content-shell">
+        <div id="calendarSection" data-page="calendar" class="page page-calendar flex flex-col lg:flex-row lg:flex-nowrap lg:items-start gap-6 max-w-7xl mx-auto scroll-mt-24">
             
             <!-- Left Column - Calendar -->
-            <div class="lg:w-3/5 lg:flex-[0_0_60%] lg:max-w-[60%] min-w-0">
+            <div class="lg:w-[45%] lg:flex-[0_0_45%] lg:max-w-[45%] min-w-0 calendar-left">
                 <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 glow-amber slide-in slide-in-delay-1">
                     <div class="flex justify-between items-center mb-5">
                         <button onclick="prevMonth()" class="text-amber-400 hover:text-amber-300 transition p-2 hover:bg-amber-500/10 rounded-full group">
@@ -1661,7 +2850,7 @@
             </div>
 
             <!-- Right Column - User Info & Event Form -->
-            <div class="lg:w-2/5 lg:flex-[0_0_40%] lg:max-w-[40%] min-w-0">
+            <div class="lg:w-[55%] lg:flex-[0_0_55%] lg:max-w-[55%] min-w-0 calendar-right">
                 <!-- Event Details Panel -->
                 <div id="eventPanel" class="hidden slide-in">
                     <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/30 glow-amber">
@@ -1731,6 +2920,32 @@
                                         <label class="text-gray-400 text-xs mb-1 block">Сколько пива принесёте? 🍺</label>
                                         <input type="number" id="beerCount" min="0" max="99" value="2"
                                             class="w-full px-3 py-2 rounded-lg bg-gray-800/50 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 transition text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-gray-400 text-xs mb-1 block">Какое пиво принесёте? 🍺</label>
+                                        <div class="relative">
+                                            <input type="hidden" id="beerBringId">
+                                            <button type="button" id="beerBringButton"
+                                                class="w-full px-3 py-2 rounded-lg bg-gray-800/50 text-white border border-amber-500/30 hover:border-amber-400 focus:outline-none focus:border-amber-400 transition text-sm flex items-center gap-3 justify-between">
+                                                <span class="flex items-center gap-3 min-w-0 pr-8">
+                                                    <span id="beerBringThumb" class="beer-picker-thumb w-8 h-8 rounded-lg overflow-hidden bg-black/40 flex items-center justify-center text-sm">🍺</span>
+                                                    <span class="min-w-0 flex flex-col text-left">
+                                                        <span id="beerBringLabel" class="font-semibold text-amber-200 truncate">Не выбрано</span>
+                                                        <span id="beerBringSub" class="text-[11px] text-gray-500 truncate">Выберите из рейтинга</span>
+                                                    </span>
+                                                </span>
+                                                <svg class="w-4 h-4 text-amber-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                </svg>
+                                            </button>
+                                            <button type="button" id="beerBringReset"
+                                                class="hidden absolute right-10 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full text-gray-500 hover:text-amber-200 hover:bg-white/5 transition z-10">
+                                                ✕
+                                            </button>
+                                            <div id="beerBringDropdown" class="beer-picker-dropdown absolute left-0 right-0 mt-2 bg-black/90 border border-amber-500/25 rounded-xl shadow-lg hidden z-10">
+                                                <div id="beerBringOptions" class="divide-y divide-amber-500/10"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                     <button onclick="confirmAttendance()" 
                                         class="w-full btn-glow bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-[1.02] shadow-lg shadow-green-500/20">
@@ -1812,8 +3027,8 @@
         </div>
 
         <!-- Backlog Section -->
-        <div id="backlogSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
-            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in beer-rating-card">
+        <div id="backlogSection" data-page="backlog" class="page page-backlog mt-12 max-w-7xl mx-auto scroll-mt-24">
+            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 slide-in beer-rating-card backlog-wrapper">
                 <h2 class="text-2xl font-bold text-amber-400 mb-6 flex items-center gap-3">
                     <span class="text-3xl">🎥</span> Бэклог фильмов
                 </h2>
@@ -1822,10 +3037,10 @@
         </div>
 
         <!-- Beer Rating Section -->
-        <div id="beerSection" class="mt-12 max-w-7xl mx-auto scroll-mt-24">
-            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/20 slide-in">
+        <div id="beerSection" data-page="beer" class="page page-beer mt-12 max-w-7xl mx-auto scroll-mt-24">
+            <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 slide-in beer-wrapper">
                 <div id="beerSticky">
-                    <div class="flex justify-between items-center mb-6 gap-3 flex-wrap">
+                    <div class="flex justify-between items-center mb-3 gap-3 flex-wrap beer-controls-row">
                         <div class="flex items-center gap-3 flex-wrap">
                             <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
                                 <span class="text-3xl">🍺</span> Рейтинг пива
@@ -1982,8 +3197,8 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto beer-table-scroll">
-                    <table class="w-full text-sm" id="beerTable">
+                <div class="beer-table-head" aria-hidden="false">
+                    <table class="beer-table w-full text-sm" id="beerTable">
                         <thead>
                             <tr class="border-b border-gray-700">
                                 <th class="py-3 px-4 text-left text-amber-400 sortable-header" onclick="sortBeerBy('name')">
@@ -2021,12 +3236,60 @@
                                 <th class="py-3 px-4 text-center text-amber-400" style="min-width: 120px;">Действия</th>
                             </tr>
                         </thead>
+                    </table>
+                </div>
+
+                <div class="overflow-x-auto beer-table-scroll">
+                    <table class="beer-table w-full text-sm">
                         <tbody id="beerTableBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </main>
+
+        <!-- Service Pages -->
+        <div id="svc_pokaki" data-page="svc_pokaki" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="График покаков" data-src="pokaki.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_profile" data-page="svc_profile" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Профиль" data-src="profile.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_roulette" data-page="svc_roulette" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Пивная рулетка" data-src="roulette.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_planning" data-page="svc_planning" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Планирование" data-src="planning.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_board" data-page="svc_board" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Доска" data-src="board.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_gallery" data-page="svc_gallery" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Галерея" data-src="gallery.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_snacks" data-page="svc_snacks" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Перекусы" data-src="snacks.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_water" data-page="svc_water" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Трекер воды" data-src="water.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        </main>
+    </div>
 
     <!-- Modals -->
     <!-- Add Column Modal -->
@@ -2220,7 +3483,9 @@
             <input type="number" id="beerAlcoholInput" placeholder="Крепость (%)" min="0" max="100" step="0.1"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
             <input type="number" id="beerCaloriesInput" placeholder="Калорийность (ккал)" min="0" max="2000" step="1"
-                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-4 text-sm">
+                class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+            <div class="text-center text-gray-400 text-xs mb-2">Оценка: <span id="addBeerRatingValue" class="text-amber-300 font-bold">—</span></div>
+            <div class="star-picker mb-5 overflow-x-auto py-2" id="beerAddStarPicker" aria-label="Выбор рейтинга"></div>
             <div class="flex gap-2">
                 <button onclick="addBeer()" class="flex-1 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold py-2 px-4 rounded-xl">
                     Добавить
@@ -2448,10 +3713,6 @@
         </svg>
     </button>
 
-    <footer class="text-center py-6 text-gray-700 text-xs relative z-10">
-        <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
-    </footer>
-
     <script>
         // Create particles
         function createParticles() {
@@ -2597,6 +3858,10 @@
         let currentBeerIdForRating = null;
         let editingBeerId = null;
         let pendingDeleteBeerId = null;
+        let addBeerRatingValue = 0;
+        let beerBringSelections = [];
+        let beerBringSearchQuery = '';
+        let beerBringOptionsHash = '';
         let beerSortBy = 'name';
         let beerSortDirection = 'asc';
         let beerSearchQuery = '';
@@ -2875,6 +4140,280 @@
         function applyTheme() {
             document.documentElement.dataset.theme = localStorage.getItem(THEME_LS_KEY) || 'beer';
         }
+
+        // -----------------
+        // Layout mode (desktop sidebar vs classic)
+        // -----------------
+        const LAYOUT_MODE_LS_KEY = 'indexLayoutMode';
+        const SIDEBAR_COLLAPSE_LS_KEY = 'indexSidebarCollapsed';
+        const PAGE_LS_KEY = 'indexActivePage';
+        const PAGE_IDS = {
+            calendar: 'calendarSection',
+            backlog: 'backlogSection',
+            beer: 'beerSection',
+            svc_pokaki: 'svc_pokaki',
+            svc_profile: 'svc_profile',
+            svc_roulette: 'svc_roulette',
+            svc_planning: 'svc_planning',
+            svc_board: 'svc_board',
+            svc_gallery: 'svc_gallery',
+            svc_snacks: 'svc_snacks',
+            svc_water: 'svc_water'
+        };
+        const SECTION_TO_PAGE = { calendarSection: 'calendar', backlogSection: 'backlog', beerSection: 'beer' };
+
+        function isDesktopLayout() {
+            return window.matchMedia('(min-width: 1024px)').matches;
+        }
+
+        function moveControlBlocks() {
+            const snowBlock = document.getElementById('snowToggleBlock');
+            const isSidebar = document.body.classList.contains('layout-sidebar');
+            const isDesktop = isDesktopLayout();
+            const snowSlotId = isSidebar ? (isDesktop ? 'snowSlotSidebar' : 'snowSlotMobile') : 'snowSlotHeader';
+            const snowSlot = document.getElementById(snowSlotId);
+            if (snowBlock && snowSlot && snowBlock.parentElement !== snowSlot) {
+                snowSlot.appendChild(snowBlock);
+            }
+        }
+
+        function setSidebarCollapsed(collapsed, persist = true) {
+            document.body.classList.toggle('sidebar-collapsed', !!collapsed);
+            const btn = document.getElementById('sidebarCollapseBtn');
+            if (btn) {
+                btn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+                btn.title = collapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар';
+                btn.textContent = collapsed ? '❯' : '❮';
+            }
+            if (persist) {
+                localStorage.setItem(SIDEBAR_COLLAPSE_LS_KEY, collapsed ? '1' : '0');
+            }
+        }
+
+        function getScrollContainer() {
+            if (document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                return document.querySelector('.content-shell');
+            }
+            return window;
+        }
+
+        function scrollContainerToTop(behavior = 'smooth') {
+            const container = getScrollContainer();
+            if (container === window) {
+                window.scrollTo({ top: 0, behavior });
+            } else if (container) {
+                container.scrollTo({ top: 0, behavior });
+            }
+        }
+
+        function ensureServiceFrame(section) {
+            if (!section || !section.classList.contains('page-service')) return;
+            const frame = section.querySelector('iframe[data-src]');
+            if (!frame || frame.getAttribute('src')) return;
+            const src = frame.getAttribute('data-src');
+            if (src) frame.setAttribute('src', src);
+        }
+        function unloadServiceFrame(section) {
+            if (!section || !section.classList.contains('page-service')) return;
+            const frame = section.querySelector('iframe');
+            if (!frame) return;
+            if (frame.dataset.unload === '1') {
+                frame.removeAttribute('src');
+            }
+        }
+
+        function syncBacklogHeight() {
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            const backlog = document.getElementById('backlogSection');
+            if (!backlog) return;
+            const isActive = backlog.classList.contains('is-active');
+            if (!useSidebar || !isActive) {
+                backlog.style.removeProperty('--backlog-board-height');
+                const board = document.getElementById('backlogBoard');
+                if (board) {
+                    board.style.removeProperty('height');
+                    board.style.removeProperty('max-height');
+                }
+                return;
+            }
+            const shell = document.querySelector('.content-shell');
+            const wrapper = backlog.querySelector('.backlog-wrapper');
+            const board = document.getElementById('backlogBoard');
+            if (!shell || !wrapper || !board) return;
+
+            const shellStyles = getComputedStyle(shell);
+            const wrapperStyles = getComputedStyle(wrapper);
+            const shellPad = parseFloat(shellStyles.paddingTop || 0) + parseFloat(shellStyles.paddingBottom || 0);
+            const wrapperPad = parseFloat(wrapperStyles.paddingTop || 0) + parseFloat(wrapperStyles.paddingBottom || 0);
+            const header = wrapper.querySelector('h2');
+            const headerHeight = header && getComputedStyle(header).display !== 'none'
+                ? header.getBoundingClientRect().height
+                : 0;
+            const available = shell.clientHeight - shellPad - wrapperPad - headerHeight;
+            const height = Math.max(160, Math.floor(available));
+            backlog.style.setProperty('--backlog-board-height', `${height}px`);
+            board.style.height = `${height}px`;
+            board.style.maxHeight = `${height}px`;
+        }
+
+        function setActivePage(page, options = {}) {
+            const fromSection = SECTION_TO_PAGE[page];
+            const resolved = PAGE_IDS[page] ? page : (fromSection || 'calendar');
+            localStorage.setItem(PAGE_LS_KEY, resolved);
+
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            document.body.classList.toggle('page-backlog-active', useSidebar && resolved === 'backlog');
+            document.body.classList.toggle('page-beer-active', useSidebar && resolved === 'beer');
+            const isServicePage = resolved.startsWith('svc_');
+            const serviceActive = useSidebar && isServicePage;
+            document.body.classList.toggle('page-service-active', serviceActive);
+            document.documentElement.classList.toggle('page-service-active', serviceActive);
+            const isBoardService = resolved === 'svc_board';
+            const chatWrap = document.getElementById('chatBtnWrap');
+            if (chatWrap) chatWrap.style.display = isBoardService ? 'none' : '';
+            if (isBoardService && typeof toggleChat === 'function') {
+                toggleChat(false);
+            }
+            document.querySelectorAll('.page').forEach((section) => {
+                const isActive = section.dataset.page === resolved;
+                if (useSidebar) {
+                    section.classList.toggle('is-active', isActive);
+                    section.hidden = !isActive;
+                    if (isActive) {
+                        ensureServiceFrame(section);
+                    } else {
+                        unloadServiceFrame(section);
+                    }
+                } else {
+                    section.classList.remove('is-active');
+                    section.hidden = section.classList.contains('page-service');
+                    unloadServiceFrame(section);
+                }
+            });
+            document.querySelectorAll('[data-page-link]').forEach((btn) => {
+                const isActive = btn.dataset.pageLink === resolved;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+            });
+
+            if (options.scroll !== false) {
+                scrollContainerToTop(options.behavior || 'smooth');
+            }
+            syncBacklogHeight();
+            if (useSidebar && resolved === 'backlog') {
+                requestAnimationFrame(syncBacklogHeight);
+            }
+        }
+
+        function setLayoutMode(mode, options = {}) {
+            const desired = mode === 'classic' ? 'classic' : 'sidebar';
+            const useSidebar = desired === 'sidebar';
+            const isDesktop = isDesktopLayout();
+            document.body.classList.toggle('layout-sidebar', useSidebar);
+            document.body.classList.toggle('layout-sidebar-mobile', useSidebar && !isDesktop);
+            document.body.classList.toggle('layout-classic', !useSidebar);
+            setMobileMenuOpen(false);
+            if (options.persist !== false) {
+                localStorage.setItem(LAYOUT_MODE_LS_KEY, 'sidebar');
+            }
+            moveControlBlocks();
+            if (useSidebar && isDesktop) {
+                document.documentElement.style.setProperty('--header-offset', '0px');
+            } else {
+                refreshHeaderOffset();
+            }
+            const savedPage = localStorage.getItem(PAGE_LS_KEY) || 'calendar';
+            setActivePage(savedPage, { scroll: false });
+        }
+
+        function openSidebarPage(page) {
+            closeMobileMenu();
+            setActivePage(page);
+        }
+
+        function openProfilePage(e) {
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            if (useSidebar) {
+                if (e) e.preventDefault();
+                closeMobileMenu();
+                setActivePage('svc_profile');
+                return false;
+            }
+            return true;
+        }
+
+        function openRoulettePage(e) {
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            if (useSidebar) {
+                if (e) e.preventDefault();
+                closeMobileMenu();
+                setActivePage('svc_roulette');
+                return false;
+            }
+            return true;
+        }
+
+        function setMobileMenuOpen(open) {
+            const menu = document.getElementById('mobileSidebar');
+            const btn = document.getElementById('mobileSidebarToggle');
+            if (!menu || !btn) return;
+            const isOpen = !!open;
+            menu.classList.toggle('is-open', isOpen);
+            menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+            btn.classList.toggle('is-open', isOpen);
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            document.body.classList.toggle('mobile-menu-open', isOpen);
+        }
+
+        function closeMobileMenu() {
+            setMobileMenuOpen(false);
+        }
+
+        function initMobileMenu() {
+            const btn = document.getElementById('mobileSidebarToggle');
+            const menu = document.getElementById('mobileSidebar');
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', () => {
+                const isOpen = menu.classList.contains('is-open');
+                setMobileMenuOpen(!isOpen);
+            });
+
+            menu.addEventListener('click', (e) => {
+                if (e.target.closest('[data-mobile-menu-close]')) {
+                    closeMobileMenu();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeMobileMenu();
+            });
+        }
+
+        function initLayoutShell() {
+            setLayoutMode('sidebar', { persist: false });
+
+            const collapseBtn = document.getElementById('sidebarCollapseBtn');
+            if (collapseBtn) {
+                collapseBtn.addEventListener('click', () => {
+                    const collapsed = !document.body.classList.contains('sidebar-collapsed');
+                    setSidebarCollapsed(collapsed);
+                });
+            }
+            const savedCollapsed = localStorage.getItem(SIDEBAR_COLLAPSE_LS_KEY) === '1';
+            setSidebarCollapsed(savedCollapsed, false);
+
+            window.addEventListener('resize', () => {
+                setLayoutMode('sidebar', { persist: false });
+                syncBacklogHeight();
+            });
+
+            const shell = document.querySelector('.content-shell');
+            if (shell) {
+                shell.addEventListener('scroll', handleScrollTopVisibility);
+                handleScrollTopVisibility();
+            }
+        }
         const LOGO_FONTS = [
             'Train One',
             'Rubik Wet Paint',
@@ -2946,16 +4485,19 @@
             if (mug) mug.setAttribute('transform', `translate(${preset.mugX}, ${preset.mugY})`);
         }
 
+        function refreshHeaderOffset() {
+            const header = document.querySelector('header');
+            if (!header) return;
+            const headerHeight = Math.ceil(header.getBoundingClientRect().height);
+            document.documentElement.style.setProperty('--header-offset', `${headerHeight}px`);
+        }
+
         function initBeerSticky() {
             const header = document.querySelector('header');
             const beerSticky = document.getElementById('beerSticky');
             if (!header || !beerSticky) return;
 
-            const root = document.documentElement;
-            const syncOffset = () => {
-                const headerHeight = Math.ceil(header.getBoundingClientRect().height);
-                root.style.setProperty('--header-offset', `${headerHeight}px`);
-            };
+            const syncOffset = () => refreshHeaderOffset();
 
             syncOffset();
 
@@ -2966,6 +4508,7 @@
                 window.addEventListener('resize', syncOffset);
             }
         }
+
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -3014,6 +4557,7 @@
             beerColumnsVisible = loadBeerColumnsVisible();
 
             initTimePickers();
+            initBeerBringPicker();
 
             const condemnText = document.getElementById('condemnText');
             if (condemnText) {
@@ -3046,7 +4590,28 @@
             // Update user profile in header
             updateUserProfile();
 
+            initLayoutShell();
+            initMobileMenu();
+
             initBeerSticky();
+
+            const beerScroll = document.querySelector('.beer-table-scroll');
+            const beerHead = document.querySelector('.beer-table-head');
+            if (beerScroll && beerHead) {
+                const syncHeadFromBody = () => {
+                    if (beerHead.scrollLeft !== beerScroll.scrollLeft) {
+                        beerHead.scrollLeft = beerScroll.scrollLeft;
+                    }
+                };
+                const syncBodyFromHead = () => {
+                    if (beerScroll.scrollLeft !== beerHead.scrollLeft) {
+                        beerScroll.scrollLeft = beerHead.scrollLeft;
+                    }
+                };
+                beerScroll.addEventListener('scroll', syncHeadFromBody, { passive: true });
+                beerHead.addEventListener('scroll', syncBodyFromHead, { passive: true });
+                syncHeadFromBody();
+            }
 
             // Snow switch init
             const snowEnabled = localStorage.getItem(SNOW_LS_KEY) === '1';
@@ -3069,43 +4634,51 @@
         });
         
         function updateUserProfile() {
-            const nav = document.getElementById('globalNav');
-            if (!nav) return;
-            const profileHTML = `
-                <details class="nav-dropdown">
+            const headerNav = document.getElementById('globalNav');
+            const servicesSidebar = document.getElementById('servicesNavSidebar');
+            const profileSidebar = document.getElementById('profileNavSidebar');
+            const logoutSidebar = document.getElementById('logoutNavSidebar');
+            const servicesMobile = document.getElementById('mobileNavServices');
+            const profileMobile = document.getElementById('mobileNavProfile');
+            const logoutMobile = document.getElementById('mobileNavLogout');
+
+            const services = [
+                { href: 'pokaki.html', icon: '💩', label: 'График покаков', page: 'svc_pokaki' },
+                { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
+                { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
+                { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
+                { href: 'snacks.html', icon: '🥨', label: 'Перекусы', page: 'svc_snacks' },
+                { href: 'water.html', icon: '💧', label: 'Трекер воды', page: 'svc_water' }
+            ];
+
+            const servicesHeaderHTML = `
+                <details class="nav-dropdown services-dropdown">
                     <summary class="nav-pill nav-dropdown-btn" title="Сервисы">
                         <span>🗂️</span>
                         <span class="nav-text"><span class="nav-label">Сервисы</span></span>
                         <span class="nav-caret">▾</span>
                     </summary>
                     <div class="nav-dropdown-menu">
-                        <a href="pokaki.html" class="nav-dropdown-item" title="График покаков">
-                            <span>💩</span>
-                            <span>График покаков</span>
-                        </a>
-                        <a href="planning.html" class="nav-dropdown-item" title="Планирование">
-                            <span>🌴</span>
-                            <span>Планирование</span>
-                        </a>
-                        <a href="board.html" class="nav-dropdown-item" title="Доска">
-                            <span>🎨</span>
-                            <span>Доска</span>
-                        </a>
-                        <a href="gallery.html" class="nav-dropdown-item" title="Галерея">
-                            <span>🖼️</span>
-                            <span>Галерея</span>
-                        </a>
-                        <a href="snacks.html" class="nav-dropdown-item" title="Перекусы">
-                            <span>🥨</span>
-                            <span>Перекусы</span>
-                        </a>
-                        <a href="water.html" class="nav-dropdown-item" title="Трекер воды">
-                            <span>💧</span>
-                            <span>Трекер воды</span>
-                        </a>
+                        ${services.map((s) => `
+                            <a href="${s.href}" class="nav-dropdown-item" title="${s.label}">
+                                <span>${s.icon}</span>
+                                <span>${s.label}</span>
+                            </a>
+                        `).join('')}
                     </div>
                 </details>
-                <a href="profile.html" class="nav-pill" title="Профиль: ${currentUser.name}">
+                <div class="services-flat nav-list">
+                    ${services.map((s) => `
+                        <a href="${s.href}" class="nav-pill" title="${s.label}">
+                            <span>${s.icon}</span>
+                            <span class="nav-text"><span class="nav-label">${s.label}</span></span>
+                        </a>
+                    `).join('')}
+                </div>
+            `;
+
+            const profileHeaderHTML = `
+                <a href="profile.html" class="nav-pill" title="Профиль: ${currentUser.name}" onclick="return openProfilePage(event);">
                     <span>👤</span>
                     <span class="nav-text"><span class="nav-label">${currentUser.name}</span></span>
                 </a>
@@ -3114,7 +4687,58 @@
                     <span class="nav-text"><span class="nav-label">Выйти</span></span>
                 </button>
             `;
-            nav.innerHTML = profileHTML;
+
+            const servicesSidebarHTML = services.map((s) => `
+                <button type="button" class="sidebar-link" data-page-link="${s.page}" onclick="openSidebarPage('${s.page}')" title="${s.label}">
+                    <span class="sidebar-icon">${s.icon}</span>
+                    <span class="sidebar-label">${s.label}</span>
+                </button>
+            `).join('');
+
+            const profileSidebarHTML = `
+                <button type="button" class="sidebar-link sidebar-link--compact" data-page-link="svc_profile" onclick="openSidebarPage('svc_profile')" title="Профиль: ${currentUser.name}">
+                    <span class="sidebar-icon">👤</span>
+                    <span class="sidebar-label">${currentUser.name}</span>
+                </button>
+            `;
+
+            const logoutSidebarHTML = `
+                <button type="button" onclick="logout()" class="sidebar-link sidebar-link--danger" title="Выйти">
+                    <span class="sidebar-icon">🚪</span>
+                    <span class="sidebar-label">Выйти</span>
+                </button>
+            `;
+
+            const servicesMobileHTML = services.map((s) => `
+                <button type="button" class="mobile-nav-link" data-page-link="${s.page}" onclick="openSidebarPage('${s.page}')" title="${s.label}">
+                    <span class="mobile-nav-icon">${s.icon}</span>
+                    <span class="mobile-nav-label">${s.label}</span>
+                </button>
+            `).join('');
+
+            const profileMobileHTML = `
+                <button type="button" class="mobile-nav-link" data-page-link="svc_profile" onclick="openSidebarPage('svc_profile')" title="Профиль: ${currentUser.name}">
+                    <span class="mobile-nav-icon">👤</span>
+                    <span class="mobile-nav-label">${currentUser.name}</span>
+                </button>
+            `;
+
+            const logoutMobileHTML = `
+                <button type="button" onclick="logout()" class="mobile-nav-link mobile-nav-link--danger" title="Выйти">
+                    <span class="mobile-nav-icon">🚪</span>
+                    <span class="mobile-nav-label">Выйти</span>
+                </button>
+            `;
+
+            if (headerNav) {
+                headerNav.innerHTML = servicesHeaderHTML + profileHeaderHTML;
+            }
+            if (servicesSidebar) servicesSidebar.innerHTML = servicesSidebarHTML;
+            if (profileSidebar) profileSidebar.innerHTML = profileSidebarHTML;
+            if (logoutSidebar) logoutSidebar.innerHTML = logoutSidebarHTML;
+            if (servicesMobile) servicesMobile.innerHTML = servicesMobileHTML;
+            if (profileMobile) profileMobile.innerHTML = profileMobileHTML;
+            if (logoutMobile) logoutMobile.innerHTML = logoutMobileHTML;
         }
 
         document.addEventListener('click', (e) => {
@@ -3268,6 +4892,614 @@
                     if (cfg.close) cfg.close(e.target);
                 });
             });
+        }
+
+        function getBeerById(beerId) {
+            if (!beerId) return null;
+            const list = Array.isArray(data.beerRating) ? data.beerRating : Object.values(data.beerRating || {});
+            return list.find(b => String(b.id) === String(beerId)) || null;
+        }
+
+        function getBeerDescriptor(beer) {
+            if (!beer) return '';
+            const parts = [];
+            if (beer.type) parts.push(beer.type);
+            if (beer.style) parts.push(beer.style);
+            return parts.join(' • ');
+        }
+
+        function normalizeBeerBringSelections(list) {
+            if (!Array.isArray(list)) return [];
+            const map = new Map();
+            list.forEach((item) => {
+                if (!item) return;
+                const qty = Math.max(0, parseInt(item.qty, 10) || 0);
+                if (!qty) return;
+                const id = item.id ? String(item.id) : '';
+                const name = item.name || '';
+                const imageUrl = item.imageUrl || '';
+                const key = id ? `id:${id}` : (name ? `name:${name}` : (imageUrl ? `img:${imageUrl}` : 'unknown'));
+                if (key === 'unknown') return;
+                const existing = map.get(key) || {
+                    id,
+                    name,
+                    imageUrl,
+                    type: item.type || '',
+                    style: item.style || '',
+                    stale: !!item.stale,
+                    qty: 0
+                };
+                existing.qty += qty;
+                map.set(key, existing);
+            });
+            return Array.from(map.values());
+        }
+
+        function getBeerBringTotal(list = beerBringSelections) {
+            return (list || []).reduce((sum, item) => sum + (parseInt(item.qty, 10) || 0), 0);
+        }
+
+        function trimBeerBringSelections(maxCount) {
+            if (!Array.isArray(beerBringSelections)) beerBringSelections = [];
+            if (!maxCount || maxCount <= 0) {
+                beerBringSelections = [];
+                return;
+            }
+            let total = getBeerBringTotal();
+            if (total <= maxCount) return;
+            let extra = total - maxCount;
+            for (let i = beerBringSelections.length - 1; i >= 0 && extra > 0; i--) {
+                const item = beerBringSelections[i];
+                const reduce = Math.min(item.qty, extra);
+                item.qty -= reduce;
+                extra -= reduce;
+                if (item.qty <= 0) beerBringSelections.splice(i, 1);
+            }
+        }
+
+        function refreshBeerBringSelectionsFromRating() {
+            if (!Array.isArray(beerBringSelections)) return false;
+            let changed = false;
+            beerBringSelections = beerBringSelections.map((item) => {
+                if (!item || !item.id) return item;
+                const beer = getBeerById(item.id);
+                if (beer) {
+                    const next = {
+                        ...item,
+                        name: beer.name || item.name,
+                        imageUrl: beer.imageUrl || item.imageUrl,
+                        type: beer.type || item.type,
+                        style: beer.style || item.style,
+                        stale: false
+                    };
+                    if (next.name !== item.name || next.imageUrl !== item.imageUrl || next.type !== item.type || next.style !== item.style || item.stale) {
+                        changed = true;
+                    }
+                    return next;
+                }
+                if (!item.stale) {
+                    changed = true;
+                    return { ...item, stale: true };
+                }
+                return item;
+            });
+            return changed;
+        }
+
+        function getBeerBringOptionsHash(list) {
+            const parts = (list || []).map((b) => [
+                b && b.id ? String(b.id) : '',
+                b && b.name ? String(b.name) : '',
+                b && b.imageUrl ? String(b.imageUrl) : '',
+                b && b.type ? String(b.type) : '',
+                b && b.style ? String(b.style) : ''
+            ].join('|'));
+            return parts.join('||');
+        }
+
+        function applyBeerBringFilter() {
+            const optionsEl = document.getElementById('beerBringOptions');
+            if (!optionsEl) return;
+            const query = (beerBringSearchQuery || '').toString().trim().toLowerCase();
+            const rows = optionsEl.querySelectorAll('.beer-option-row');
+            if (!rows.length) return;
+            rows.forEach((row) => {
+                if (!query) {
+                    row.classList.remove('hidden');
+                    return;
+                }
+                const search = (row.dataset.search || '').toLowerCase();
+                row.classList.toggle('hidden', !search.includes(query));
+            });
+        }
+
+        function resolveBeerSelections(info) {
+            if (!info) return [];
+            const selections = [];
+            if (Array.isArray(info.beers)) {
+                info.beers.forEach((entry) => {
+                    if (!entry) return;
+                    const rawQty = parseInt(entry.qty, 10);
+                    const qty = Number.isFinite(rawQty) ? rawQty : 1;
+                    if (!qty || qty <= 0) return;
+                    const id = entry.id || entry.beerId || '';
+                    const fromList = id ? getBeerById(id) : null;
+                    if (fromList) {
+                        selections.push({
+                            id: String(fromList.id),
+                            name: fromList.name || '',
+                            imageUrl: fromList.imageUrl || '',
+                            type: fromList.type || '',
+                            style: fromList.style || '',
+                            stale: false,
+                            qty
+                        });
+                    } else {
+                        selections.push({
+                            id: id ? String(id) : '',
+                            name: entry.name || entry.beerName || '',
+                            imageUrl: entry.imageUrl || entry.beerImageUrl || '',
+                            type: entry.type || entry.beerType || '',
+                            style: entry.style || entry.beerStyle || '',
+                            stale: !!id,
+                            qty
+                        });
+                    }
+                });
+            } else if (info.beerId || info.beerName || info.beerImageUrl) {
+                const rawQty = parseInt(info.beer, 10);
+                const qty = Number.isFinite(rawQty) ? rawQty : 1;
+                if (qty && qty > 0) {
+                    const id = info.beerId || '';
+                    const fromList = id ? getBeerById(id) : null;
+                    if (fromList) {
+                        selections.push({
+                            id: String(fromList.id),
+                            name: fromList.name || '',
+                            imageUrl: fromList.imageUrl || '',
+                            type: fromList.type || '',
+                            style: fromList.style || '',
+                            stale: false,
+                            qty
+                        });
+                    } else {
+                        selections.push({
+                            id: id ? String(id) : '',
+                            name: info.beerName || '',
+                            imageUrl: info.beerImageUrl || '',
+                            type: info.beerType || '',
+                            style: info.beerStyle || '',
+                            stale: !!id,
+                            qty
+                        });
+                    }
+                }
+            }
+            return normalizeBeerBringSelections(selections);
+        }
+
+        function getAttendeeBeerSummary(info) {
+            if (!info) return '';
+            const beerCount = parseInt(info.beer, 10) || 0;
+            if (!beerCount) return '';
+            const selections = resolveBeerSelections(info);
+            if (!selections.length) return '';
+
+            const listHtml = selections.map((item) => {
+                const safeName = escapeHtml(item.name || 'Пиво');
+                const safeImage = item.imageUrl ? escapeHtml(item.imageUrl) : '';
+                const qty = Math.max(1, parseInt(item.qty, 10) || 1);
+                return `
+                    <div class="flex items-center gap-3 p-2 rounded-lg bg-black/40 border border-amber-500/15">
+                        <span class="beer-option-thumb w-9 h-9 rounded-lg bg-black/50 overflow-hidden flex items-center justify-center text-sm shrink-0" data-preview="${safeImage}">
+                            ${safeImage ? `<img src="${safeImage}" alt="">` : '🍺'}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-white font-semibold truncate">${safeName}</div>
+                        </div>
+                        <div class="text-amber-200 font-bold text-xs">×${qty}</div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="relative attendee-beer-wrap">
+                    <button type="button"
+                        class="attendee-beer-toggle inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-200 hover:bg-amber-500/20 transition">
+                        <span class="truncate max-w-[120px]">Пиво</span>
+                        <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <div class="attendee-beer-dropdown hidden absolute w-64 bg-black/90 border border-amber-500/25 rounded-xl shadow-lg p-2 space-y-2 z-20">
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function positionAttendeeBeerDropdown(btn, dropdown) {
+            if (!btn || !dropdown) return;
+            const wrap = dropdown.closest('.attendee-beer-wrap');
+            if (!wrap) return;
+            dropdown.style.left = '';
+            dropdown.style.top = '';
+            dropdown.style.width = '';
+            dropdown.style.right = '';
+            dropdown.style.marginLeft = '0';
+            dropdown.style.marginTop = '0';
+            dropdown.style.visibility = 'hidden';
+            dropdown.style.position = 'absolute';
+
+            const rect = dropdown.getBoundingClientRect();
+            const wrapRect = wrap.getBoundingClientRect();
+            const btnRect = btn.getBoundingClientRect();
+            const maxWidth = Math.min(rect.width, window.innerWidth - 16);
+
+            dropdown.style.width = maxWidth + 'px';
+
+            let left = btnRect.left;
+            const top = btnRect.bottom + 4;
+            if (left < 8) left = 8;
+            if (left + maxWidth > window.innerWidth - 8) {
+                left = Math.max(8, window.innerWidth - 8 - maxWidth);
+            }
+
+            dropdown.style.left = (left - wrapRect.left) + 'px';
+            dropdown.style.top = (top - wrapRect.top) + 'px';
+            dropdown.style.visibility = '';
+        }
+
+        function setBeerBringSelections(list, options = {}) {
+            const input = document.getElementById('beerBringId');
+            beerBringSelections = normalizeBeerBringSelections(list || []);
+            const beerCountInput = document.getElementById('beerCount');
+            const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+            if (options.trim !== false) trimBeerBringSelections(beerCount);
+            if (input) {
+                const ids = beerBringSelections.map((b) => b.id).filter(Boolean);
+                input.value = ids.join(',');
+            }
+            updateBeerBringButton();
+            updateBeerBringOptionState();
+            if (!options.skipOptions) renderBeerBringOptions();
+        }
+
+        function updateBeerBringButton() {
+            const button = document.getElementById('beerBringButton');
+            const label = document.getElementById('beerBringLabel');
+            const sub = document.getElementById('beerBringSub');
+            const thumb = document.getElementById('beerBringThumb');
+            const resetBtn = document.getElementById('beerBringReset');
+            if (!button || !label || !sub || !thumb) return;
+
+            refreshBeerBringSelectionsFromRating();
+
+            const list = Array.isArray(data.beerRating) ? data.beerRating : Object.values(data.beerRating || {});
+            const listEmpty = !list.length;
+            const beerCountInput = document.getElementById('beerCount');
+            const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+            const totalSelected = getBeerBringTotal();
+            const hasSelection = totalSelected > 0;
+            const isDisabled = beerCount <= 0;
+            const overLimit = beerCount > 0 && totalSelected > beerCount;
+
+            if (resetBtn) resetBtn.classList.toggle('hidden', !hasSelection);
+
+            button.disabled = isDisabled;
+            button.classList.toggle('opacity-60', isDisabled);
+            button.classList.toggle('cursor-not-allowed', isDisabled);
+
+            if (hasSelection) {
+                const first = beerBringSelections[0] || {};
+                const labelText = beerBringSelections.length > 1
+                    ? `${first.name || 'Выбрано'}${first.qty > 1 ? ` ×${first.qty}` : ''} +${beerBringSelections.length - 1}`
+                    : `${first.name || 'Выбрано'}${first.qty > 1 ? ` ×${first.qty}` : ''}`;
+                label.textContent = labelText;
+                if (first.imageUrl) {
+                    thumb.innerHTML = `<img src="${escapeHtml(first.imageUrl)}" alt="">`;
+                    thumb.dataset.preview = first.imageUrl;
+                } else {
+                    thumb.textContent = '🍺';
+                    delete thumb.dataset.preview;
+                }
+            } else {
+                label.textContent = 'Не выбрано';
+                thumb.textContent = '🍺';
+                delete thumb.dataset.preview;
+            }
+
+            sub.classList.remove('text-red-400', 'text-amber-300');
+            if (isDisabled) {
+                sub.textContent = 'Сначала укажите количество пива';
+                sub.classList.add('text-gray-500');
+            } else if (hasSelection) {
+                if (beerCount > 0) {
+                    const diff = beerCount - totalSelected;
+                    if (diff > 0) {
+                        sub.textContent = `Выбрано ${totalSelected} из ${beerCount} • ещё ${diff}`;
+                    } else if (diff === 0) {
+                        sub.textContent = `Выбрано ${totalSelected} из ${beerCount}`;
+                    } else {
+                        sub.textContent = `Выбрано ${totalSelected} из ${beerCount} • перебор ${Math.abs(diff)}`;
+                        sub.classList.add('text-red-400');
+                    }
+                } else {
+                    sub.textContent = 'Выбрано из рейтинга';
+                }
+            } else if (listEmpty) {
+                sub.textContent = 'В рейтинге пока нет пива';
+            } else {
+                sub.textContent = 'Выберите из рейтинга';
+            }
+
+            attachBeerThumbPreviews();
+        }
+
+        function updateBeerBringOptionState() {
+            const optionsEl = document.getElementById('beerBringOptions');
+            if (!optionsEl) return;
+            const rows = optionsEl.querySelectorAll('.beer-option-row');
+            if (!rows.length) return;
+
+            const beerCountInput = document.getElementById('beerCount');
+            const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+            const totalSelected = getBeerBringTotal();
+            const canIncGlobal = beerCount > 0 && totalSelected < beerCount;
+
+            const selectionMap = new Map();
+            beerBringSelections.forEach((item) => {
+                if (item.id) selectionMap.set(String(item.id), item);
+            });
+
+            rows.forEach((row) => {
+                const id = row.dataset.beerId || '';
+                const current = selectionMap.get(String(id));
+                const qty = current ? current.qty : 0;
+                row.classList.toggle('bg-amber-500/10', qty > 0);
+
+                const nameEl = row.querySelector('.beer-option-name');
+                if (nameEl) {
+                    nameEl.classList.toggle('text-amber-200', qty > 0);
+                    nameEl.classList.toggle('text-gray-200', qty <= 0);
+                }
+
+                const qtyEl = row.querySelector('.beer-option-qty');
+                if (qtyEl) qtyEl.textContent = String(qty);
+
+                const decBtn = row.querySelector('[data-action="dec"]');
+                if (decBtn) {
+                    decBtn.disabled = qty <= 0;
+                    decBtn.classList.toggle('opacity-40', qty <= 0);
+                    decBtn.classList.toggle('cursor-not-allowed', qty <= 0);
+                }
+                const incBtn = row.querySelector('[data-action="inc"]');
+                if (incBtn) {
+                    incBtn.disabled = !canIncGlobal;
+                    incBtn.classList.toggle('opacity-40', !canIncGlobal);
+                    incBtn.classList.toggle('cursor-not-allowed', !canIncGlobal);
+                }
+            });
+        }
+
+        function renderBeerBringOptions(preserveSearchFocus = false) {
+            const optionsEl = document.getElementById('beerBringOptions');
+            const dropdown = document.getElementById('beerBringDropdown');
+            if (!optionsEl || !dropdown) return;
+
+            refreshBeerBringSelectionsFromRating();
+
+            const raw = Array.isArray(data.beerRating) ? data.beerRating : Object.values(data.beerRating || {});
+            const beersSorted = raw.slice().sort((a, b) => {
+                const aName = (a.name || '').trim();
+                const bName = (b.name || '').trim();
+                return collator.compare(aName, bName);
+            });
+            const hash = getBeerBringOptionsHash(beersSorted);
+            const needsRebuild = optionsEl.dataset.built !== 'true' || hash !== beerBringOptionsHash;
+
+            if (needsRebuild) {
+                beerBringOptionsHash = hash;
+                const beerCountInput = document.getElementById('beerCount');
+                const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+                const totalSelected = getBeerBringTotal();
+
+                const selectionMap = new Map();
+                beerBringSelections.forEach((item) => {
+                    if (item.id) selectionMap.set(String(item.id), item);
+                });
+
+                const optionRows = [];
+                optionRows.push(`
+                    <div class="p-2 border-b border-amber-500/10">
+                        <input id="beerBringSearch" type="search" placeholder="Поиск пива..."
+                            class="w-full px-3 py-2 rounded-lg bg-gray-900/60 text-white placeholder-gray-500 border border-amber-500/25 focus:outline-none focus:border-amber-400 transition text-sm">
+                    </div>
+                `);
+
+                if (!beersSorted.length) {
+                    optionRows.push(`
+                        <div class="px-3 py-3 text-xs text-gray-500">
+                            В рейтинге пока нет пива. Добавьте его в «Рейтинг пива».
+                        </div>
+                    `);
+                } else {
+                    optionRows.push(beersSorted.map((beer) => {
+                        const id = escapeHtml(beer.id || '');
+                        const name = escapeHtml(beer.name || 'Без названия');
+                        const imageUrl = escapeHtml(beer.imageUrl || '');
+                        const meta = escapeHtml(getBeerDescriptor(beer) || '');
+                        const current = selectionMap.get(String(beer.id));
+                        const qty = current ? current.qty : 0;
+                        const active = qty > 0;
+                        const canInc = beerCount > 0 && totalSelected < beerCount;
+                        const searchText = escapeHtml(`${beer.name || ''} ${beer.style || ''} ${beer.type || ''}`.toLowerCase());
+                        return `
+                            <div class="beer-option-row w-full flex items-center gap-3 px-3 py-2 ${active ? 'bg-amber-500/10' : ''} hover:bg-amber-500/10 transition" data-beer-id="${id}" data-search="${searchText}">
+                                <span class="beer-option-thumb w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center overflow-hidden text-sm shrink-0" data-preview="${imageUrl}">
+                                    ${imageUrl ? `<img src="${imageUrl}" alt="">` : '🍺'}
+                                </span>
+                                <span class="flex flex-col min-w-0 flex-1">
+                                    <span class="beer-option-name font-semibold truncate ${active ? 'text-amber-200' : 'text-gray-200'}">${name}</span>
+                                    <span class="text-[11px] text-gray-500 truncate">${meta || 'Без категории'}</span>
+                                </span>
+                                <span class="ml-auto flex items-center gap-1.5">
+                                    <button type="button" data-action="dec" data-beer-id="${id}"
+                                        class="w-7 h-7 rounded-full border border-amber-500/25 text-amber-200 hover:text-white hover:border-amber-400 transition ${qty > 0 ? '' : 'opacity-40 cursor-not-allowed'}" ${qty > 0 ? '' : 'disabled'}>
+                                        −
+                                    </button>
+                                    <span class="beer-option-qty text-xs text-amber-200 min-w-[16px] text-center">${qty}</span>
+                                    <button type="button" data-action="inc" data-beer-id="${id}"
+                                        class="w-7 h-7 rounded-full border border-amber-500/25 text-amber-200 hover:text-white hover:border-amber-400 transition ${canInc ? '' : 'opacity-40 cursor-not-allowed'}" ${canInc ? '' : 'disabled'}>
+                                        +
+                                    </button>
+                                </span>
+                            </div>
+                        `;
+                    }).join(''));
+                }
+
+                optionsEl.innerHTML = optionRows.join('');
+                optionsEl.dataset.built = 'true';
+
+                const searchInput = document.getElementById('beerBringSearch');
+                if (searchInput) {
+                    searchInput.value = beerBringSearchQuery || '';
+                    searchInput.addEventListener('input', () => {
+                        beerBringSearchQuery = searchInput.value || '';
+                        applyBeerBringFilter();
+                    });
+                }
+
+                optionsEl.querySelectorAll('[data-action]').forEach((btn) => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = btn.dataset.beerId || '';
+                        if (!id) return;
+                        const beer = getBeerById(id);
+                        if (!beer) return;
+                        const current = beerBringSelections.find((b) => String(b.id) === String(id));
+                        const qty = current ? current.qty : 0;
+                        const delta = btn.dataset.action === 'inc' ? 1 : -1;
+                        const nextQty = Math.max(0, qty + delta);
+                        const beerCountInput = document.getElementById('beerCount');
+                        const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+                        if (delta > 0 && beerCount > 0 && getBeerBringTotal() >= beerCount) return;
+                        if (current) {
+                            current.qty = nextQty;
+                        } else if (nextQty > 0) {
+                            beerBringSelections.push({
+                                id: String(beer.id),
+                                name: beer.name || '',
+                                imageUrl: beer.imageUrl || '',
+                                type: beer.type || '',
+                                style: beer.style || '',
+                                stale: false,
+                                qty: nextQty
+                            });
+                        }
+                        if (current && current.qty <= 0) {
+                            beerBringSelections = beerBringSelections.filter((b) => String(b.id) !== String(id));
+                        }
+                        setBeerBringSelections(beerBringSelections, { skipOptions: true, trim: false });
+                        updateBeerBringOptionState();
+                    });
+                });
+
+                optionsEl.querySelectorAll('.beer-option-row').forEach((row) => {
+                    row.addEventListener('click', (e) => {
+                        if (e.target.closest('button')) return;
+                        const id = row.dataset.beerId || '';
+                        const beer = getBeerById(id);
+                        if (!beer) return;
+                        const current = beerBringSelections.find((b) => String(b.id) === String(id));
+                        const qty = current ? current.qty : 0;
+                        const beerCountInput = document.getElementById('beerCount');
+                        const beerCount = parseInt(beerCountInput?.value, 10) || 0;
+                        if (beerCount <= 0) return;
+                        if (getBeerBringTotal() >= beerCount) return;
+                        if (current) {
+                            current.qty = qty + 1;
+                        } else {
+                            beerBringSelections.push({
+                                id: String(beer.id),
+                                name: beer.name || '',
+                                imageUrl: beer.imageUrl || '',
+                                type: beer.type || '',
+                                style: beer.style || '',
+                                stale: false,
+                                qty: 1
+                            });
+                        }
+                        setBeerBringSelections(beerBringSelections, { skipOptions: true, trim: false });
+                        updateBeerBringOptionState();
+                    });
+                });
+            }
+
+            const searchInput = document.getElementById('beerBringSearch');
+            if (searchInput) {
+                searchInput.value = beerBringSearchQuery || '';
+                if (preserveSearchFocus) {
+                    const end = searchInput.value.length;
+                    searchInput.focus();
+                    try { searchInput.setSelectionRange(end, end); } catch (_) {}
+                }
+            }
+
+            applyBeerBringFilter();
+            attachBeerThumbPreviews();
+            updateBeerBringButton();
+            updateBeerBringOptionState();
+        }
+
+        function initBeerBringPicker() {
+            const button = document.getElementById('beerBringButton');
+            const dropdown = document.getElementById('beerBringDropdown');
+            const beerCountInput = document.getElementById('beerCount');
+            const resetBtn = document.getElementById('beerBringReset');
+            if (!button || !dropdown) return;
+
+            const toggle = (e) => {
+                e?.stopPropagation();
+                if (button.disabled) return;
+                const isOpen = !dropdown.classList.contains('hidden');
+                if (isOpen) {
+                    dropdown.classList.add('hidden');
+                } else {
+                    renderBeerBringOptions(true);
+                    dropdown.classList.remove('hidden');
+                }
+            };
+
+            button.addEventListener('click', toggle);
+
+            if (beerCountInput) {
+                beerCountInput.addEventListener('input', () => {
+                    const beerCount = parseInt(beerCountInput.value, 10) || 0;
+                    trimBeerBringSelections(beerCount);
+                    updateBeerBringButton();
+                    renderBeerBringOptions(true);
+                    if (beerCount <= 0) dropdown.classList.add('hidden');
+                });
+            }
+
+            if (resetBtn) {
+                resetBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    setBeerBringSelections([]);
+                    beerBringSearchQuery = '';
+                    renderBeerBringOptions(true);
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target) && !button.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            });
+
+            updateBeerBringButton();
         }
 
         // Firebase Methods
@@ -4114,19 +6346,50 @@
                             <div class="bg-green-600/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-green-500/30 text-sm">
                                 <span class="text-white font-medium">${name}</span>
                                 <span class="text-amber-300 font-bold text-xs">🍺${info.beer}</span>
+                                ${getAttendeeBeerSummary(info)}
                                 ${info.arrivalTime ? `<span class="text-sky-300 text-xs">🕒 ${info.arrivalTime}</span>` : ''}
                                 ${name === userName ? `<button onclick="removeAttendance('${name}')" class="text-red-400 hover:text-red-300 ml-1 text-xs">✕</button>` : ''}
                             </div>
                         `).join('');
+
+                        const closeDropdowns = () => {
+                            attendeesContainer.querySelectorAll('.attendee-beer-dropdown').forEach((dd) => dd.classList.add('hidden'));
+                        };
+                        const handleOutsideClick = (event) => {
+                            if (event.target.closest('.attendee-beer-wrap')) return;
+                            closeDropdowns();
+                            document.removeEventListener('click', handleOutsideClick);
+                        };
+                        attendeesContainer.querySelectorAll('.attendee-beer-toggle').forEach((btn) => {
+                            btn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const wrap = btn.closest('.attendee-beer-wrap');
+                                const dropdown = wrap?.querySelector('.attendee-beer-dropdown');
+                                if (!dropdown) return;
+                                const isOpen = !dropdown.classList.contains('hidden');
+                                closeDropdowns();
+                                if (!isOpen) {
+                                    dropdown.classList.remove('hidden');
+                                    positionAttendeeBeerDropdown(btn, dropdown);
+                                    document.addEventListener('click', handleOutsideClick);
+                                }
+                            });
+                        });
                     }
                 }
 
                 if (attendees[userName]) {
                     const beerCountInput = document.getElementById('beerCount');
                     if (beerCountInput) beerCountInput.value = attendees[userName].beer;
+                    const selections = resolveBeerSelections(attendees[userName]);
+                    setBeerBringSelections(selections, { skipOptions: true });
+                } else {
+                    setBeerBringSelections([], { skipOptions: true });
                 }
                 setTimePickerValue('arrivalTimeInput', 'arrivalTimeLabel', finalArrivalTime);
                 setTimePickerState('arrivalTimeButton', 'arrivalTimeLabel', hasMeetingTime, 'Начало встречи еще не определено');
+                renderBeerBringOptions();
+                updateBeerBringButton();
 
                 const totalBeer = Object.values(attendees).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
                 const totalBeerEl = document.getElementById('totalBeer');
@@ -4211,7 +6474,22 @@
                 event.startTime = meetingTimeInput.value || '';
             }
             if (!event.attendees) event.attendees = {};
-            event.attendees[userName] = { beer: beerCount, arrivalTime, timestamp: Date.now() };
+            const attendee = { beer: beerCount, arrivalTime, timestamp: Date.now() };
+            trimBeerBringSelections(beerCount);
+            const selections = normalizeBeerBringSelections(beerBringSelections || []);
+            if (beerCount > 0 && selections.length) {
+                attendee.beers = selections.map((s) => ({
+                    id: s.id || '',
+                    name: s.name || '',
+                    imageUrl: s.imageUrl || '',
+                    type: s.type || '',
+                    style: s.style || '',
+                    qty: Math.max(1, parseInt(s.qty, 10) || 1)
+                }));
+            } else if (attendee.beers) {
+                delete attendee.beers;
+            }
+            event.attendees[userName] = attendee;
             setEvent(selectedDate, event);
             
             if (!useFirebase) renderPanelContent();
@@ -4488,6 +6766,7 @@
             `;
             
             setupBacklogDragDrop();
+            syncBacklogHeight();
         }
 
         function setupBacklogDragDrop() {
@@ -5653,6 +7932,8 @@
                 tbody.innerHTML = `<tr><td colspan="${visibleCount}" class="text-center text-gray-600 py-8">${msg}</td></tr>`;
                 // also keep header in sync
                 applyBeerColumnsVisibility();
+                renderBeerBringOptions();
+                updateBeerBringButton();
                 return;
             }
             
@@ -5732,6 +8013,8 @@
             applyBeerColumnsVisibility();
             attachBeerThumbPreviews();
             attachBeerTextTooltips();
+            renderBeerBringOptions();
+            updateBeerBringButton();
         }
 
         let beerHoverPreviewEl = null;
@@ -5767,13 +8050,14 @@
         function attachBeerThumbPreviews() {
             const preview = ensureBeerHoverPreview();
             const img = preview.querySelector('img');
-            document.querySelectorAll('.beer-thumb[data-preview]').forEach((thumb) => {
+            const selector = '.beer-thumb[data-preview], .beer-option-thumb[data-preview], .beer-picker-thumb[data-preview], .beer-preview-thumb[data-preview]';
+            document.querySelectorAll(selector).forEach((thumb) => {
                 if (thumb.dataset.previewBound === 'true') return;
                 thumb.dataset.previewBound = 'true';
-                const url = (thumb.dataset.preview || '').trim();
-                if (!url) return;
                 thumb.addEventListener('mouseenter', () => {
                     if (!img) return;
+                    const url = (thumb.dataset.preview || '').trim();
+                    if (!url) return;
                     img.src = url;
                     const rect = thumb.getBoundingClientRect();
                     positionBeerHoverPreview(rect);
@@ -5878,6 +8162,7 @@
             document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
             document.getElementById('beerCaloriesInput').value = '';
+            addBeerRatingValue = 0;
             // default style
             const styleSel = document.getElementById('beerStyleInput');
             if (styleSel) styleSel.value = 'Lager';
@@ -5885,11 +8170,21 @@
             // ensure custom selects are applied and in sync
             enhanceBeerSelects();
             syncBeerSelects();
+
+            requestAnimationFrame(() => initBeerStarPicker(addBeerRatingValue, {
+                pickerId: 'beerAddStarPicker',
+                valueId: 'addBeerRatingValue',
+                onRate: setAddBeerRating
+            }));
         }
 
         function closeAddBeerModal() {
             document.getElementById('addBeerModal').classList.add('hidden');
             document.getElementById('addBeerModal').classList.remove('flex');
+        }
+
+        function setAddBeerRating(rating) {
+            addBeerRatingValue = rating;
         }
 
         function addBeer() {
@@ -5915,6 +8210,11 @@
                 ratings: {},
                 timestamp: Date.now()
             };
+
+            const ratingVal = parseFloat(addBeerRatingValue);
+            if (!Number.isNaN(ratingVal) && ratingVal > 0) {
+                beer.ratings[userName] = ratingVal;
+            }
             
             data.beerRating.push(beer);
             saveData();
@@ -6050,7 +8350,6 @@
 
         // Half-star picker (0.5 step) for beer rating
         const STAR_MAX = 10;
-        let beerStarHoverValue = null;
 
         function getStarSVG() {
             return `
@@ -6060,16 +8359,26 @@
             `.trim();
         }
 
-        function initBeerStarPicker(currentValue) {
-            const picker = document.getElementById('beerStarPicker');
-            const valueEl = document.getElementById('rateBeerValue');
+        function initBeerStarPicker(currentValue, options = {}) {
+            const pickerId = options.pickerId || 'beerStarPicker';
+            const valueId = options.valueId || 'rateBeerValue';
+            const onRate = typeof options.onRate === 'function' ? options.onRate : rateBeer;
+            const picker = document.getElementById(pickerId);
+            const valueEl = document.getElementById(valueId);
             if (!picker || !valueEl) return;
 
-            const val = (typeof currentValue === 'number') ? currentValue : (parseFloat(currentValue) || 0);
-            valueEl.textContent = val ? val.toFixed(1).replace(/\.0$/, '') : '—';
+            let baseValue = (typeof currentValue === 'number') ? currentValue : (parseFloat(currentValue) || 0);
+            const setValueText = (val) => {
+                valueEl.textContent = val ? val.toFixed(1).replace(/\.0$/, '') : '—';
+            };
+            const setBaseValue = (val) => {
+                baseValue = val;
+                applyBeerStarVisual(picker, baseValue, false);
+                setValueText(baseValue);
+            };
 
+            setValueText(baseValue);
             picker.innerHTML = '';
-            beerStarHoverValue = null;
 
             for (let i = 1; i <= STAR_MAX; i++) {
                 const unit = document.createElement('div');
@@ -6088,34 +8397,26 @@
                 unit.querySelectorAll('.star-hit').forEach(hit => {
                     hit.addEventListener('mouseenter', () => {
                         const v = parseFloat(hit.dataset.val);
-                        beerStarHoverValue = v;
-                        applyBeerStarVisual(v, true);
-                        valueEl.textContent = v.toFixed(1).replace(/\.0$/, '');
+                        applyBeerStarVisual(picker, v, true);
+                        setValueText(v);
                     });
                     hit.addEventListener('click', () => {
                         const v = parseFloat(hit.dataset.val);
-                        rateBeer(v);
+                        setBaseValue(v);
+                        onRate(v);
                     });
                 });
 
                 picker.appendChild(unit);
             }
 
-            // Use property handler to avoid stacking listeners across modal openings
-            picker.onmouseleave = () => {
-                beerStarHoverValue = null;
-                const fixed = val;
-                applyBeerStarVisual(fixed, false);
-                valueEl.textContent = fixed ? fixed.toFixed(1).replace(/\.0$/, '') : '—';
-            };
-
-            applyBeerStarVisual(val, false);
-            bindBeerStarPickerSwipe(val);
+            applyBeerStarVisual(picker, baseValue, false);
+            bindBeerStarPickerSwipe(picker, valueEl, () => baseValue, setBaseValue, onRate);
         }
 
-        function applyBeerStarVisual(value, isHover) {
+        function applyBeerStarVisual(picker, value, isHover) {
             const v = parseFloat(value) || 0;
-            document.querySelectorAll('#beerStarPicker .star-unit').forEach(unit => {
+            picker.querySelectorAll('.star-unit').forEach(unit => {
                 const i = parseInt(unit.dataset.star, 10);
                 const fillEl = unit.querySelector('.star-fill');
                 const dimEl = unit.querySelector('.star-dim');
@@ -6149,8 +8450,7 @@
         }
 
         // Swipe/drag rating (mobile friendly)
-        function getBeerRatingFromPointerEvent(evt) {
-            const picker = document.getElementById('beerStarPicker');
+        function getBeerRatingFromPointerEvent(picker, evt) {
             if (!picker) return 0;
             const rect = picker.getBoundingClientRect();
 
@@ -6180,9 +8480,7 @@
             return Math.max(0.5, Math.min(STAR_MAX, v));
         }
 
-        function bindBeerStarPickerSwipe(baseValue) {
-            const picker = document.getElementById('beerStarPicker');
-            const valueEl = document.getElementById('rateBeerValue');
+        function bindBeerStarPickerSwipe(picker, valueEl, getBaseValue, setBaseValue, onRate) {
             if (!picker || !valueEl) return;
 
             // Enable swipe/drag only on touch/coarse-pointer devices to avoid double-trigger on desktop.
@@ -6192,10 +8490,10 @@
             let lastV = null;
 
             const preview = (evt) => {
-                const v = getBeerRatingFromPointerEvent(evt);
+                const v = getBeerRatingFromPointerEvent(picker, evt);
                 if (!v) return;
                 lastV = v;
-                applyBeerStarVisual(v, true);
+                applyBeerStarVisual(picker, v, true);
                 valueEl.textContent = v.toFixed(1).replace(/\.0$/, '');
             };
 
@@ -6216,7 +8514,10 @@
                 if (!isDragging) return;
                 isDragging = false;
                 picker.classList.remove('select-none');
-                if (lastV != null) rateBeer(lastV);
+                if (lastV != null) {
+                    setBaseValue(lastV);
+                    onRate(lastV);
+                }
             };
 
             // remove previous handlers to avoid stacking
@@ -6245,9 +8546,8 @@
             // keep existing mouseleave behavior (restore fixed value)
             picker.onmouseleave = () => {
                 if (isDragging) return;
-                const fixed = baseValue;
-                applyBeerStarVisual(fixed, false);
-                valueEl.textContent = fixed ? fixed.toFixed(1).replace(/\.0$/, '') : '—';
+                const fixed = getBaseValue();
+                setBaseValue(fixed);
             };
         }
 
@@ -6936,24 +9236,42 @@
         // Scroll functions
         function scrollToSection(sectionId) {
             const section = document.getElementById(sectionId);
-            if (section) {
-                section.scrollIntoView({ behavior: 'smooth' });
+            if (!section) return;
+            if (document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                const pageKey = SECTION_TO_PAGE[sectionId] || sectionId;
+                setActivePage(pageKey);
+                return;
             }
+            section.scrollIntoView({ behavior: 'smooth' });
         }
 
         function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            scrollContainerToTop('smooth');
         }
 
         // Show/hide scroll to top button
-        window.addEventListener('scroll', () => {
+        function handleScrollTopVisibility() {
             const scrollTopBtn = document.getElementById('scrollTopBtn');
             const calendarSection = document.getElementById('calendarSection');
-            
+            if (!scrollTopBtn) return;
+
+            if (document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                const shell = document.querySelector('.content-shell');
+                const topVal = shell ? shell.scrollTop : 0;
+                if (topVal > 200) {
+                    scrollTopBtn.style.opacity = '1';
+                    scrollTopBtn.style.visibility = 'visible';
+                } else {
+                    scrollTopBtn.style.opacity = '0';
+                    scrollTopBtn.style.visibility = 'hidden';
+                }
+                return;
+            }
+
             if (calendarSection) {
                 const calendarRect = calendarSection.getBoundingClientRect();
                 const calendarBottom = calendarRect.bottom;
-                
+
                 if (calendarBottom < 0) {
                     scrollTopBtn.style.opacity = '1';
                     scrollTopBtn.style.visibility = 'visible';
@@ -6962,7 +9280,10 @@
                     scrollTopBtn.style.visibility = 'hidden';
                 }
             }
-        });
+        }
+
+        window.addEventListener('scroll', handleScrollTopVisibility);
+        window.addEventListener('resize', handleScrollTopVisibility);
     </script>
 </body>
 </html>

@@ -1,0 +1,107 @@
+# MTL rebuilt for three.js (OBJ+MTL)
+# Keep OBJ/MTL/textures in the same folder. Textures expected as base.png, base_n.png, base_s.png
+
+newmtl 25_Material96_1_0_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd body1.png
+map_Ks body1_s.png
+map_Bump -bm 1.000000 body1_n.png
+
+newmtl 25_Material97_1_0_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd arms.png
+map_Ks arms_s.png
+map_Bump -bm 1.000000 arms_n.png
+
+newmtl 25_Material95_1_0_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd legs.png
+map_Ks legs_s.png
+map_Bump -bm 1.000000 legs_n.png
+
+newmtl 25_Material98_1_0_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+Tr 0.000000
+illum 2
+map_Kd body2.png
+map_Ks body2_s.png
+map_Bump -bm 1.000000 body2_n.png
+
+newmtl 25_+Material120.Material120_1_0_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd mask.png
+map_Ks mask_s.png
+map_Bump -bm 1.000000 mask_n.png
+
+newmtl AM_A_1000_0
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd WP_A_1517.png
+map_Ks WP_A_1517_s.png
+map_Bump -bm 1.000000 WP_A_1517_n.png
+
+newmtl AM_A_1000_1
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd WP_A_0208.png
+map_Ks WP_A_0208_s.png
+map_Bump -bm 1.000000 WP_A_0208_n.png
+
+newmtl AM_A_1000_0.001
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.350000 0.350000 0.350000
+Ke 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd WP_A_0208.png
+map_Ks WP_A_0208_s.png
+map_Bump -bm 1.000000 WP_A_0208_n.png

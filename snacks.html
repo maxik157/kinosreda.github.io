@@ -27,6 +27,7 @@
     </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        body { margin: 0; overflow-y: auto; }
 
         html:not(.authed) body { visibility: hidden; }
     
@@ -121,8 +122,12 @@
         html, body {
             background: #000;
             overflow-x: hidden;
-            overscroll-behavior: none;
+            overscroll-behavior-x: none;
+            overscroll-behavior-y: auto;
+            height: 100%;
         }
+        html { overflow-y: hidden; }
+        body { overflow-y: auto; }
         body {
             font-family: 'Comfortaa', cursive;
             color: #fff;
@@ -197,6 +202,115 @@
             pointer-events: none;
             z-index: 0;
         }
+        .content {
+            padding: 20px 24px 40px;
+        }
+        body {
+            scrollbar-color: #fbbf24 rgba(255,255,255,0.08);
+            scrollbar-width: thin;
+        }
+        body::-webkit-scrollbar {
+            width: 10px;
+        }
+        body::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 999px;
+        }
+        body::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(245,158,11,0.9), rgba(217,119,6,0.9));
+            border-radius: 999px;
+            border: 2px solid rgba(0,0,0,0.4);
+        }
+        .summary-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+        }
+        @media (min-width: 768px) {
+            .summary-controls {
+                align-items: flex-end;
+            }
+        }
+        .calendar-card {
+            width: fit-content;
+        }
+        .page-head {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stacked-sections {
+            display: grid;
+            gap: 16px;
+        }
+        .section-card {
+            padding: 16px;
+        }
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .section-head-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-head-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .provider-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(255,255,255,0.04);
+        }
+        .provider-btn {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            color: #cbd5f5;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .provider-btn.active {
+            background: linear-gradient(90deg, rgba(245,158,11,0.25), rgba(251,191,36,0.45));
+            color: #fff;
+            box-shadow: 0 8px 14px rgba(251,191,36,0.18);
+        }
+        .section-toggle {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0,0,0,0.35);
+            color: var(--accent-200);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .section-toggle:hover { background: rgba(245,158,11,0.12); }
+        .section-card.is-collapsed .section-body { display: none; }
+        .section-card.is-collapsed .section-toggle { transform: rotate(-90deg); }
+        .btn-compact {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+        @media (max-width: 980px) {
+            .content { padding: 16px 16px 32px; }
+        }
         .glow {
             box-shadow: 0 0 0 1px rgba(245,158,11,0.12), 0 18px 50px rgba(245,158,11,0.08);
         }
@@ -210,6 +324,7 @@
             overflow: visible;
         }
         .card.elevated { z-index: 30; }
+        .card.food-open { z-index: 120; }
         .card.calendar-open { z-index: 80; }
         .section-title {
             font-size: 1.1rem;
@@ -329,6 +444,132 @@
             padding: 6px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.45);
         }
+        .food-name-wrap {
+            position: relative;
+            z-index: 30;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .food-weight-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        @media (min-width: 640px) {
+            .food-weight-wrap {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        .food-suggest {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 240;
+            max-height: 260px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            background: rgba(8,8,8,0.96);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+        }
+        .food-suggest.hidden { display: none; }
+        .food-suggest-item {
+            width: 100%;
+            text-align: left;
+            padding: 8px 10px;
+            border-radius: 10px;
+            color: #e5e7eb;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.35);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .food-suggest-item:hover {
+            background: rgba(245,158,11,0.12);
+            color: var(--accent-200);
+        }
+        .food-suggest-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .food-suggest-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.72rem;
+            color: #9ca3af;
+        }
+        .food-suggest-empty {
+            padding: 10px;
+            color: #9ca3af;
+            font-size: 0.8rem;
+        }
+        .food-grid {
+            display: grid;
+            gap: 12px;
+            align-items: center;
+            grid-template-columns: 1fr;
+        }
+        .table-head { display: none; }
+        @media (max-width: 639px) {
+            .table-head,
+            .macro-head {
+                display: none !important;
+            }
+        }
+        @media (min-width: 640px) {
+            .food-grid {
+                grid-template-columns: minmax(200px, 2.3fr) minmax(80px, 0.7fr) minmax(260px, 1.6fr) minmax(80px, 0.7fr) 32px;
+            }
+            .table-head { display: grid; }
+        }
+        .macro-wrap {
+            display: grid;
+            grid-template-columns: minmax(110px, 1fr) repeat(3, minmax(60px, 0.6fr));
+            gap: 6px;
+            align-items: center;
+        }
+        .macro-head {
+            display: grid;
+            grid-template-columns: minmax(110px, 1fr) repeat(3, minmax(60px, 0.6fr));
+            gap: 6px;
+            align-items: center;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+        }
+        .macro-grid { display: contents; }
+        .macro-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+        .macro-kcal {
+            width: 100%;
+        }
+        .macro-input {
+            width: 100%;
+        }
+        .macro-input::placeholder { color: #6b7280; }
+        .macro-input:focus {
+            outline: none;
+            border-color: var(--accent-400);
+            box-shadow: 0 0 0 1px var(--accent-400);
+        }
+        .macro-total {
+            font-size: 0.75rem;
+            color: #fcd34d;
+        }
+        .nowrap { white-space: nowrap; }
         .calendar-panel {
             position: absolute;
             top: calc(100% + 10px);
@@ -441,148 +682,75 @@
     </style>
 </head>
 <body class="bg-dark">
-    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
-            <div class="flex items-center gap-3 pl-2">
-                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
-                    <defs>
-                        <linearGradient id="beerGradSnack" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#fcd34d"/>
-                            <stop offset="50%" style="stop-color:#fbbf24"/>
-                            <stop offset="100%" style="stop-color:#d97706"/>
-                        </linearGradient>
-                        <linearGradient id="foamGradSnack" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#ffffff"/>
-                            <stop offset="100%" style="stop-color:#fef3c7"/>
-                        </linearGradient>
-                        <clipPath id="mugClipSnack"><rect x="0" y="0" width="50" height="55" rx="3"/></clipPath>
-                        <filter id="glowSnack">
-                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                            <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                        </filter>
-                    </defs>
+        <main class="content">
+            <section class="pt-4 pb-10">
 
-                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
-                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="var(--accent-500)" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowSnack)">КИНОСРЕДА</text>
-                    </a>
-
-                    <g id="logoMug" transform="translate(438, 2)">
-                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="rgba(180,83,9,0.95)" stroke-width="3"/>
-                        <g clip-path="url(#mugClipSnack)" transform="translate(0, 30)">
-                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradSnack)">
-                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze"/>
-                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze"/>
-                            </rect>
-                        </g>
-                        <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
-                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradSnack)"/>
-                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
-                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
-                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
-                        </g>
-                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-                    </g>
-                </svg>
-            </div>
-
-            <div class="flex items-center gap-1 md:gap-3 flex-nowrap whitespace-nowrap justify-center">
-                <a href="index.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2">
-                    <span>←</span> <span class="hidden sm:inline">На главную</span>
-                </a>
-                <a href="planning.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Планирование">
-                    <span>🌴</span>
-                </a>
-                <span class="text-amber-400 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Калькулятор перекусов">
-                    <span>🥨</span>
-                </span>
-                <a href="profile.html" class="text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10 flex items-center gap-1 md:gap-2" title="Профиль">
-                    <span>👤</span> <span id="profileName" class="hidden sm:inline"></span>
-                </a>
-                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
-                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="relative z-10">
-        <section class="container mx-auto px-3 md:px-4 max-w-7xl pt-6 pb-12">
-            <div class="flex flex-col lg:flex-row gap-6 lg:items-start lg:justify-between">
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-amber-200 m-0">Калькулятор перекусов</h1>
-                </div>
-                <div class="card glow p-3 w-full lg:w-auto">
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative">
-                        <div class="flex items-center gap-2">
-                            <button id="prevDateBtn" type="button" class="btn-muted" aria-label="Предыдущий день">←</button>
-                            <input id="snackDate" type="date" class="input-field" />
-                            <button id="nextDateBtn" type="button" class="btn-muted" aria-label="Следующий день">→</button>
-                            <button id="calendarToggle" type="button" class="btn-muted" aria-label="Открыть календарь">📅</button>
+            <div class="stacked-sections mt-6">
+                <div class="card glow section-card" data-section-card="beer">
+                    <div class="section-head">
+                        <div class="section-head-left">
+                            <button type="button" class="section-toggle" data-section-toggle aria-expanded="true" aria-controls="beerSectionBody">▾</button>
+                            <h2 class="section-title text-amber-200">Пиво</h2>
                         </div>
+                        <button id="addBeerRow" class="btn-amber btn-compact">+ Добавить пиво</button>
                     </div>
-                    <div id="calendarPanel" class="calendar-panel hidden">
-                        <div class="calendar-head">
-                            <button id="calendarPrevMonth" type="button" class="btn-muted" aria-label="Предыдущий месяц">←</button>
-                            <div id="calendarMonthLabel" class="text-sm text-amber-200 font-semibold"></div>
-                            <button id="calendarNextMonth" type="button" class="btn-muted" aria-label="Следующий месяц">→</button>
+                    <div id="beerSectionBody" class="section-body" aria-hidden="false">
+                        <div class="mt-4 space-y-2">
+                            <div class="hidden sm:grid grid-cols-[minmax(180px,1fr)_100px_120px_110px_32px] gap-3 table-head">
+                                <div>Пиво</div>
+                                <div>Объем</div>
+                                <div>Ккал / 100 мл</div>
+                                <div>Итого</div>
+                                <div></div>
+                            </div>
+                            <div id="beerRows" class="space-y-2"></div>
                         </div>
-                        <div class="calendar-grid mb-2">
-                            <div class="calendar-weekday">Пн</div>
-                            <div class="calendar-weekday">Вт</div>
-                            <div class="calendar-weekday">Ср</div>
-                            <div class="calendar-weekday">Чт</div>
-                            <div class="calendar-weekday">Пт</div>
-                            <div class="calendar-weekday">Сб</div>
-                            <div class="calendar-weekday">Вс</div>
+                        <div class="mt-4 flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Итого по пиву</span>
+                            <span id="beerTotal" class="text-amber-200 font-semibold">0 ккал</span>
                         </div>
-                        <div id="calendarDays" class="calendar-grid"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid gap-6 lg:grid-cols-2 mt-8 items-start">
-                <div class="card glow p-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="section-title text-amber-200">Пиво</h2>
-                        <button id="addBeerRow" class="btn-amber">+ Добавить пиво</button>
-                    </div>
-                    <div class="mt-5 space-y-3">
-                        <div class="hidden sm:grid grid-cols-[minmax(180px,1fr)_100px_120px_110px_32px] gap-3 table-head">
-                            <div>Пиво</div>
-                            <div>Объем</div>
-                            <div>Ккал / 100 мл</div>
-                            <div>Итого</div>
-                            <div></div>
-                        </div>
-                        <div id="beerRows" class="space-y-3"></div>
-                    </div>
-                    <div class="mt-5 flex items-center justify-between text-sm">
-                        <span class="text-gray-400">Итого по пиву</span>
-                        <span id="beerTotal" class="text-amber-200 font-semibold">0 ккал</span>
                     </div>
                 </div>
 
-                <div class="card glow p-5">
-                    <div class="flex items-center justify-between">
-                        <h2 class="section-title text-amber-200">Еда</h2>
-                        <button id="addFoodRow" class="btn-amber">+ Добавить блюдо</button>
+                <div class="card glow section-card" data-section-card="food">
+                    <div class="section-head">
+                        <div class="section-head-left">
+                            <button type="button" class="section-toggle" data-section-toggle aria-expanded="true" aria-controls="foodSectionBody">▾</button>
+                            <h2 class="section-title text-amber-200">Еда</h2>
+                        </div>
+                        <div class="section-head-right">
+                            <div class="provider-toggle" id="foodProviderToggle" role="group" aria-label="Источник данных">
+                                <button type="button" class="provider-btn" data-provider="fatsecret" aria-pressed="false">FatSecret</button>
+                                <button type="button" class="provider-btn" data-provider="openfoodfacts" aria-pressed="false">OpenFoodFacts</button>
+                            </div>
+                            <button id="addFoodRow" class="btn-amber btn-compact">+ Добавить блюдо</button>
+                        </div>
                     </div>
-                    <div class="mt-5 space-y-3">
-                        <div class="hidden sm:grid grid-cols-[minmax(180px,1fr)_110px_120px_110px_32px] gap-3 table-head">
+                    <div id="foodSectionBody" class="section-body" aria-hidden="false">
+                        <div class="mt-4 space-y-2">
+                        <div class="hidden sm:grid food-grid gap-3 table-head">
                             <div>Блюдо / продукт</div>
                             <div>Вес, г</div>
-                            <div>Ккал / 100 г</div>
+                            <div>
+                                <div class="macro-head">
+                                    <span class="nowrap">ККАЛ / 100 г</span>
+                                    <span>Б</span>
+                                    <span>Ж</span>
+                                    <span>У</span>
+                                </div>
+                            </div>
                             <div>Итого</div>
                             <div></div>
                         </div>
-                        <div id="foodRows" class="space-y-3"></div>
-                    </div>
-                    <div class="mt-5 flex items-center justify-between text-sm">
-                        <span class="text-gray-400">Итого по еде</span>
-                        <span id="foodTotal" class="text-amber-200 font-semibold">0 ккал</span>
+                            <div id="foodRows" class="space-y-2"></div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between text-sm">
+                            <span class="text-gray-400">Итого по еде</span>
+                            <div class="text-right">
+                                <div id="foodTotal" class="text-amber-200 font-semibold">0 ккал</div>
+                                <div id="foodMacrosTotal" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -591,9 +759,12 @@
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                         <div class="text-xs uppercase tracking-[0.3em] text-amber-300/70">Общий итог</div>
-                        <div class="text-lg md:text-xl font-bold text-amber-200">Суммарная калорийность за день</div>
+                        <div class="text-lg md:text-xl font-bold text-amber-200">Суммарные КБЖУ за день</div>
                     </div>
-                    <div id="grandTotal" class="text-2xl md:text-3xl font-bold text-amber-300">0 ккал</div>
+                    <div class="text-right">
+                        <div id="grandTotal" class="text-2xl md:text-3xl font-bold text-amber-300">0 ккал</div>
+                        <div id="grandMacros" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                    </div>
                 </div>
             </div>
 
@@ -603,7 +774,35 @@
                         <div class="text-xs uppercase tracking-[0.3em] text-amber-300/70">Сводка</div>
                         <h2 class="text-xl md:text-2xl font-bold text-amber-200">Перекусы участников</h2>
                     </div>
-                    <div id="summaryDateLabel" class="text-sm text-gray-400"></div>
+                    <div class="summary-controls">
+                        <div class="card glow p-3 calendar-card">
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-3 relative">
+                                <div class="flex items-center gap-2">
+                                    <button id="prevDateBtn" type="button" class="btn-muted" aria-label="Предыдущий день">←</button>
+                                    <input id="snackDate" type="date" class="input-field" />
+                                    <button id="nextDateBtn" type="button" class="btn-muted" aria-label="Следующий день">→</button>
+                                    <button id="calendarToggle" type="button" class="btn-muted" aria-label="Открыть календарь">📅</button>
+                                </div>
+                            </div>
+                            <div id="calendarPanel" class="calendar-panel hidden">
+                                <div class="calendar-head">
+                                    <button id="calendarPrevMonth" type="button" class="btn-muted" aria-label="Предыдущий месяц">←</button>
+                                    <div id="calendarMonthLabel" class="text-sm text-amber-200 font-semibold"></div>
+                                    <button id="calendarNextMonth" type="button" class="btn-muted" aria-label="Следующий месяц">→</button>
+                                </div>
+                                <div class="calendar-grid mb-2">
+                                    <div class="calendar-weekday">Пн</div>
+                                    <div class="calendar-weekday">Вт</div>
+                                    <div class="calendar-weekday">Ср</div>
+                                    <div class="calendar-weekday">Чт</div>
+                                    <div class="calendar-weekday">Пт</div>
+                                    <div class="calendar-weekday">Сб</div>
+                                    <div class="calendar-weekday">Вс</div>
+                                </div>
+                                <div id="calendarDays" class="calendar-grid"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="summaryEmpty" class="card glow p-6 text-center text-gray-400 mt-5">Пока никто не добавил перекусы за выбранный день.</div>
                 <div id="summaryCards" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mt-5"></div>
@@ -638,6 +837,18 @@
             suppressFormUpdate: false,
             saveTimer: null
         };
+        const FOOD_SEARCH_BASE = window.FOOD_SEARCH_BASE || window.OPENFOODFACTS_BASE || 'https://realtime.киносреда.рф';
+        const FATSECRET_ENDPOINT = `${FOOD_SEARCH_BASE}/fatsecret/search`;
+        const OPENFOODFACTS_ENDPOINT = `${FOOD_SEARCH_BASE}/openfoodfacts/search`;
+        const FOOD_SEARCH_PROVIDER = window.FOOD_SEARCH_PROVIDER || 'fatsecret';
+        const FOOD_PROVIDER_LS_KEY = 'foodSearchProvider';
+        const FOOD_SEARCH_MIN_CHARS = 2;
+        const FOOD_SEARCH_LIMIT = 20;
+        const FOOD_SEARCH_DELAY = 250;
+        const FOOD_SEARCH_CACHE_TTL = 5 * 60 * 1000;
+        const foodSearchCache = new Map();
+        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+        let beerRatingMetaTs = null;
 
         function initCurrentUser() {
             try {
@@ -678,6 +889,31 @@
             return `${num.toLocaleString('ru-RU')} ккал`;
         }
 
+        function formatMacro(value) {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return '0';
+            return (Math.round(num * 10) / 10).toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+        }
+
+        function formatMacroOptional(value) {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return '—';
+            return (Math.round(num * 10) / 10).toLocaleString('ru-RU', { maximumFractionDigits: 1 });
+        }
+
+        function formatPerLabel(label) {
+            if (!label) return '';
+            let text = String(label).trim();
+            text = text.replace(/^Per\s+/i, 'на ');
+            text = text.replace(/(\d)\s*g\b/i, '$1 г');
+            text = text.replace(/(\d)\s*ml\b/i, '$1 мл');
+            return text;
+        }
+
+        function formatMacrosLine(protein, fat, carbs) {
+            return `Б ${formatMacro(protein)} • Ж ${formatMacro(fat)} • У ${formatMacro(carbs)}`;
+        }
+
         function calcBeerCalories(volume, caloriesPer100) {
             const vol = parseFloat(volume);
             const cal = parseFloat(caloriesPer100);
@@ -690,6 +926,28 @@
             const cal = parseFloat(caloriesPer100);
             if (!wt || !cal) return 0;
             return (cal * wt) / 100;
+        }
+
+        function calcFoodMacro(weight, per100) {
+            const wt = parseFloat(weight);
+            const val = parseFloat(per100);
+            if (!wt || !val) return 0;
+            return (val * wt) / 100;
+        }
+
+        function parseOptionalNumber(value) {
+            const raw = String(value ?? '').trim();
+            if (!raw) return '';
+            const normalized = raw.replace(',', '.');
+            const num = parseFloat(normalized);
+            return Number.isFinite(num) ? num : '';
+        }
+
+        function getFoodInputValue(row, selector, datasetKey) {
+            const input = row.querySelector(selector);
+            if (input && input.value != null && input.value !== '') return input.value;
+            if (row && datasetKey && row.dataset[datasetKey] != null) return row.dataset[datasetKey];
+            return '';
         }
 
         function escapeHtml(str) {
@@ -764,6 +1022,334 @@
                 const card = wrap.closest('.card');
                 if (card) card.classList.add('elevated');
             }
+        }
+
+        function closeFoodSuggests(except = null) {
+            document.querySelectorAll('.food-suggest').forEach(menu => {
+                if (except && menu === except) return;
+                menu.classList.add('hidden');
+                const card = menu.closest('.card');
+                if (card) card.classList.remove('food-open');
+            });
+        }
+
+        function getFoodSearchProvider() {
+            const saved = localStorage.getItem(FOOD_PROVIDER_LS_KEY);
+            if (saved === 'openfoodfacts' || saved === 'fatsecret') return saved;
+            return FOOD_SEARCH_PROVIDER === 'openfoodfacts' ? 'openfoodfacts' : 'fatsecret';
+        }
+
+        function updateFoodProviderUI() {
+            const wrap = document.getElementById('foodProviderToggle');
+            if (!wrap) return;
+            const current = getFoodSearchProvider();
+            wrap.querySelectorAll('.provider-btn').forEach(btn => {
+                const isActive = btn.dataset.provider === current;
+                btn.classList.toggle('active', isActive);
+                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function setFoodSearchProvider(provider) {
+            const value = provider === 'openfoodfacts' ? 'openfoodfacts' : 'fatsecret';
+            localStorage.setItem(FOOD_PROVIDER_LS_KEY, value);
+            foodSearchCache.clear();
+            updateFoodProviderUI();
+            closeFoodSuggests();
+        }
+
+        function normalizeFoodItem(item) {
+            if (!item || typeof item !== 'object') return null;
+            const name = item.name || item.food_name || item.product_name || '';
+            const brand = item.brand || item.brand_name || item.brands || '';
+            const quantity = item.quantity || item.per || item.description || '';
+            const kcal = Number.isFinite(Number(item.kcal_100g)) ? Number(item.kcal_100g)
+                : (Number.isFinite(Number(item.kcal)) ? Number(item.kcal) : null);
+            const protein = Number.isFinite(Number(item.proteins_100g)) ? Number(item.proteins_100g)
+                : (Number.isFinite(Number(item.protein)) ? Number(item.protein) : null);
+            const fat = Number.isFinite(Number(item.fat_100g)) ? Number(item.fat_100g)
+                : (Number.isFinite(Number(item.fat)) ? Number(item.fat) : null);
+            const carbs = Number.isFinite(Number(item.carbs_100g)) ? Number(item.carbs_100g)
+                : (Number.isFinite(Number(item.carbs)) ? Number(item.carbs) : null);
+            const id = item.code || item.id || '';
+            return { name, brand, quantity, kcal, protein, fat, carbs, id };
+        }
+
+        function buildFoodSuggestHtml(items, showEmpty = true) {
+            if (!items || !items.length) {
+                return showEmpty ? '<div class="food-suggest-empty">Ничего не найдено.</div>' : '';
+            }
+            return items.map(raw => {
+                const item = normalizeFoodItem(raw);
+                if (!item) return '';
+                const name = item.name ? item.name : 'Без названия';
+                const brand = item.brand || '';
+                const quantity = item.quantity || '';
+                const kcal = Number.isFinite(item.kcal) ? item.kcal : null;
+                const protein = Number.isFinite(item.protein) ? item.protein : null;
+                const fat = Number.isFinite(item.fat) ? item.fat : null;
+                const carbs = Number.isFinite(item.carbs) ? item.carbs : null;
+                const metaParts = [
+                    `К ${formatMacroOptional(kcal)}`,
+                    `Б ${formatMacroOptional(protein)}`,
+                    `Ж ${formatMacroOptional(fat)}`,
+                    `У ${formatMacroOptional(carbs)}`
+                ];
+                const extraParts = [quantity, brand].filter(Boolean).map(part => escapeHtml(part));
+                const extra = extraParts.length ? `<span>${extraParts.join(' • ')}</span>` : '';
+                const dataAttrs = [
+                    `data-food-code="${escapeHtml(item.id ? item.id : '')}"`,
+                    `data-food-name="${escapeHtml(name)}"`,
+                    `data-food-kcal="${Number.isFinite(kcal) ? kcal : ''}"`,
+                    `data-food-protein="${Number.isFinite(protein) ? protein : ''}"`,
+                    `data-food-fat="${Number.isFinite(fat) ? fat : ''}"`,
+                    `data-food-carbs="${Number.isFinite(carbs) ? carbs : ''}"`
+                ].join(' ');
+                return `
+                    <button type="button" class="food-suggest-item" data-food-item ${dataAttrs}>
+                        <div class="food-suggest-title">${escapeHtml(name)}</div>
+                        <div class="food-suggest-meta">
+                            <span>${metaParts.join(' • ')}</span>
+                            ${extra}
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function fetchFoodSuggestions(query, page, signal) {
+            const provider = getFoodSearchProvider();
+            const key = `${provider}|${query.toLowerCase()}|${page}`;
+            const cached = foodSearchCache.get(key);
+            if (cached && (Date.now() - cached.at) < FOOD_SEARCH_CACHE_TTL) {
+                return Promise.resolve(cached.payload || { items: [], hasMore: false });
+            }
+            const endpoint = provider === 'openfoodfacts' ? OPENFOODFACTS_ENDPOINT : FATSECRET_ENDPOINT;
+            const url = `${endpoint}?q=${encodeURIComponent(query)}&limit=${FOOD_SEARCH_LIMIT}&page=${page}`;
+            return fetch(url, { signal, credentials: 'include' })
+                .then(res => {
+                    if (!res.ok) throw new Error('search_failed');
+                    return res.json();
+                })
+                .then(data => {
+                    if (data && data.ok === false) {
+                        throw new Error(data.error || 'search_failed');
+                    }
+                    const items = Array.isArray(data && data.items) ? data.items : [];
+                    const payload = { items, hasMore: !!(data && data.hasMore) };
+                    foodSearchCache.set(key, { at: Date.now(), payload });
+                    return payload;
+                });
+        }
+
+        function fetchFoodDetails() {
+            return Promise.resolve(null);
+        }
+
+        function setupFoodAutocomplete(input, suggest, applySelection) {
+            let timer = null;
+            let controller = null;
+            let lastQuery = '';
+            let currentQuery = '';
+            let currentPage = 1;
+            let hasMore = false;
+            let isLoading = false;
+            let requestToken = 0;
+            let seenKeys = new Set();
+            let pendingPage = null;
+            let isPicking = false;
+
+            function hideSuggest() {
+                suggest.classList.add('hidden');
+                const card = suggest.closest('.card');
+                if (card) card.classList.remove('food-open');
+            }
+
+            function showSuggest() {
+                closeFoodSuggests(suggest);
+                suggest.classList.remove('hidden');
+                const card = suggest.closest('.card');
+                if (card) card.classList.add('food-open');
+            }
+
+            function renderLoading() {
+                suggest.innerHTML = '<div class="food-suggest-empty">Поиск...</div>';
+                showSuggest();
+            }
+
+            function renderError() {
+                suggest.innerHTML = '<div class="food-suggest-empty">Не удалось загрузить данные.</div>';
+                showSuggest();
+            }
+
+            function renderItems(items, append = false) {
+                if (append) {
+                    const html = buildFoodSuggestHtml(items, false);
+                    const loadingNode = suggest.querySelector('[data-food-loading]');
+                    if (loadingNode) loadingNode.remove();
+                    if (html) suggest.insertAdjacentHTML('beforeend', html);
+                } else {
+                    suggest.innerHTML = buildFoodSuggestHtml(items, true);
+                }
+                showSuggest();
+            }
+
+            function setAppendLoading() {
+                const existing = suggest.querySelector('[data-food-loading]');
+                if (existing) return;
+                const node = document.createElement('div');
+                node.className = 'food-suggest-empty';
+                node.dataset.foodLoading = '1';
+                node.textContent = 'Загрузка...';
+                suggest.appendChild(node);
+            }
+
+            function loadPage(query, page, append = false) {
+                if (isLoading || pendingPage === page) return;
+                isLoading = true;
+                pendingPage = page;
+                const token = requestToken;
+                if (controller) controller.abort();
+                controller = new AbortController();
+                if (append) setAppendLoading();
+                else renderLoading();
+                fetchFoodSuggestions(query, page, controller.signal)
+                    .then(result => {
+                        if (token !== requestToken) return;
+                        if (input.value.trim() !== query || lastQuery !== query) return;
+                        const items = Array.isArray(result && result.items) ? result.items : [];
+                        const filtered = items.filter(item => {
+                            if (!item) return false;
+                            const key = item.id || `${item.name || ''}|${item.brand || ''}|${item.per || ''}`;
+                            if (!key) return true;
+                            if (seenKeys.has(key)) return false;
+                            seenKeys.add(key);
+                            return true;
+                        });
+                        const sizeHasMore = items.length >= FOOD_SEARCH_LIMIT;
+                        currentQuery = query;
+                        currentPage = page;
+                        hasMore = !!(result && result.hasMore) || sizeHasMore;
+                        renderItems(filtered, append);
+                    })
+                    .catch(err => {
+                        if (err && err.name === 'AbortError') return;
+                        if (input.value.trim() !== query) return;
+                        renderError();
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        pendingPage = null;
+                        const loadingNode = suggest.querySelector('[data-food-loading]');
+                        if (loadingNode) loadingNode.remove();
+                    });
+            }
+
+            input.addEventListener('input', () => {
+                const query = input.value.trim();
+                if (controller) controller.abort();
+                requestToken += 1;
+                if (query.length < FOOD_SEARCH_MIN_CHARS) {
+                    lastQuery = '';
+                    hideSuggest();
+                    return;
+                }
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    const current = input.value.trim();
+                    if (current.length < FOOD_SEARCH_MIN_CHARS) {
+                        hideSuggest();
+                        return;
+                    }
+                    lastQuery = current;
+                    currentPage = 1;
+                    hasMore = false;
+                    seenKeys = new Set();
+                    pendingPage = null;
+                    loadPage(current, 1, false);
+                }, FOOD_SEARCH_DELAY);
+            });
+
+            input.addEventListener('focus', () => {
+                const query = input.value.trim();
+                if (query.length >= FOOD_SEARCH_MIN_CHARS && suggest.innerHTML) {
+                    showSuggest();
+                }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideSuggest();
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                setTimeout(() => {
+                    if (isPicking) return;
+                    hideSuggest();
+                }, 150);
+            });
+
+            suggest.addEventListener('mousedown', (e) => {
+                const item = e.target.closest('[data-food-item]');
+                if (!item) return;
+                e.preventDefault();
+                isPicking = true;
+                const payload = {
+                    name: item.dataset.foodName || '',
+                    kcal: item.dataset.foodKcal || '',
+                    protein: item.dataset.foodProtein || '',
+                    fat: item.dataset.foodFat || '',
+                    carbs: item.dataset.foodCarbs || ''
+                };
+                applySelection(payload);
+                hideSuggest();
+                setTimeout(() => {
+                    isPicking = false;
+                }, 0);
+            });
+
+            suggest.addEventListener('scroll', () => {
+                if (isLoading || !hasMore) return;
+                if (!currentQuery) return;
+                if (suggest.scrollHeight <= suggest.clientHeight + 20) return;
+                const nearBottom = suggest.scrollTop + suggest.clientHeight >= suggest.scrollHeight - 40;
+                if (nearBottom) {
+                    loadPage(currentQuery, currentPage + 1, true);
+                }
+            });
+
+            suggest.addEventListener('click', (e) => {
+                if (isPicking) return;
+                const item = e.target.closest('[data-food-item]');
+                if (!item) return;
+                const payload = {
+                    name: item.dataset.foodName || '',
+                    kcal: item.dataset.foodKcal || '',
+                    protein: item.dataset.foodProtein || '',
+                    fat: item.dataset.foodFat || '',
+                    carbs: item.dataset.foodCarbs || ''
+                };
+                applySelection(payload);
+                hideSuggest();
+            });
+        }
+
+        function initSectionToggles() {
+            document.querySelectorAll('[data-section-toggle]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const card = btn.closest('[data-section-card]');
+                    if (!card) return;
+                    const willCollapse = !card.classList.contains('is-collapsed');
+                    card.classList.toggle('is-collapsed');
+                    btn.setAttribute('aria-expanded', String(!willCollapse));
+                    const bodyId = btn.getAttribute('aria-controls');
+                    if (bodyId) {
+                        const body = document.getElementById(bodyId);
+                        if (body) body.setAttribute('aria-hidden', String(willCollapse));
+                    }
+                });
+            });
         }
 
         function createBeerRow(data = {}) {
@@ -879,20 +1465,31 @@
 
         function createFoodRow(data = {}) {
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-1 sm:grid-cols-[minmax(180px,1fr)_110px_120px_110px_32px] gap-3 items-center';
+            row.className = 'grid food-grid gap-3 items-center';
             row.dataset.foodRow = '1';
 
             const nameWrap = document.createElement('div');
+            nameWrap.className = 'food-name-wrap';
+            const nameLabel = document.createElement('span');
+            nameLabel.className = 'cell-label sm:hidden';
+            nameLabel.textContent = 'Блюдо / продукт';
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
             nameInput.placeholder = 'Блюдо или продукт';
             nameInput.className = 'input-field';
             nameInput.value = data.name || '';
             nameInput.dataset.foodName = '1';
+            nameWrap.appendChild(nameLabel);
             nameWrap.appendChild(nameInput);
+            const suggest = document.createElement('div');
+            suggest.className = 'food-suggest hidden';
+            nameWrap.appendChild(suggest);
 
             const weightWrap = document.createElement('div');
-            weightWrap.className = 'flex items-center gap-2';
+            weightWrap.className = 'food-weight-wrap';
+            const weightLabel = document.createElement('span');
+            weightLabel.className = 'cell-label sm:hidden';
+            weightLabel.textContent = 'Вес, г';
             const weightInput = document.createElement('input');
             weightInput.type = 'number';
             weightInput.min = '0';
@@ -901,19 +1498,79 @@
             weightInput.className = 'input-field';
             weightInput.value = data.weight != null ? data.weight : '';
             weightInput.dataset.foodWeight = '1';
+            weightWrap.appendChild(weightLabel);
             weightWrap.appendChild(weightInput);
 
             const calWrap = document.createElement('div');
-            calWrap.className = 'flex items-center gap-2';
+            calWrap.className = 'macro-wrap';
             const calInput = document.createElement('input');
             calInput.type = 'number';
             calInput.min = '0';
             calInput.step = '1';
-            calInput.placeholder = 'ккал/100 г';
+            calInput.placeholder = '';
             calInput.className = 'input-field';
             calInput.value = data.calories != null ? data.calories : '';
             calInput.dataset.foodCalories = '1';
-            calWrap.appendChild(calInput);
+            calInput.classList.add('macro-kcal');
+            const kcalField = document.createElement('div');
+            kcalField.className = 'macro-field';
+            const kcalLabel = document.createElement('span');
+            kcalLabel.className = 'cell-label sm:hidden';
+            kcalLabel.textContent = 'ККАЛ / 100 г';
+            kcalField.appendChild(kcalLabel);
+            kcalField.appendChild(calInput);
+            calWrap.appendChild(kcalField);
+            const macroGrid = document.createElement('div');
+            macroGrid.className = 'macro-grid';
+            const proteinInput = document.createElement('input');
+            proteinInput.type = 'number';
+            proteinInput.min = '0';
+            proteinInput.step = '0.1';
+            proteinInput.placeholder = '';
+            proteinInput.className = 'input-field macro-input';
+            proteinInput.value = data.protein != null ? data.protein : '';
+            proteinInput.dataset.foodProtein = '1';
+            const fatInput = document.createElement('input');
+            fatInput.type = 'number';
+            fatInput.min = '0';
+            fatInput.step = '0.1';
+            fatInput.placeholder = '';
+            fatInput.className = 'input-field macro-input';
+            fatInput.value = data.fat != null ? data.fat : '';
+            fatInput.dataset.foodFat = '1';
+            const carbInput = document.createElement('input');
+            carbInput.type = 'number';
+            carbInput.min = '0';
+            carbInput.step = '0.1';
+            carbInput.placeholder = '';
+            carbInput.className = 'input-field macro-input';
+            carbInput.value = data.carbs != null ? data.carbs : '';
+            carbInput.dataset.foodCarbs = '1';
+            const proteinField = document.createElement('div');
+            proteinField.className = 'macro-field';
+            const proteinLabel = document.createElement('span');
+            proteinLabel.className = 'cell-label sm:hidden';
+            proteinLabel.textContent = 'Б';
+            proteinField.appendChild(proteinLabel);
+            proteinField.appendChild(proteinInput);
+            const fatField = document.createElement('div');
+            fatField.className = 'macro-field';
+            const fatLabel = document.createElement('span');
+            fatLabel.className = 'cell-label sm:hidden';
+            fatLabel.textContent = 'Ж';
+            fatField.appendChild(fatLabel);
+            fatField.appendChild(fatInput);
+            const carbField = document.createElement('div');
+            carbField.className = 'macro-field';
+            const carbLabel = document.createElement('span');
+            carbLabel.className = 'cell-label sm:hidden';
+            carbLabel.textContent = 'У';
+            carbField.appendChild(carbLabel);
+            carbField.appendChild(carbInput);
+            macroGrid.appendChild(proteinField);
+            macroGrid.appendChild(fatField);
+            macroGrid.appendChild(carbField);
+            calWrap.appendChild(macroGrid);
 
             const totalEl = document.createElement('div');
             totalEl.className = 'text-sm font-semibold text-amber-200 flex items-center gap-2';
@@ -930,22 +1587,59 @@
             row.appendChild(totalEl);
             row.appendChild(removeBtn);
 
+            function syncFoodRowValues() {
+                row.dataset.foodWeightValue = weightInput.value || '';
+                row.dataset.foodCaloriesValue = calInput.value || '';
+                row.dataset.foodProteinValue = proteinInput.value || '';
+                row.dataset.foodFatValue = fatInput.value || '';
+                row.dataset.foodCarbsValue = carbInput.value || '';
+            }
+
             function updateFoodRowTotal() {
                 const weight = parseFloat(weightInput.value);
                 const calories = parseFloat(calInput.value);
+                const protein = parseFloat(proteinInput.value);
+                const fat = parseFloat(fatInput.value);
+                const carbs = parseFloat(carbInput.value);
                 const total = calcFoodCalories(weight, calories);
+                const proteinTotal = calcFoodMacro(weight, protein);
+                const fatTotal = calcFoodMacro(weight, fat);
+                const carbsTotal = calcFoodMacro(weight, carbs);
                 row.dataset.foodTotal = String(total || 0);
+                row.dataset.foodProteinTotal = String(proteinTotal || 0);
+                row.dataset.foodFatTotal = String(fatTotal || 0);
+                row.dataset.foodCarbTotal = String(carbsTotal || 0);
                 row.querySelector('[data-food-total]').textContent = total ? Math.round(total).toString() : '0';
             }
 
             updateFoodRowTotal();
+            syncFoodRowValues();
 
-            [nameInput, weightInput, calInput].forEach(input => {
+            [nameInput, weightInput, calInput, proteinInput, fatInput, carbInput].forEach(input => {
                 input.addEventListener('input', () => {
+                    syncFoodRowValues();
                     updateFoodRowTotal();
                     updateTotals();
                     scheduleSave();
                 });
+            });
+
+            let detailController = null;
+
+            setupFoodAutocomplete(nameInput, suggest, (payload) => {
+                const safeValue = (val) => (val === null || val === undefined || val === '' ? '' : String(val));
+                nameInput.value = payload.name || '';
+                calInput.value = safeValue(payload.kcal);
+                proteinInput.value = safeValue(payload.protein);
+                fatInput.value = safeValue(payload.fat);
+                carbInput.value = safeValue(payload.carbs);
+                syncFoodRowValues();
+                updateFoodRowTotal();
+                updateTotals();
+                scheduleSave();
+
+                if (detailController) detailController.abort();
+                if (detailController) detailController.abort();
             });
 
             removeBtn.addEventListener('click', () => {
@@ -979,12 +1673,22 @@
                 beerTotal += parseFloat(row.dataset.beerTotal || '0') || 0;
             });
             let foodTotal = 0;
+            let foodProteinTotal = 0;
+            let foodFatTotal = 0;
+            let foodCarbTotal = 0;
             document.querySelectorAll('[data-food-row]').forEach(row => {
                 foodTotal += parseFloat(row.dataset.foodTotal || '0') || 0;
+                foodProteinTotal += parseFloat(row.dataset.foodProteinTotal || '0') || 0;
+                foodFatTotal += parseFloat(row.dataset.foodFatTotal || '0') || 0;
+                foodCarbTotal += parseFloat(row.dataset.foodCarbTotal || '0') || 0;
             });
             document.getElementById('beerTotal').textContent = formatKcal(beerTotal);
             document.getElementById('foodTotal').textContent = formatKcal(foodTotal);
+            const foodMacrosEl = document.getElementById('foodMacrosTotal');
+            if (foodMacrosEl) foodMacrosEl.textContent = formatMacrosLine(foodProteinTotal, foodFatTotal, foodCarbTotal);
             document.getElementById('grandTotal').textContent = formatKcal(beerTotal + foodTotal);
+            const grandMacrosEl = document.getElementById('grandMacros');
+            if (grandMacrosEl) grandMacrosEl.textContent = formatMacrosLine(foodProteinTotal, foodFatTotal, foodCarbTotal);
         }
 
         function setSaveStatus(text, mode) {
@@ -1020,13 +1724,19 @@
             const foods = [];
             document.querySelectorAll('[data-food-row]').forEach(row => {
                 const name = row.querySelector('[data-food-name]').value.trim();
-                const weight = row.querySelector('[data-food-weight]').value;
-                const calories = row.querySelector('[data-food-calories]').value;
-                if (!name && !weight && !calories) return;
+                const weight = getFoodInputValue(row, '[data-food-weight]', 'foodWeightValue');
+                const calories = getFoodInputValue(row, '[data-food-calories]', 'foodCaloriesValue');
+                const protein = getFoodInputValue(row, '[data-food-protein]', 'foodProteinValue');
+                const fat = getFoodInputValue(row, '[data-food-fat]', 'foodFatValue');
+                const carbs = getFoodInputValue(row, '[data-food-carbs]', 'foodCarbsValue');
+                if (!name && !weight && !calories && !protein && !fat && !carbs) return;
                 foods.push({
                     name,
-                    weight: weight ? parseFloat(weight) : '',
-                    calories: calories ? parseFloat(calories) : ''
+                    weight: parseOptionalNumber(weight),
+                    calories: parseOptionalNumber(calories),
+                    protein: parseOptionalNumber(protein),
+                    fat: parseOptionalNumber(fat),
+                    carbs: parseOptionalNumber(carbs)
                 });
             });
 
@@ -1123,6 +1833,9 @@
                 const foods = Array.isArray(data.foods) ? data.foods : [];
                 const beerTotal = beers.reduce((sum, item) => sum + calcBeerCalories(item.volume, item.calories), 0);
                 const foodTotal = foods.reduce((sum, item) => sum + calcFoodCalories(item.weight, item.calories), 0);
+                const foodProteinTotal = foods.reduce((sum, item) => sum + calcFoodMacro(item.weight, item.protein), 0);
+                const foodFatTotal = foods.reduce((sum, item) => sum + calcFoodMacro(item.weight, item.fat), 0);
+                const foodCarbTotal = foods.reduce((sum, item) => sum + calcFoodMacro(item.weight, item.carbs), 0);
                 const total = beerTotal + foodTotal;
 
                 const beerList = beers.map(item => {
@@ -1145,9 +1858,14 @@
 
                 return `
                     <div class="summary-card p-5">
-                        <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-start justify-between gap-2">
                             <div class="text-lg font-bold text-white">${escapeHtml(userName)}</div>
-                            <div class="text-amber-300 font-bold">${formatKcal(total)}</div>
+                            <div class="text-right">
+                                <div class="text-amber-300 font-bold flex items-baseline justify-end gap-2">
+                                    <span>${formatKcal(total)}</span>
+                                    <span class="text-xs text-amber-200 font-semibold">${formatMacrosLine(foodProteinTotal, foodFatTotal, foodCarbTotal)}</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="text-xs text-gray-400 mt-1">🍺 ${beers.length} • 🥪 ${foods.length}</div>
                         <div class="mt-4 space-y-2 text-sm text-gray-300">
@@ -1164,8 +1882,6 @@
             state.currentDate = dateKey;
             const dateInput = document.getElementById('snackDate');
             if (dateInput) dateInput.value = dateKey;
-            const dateLabel = document.getElementById('summaryDateLabel');
-            if (dateLabel) dateLabel.textContent = formatDateRu(dateKey);
             if (state.calendarMonth) renderCalendar();
             listenSnackDate(dateKey);
         }
@@ -1305,9 +2021,17 @@
             }
             state.db = firebase.database();
 
-            state.db.ref('beerRating').on('value', snapshot => {
-                state.beerRating = normalizeBeerList(snapshot.val());
-                refreshBeerMenus();
+            const fetchBeerRatingOnce = () => {
+                return state.db.ref('beerRating').once('value').then((snapshot) => {
+                    state.beerRating = normalizeBeerList(snapshot.val());
+                    refreshBeerMenus();
+                });
+            };
+            state.db.ref(BEER_RATING_META_PATH).on('value', snapshot => {
+                const ts = snapshot.val();
+                if (ts && ts === beerRatingMetaTs && state.beerRating.length) return;
+                if (ts) beerRatingMetaTs = ts;
+                fetchBeerRatingOnce().catch(() => {});
             });
 
             state.db.ref('users').on('value', snapshot => {
@@ -1333,17 +2057,27 @@
             const calendarNext = document.getElementById('calendarNextMonth');
             state.currentDate = formatLocalDate();
             if (dateInput) dateInput.value = state.currentDate;
-            const dateLabel = document.getElementById('summaryDateLabel');
-            if (dateLabel) dateLabel.textContent = formatDateRu(state.currentDate);
             state.calendarMonth = new Date();
 
             const addBeerBtn = document.getElementById('addBeerRow');
             const addFoodBtn = document.getElementById('addFoodRow');
+            const providerToggle = document.getElementById('foodProviderToggle');
 
             if (addBeerBtn) {
                 addBeerBtn.addEventListener('click', () => {
                     const wrap = document.getElementById('beerRows');
                     if (!wrap) return;
+                    const card = addBeerBtn.closest('[data-section-card]');
+                    if (card && card.classList.contains('is-collapsed')) {
+                        card.classList.remove('is-collapsed');
+                        const toggle = card.querySelector('[data-section-toggle]');
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'true');
+                            const bodyId = toggle.getAttribute('aria-controls');
+                            const body = bodyId ? document.getElementById(bodyId) : null;
+                            if (body) body.setAttribute('aria-hidden', 'false');
+                        }
+                    }
                     closeBeerMenus();
                     const row = createBeerRow();
                     wrap.appendChild(row);
@@ -1357,6 +2091,17 @@
                 addFoodBtn.addEventListener('click', () => {
                     const wrap = document.getElementById('foodRows');
                     if (!wrap) return;
+                    const card = addFoodBtn.closest('[data-section-card]');
+                    if (card && card.classList.contains('is-collapsed')) {
+                        card.classList.remove('is-collapsed');
+                        const toggle = card.querySelector('[data-section-toggle]');
+                        if (toggle) {
+                            toggle.setAttribute('aria-expanded', 'true');
+                            const bodyId = toggle.getAttribute('aria-controls');
+                            const body = bodyId ? document.getElementById(bodyId) : null;
+                            if (body) body.setAttribute('aria-hidden', 'false');
+                        }
+                    }
                     const row = createFoodRow();
                     wrap.appendChild(row);
                     updateTotals();
@@ -1364,6 +2109,15 @@
                     if (input) input.focus();
                 });
             }
+            if (providerToggle) {
+                providerToggle.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.provider-btn');
+                    if (!btn) return;
+                    setFoodSearchProvider(btn.dataset.provider || 'fatsecret');
+                });
+                updateFoodProviderUI();
+            }
+            initSectionToggles();
 
             if (dateInput) {
                 dateInput.addEventListener('change', () => {
@@ -1401,6 +2155,7 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('.beer-select')) closeBeerMenus();
+                if (!e.target.closest('.food-name-wrap')) closeFoodSuggests();
                 if (!e.target.closest('#calendarPanel') && !e.target.closest('#calendarToggle')) {
                     toggleCalendar(false);
                 }

@@ -2227,18 +2227,6 @@
             </svg>
         </button>
     </aside>
-    <header class="board-header">
-        <a class="board-logo" href="index.html" aria-label="Киносреда">
-            <span class="logo-text">Киносреда</span>
-        </a>
-        <div class="board-actions">
-            <a href="profile.html" class="btn" title="Профиль">
-                <span class="avatar">👤</span>
-                <span id="profileName">Профиль</span>
-            </a>
-            <button type="button" class="btn btn-danger" onclick="logout()">Выйти</button>
-        </div>
-    </header>
     <div class="widgets-menu" id="widgetsMenu">
         <button type="button" class="widgets-btn" id="widgetsToggle">Виджеты</button>
         <div class="widgets-dropdown" id="widgetsDropdown"></div>
@@ -2482,6 +2470,9 @@
         let viewportRestored = false;
         let suppressHiddenSync = false;
         const HIDDEN_CARDS_DB_PATH = 'boardState/hiddenCards';
+        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
+        const EVENTS_META_PATH = 'eventsMeta/updatedAt';
+        const BACKLOG_META_PATH = 'backlogMeta/updatedAt';
         const keys = { space: false };
         const eventData = { events: {} };
         let selectedEventDateKey = null;
@@ -2491,6 +2482,9 @@
         let rouletteRotation = 0;
         let rouletteResizeObserver = null;
         let beerDataCache = [];
+        let beerRatingMetaTs = null;
+        let eventsMetaTs = null;
+        let backlogMetaTs = null;
         let rouletteApplyRemote = false;
         let rouletteLastPublished = 0;
         const drawingState = { active: false, tool: 'select', startX: 0, startY: 0, element: null, points: [], textValue: '' };
@@ -5572,7 +5566,11 @@
 
         function setEvent(dateKey, event) {
             eventData.events[dateKey] = event;
-            if (boardDb) boardDb.ref('events').set(eventData.events);
+            if (boardDb) {
+                const updates = { events: eventData.events };
+                updates[EVENTS_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                boardDb.ref().update(updates);
+            }
         }
 
         function getNearestWednesday(baseDate) {
@@ -6558,7 +6556,9 @@
             list[idx] = target;
             try {
                 const db = firebase.database();
-                await db.ref('beerRating').set(list);
+                const updates = { beerRating: list };
+                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                await db.ref().update(updates);
                 beerDataCache = list;
                 const card = cardsLayer.querySelector(`.card[data-beer-info="${beerId}"]`);
                 if (card) {
@@ -6597,7 +6597,9 @@
             };
             try {
                 const db = firebase.database();
-                await db.ref('beerRating').set(list);
+                const updates = { beerRating: list };
+                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                await db.ref().update(updates);
                 beerDataCache = list;
                 removeBeerInfoLive(beerId);
                 card.remove();
@@ -6844,19 +6846,36 @@
             try {
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 boardDb = firebase.database();
-                boardDb.ref('beerRating').on('value', (snapshot) => {
-                    const value = snapshot.val() || [];
-                    const list = Array.isArray(value) ? value : Object.values(value);
-                    beerDataCache = list;
-                    renderBeerRating(list);
-                    renderRouletteList();
-                    renderRouletteWheel();
+                const loadBeerRatingOnce = () => {
+                    return boardDb.ref('beerRating').once('value').then((snapshot) => {
+                        const value = snapshot.val() || [];
+                        const list = Array.isArray(value) ? value : Object.values(value);
+                        beerDataCache = list;
+                        renderBeerRating(list);
+                        renderRouletteList();
+                        renderRouletteWheel();
+                    });
+                };
+                boardDb.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    if (ts && ts === beerRatingMetaTs && beerDataCache.length) return;
+                    if (ts) beerRatingMetaTs = ts;
+                    loadBeerRatingOnce().catch(() => {});
                 });
-                boardDb.ref('events').on('value', (snapshot) => {
-                    const value = snapshot.val() || {};
-                    eventData.events = value && typeof value === 'object' ? value : {};
-                    renderEventCalendar();
-                    renderEventPanel();
+                const loadEventsOnce = () => {
+                    return boardDb.ref('events').once('value').then((snapshot) => {
+                        const value = snapshot.val() || {};
+                        eventData.events = value && typeof value === 'object' ? value : {};
+                        renderEventCalendar();
+                        renderEventPanel();
+                    });
+                };
+                boardDb.ref(EVENTS_META_PATH).on('value', (snapshot) => {
+                    const ts = snapshot.val();
+                    const hasEvents = eventData.events && Object.keys(eventData.events).length > 0;
+                    if (ts && ts === eventsMetaTs && hasEvents) return;
+                    if (ts) eventsMetaTs = ts;
+                    loadEventsOnce().catch(() => {});
                 });
                 initBacklogFeed();
                 initPlanningFeed();
@@ -6881,7 +6900,9 @@
 
         function saveBacklog() {
             if (!boardDb) return;
-            boardDb.ref('backlog').set(backlogData);
+            const updates = { backlog: backlogData };
+            updates[BACKLOG_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+            boardDb.ref().update(updates);
         }
 
         function getCardAvgRating(card) {
@@ -7371,11 +7392,20 @@
 
         function initBacklogFeed() {
             if (!boardDb) return;
-            boardDb.ref('backlog').on('value', (snapshot) => {
-                const backlog = snapshot.val() || { columns: [], cards: [] };
-                backlogData.columns = Array.isArray(backlog.columns) ? backlog.columns : Object.values(backlog.columns || {});
-                backlogData.cards = Array.isArray(backlog.cards) ? backlog.cards : Object.values(backlog.cards || {});
-                renderBacklog();
+            const loadBacklogOnce = () => {
+                return boardDb.ref('backlog').once('value').then((snapshot) => {
+                    const backlog = snapshot.val() || { columns: [], cards: [] };
+                    backlogData.columns = Array.isArray(backlog.columns) ? backlog.columns : Object.values(backlog.columns || {});
+                    backlogData.cards = Array.isArray(backlog.cards) ? backlog.cards : Object.values(backlog.cards || {});
+                    renderBacklog();
+                });
+            };
+            boardDb.ref(BACKLOG_META_PATH).on('value', (snapshot) => {
+                const ts = snapshot.val();
+                const hasData = backlogData.columns.length || backlogData.cards.length;
+                if (ts && ts === backlogMetaTs && hasData) return;
+                if (ts) backlogMetaTs = ts;
+                loadBacklogOnce().catch(() => {});
             });
         }
 
@@ -7654,7 +7684,9 @@
             const next = Array.isArray(beerDataCache) ? [...beerDataCache, beer] : [beer];
             try {
                 const db = firebase.database();
-                await db.ref('beerRating').set(next);
+                const updates = { beerRating: next };
+                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
+                await db.ref().update(updates);
                 beerDataCache = next;
                 resetAddBeerForm();
                 closeAddBeerModal();

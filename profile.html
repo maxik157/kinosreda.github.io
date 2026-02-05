@@ -97,11 +97,16 @@
         html, body {
             background: #000;
             overflow-x: hidden;
-            overscroll-behavior: none;
+            overscroll-behavior-x: none;
+            overscroll-behavior-y: auto;
+            height: 100%;
         }
+        html { overflow-y: hidden; }
         body {
             font-family: 'Comfortaa', cursive;
             color: #fff;
+            margin: 0;
+            overflow-y: auto;
         }
         @font-face {
             font-family: 'Egyptian Bold Extended';
@@ -526,205 +531,74 @@
                 font-size: 16px !important;
             }
         }
+        #changePasswordBtn {
+            white-space: nowrap;
+            align-self: flex-start;
+            width: fit-content;
+            max-width: 100%;
+        }
 </style>
 </head>
 <body class="bg-dark min-h-screen">
     <div class="snow hidden" id="snow"></div>
-    <header class="py-2 md:py-4 relative z-50 sticky top-0 bg-black/95 backdrop-blur-sm border-b border-amber-500/10">
-        <div class="container mx-auto px-3 md:px-4 max-w-7xl flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4 safe-wrap">
-            <div class="flex items-center gap-3 pl-2 min-w-0">
-                <svg class="w-[220px] md:w-[360px] h-12 md:h-20 float pulse-glow flex-shrink-0" viewBox="0 0 580 120" style="overflow: visible;">
-                    <defs>
-                        <linearGradient id="beerGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#fcd34d"/>
-                            <stop offset="50%" style="stop-color:#fbbf24"/>
-                            <stop offset="100%" style="stop-color:#d97706"/>
-                        </linearGradient>
-                        <linearGradient id="foamGradProfile" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:#ffffff"/>
-                            <stop offset="100%" style="stop-color:#fef3c7"/>
-                        </linearGradient>
-                        <clipPath id="mugClipProfile">
-                            <rect x="0" y="0" width="50" height="55" rx="3"/>
-                        </clipPath>
-                        <filter id="glowProfile">
-                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                            <feMerge>
-                                <feMergeNode in="coloredBlur"/>
-                                <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                        </filter>
-                    </defs>
 
-                    <a href="index.html" aria-label="На главную" style="cursor:pointer;">
-                        <text id="logoText" x="28" y="78" text-anchor="start" class="logo-text" fill="#f59e0b" font-size="62" textLength="395" lengthAdjust="spacingAndGlyphs" filter="url(#glowProfile)">КИНОСРЕДА</text>
-                    </a>
-
-                    <a href="roulette.html" aria-label="Пивная рулетка" style="cursor:pointer;">
-                    <g id="logoMug" transform="translate(438, 2)" style="cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); location.assign('roulette.html');">
-                        <rect x="0" y="25" width="50" height="60" rx="5" fill="none" stroke="#b45309" stroke-width="3"/>
-                        <g clip-path="url(#mugClipProfile)" transform="translate(0, 30)">
-                            <rect x="0" y="55" height="0" width="50" fill="url(#beerGradProfile)">
-                                <animate attributeName="height" from="0" to="55" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-                                <animate attributeName="y" from="55" to="0" dur="2.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-                            </rect>
-                        </g>
-                        <rect x="6" y="30" width="6" height="50" rx="3" fill="rgba(255,255,255,0.3)" opacity="0.5"/>
-                        <g opacity="0">
-                            <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2s" fill="freeze"/>
-                            <ellipse cx="25" cy="27" rx="27" ry="10" fill="url(#foamGradProfile)"/>
-                            <circle cx="12" cy="24" r="6" fill="white" opacity="0.95"/>
-                            <circle cx="28" cy="22" r="5" fill="white" opacity="0.9"/>
-                            <circle cx="40" cy="25" r="5" fill="white" opacity="0.9"/>
-                        </g>
-                        <path d="M50 32 Q72 32 72 55 Q72 78 50 78" fill="none" stroke="#b45309" stroke-width="5" stroke-linecap="round"/>
-                    </g>
-                    </a>
-                </svg>
-
-                <!-- Snow toggle (same as main) -->
-                <div class="snow-toggle ml-1">
-                    <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
-                        <input type="checkbox" id="snowToggle" aria-label="Снежинки">
-                        <div class="snow-thumb"><span class="snow-icon">❄</span></div>
-                    </div>
-                </div>
+    
+    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8 safe-wrap">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 safe-wrap">
+            <div class="min-w-0">
+                <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
             </div>
 
-            <div class="flex items-center gap-2 min-w-0 flex-wrap justify-center">
-
-                <!-- Theme selector (desktop only in header) -->
-                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 160px;">
-                    <div class="cs" id="themeCS" style="width: 100%;">
-                        <select id="themeSelect" class="cs-native theme-select">
-                            <option value="beer">Пивной</option>
-                            <option value="white">Белый</option>
-                        </select>
-                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="cs-label"></span>
-                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <div class="cs-menu" role="listbox"></div>
-                    </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+                <div class="cs" id="themeCS" style="width: min(180px, 90vw);">
+                    <select id="themeSelect" class="cs-native theme-select">
+                        <option value="beer">Пивной</option>
+                        <option value="white">Белый</option>
+                    </select>
+                    <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="cs-label"></span>
+                        <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="cs-menu" role="listbox"></div>
                 </div>
 
-                <!-- Logo font selector (desktop only in header) -->
-                <div class="hidden md:flex items-center gap-2 min-w-0" style="width: 220px;">
-                    <div class="cs" id="logoFontCS" style="width: 100%;">
-                        <select id="logoFontSelect" class="cs-native logo-font-select">
-                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
-                            <option value="Train One">Train One</option>
-                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
-                            <option value="Rubik Microbe">Rubik Microbe</option>
-                            <option value="Rubik Puddles">Rubik Puddles</option>
-                            <option value="Stick">Stick</option>
-                            <option value="Press Start 2P">Press Start 2P</option>
-                            <option value="Reggae One">Reggae One</option>
-                            <option value="Dela Gothic One">Dela Gothic One</option>
-                            <option value="Amatic SC">Amatic SC</option>
-                            <option value="Underdog">Underdog</option>
-                            <option value="Stalinist One">Stalinist One</option>
-                            <option value="Lobster">Lobster</option>
-                            <option value="Kablammo">Kablammo</option>
-                            <option value="Comforter">Comforter</option>
-                            <option value="Pacifico">Pacifico</option>
-                            <option value="Ruslan Display">Ruslan Display</option>
-                            <option value="Caveat">Caveat</option>
-                            <option value="Rampart One">Rampart One</option>
-                            <option value="Rubik Scribble">Rubik Scribble</option>
-                        </select>
-                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="cs-label"></span>
-                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <div class="cs-menu" role="listbox"></div>
-                    </div>
+                <div class="cs" id="logoFontCS" style="width: min(240px, 90vw);">
+                    <select id="logoFontSelect" class="cs-native logo-font-select">
+                        <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                        <option value="Train One">Train One</option>
+                        <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                        <option value="Rubik Microbe">Rubik Microbe</option>
+                        <option value="Rubik Puddles">Rubik Puddles</option>
+                        <option value="Stick">Stick</option>
+                        <option value="Press Start 2P">Press Start 2P</option>
+                        <option value="Reggae One">Reggae One</option>
+                        <option value="Dela Gothic One">Dela Gothic One</option>
+                        <option value="Amatic SC">Amatic SC</option>
+                        <option value="Underdog">Underdog</option>
+                        <option value="Stalinist One">Stalinist One</option>
+                        <option value="Lobster">Lobster</option>
+                        <option value="Kablammo">Kablammo</option>
+                        <option value="Comforter">Comforter</option>
+                        <option value="Pacifico">Pacifico</option>
+                        <option value="Ruslan Display">Ruslan Display</option>
+                        <option value="Caveat">Caveat</option>
+                        <option value="Rampart One">Rampart One</option>
+                        <option value="Rubik Scribble">Rubik Scribble</option>
+                    </select>
+                    <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                        <span class="cs-label"></span>
+                        <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="cs-menu" role="listbox"></div>
                 </div>
 
-                <!-- Name now right before logout -->
-                <div class="hidden sm:flex items-center gap-2 min-w-0">
-                    <span class="text-amber-400">👤</span>
-                    <span id="profileName" class="text-sm text-amber-400 font-medium truncate"></span>
-                </div>
-
-                <button onclick="logout()" class="text-red-400 hover:text-red-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-red-500/10">
-                    <span class="sm:hidden">🚪</span><span class="hidden sm:inline">Выйти</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="relative z-10 container mx-auto max-w-7xl px-3 md:px-4 py-6 md:py-8 safe-wrap">
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6 safe-wrap">
-            <div class="min-w-0 flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                    <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
-                    <div class="text-gray-400 text-sm mt-1">Личная статистика по кино и пиву</div>
-                </div>
-
-                <!-- Mobile selectors (shown here on small screens) -->
-                <div class="md:hidden flex-shrink-0 flex flex-col items-end gap-2" style="width: min(190px, 44vw);">
-                    <!-- Theme (mobile) -->
-                    <div class="cs" id="themeCSMobile" style="width: 100%;">
-                        <select id="themeSelectMobile" class="cs-native theme-select">
-                            <option value="beer">Пивной</option>
-                            <option value="white">Белый</option>
-                        </select>
-                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="cs-label"></span>
-                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <div class="cs-menu" role="listbox"></div>
-                    </div>
-
-                    <!-- Logo font (mobile) -->
-                    <div class="cs" id="logoFontCSMobile" style="width: 100%;">
-                        <select id="logoFontSelectMobile" class="cs-native logo-font-select">
-                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
-                            <option value="Train One">Train One</option>
-                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
-                            <option value="Rubik Microbe">Rubik Microbe</option>
-                            <option value="Rubik Puddles">Rubik Puddles</option>
-                            <option value="Stick">Stick</option>
-                            <option value="Press Start 2P">Press Start 2P</option>
-                            <option value="Reggae One">Reggae One</option>
-                            <option value="Dela Gothic One">Dela Gothic One</option>
-                            <option value="Amatic SC">Amatic SC</option>
-                            <option value="Underdog">Underdog</option>
-                            <option value="Stalinist One">Stalinist One</option>
-                            <option value="Lobster">Lobster</option>
-                            <option value="Kablammo">Kablammo</option>
-                            <option value="Comforter">Comforter</option>
-                            <option value="Pacifico">Pacifico</option>
-                            <option value="Ruslan Display">Ruslan Display</option>
-                            <option value="Caveat">Caveat</option>
-                            <option value="Rampart One">Rampart One</option>
-                            <option value="Rubik Scribble">Rubik Scribble</option>
-                        </select>
-                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="cs-label"></span>
-                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                        <div class="cs-menu" role="listbox"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2">
                 <button id="changePasswordBtn" type="button" class="inline-flex items-center gap-2 text-amber-200 hover:text-amber-100 transition font-medium text-xs md:text-sm px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50">
                     🔒 <span>Сменить пароль</span>
                 </button>
-                <a href="index.html" class="inline-flex items-center gap-1 md:gap-2 text-amber-400 hover:text-amber-300 transition font-medium text-xs md:text-sm px-2 md:px-3 py-1 md:py-2 rounded-lg hover:bg-amber-500/10">
-                    <span>←</span> <span class="hidden sm:inline">На главную</span>
-                </a>
             </div>
         </div>
 

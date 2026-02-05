@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GiantDad OBJ Viewer — manual bind + brightness/emissive for dark atlases</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111; }
+    #app { position: fixed; inset: 0; }
+    #hud {
+      position: fixed; left: 12px; top: 12px; right: 12px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: #eee; font-size: 14px; line-height: 1.35;
+      display: flex; gap: 12px; align-items: flex-start; pointer-events: none;
+    }
+    #card {
+      pointer-events: auto;
+      background: rgba(0,0,0,.66);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      backdrop-filter: blur(8px);
+      max-width: 1040px;
+    }
+    #row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 8px; }
+    label { display: inline-flex; gap: 8px; align-items: center; }
+    input[type="checkbox"] { transform: translateY(1px); }
+    input[type="range"] { width: 220px; }
+    button {
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: #eee; border-radius: 10px;
+      padding: 6px 10px; cursor: pointer;
+    }
+    button:hover { background: rgba(255,255,255,.12); }
+    #barWrap { margin-top: 8px; height: 8px; background: rgba(255,255,255,.12); border-radius: 99px; overflow: hidden; }
+    #bar { height: 100%; width: 0%; background: rgba(255,255,255,.75); }
+    #error { color: #ffb4b4; white-space: pre-wrap; margin-top: 8px; display: none; }
+    #warn { color: #ffd7a6; white-space: pre-wrap; margin-top: 8px; display: none; max-height: 220px; overflow: auto; }
+    #mat { color: #cfe6ff; white-space: pre; margin-top: 8px; display: none; max-height: 340px; overflow: auto; font-size: 13px; }
+    code { background: rgba(255,255,255,.10); padding: 2px 6px; border-radius: 8px; }
+    .small { opacity: .85; font-size: 13px; }
+    .pill { opacity: .9; font-size: 12px; padding: 2px 8px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="hud">
+    <div id="card">
+      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+        <div><strong>GiantDad viewer</strong> — исправление “чёрных” рук/туловища</div>
+        <span class="pill">обычно причина: атлас очень тёмный + неверный normal/spec → убираем их и добавляем emissive</span>
+      </div>
+
+      <div class="small" style="margin-top:6px">
+        Положи рядом: <code>GiantDad_three_final.obj</code> и текстуры (<code>arms/body1/body2/legs/mask/WP_*</code>).<br/>
+        Запуск: <code>python -m http.server</code> → <code>http://localhost:8000/</code>
+      </div>
+
+      <div id="row">
+        <label><input id="flipY" type="checkbox" checked> flipY</label>
+        <label><input id="useRepeat" type="checkbox" checked> RepeatWrapping</label>
+        <label><input id="cutout" type="checkbox" checked> alphaTest cutout (для рваных частей)</label>
+        <label title="Убирает normal/spec карты только для body1+arms (часто они криво сконвертированы из DDS)">
+          <input id="noNS" type="checkbox" checked> отключить normal/spec для body1+arms
+        </label>
+        <label title="Делает body1+arms ярче независимо от света (показывает сам атлас)">
+          <input id="emissive" type="checkbox" checked> emissive для body1+arms
+        </label>
+
+        <label title="Общая экспозиция (как в Blender Filmic/ACES) — помогает, если всё слишком тёмное">
+          exposure <input id="exposure" type="range" min="0.6" max="2.8" step="0.05" value="1.55">
+          <span id="expVal" class="pill"></span>
+        </label>
+
+        <button id="reload">Перезагрузить</button>
+      </div>
+
+      <div id="barWrap"><div id="bar"></div></div>
+      <div id="error"></div>
+      <div id="warn"></div>
+      <div id="mat"></div>
+
+      <div class="small" style="margin-top:8px">
+        Привязка по <code>usemtl</code> из OBJ:
+        <code>Material97→arms</code>, <code>Material96→body1</code>, <code>Material98→body2</code>, <code>Material95→legs</code>, <code>Material120→mask</code>, <code>AM_A_1000_*→WP_A_*</code>.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+    const OBJ_FILE = './GiantDad_three_final.obj';
+    const BASE_PATH = './';
+
+    const MATERIAL_TO_BASE = {
+      "25_Material97_1_0_0.001": "arms",
+      "25_Material96_1_0_0.001": "body1",
+      "25_Material98_1_0_0.001": "body2",
+      "25_Material95_1_0_0.001": "legs",
+      "25_+Material120.Material120_1_0_0.001": "mask",
+      "AM_A_1000_0": "WP_A_1517",
+      "AM_A_1000_1": "WP_A_0208",
+      "AM_A_1000_0.001": "WP_A_0208"
+    };
+
+    // Какие атласы “с дырками”
+    const CUTOUT_BASES = new Set(["body2"]);
+    // Какие базы ты жалуешься как "чёрные"
+    const DARK_BASES = new Set(["arms", "body1"]);
+
+    const container = document.getElementById('app');
+    const bar = document.getElementById('bar');
+    const errorEl = document.getElementById('error');
+    const warnEl = document.getElementById('warn');
+    const matEl = document.getElementById('mat');
+
+    const flipYEl = document.getElementById('flipY');
+    const repeatEl = document.getElementById('useRepeat');
+    const cutoutEl = document.getElementById('cutout');
+    const noNSEl = document.getElementById('noNS');
+    const emissiveEl = document.getElementById('emissive');
+    const exposureEl = document.getElementById('exposure');
+    const expVal = document.getElementById('expVal');
+    const reloadBtn = document.getElementById('reload');
+
+    let renderer, scene, camera, controls, currentObj;
+
+    const missing = new Set();
+    const matReport = [];
+
+    const setProgress = (p) => {
+      const clamped = Math.max(0, Math.min(1, p));
+      bar.style.width = (clamped * 100).toFixed(1) + '%';
+    };
+    const showError = (msg) => {
+      errorEl.style.display = 'block';
+      errorEl.textContent = 'Ошибка:\n' + msg;
+    };
+    const showWarn = () => {
+      if (!missing.size) return;
+      warnEl.style.display = 'block';
+      warnEl.textContent = 'Не найдены файлы (404):\n' + Array.from(missing).slice(0, 140).join('\n');
+    };
+    const showMat = () => {
+      if (!matReport.length) return;
+      matEl.style.display = 'block';
+      matEl.textContent = matReport.join('\n');
+    };
+
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      // Tone mapping ближе к Blender-подобному восприятию
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = parseFloat(exposureEl.value);
+
+      container.appendChild(renderer.domElement);
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x111111);
+
+      camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 2000);
+      camera.position.set(0, 1.2, 3);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      // Свет всё равно оставим — но если эмиссив включён, он “переедет” тёмные атласы
+      scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+      const key = new THREE.DirectionalLight(0xffffff, 2.0);
+      key.position.set(3, 6, 2);
+      scene.add(key);
+      const fill = new THREE.DirectionalLight(0xffffff, 1.1);
+      fill.position.set(-3, 2, -2);
+      scene.add(fill);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      expVal.textContent = `x${renderer.toneMappingExposure.toFixed(2)}`;
+    }
+
+    function frameObject(obj) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      obj.position.sub(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = (maxDim / 2) / Math.tan(fov / 2);
+      cameraZ *= 2.2;
+
+      camera.position.set(0, Math.max(0.6, maxDim * 0.25), cameraZ);
+      camera.near = Math.max(0.001, cameraZ / 200);
+      camera.far = cameraZ * 200;
+      camera.updateProjectionMatrix();
+
+      controls.target.set(0, 0, 0);
+      controls.update();
+    }
+
+    function loadTex(texLoader, url, isColor) {
+      const t = texLoader.load(
+        url,
+        undefined,
+        undefined,
+        () => { missing.add(url); showWarn(); }
+      );
+
+      t.flipY = flipYEl.checked;
+
+      if (repeatEl.checked) {
+        t.wrapS = THREE.RepeatWrapping;
+        t.wrapT = THREE.RepeatWrapping;
+      } else {
+        t.wrapS = THREE.ClampToEdgeWrapping;
+        t.wrapT = THREE.ClampToEdgeWrapping;
+      }
+
+      if (isColor) t.colorSpace = THREE.SRGBColorSpace;
+      t.needsUpdate = true;
+      return t;
+    }
+
+    function applyMaps(mat, base) {
+      const texLoader = new THREE.TextureLoader();
+
+      // diffuse/albedo
+      const map = loadTex(texLoader, BASE_PATH + base + '.png', true);
+      mat.map = map;
+
+      // cutout alpha (для body2)
+      if (cutoutEl.checked && CUTOUT_BASES.has(base)) {
+        mat.alphaTest = 0.5;
+        mat.transparent = false;
+      } else {
+        mat.alphaTest = 0.0;
+        mat.transparent = false;
+      }
+
+      // Для body1+arms часто *_n / *_s после DDS->PNG получаются некорректными → дают "черноту" по освещению.
+      const allowNS = !(noNSEl.checked && DARK_BASES.has(base));
+
+      if (allowNS) {
+        const nrm = loadTex(texLoader, BASE_PATH + base + '_n.png', false);
+        const spc = loadTex(texLoader, BASE_PATH + base + '_s.png', false);
+        mat.normalMap = nrm;
+        mat.specularMap = spc;
+      } else {
+        mat.normalMap = null;
+        mat.specularMap = null;
+      }
+
+      // Эмиссив помогает показать сам атлас, даже если он тёмный
+      if (emissiveEl.checked && DARK_BASES.has(base)) {
+        mat.emissive = new THREE.Color(0xffffff);
+        mat.emissiveMap = map;
+        mat.emissiveIntensity = 0.65;
+      } else {
+        mat.emissive = new THREE.Color(0x000000);
+        mat.emissiveMap = null;
+        mat.emissiveIntensity = 0.0;
+      }
+
+      mat.color.set(0xffffff);
+      mat.specular = new THREE.Color(0x777777);
+      mat.shininess = 30;
+      mat.side = THREE.DoubleSide;
+      mat.needsUpdate = true;
+
+      matReport.push(`[OK] ${mat.name} -> ${base} | flipY=${map.flipY} | allowNS=${allowNS} | emissive=${emissiveEl.checked && DARK_BASES.has(base)}`);
+    }
+
+    function resolveBase(name) {
+      const trimmed = (name || '').trim();
+      if (MATERIAL_TO_BASE[trimmed]) return MATERIAL_TO_BASE[trimmed];
+      for (const k in MATERIAL_TO_BASE) {
+        if (trimmed.includes(k) || k.includes(trimmed)) return MATERIAL_TO_BASE[k];
+      }
+      return null;
+    }
+
+    function disposeObj(obj) {
+      obj.traverse((c) => {
+        if (!c.isMesh) return;
+        const mats = Array.isArray(c.material) ? c.material : [c.material];
+        mats.forEach((m) => {
+          if (!m) return;
+          m.map?.dispose?.();
+          m.normalMap?.dispose?.();
+          m.specularMap?.dispose?.();
+          m.emissiveMap?.dispose?.();
+          m.dispose?.();
+        });
+        c.geometry?.dispose?.();
+      });
+    }
+
+    function loadModel() {
+      setProgress(0);
+      errorEl.style.display = 'none';
+      warnEl.style.display = 'none';
+      matEl.style.display = 'none';
+      matReport.length = 0;
+      missing.clear();
+
+      renderer.toneMappingExposure = parseFloat(exposureEl.value);
+      expVal.textContent = `x${renderer.toneMappingExposure.toFixed(2)}`;
+
+      if (currentObj) {
+        scene.remove(currentObj);
+        disposeObj(currentObj);
+        currentObj = null;
+      }
+
+      const loader = new OBJLoader();
+      loader.load(
+        OBJ_FILE,
+        (obj) => {
+          const seen = new Set();
+          obj.traverse((child) => {
+            if (!child.isMesh) return;
+
+            const hasUV = !!child.geometry.attributes.uv;
+            if (!hasUV) matReport.push(`[WARN] Mesh без UV: ${child.name || '(no name)'}`);
+
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((m) => {
+              if (!m || seen.has(m.uuid)) return;
+              seen.add(m.uuid);
+
+              const base = resolveBase(m.name);
+              if (base) applyMaps(m, base);
+              else matReport.push(`[SKIP] ${m.name} (нет правила)`);
+            });
+          });
+
+          scene.add(obj);
+          currentObj = obj;
+          frameObject(obj);
+          setProgress(1);
+          showWarn();
+          showMat();
+        },
+        (xhr) => { if (xhr && xhr.total) setProgress(xhr.loaded / xhr.total); },
+        (err) => showError(err?.message || String(err))
+      );
+    }
+
+    initThree();
+    loadModel();
+
+    reloadBtn.addEventListener('click', loadModel);
+    exposureEl.addEventListener('input', () => {
+      renderer.toneMappingExposure = parseFloat(exposureEl.value);
+      expVal.textContent = `x${renderer.toneMappingExposure.toFixed(2)}`;
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
