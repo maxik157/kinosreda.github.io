@@ -328,20 +328,28 @@
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
         html.keyboard-open body.modal-open { position: relative; width: auto; }
         html.keyboard-open #poopModal {
-            padding-top: env(safe-area-inset-top, 16px);
+            padding-top: env(safe-area-inset-top, 12px);
             padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 120px);
         }
-        html.keyboard-open #poopModal .modal-card { max-height: none; }
+        html.keyboard-open #poopModal .modal-card {
+            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+        }
         html.ios-safari body.modal-open { position: relative; width: auto; }
         html.ios-safari #poopModal {
             height: 100dvh;
-            padding-top: env(safe-area-inset-top, 16px);
+            padding-top: env(safe-area-inset-top, 12px);
             padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
         }
-        html.ios-safari #poopModal .modal-card { max-height: none; overflow: visible; }
+        html.ios-safari #poopModal .modal-card {
+            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+            overflow-y: auto;
+        }
         @media (max-width: 640px) {
             body.modal-open { position: relative; width: auto; }
-            #poopModal .modal-card { max-height: none; overflow: visible; }
+            #poopModal .modal-card {
+                max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+                overflow-y: auto;
+            }
         }
         #poopModal {
             overscroll-behavior: contain;
@@ -356,6 +364,10 @@
             -webkit-backdrop-filter: none;
             backdrop-filter: none;
             contain: paint;
+        }
+        #poopModal .modal-card {
+            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+            overflow-y: auto;
         }
         #poopExportModal {
             overscroll-behavior: contain;
