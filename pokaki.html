@@ -325,38 +325,22 @@
         .comment-actions { position: absolute; bottom: 4px; right: 4px; display: flex; gap: 6px; align-items: center; transition: opacity 0.2s ease; }
         .comment-card.comment-editing .comment-actions { display: none; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
-        body.modal-open { overflow: hidden; position: fixed; width: 100%; }
-        html.keyboard-open body.modal-open { position: relative; width: auto; }
-        html.keyboard-open #poopModal {
-            padding-top: env(safe-area-inset-top, 12px);
-            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 120px);
+        body.modal-open { overflow: hidden; }
+        @media (min-width: 769px) {
+            body.modal-open { position: fixed; width: 100%; }
         }
-        html.keyboard-open #poopModal .modal-card {
-            max-height: none;
-        }
-        html.ios-safari body.modal-open { position: relative; width: auto; }
-        html.ios-safari #poopModal {
-            height: 100dvh;
-            padding-top: env(safe-area-inset-top, 12px);
-            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
-        }
-        html.ios-safari #poopModal .modal-card {
-            max-height: none;
-            overflow: visible;
-        }
-        @media (max-width: 640px) {
-            body.modal-open { position: relative; width: auto; }
-            #poopModal .modal-card {
-                max-height: none;
-                overflow: visible;
-            }
+        @media (max-width: 768px) {
+            body.modal-open { position: static; width: auto; }
         }
         #poopModal {
             overscroll-behavior: contain;
-            align-items: flex-start;
-            padding-top: calc(env(safe-area-inset-top, 16px) + var(--modal-offset, 0px));
-            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
+            align-items: stretch;
+            justify-content: center;
+            padding: env(safe-area-inset-top, 0px) 12px calc(env(safe-area-inset-bottom, 0px) + 24px);
             height: var(--modal-vh, 100dvh);
+            max-height: var(--modal-vh, 100dvh);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             transform: translateZ(0);
             backface-visibility: hidden;
             isolation: isolate;
@@ -365,23 +349,17 @@
             backdrop-filter: none;
             contain: paint;
         }
-        #poopModal .modal-card {
-            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
-            overflow-y: auto;
+        html.keyboard-open #poopModal {
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 140px);
         }
-        @media (max-width: 768px) {
-            #poopModal {
-                align-items: stretch;
-                padding: env(safe-area-inset-top, 0px) 12px env(safe-area-inset-bottom, 0px);
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            #poopModal .modal-card {
-                height: auto;
-                max-height: none;
-                overflow: visible;
-                min-height: 0;
-            }
+        #poopModal .modal-card {
+            width: 100%;
+            max-width: 720px;
+            height: auto;
+            max-height: none;
+            overflow: visible;
+            min-height: 0;
+            align-self: stretch;
         }
         #poopExportModal {
             overscroll-behavior: contain;
