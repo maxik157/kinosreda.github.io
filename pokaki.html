@@ -318,6 +318,17 @@
         .comment-card.comment-editing .comment-actions { display: none; }
         .confirm-modal { background: rgba(0,0,0,0.85); }
         body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+        html.keyboard-open body.modal-open { position: relative; width: auto; }
+        html.keyboard-open #poopModal {
+            position: absolute;
+            inset: 0;
+            padding-top: env(safe-area-inset-top, 16px);
+        }
+        html.keyboard-open #poopModal .modal-card { max-height: none; }
+        @media (max-width: 640px) {
+            body.modal-open { position: relative; width: auto; }
+            #poopModal .modal-card { max-height: none; overflow: visible; }
+        }
         #poopModal {
             overscroll-behavior: contain;
             align-items: flex-start;
@@ -1289,6 +1300,9 @@
                 const offset = vv ? vv.offsetTop : 0;
                 document.documentElement.style.setProperty('--modal-vh', `${h}px`);
                 document.documentElement.style.setProperty('--modal-offset', `${offset}px`);
+                const keyboardGap = 120;
+                const keyboardOpen = vv ? (window.innerHeight - vv.height) > keyboardGap : false;
+                document.documentElement.classList.toggle('keyboard-open', keyboardOpen);
             }
             function roundRectPath(ctx, x, y, w, h, r){
                 const radius = Math.min(r, w / 2, h / 2);
@@ -3842,6 +3856,8 @@
             authorFilterLabel.textContent = selectedAuthor === 'all' ? 'Все' : selectedAuthor;
             updateModalVh();
             window.addEventListener('resize', updateModalVh);
+            window.addEventListener('focusin', updateModalVh);
+            window.addEventListener('focusout', updateModalVh);
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', updateModalVh);
                 window.visualViewport.addEventListener('scroll', updateModalVh);
