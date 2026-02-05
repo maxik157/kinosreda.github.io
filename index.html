@@ -2116,10 +2116,17 @@
                 box-sizing: border-box;
             }
             body.layout-sidebar.page-service-active .content-shell {
-                padding-top: var(--header-offset, 0px);
+                padding-top: 0;
                 height: var(--vvh, 100dvh);
                 overflow: hidden;
                 box-sizing: border-box;
+            }
+            body.layout-sidebar.page-service-active .page-service {
+                height: calc(var(--vvh, 100dvh) - var(--header-offset, 0px));
+                margin-top: var(--header-offset, 0px);
+            }
+            body.layout-sidebar.page-service-active .service-frame {
+                height: 100%;
             }
         }
         html.ios-safari body.layout-sidebar.layout-sidebar-mobile header.header-shell {
