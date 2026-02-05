@@ -346,6 +346,11 @@
             backdrop-filter: none;
             contain: paint;
         }
+        @media (max-width: 768px) {
+            #poopModal {
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+            }
+        }
         #poopModal .modal-card {
             width: 100%;
             max-width: 720px;
