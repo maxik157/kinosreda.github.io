@@ -2113,6 +2113,13 @@
                 height: calc(100dvh - var(--header-offset, 0px));
                 overflow-y: auto;
                 -webkit-overflow-scrolling: touch;
+                box-sizing: border-box;
+            }
+            body.layout-sidebar.page-service-active .content-shell {
+                padding-top: var(--header-offset, 0px);
+                height: calc(100dvh - var(--header-offset, 0px));
+                overflow: hidden;
+                box-sizing: border-box;
             }
         }
         html.ios-safari body.layout-sidebar.layout-sidebar-mobile header.header-shell {

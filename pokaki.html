@@ -332,7 +332,7 @@
             padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 120px);
         }
         html.keyboard-open #poopModal .modal-card {
-            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+            max-height: none;
         }
         html.ios-safari body.modal-open { position: relative; width: auto; }
         html.ios-safari #poopModal {
@@ -341,14 +341,14 @@
             padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
         }
         html.ios-safari #poopModal .modal-card {
-            max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
-            overflow-y: auto;
+            max-height: none;
+            overflow: visible;
         }
         @media (max-width: 640px) {
             body.modal-open { position: relative; width: auto; }
             #poopModal .modal-card {
-                max-height: calc(var(--modal-vh, 100dvh) - 24px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
-                overflow-y: auto;
+                max-height: none;
+                overflow: visible;
             }
         }
         #poopModal {
@@ -373,11 +373,13 @@
             #poopModal {
                 align-items: stretch;
                 padding: env(safe-area-inset-top, 0px) 12px env(safe-area-inset-bottom, 0px);
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
             #poopModal .modal-card {
-                height: 100%;
-                max-height: 100%;
-                overflow-y: auto;
+                height: auto;
+                max-height: none;
+                overflow: visible;
                 min-height: 0;
             }
         }
@@ -394,13 +396,7 @@
             contain: paint;
         }
         .modal-actions {
-            position: sticky;
-            bottom: 0;
-            padding-top: 12px;
-            padding-bottom: 4px;
             margin-top: 8px;
-            background: linear-gradient(180deg, rgba(5,5,5,0) 0%, rgba(5,5,5,0.85) 40%, rgba(5,5,5,0.95) 100%);
-            z-index: 2;
         }
         .modal-card {
             max-height: calc(var(--modal-vh, 100vh) - 2rem);
