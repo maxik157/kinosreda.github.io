@@ -523,6 +523,18 @@
             input.value = '';
         }
 
+        function notifyParentPlanningRoute(view, eventId) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'planning:route',
+                        view,
+                        eventId: eventId || null
+                    }, window.location.origin);
+                }
+            } catch (_) {}
+        }
+
         function setEventModalMode(mode) {
             const title = document.getElementById('addEventTitle');
             const btn = document.getElementById('createEventBtn');
@@ -697,6 +709,7 @@
         initProfileName();
         initFirebase();
         initUsers();
+        notifyParentPlanningRoute('list');
     </script>
 </body>
 </html>

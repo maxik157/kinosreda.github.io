@@ -4195,6 +4195,8 @@
         const LAYOUT_MODE_LS_KEY = 'indexLayoutMode';
         const SIDEBAR_COLLAPSE_LS_KEY = 'indexSidebarCollapsed';
         const PAGE_LS_KEY = 'indexActivePage';
+        const PAGE_URL_PARAM = 'page';
+        const PLANNING_EVENT_PARAM = 'planningEvent';
         const PAGE_IDS = {
             calendar: 'calendarSection',
             backlog: 'backlogSection',
@@ -4209,6 +4211,48 @@
             svc_water: 'svc_water'
         };
         const SECTION_TO_PAGE = { calendarSection: 'calendar', backlogSection: 'backlog', beerSection: 'beer' };
+        function getPageFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const page = params.get(PAGE_URL_PARAM);
+                if (page && PAGE_IDS[page]) return page;
+            } catch (_) {}
+            return null;
+        }
+        function getPlanningEventIdFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const raw = params.get(PLANNING_EVENT_PARAM);
+                return raw ? String(raw) : null;
+            } catch (_) {}
+            return null;
+        }
+        function updatePageUrl(page, options = {}) {
+            const resolved = PAGE_IDS[page] ? page : 'calendar';
+            try {
+                const url = new URL(window.location.href);
+                if (resolved && resolved !== 'calendar') {
+                    url.searchParams.set(PAGE_URL_PARAM, resolved);
+                } else {
+                    url.searchParams.delete(PAGE_URL_PARAM);
+                }
+                const planningEventId = resolved === 'svc_planning'
+                    ? (options.planningEventId !== undefined ? options.planningEventId : getPlanningEventIdFromUrl())
+                    : null;
+                if (resolved === 'svc_planning' && planningEventId) {
+                    url.searchParams.set(PLANNING_EVENT_PARAM, planningEventId);
+                } else {
+                    url.searchParams.delete(PLANNING_EVENT_PARAM);
+                }
+                const next = `${url.pathname}${url.search}${url.hash}`;
+                const state = { page: resolved };
+                if (options.push) {
+                    window.history.pushState(state, '', next);
+                } else {
+                    window.history.replaceState(state, '', next);
+                }
+            } catch (_) {}
+        }
 
         function isDesktopLayout() {
             return window.matchMedia('(min-width: 1024px)').matches;
@@ -4262,7 +4306,18 @@
                 if (frame) frame.removeAttribute('src');
                 return;
             }
-            if (!frame || frame.getAttribute('src')) return;
+            if (!frame) return;
+            if (section.id === 'svc_planning') {
+                const eventId = getPlanningEventIdFromUrl();
+                const desired = eventId
+                    ? `planning-event.html?id=${encodeURIComponent(eventId)}`
+                    : frame.getAttribute('data-src');
+                if (desired && frame.getAttribute('src') !== desired) {
+                    frame.setAttribute('src', desired);
+                }
+                return;
+            }
+            if (frame.getAttribute('src')) return;
             const src = frame.getAttribute('data-src');
             if (src) frame.setAttribute('src', src);
         }
@@ -4313,6 +4368,9 @@
             const fromSection = SECTION_TO_PAGE[page];
             const resolved = PAGE_IDS[page] ? page : (fromSection || 'calendar');
             localStorage.setItem(PAGE_LS_KEY, resolved);
+            if (options.updateUrl !== false) {
+                updatePageUrl(resolved, { push: !!options.push, planningEventId: options.planningEventId });
+            }
 
             const useSidebar = document.body.classList.contains('layout-sidebar');
             document.body.classList.toggle('page-backlog-active', useSidebar && resolved === 'backlog');
@@ -4356,6 +4414,9 @@
             if (useSidebar && resolved === 'backlog') {
                 requestAnimationFrame(syncBacklogHeight);
             }
+            if (useSidebar && resolved === 'svc_planning') {
+                ensureServiceFrame(document.getElementById('svc_planning'));
+            }
         }
 
         function setLayoutMode(mode, options = {}) {
@@ -4375,14 +4436,19 @@
             } else {
                 refreshHeaderOffset();
             }
-            const savedPage = localStorage.getItem(PAGE_LS_KEY) || 'calendar';
-            setActivePage(savedPage, { scroll: false });
+            const urlPage = getPageFromUrl() || (getPlanningEventIdFromUrl() ? 'svc_planning' : null);
+            const savedPage = urlPage || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
+            setActivePage(savedPage, { scroll: false, updateUrl: true });
             scheduleSidebarLogoFit(60);
         }
 
         function openSidebarPage(page) {
             closeMobileMenu();
-            setActivePage(page);
+            if (page === 'svc_planning') {
+                setActivePage(page, { push: true, planningEventId: null });
+            } else {
+                setActivePage(page, { push: true });
+            }
         }
 
         function openProfilePage(e) {
@@ -4390,7 +4456,7 @@
             if (useSidebar) {
                 if (e) e.preventDefault();
                 closeMobileMenu();
-                setActivePage('svc_profile');
+                setActivePage('svc_profile', { push: true });
                 return false;
             }
             return true;
@@ -4401,7 +4467,7 @@
             if (useSidebar) {
                 if (e) e.preventDefault();
                 closeMobileMenu();
-                setActivePage('svc_roulette');
+                setActivePage('svc_roulette', { push: true });
                 return false;
             }
             return true;
@@ -4467,6 +4533,14 @@
                 shell.addEventListener('scroll', handleScrollTopVisibility);
                 handleScrollTopVisibility();
             }
+
+            window.addEventListener('popstate', () => {
+                const page = getPageFromUrl() || (getPlanningEventIdFromUrl() ? 'svc_planning' : null) || 'calendar';
+                setActivePage(page, { scroll: false, updateUrl: false });
+                if (page === 'svc_planning') {
+                    ensureServiceFrame(document.getElementById('svc_planning'));
+                }
+            });
         }
         const LOGO_FONTS = [
             'Train One',
@@ -4729,6 +4803,20 @@
             initMobileMenu();
 
             initBeerSticky();
+
+            window.addEventListener('message', (e) => {
+                const data = e && e.data ? e.data : null;
+                if (!data || data.type !== 'planning:route') return;
+                const currentPage = getPageFromUrl() || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
+                const currentPlanningId = getPlanningEventIdFromUrl();
+                if (data.view === 'event' && data.eventId) {
+                    if (currentPage === 'svc_planning' && currentPlanningId === data.eventId) return;
+                    setActivePage('svc_planning', { scroll: false, push: true, planningEventId: data.eventId });
+                } else if (data.view === 'list') {
+                    if (currentPage === 'svc_planning' && !currentPlanningId) return;
+                    setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
+                }
+            });
 
             const beerScroll = document.querySelector('.beer-table-scroll');
             const beerHead = document.querySelector('.beer-table-head');

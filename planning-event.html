@@ -3405,13 +3405,27 @@
             }
         }
 
+        function notifyParentPlanningRoute(view, eventId) {
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'planning:route',
+                        view,
+                        eventId: eventId || null
+                    }, window.location.origin);
+                }
+            } catch (_) {}
+        }
+
         function init() {
             const params = new URLSearchParams(window.location.search);
             eventId = params.get('id');
             if (!eventId) {
                 document.getElementById('missingEvent').classList.remove('hidden');
+                notifyParentPlanningRoute('list');
                 return;
             }
+            notifyParentPlanningRoute('event', eventId);
 
             updateStickyTop();
             window.addEventListener('resize', updateStickyTop);
