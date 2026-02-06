@@ -836,6 +836,398 @@
             background: rgba(10, 10, 10, 0.85);
             border-radius: 18px;
         }
+        .total-overview-card {
+            border-color: var(--accent-border-25);
+            background:
+                radial-gradient(120% 140% at 100% 0%, rgba(245,158,11,0.10), transparent 46%),
+                radial-gradient(120% 140% at 0% 100%, rgba(96,165,250,0.08), transparent 42%),
+                rgba(8, 8, 8, 0.78);
+            overflow: visible;
+        }
+        .total-overview-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(130deg, rgba(255,255,255,0.04), transparent 35%);
+            pointer-events: none;
+        }
+        .total-overview-grid {
+            display: grid;
+            gap: 16px;
+            align-items: stretch;
+        }
+        @media (min-width: 1080px) {
+            .total-overview-grid {
+                grid-template-columns: minmax(320px, 1fr) minmax(360px, 1fr);
+            }
+            .total-overview-grid > * {
+                min-height: 360px;
+            }
+        }
+        .total-overview-grid > * {
+            min-height: 0;
+        }
+        .total-kpi {
+            display: grid;
+            gap: 4px;
+            margin-top: 14px;
+        }
+        .macro-pie-summary .total-kpi {
+            margin-top: 0;
+        }
+        .macro-pie-layout {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-left: 10px;
+        }
+        @media (max-width: 640px) {
+            .macro-pie-layout {
+                padding-left: 0;
+            }
+        }
+        .macro-pie-summary {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .macro-pie-panel {
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 16px;
+            padding: 12px 14px 14px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+                rgba(6,6,6,0.65);
+            transition: border-color 200ms ease, transform 220ms ease, box-shadow 220ms ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            overflow: visible;
+        }
+        .macro-pie-panel:hover {
+            border-color: var(--accent-border-50);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+        }
+        .macro-pie {
+            width: min(210px, 50vw);
+            aspect-ratio: 1 / 1;
+            position: relative;
+            border-radius: 999px;
+            overflow: visible;
+        }
+        .macro-pie-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transform: rotate(-90deg);
+            filter: drop-shadow(0 8px 18px rgba(0,0,0,0.35));
+            transition: transform 240ms ease, filter 240ms ease;
+            overflow: visible;
+        }
+        .macro-pie-panel:hover .macro-pie-svg {
+            transform: rotate(-90deg) scale(1.02);
+            filter: drop-shadow(0 12px 26px rgba(0,0,0,0.4));
+        }
+        .macro-pie-track {
+            fill: none;
+            stroke: rgba(71, 85, 105, 0.55);
+            stroke-width: 20;
+        }
+        .macro-pie-arc {
+            fill: none;
+            stroke-width: 20;
+            stroke-linecap: butt;
+            stroke-dasharray: 0 999;
+            stroke-dashoffset: 0;
+            transition: stroke-dasharray 220ms ease, stroke-dashoffset 220ms ease, stroke-width 200ms ease, opacity 200ms ease, filter 200ms ease;
+            shape-rendering: geometricPrecision;
+            opacity: 0.94;
+            cursor: pointer;
+        }
+        .macro-pie-arc.protein { stroke: #60a5fa; }
+        .macro-pie-arc.fat { stroke: #f59e0b; }
+        .macro-pie-arc.carbs { stroke: #34d399; }
+        .macro-pie[data-active="protein"] .macro-pie-arc:not(.protein),
+        .macro-pie[data-active="fat"] .macro-pie-arc:not(.fat),
+        .macro-pie[data-active="carbs"] .macro-pie-arc:not(.carbs) {
+            opacity: 0.45;
+        }
+        .macro-pie-arc.is-active {
+            stroke-width: 20;
+            opacity: 1;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.25)) brightness(1.06);
+        }
+        .macro-pie-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+            pointer-events: none;
+        }
+        .macro-pie-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 66.67%;
+            height: 66.67%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 2px;
+            border-radius: 999px;
+            background: rgba(11,11,11,0.96);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+        }
+        .macro-pie-total {
+            color: var(--accent-200);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .macro-pie-sub {
+            color: #9ca3af;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .macro-legend {
+            min-width: 190px;
+            display: grid;
+            gap: 10px;
+        }
+        .macro-legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #d1d5db;
+            border-radius: 10px;
+            padding: 4px 6px;
+            transition: background 180ms ease, transform 180ms ease;
+            cursor: pointer;
+        }
+        .macro-legend-item:hover {
+            background: rgba(255,255,255,0.04);
+            transform: translateX(1px);
+        }
+        .macro-legend-item.is-active {
+            background: rgba(255,255,255,0.08);
+        }
+        .macro-dot {
+            margin-top: 3px;
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            flex: none;
+        }
+        .macro-legend-item.protein .macro-dot { background: #60a5fa; }
+        .macro-legend-item.fat .macro-dot { background: #f59e0b; }
+        .macro-legend-item.carbs .macro-dot { background: #34d399; }
+        .macro-legend-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+        }
+        .macro-legend-value {
+            margin-top: 1px;
+            color: #e5e7eb;
+            font-weight: 600;
+        }
+        .calc-widget {
+            width: 100%;
+            border-radius: 16px;
+            position: relative;
+            z-index: 2;
+            border: 1px solid rgba(255,255,255,0.1);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
+                rgba(4,4,4,0.72);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .calc-widget-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .calc-widget-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .calc-widget-body {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .calc-widget-body.hidden {
+            display: none;
+        }
+        .calorie-calc-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        @media (max-width: 700px) {
+            .calorie-calc-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .calc-field {
+            display: grid;
+            gap: 4px;
+            position: relative;
+        }
+        .calc-input-wrap {
+            position: relative;
+        }
+        .calc-input-wrap .calc-metric-input {
+            padding-right: 54px;
+        }
+        .calc-input-unit {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.76rem;
+            letter-spacing: 0.04em;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 140ms ease;
+        }
+        .calc-input-wrap.has-value .calc-input-unit {
+            opacity: 1;
+        }
+        .calc-field label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+        }
+        .calc-native-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            border: 0 !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        .calc-custom-select {
+            position: relative;
+            min-height: 40px;
+        }
+        .calc-custom-trigger {
+            width: 100%;
+            min-height: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            background: #0c0c0c;
+            color: #e5e7eb;
+            padding: 10px 12px;
+            font-size: 0.88rem;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+        }
+        .calc-custom-trigger::after {
+            content: '▾';
+            color: #9ca3af;
+            font-size: 0.75rem;
+            transition: transform 160ms ease;
+        }
+        .calc-custom-select.open .calc-custom-trigger {
+            border-color: var(--accent-400);
+            box-shadow: 0 0 0 1px var(--accent-400);
+            transform: translateY(-1px);
+        }
+        .calc-custom-select.open .calc-custom-trigger::after {
+            transform: rotate(180deg);
+        }
+        .calc-custom-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 35;
+            max-height: 240px;
+            overflow-y: auto;
+            background: rgba(8,8,8,0.97);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 12px;
+            padding: 6px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+        }
+        .calc-custom-menu.hidden {
+            display: none;
+        }
+        .calc-custom-opt {
+            width: 100%;
+            text-align: left;
+            padding: 8px 10px;
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 0.84rem;
+            background: rgba(0,0,0,0.35);
+            transition: background 160ms ease, color 160ms ease;
+        }
+        .calc-custom-opt:hover {
+            background: rgba(245,158,11,0.16);
+            color: #fff;
+        }
+        .calc-custom-opt.active {
+            background: linear-gradient(90deg, rgba(245,158,11,0.28), rgba(251,191,36,0.34));
+            color: #fff;
+        }
+        .calc-main {
+            color: var(--accent-200);
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .calc-sub {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 3px;
+        }
+        .calc-pills {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .calc-pill {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 999px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            background: rgba(255,255,255,0.03);
+        }
+        .calc-pill span {
+            color: #f8fafc;
+            font-weight: 600;
+        }
         .status-dot {
             width: 8px;
             height: 8px;
@@ -982,15 +1374,124 @@
                 </div>
             </div>
 
-            <div class="card glow p-5 mt-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div>
-                        <div class="text-xs uppercase tracking-[0.3em] text-amber-300/70">Общий итог</div>
-                        <div class="text-lg md:text-xl font-bold text-amber-200">Суммарные КБЖУ за день</div>
+            <div class="card glow p-5 mt-6 total-overview-card">
+                <div class="total-overview-grid">
+                    <div id="calorieCalcWidget" class="calc-widget">
+                        <div class="calc-widget-head">
+                            <div>
+                                <div class="text-xs uppercase tracking-[0.25em] text-amber-300/70">Калькулятор нормы</div>
+                                <div id="calcMain" class="calc-main mt-1">0 ккал/день</div>
+                                <div id="calcSub" class="calc-sub">Выберите параметры для расчета нормы.</div>
+                            </div>
+                            <div class="calc-widget-actions">
+                                <button id="calorieCalcReset" type="button" class="btn-muted">Сброс</button>
+                            </div>
+                        </div>
+                        <div id="calorieCalcBody" class="calc-widget-body" aria-hidden="false">
+                            <div class="calorie-calc-grid">
+                                <div class="calc-field">
+                                    <label for="calcSex">Пол</label>
+                                    <select id="calcSex" class="select-field">
+                                        <option value="male">Мужчина</option>
+                                        <option value="female">Женщина</option>
+                                    </select>
+                                </div>
+                                <div class="calc-field">
+                                    <label for="calcAge">Возраст</label>
+                                    <div class="calc-input-wrap" data-calc-unit-wrap>
+                                        <input id="calcAge" class="input-field calc-metric-input" type="text" inputmode="numeric" autocomplete="off" placeholder="Возраст" />
+                                        <span class="calc-input-unit">лет</span>
+                                    </div>
+                                </div>
+                                <div class="calc-field">
+                                    <label for="calcHeight">Рост, см</label>
+                                    <div class="calc-input-wrap" data-calc-unit-wrap>
+                                        <input id="calcHeight" class="input-field calc-metric-input" type="text" inputmode="numeric" autocomplete="off" placeholder="Рост" />
+                                        <span class="calc-input-unit">см</span>
+                                    </div>
+                                </div>
+                                <div class="calc-field">
+                                    <label for="calcWeight">Вес, кг</label>
+                                    <div class="calc-input-wrap" data-calc-unit-wrap>
+                                        <input id="calcWeight" class="input-field calc-metric-input" type="text" inputmode="decimal" autocomplete="off" placeholder="Вес" />
+                                        <span class="calc-input-unit">кг</span>
+                                    </div>
+                                </div>
+                                <div class="calc-field">
+                                    <label for="calcActivity">Активность</label>
+                                    <select id="calcActivity" class="select-field">
+                                        <option value="1.2">Минимальная</option>
+                                        <option value="1.375">Низкая (1-3 тренировки)</option>
+                                        <option value="1.55">Средняя (3-5 тренировок)</option>
+                                        <option value="1.725">Высокая (6-7 тренировок)</option>
+                                        <option value="1.9">Очень высокая</option>
+                                    </select>
+                                </div>
+                                <div class="calc-field">
+                                    <label for="calcGoal">Цель</label>
+                                    <select id="calcGoal" class="select-field">
+                                        <option value="1">Поддержание</option>
+                                        <option value="0.85">Снижение веса</option>
+                                        <option value="1.1">Набор массы</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="calc-pills">
+                                <div class="calc-pill">База: <span id="calcBmr">0</span></div>
+                                <div class="calc-pill">Поддержание: <span id="calcMaintain">0</span></div>
+                                <div class="calc-pill">Цель: <span id="calcTarget">0</span></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <div id="grandTotal" class="text-2xl md:text-3xl font-bold text-amber-300">0 ккал</div>
-                        <div id="grandMacros" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                    <div class="macro-pie-panel">
+                        <div class="macro-pie-summary">
+                            <div>
+                                <div class="text-xs uppercase tracking-[0.3em] text-amber-300/70">Общий итог</div>
+                                <div class="text-sm text-gray-400 mt-1">Диаграмма и суммарные КБЖУ за день</div>
+                            </div>
+                            <div class="text-right total-kpi">
+                                <div id="grandTotal" class="text-2xl md:text-3xl font-bold text-amber-300">0 ккал</div>
+                                <div id="grandMacros" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                            </div>
+                        </div>
+                        <div class="macro-pie-layout mt-4">
+                            <div id="macroPieChart" class="macro-pie" role="img" aria-label="Диаграмма БЖУ: нет данных">
+                                <svg class="macro-pie-svg" viewBox="0 0 120 120" aria-hidden="true">
+                                    <circle class="macro-pie-track" cx="60" cy="60" r="50"></circle>
+                                    <circle id="macroPieProteinArc" class="macro-pie-arc protein" data-macro-kind="protein" cx="60" cy="60" r="50"></circle>
+                                    <circle id="macroPieFatArc" class="macro-pie-arc fat" data-macro-kind="fat" cx="60" cy="60" r="50"></circle>
+                                    <circle id="macroPieCarbsArc" class="macro-pie-arc carbs" data-macro-kind="carbs" cx="60" cy="60" r="50"></circle>
+                                </svg>
+                                <div class="macro-pie-ring"></div>
+                                <div class="macro-pie-center">
+                                    <div id="macroPieTotal" class="macro-pie-total">0 г</div>
+                                    <div class="macro-pie-sub">БЖУ</div>
+                                </div>
+                            </div>
+                            <div class="macro-legend">
+                                <div class="macro-legend-item protein" data-macro-kind="protein">
+                                    <span class="macro-dot"></span>
+                                    <div>
+                                        <div class="macro-legend-label">Белки</div>
+                                        <div id="macroLegendProtein" class="macro-legend-value">0 г • 0%</div>
+                                    </div>
+                                </div>
+                                <div class="macro-legend-item fat" data-macro-kind="fat">
+                                    <span class="macro-dot"></span>
+                                    <div>
+                                        <div class="macro-legend-label">Жиры</div>
+                                        <div id="macroLegendFat" class="macro-legend-value">0 г • 0%</div>
+                                    </div>
+                                </div>
+                                <div class="macro-legend-item carbs" data-macro-kind="carbs">
+                                    <span class="macro-dot"></span>
+                                    <div>
+                                        <div class="macro-legend-label">Углеводы</div>
+                                        <div id="macroLegendCarbs" class="macro-legend-value">0 г • 0%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1080,6 +1581,9 @@
         const FOOD_SEARCH_DELAY = 250;
         const FOOD_SEARCH_CACHE_TTL = 5 * 60 * 1000;
         const foodSearchCache = new Map();
+        const CALORIE_CALC_LS_KEY = 'snacksCalorieCalc';
+        const calcCustomSelectUI = new Map();
+        let calcCustomSelectDocBound = false;
         const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
         let beerRatingMetaTs = null;
 
@@ -1152,6 +1656,367 @@
 
         function formatMacrosLine(protein, fat, carbs) {
             return `Б ${formatMacro(protein)} • Ж ${formatMacro(fat)} • У ${formatMacro(carbs)}`;
+        }
+
+        function formatPercent(value) {
+            const num = Number(value);
+            if (!Number.isFinite(num) || num <= 0) return '0%';
+            return `${(Math.round(num * 10) / 10).toLocaleString('ru-RU', { maximumFractionDigits: 1 })}%`;
+        }
+
+        function setMacroPieArc(arcEl, percent, startPercent) {
+            if (!arcEl) return;
+            const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+            const r = Number(arcEl.getAttribute('r')) || 50;
+            const circumference = 2 * Math.PI * r;
+            const dash = (circumference * safePercent) / 100;
+            const offset = -((circumference * (Number(startPercent) || 0)) / 100);
+            arcEl.style.strokeDasharray = `${dash} ${circumference}`;
+            arcEl.style.strokeDashoffset = `${offset}`;
+        }
+
+        function setMacroPieActive(kind) {
+            const chart = document.getElementById('macroPieChart');
+            if (!chart) return;
+            const normalized = (kind || '').toLowerCase();
+            chart.dataset.active = normalized;
+            document.querySelectorAll('.macro-pie-arc').forEach(arc => {
+                const isActive = normalized && arc.dataset.macroKind === normalized;
+                arc.classList.toggle('is-active', !!isActive);
+            });
+            document.querySelectorAll('.macro-legend-item').forEach(item => {
+                const isActive = normalized && item.dataset.macroKind === normalized;
+                item.classList.toggle('is-active', !!isActive);
+            });
+        }
+
+        function initMacroPieInteractions() {
+            const chart = document.getElementById('macroPieChart');
+            if (!chart || chart.dataset.bound === '1') return;
+            chart.dataset.bound = '1';
+            const bindHover = (el) => {
+                if (!el) return;
+                el.addEventListener('mouseenter', () => {
+                    if (chart.dataset.hasData !== '1') return;
+                    setMacroPieActive(el.dataset.macroKind || '');
+                });
+                el.addEventListener('mouseleave', () => {
+                    setMacroPieActive('');
+                });
+            };
+            document.querySelectorAll('.macro-pie-arc').forEach(bindHover);
+            document.querySelectorAll('.macro-legend-item').forEach(bindHover);
+        }
+
+        function updateMacroPieChart(protein, fat, carbs) {
+            const chart = document.getElementById('macroPieChart');
+            const totalEl = document.getElementById('macroPieTotal');
+            const pEl = document.getElementById('macroLegendProtein');
+            const fEl = document.getElementById('macroLegendFat');
+            const cEl = document.getElementById('macroLegendCarbs');
+            const pArc = document.getElementById('macroPieProteinArc');
+            const fArc = document.getElementById('macroPieFatArc');
+            const cArc = document.getElementById('macroPieCarbsArc');
+            if (!chart || !totalEl || !pEl || !fEl || !cEl || !pArc || !fArc || !cArc) return;
+
+            const p = Math.max(0, Number(protein) || 0);
+            const f = Math.max(0, Number(fat) || 0);
+            const c = Math.max(0, Number(carbs) || 0);
+            const total = p + f + c;
+            totalEl.textContent = `${formatMacro(total)} г`;
+            chart.dataset.hasData = total > 0 ? '1' : '0';
+
+            if (!total) {
+                setMacroPieArc(pArc, 0, 0);
+                setMacroPieArc(fArc, 0, 0);
+                setMacroPieArc(cArc, 0, 0);
+                setMacroPieActive('');
+                chart.setAttribute('aria-label', 'Диаграмма БЖУ: нет данных');
+                pEl.textContent = '0 г • 0%';
+                fEl.textContent = '0 г • 0%';
+                cEl.textContent = '0 г • 0%';
+                return;
+            }
+
+            const pRaw = (p / total) * 100;
+            const fRaw = (f / total) * 100;
+            const cRaw = Math.max(0, 100 - pRaw - fRaw);
+            // Tiny overlap between arcs prevents antialias seams on segment borders.
+            const seamOverlap = 0.08;
+            const pPct = pRaw > 0 ? pRaw + seamOverlap : 0;
+            const fPct = fRaw > 0 ? fRaw + seamOverlap : 0;
+            const cPct = cRaw > 0 ? cRaw + seamOverlap : 0;
+            setMacroPieArc(pArc, pPct, 0);
+            setMacroPieArc(fArc, fPct, pRaw);
+            setMacroPieArc(cArc, cPct, pRaw + fRaw);
+            chart.setAttribute('aria-label', `Диаграмма БЖУ: белки ${formatMacro(p)} г, жиры ${formatMacro(f)} г, углеводы ${formatMacro(c)} г`);
+            pEl.textContent = `${formatMacro(p)} г • ${formatPercent(pRaw)}`;
+            fEl.textContent = `${formatMacro(f)} г • ${formatPercent(fRaw)}`;
+            cEl.textContent = `${formatMacro(c)} г • ${formatPercent(cRaw)}`;
+        }
+
+        function collectCalorieCalcInputs() {
+            const sex = (document.getElementById('calcSex')?.value || 'male').toLowerCase();
+            const age = parseCalcMetricInput(document.getElementById('calcAge')?.value || '');
+            const height = parseCalcMetricInput(document.getElementById('calcHeight')?.value || '');
+            const weight = parseCalcMetricInput(document.getElementById('calcWeight')?.value || '');
+            const activity = parseFloat(document.getElementById('calcActivity')?.value || '1.2');
+            const goalFactor = parseFloat(document.getElementById('calcGoal')?.value || '1');
+            return { sex, age, height, weight, activity, goalFactor };
+        }
+
+        function parseCalcMetricInput(value) {
+            const raw = String(value == null ? '' : value).trim();
+            if (!raw) return NaN;
+            const normalized = raw.replace(',', '.').replace(/[^\d.]+/g, '');
+            const num = parseFloat(normalized);
+            return Number.isFinite(num) ? num : NaN;
+        }
+
+        function calculateDailyCalorieNorm(params) {
+            const age = Number(params.age);
+            const height = Number(params.height);
+            const weight = Number(params.weight);
+            const activity = Number(params.activity);
+            const goalFactor = Number(params.goalFactor);
+            if (!Number.isFinite(age) || !Number.isFinite(height) || !Number.isFinite(weight)) return null;
+            if (age <= 0 || height <= 0 || weight <= 0) return null;
+            if (!Number.isFinite(activity) || activity <= 0) return null;
+            if (!Number.isFinite(goalFactor) || goalFactor <= 0) return null;
+            const sexOffset = params.sex === 'female' ? -161 : 5;
+            const bmr = (10 * weight) + (6.25 * height) - (5 * age) + sexOffset;
+            const maintain = bmr * activity;
+            const target = maintain * goalFactor;
+            return { bmr, maintain, target };
+        }
+
+        function saveCalorieCalcState() {
+            try {
+                const payload = {
+                    sex: (document.getElementById('calcSex')?.value || 'male'),
+                    age: (document.getElementById('calcAge')?.value || ''),
+                    height: (document.getElementById('calcHeight')?.value || ''),
+                    weight: (document.getElementById('calcWeight')?.value || ''),
+                    activity: (document.getElementById('calcActivity')?.value || '1.2'),
+                    goalFactor: (document.getElementById('calcGoal')?.value || '1')
+                };
+                localStorage.setItem(CALORIE_CALC_LS_KEY, JSON.stringify(payload));
+            } catch (_) {}
+        }
+
+        function loadCalorieCalcState() {
+            const defaults = { sex: 'male', age: '', height: '', weight: '', activity: 1.2, goalFactor: 1 };
+            try {
+                const raw = localStorage.getItem(CALORIE_CALC_LS_KEY);
+                if (!raw) return defaults;
+                const saved = JSON.parse(raw) || {};
+                const numericOrEmpty = (value) => {
+                    if (value == null || value === '') return '';
+                    const num = Number(value);
+                    return Number.isFinite(num) ? String(num) : '';
+                };
+                const numericOrDefault = (value, fallback) => {
+                    if (value == null || value === '') return String(fallback);
+                    const num = Number(value);
+                    return Number.isFinite(num) ? String(num) : String(fallback);
+                };
+                return {
+                    sex: saved.sex === 'female' ? 'female' : 'male',
+                    age: numericOrEmpty(saved.age),
+                    height: numericOrEmpty(saved.height),
+                    weight: numericOrEmpty(saved.weight),
+                    activity: numericOrDefault(saved.activity, 1.2),
+                    goalFactor: numericOrDefault(saved.goalFactor, 1)
+                };
+            } catch (_) {
+                return defaults;
+            }
+        }
+
+        function refreshCalcMetricUnitState() {
+            const metricIds = ['calcAge', 'calcHeight', 'calcWeight'];
+            metricIds.forEach((id) => {
+                const input = document.getElementById(id);
+                const wrap = input.closest('[data-calc-unit-wrap]');
+                if (!input || !wrap) return;
+                wrap.classList.toggle('has-value', String(input.value || '').trim().length > 0);
+            });
+        }
+
+        function initCalcMetricInputs() {
+            const metricIds = ['calcAge', 'calcHeight', 'calcWeight'];
+            metricIds.forEach((id) => {
+                const input = document.getElementById(id);
+                if (!input || input.dataset.bound === '1') return;
+                input.addEventListener('input', refreshCalcMetricUnitState);
+                input.addEventListener('change', refreshCalcMetricUnitState);
+                input.dataset.bound = '1';
+            });
+            refreshCalcMetricUnitState();
+        }
+
+        function closeCalcCustomSelects(exceptId) {
+            calcCustomSelectUI.forEach((ui, id) => {
+                if (exceptId && id === exceptId) return;
+                ui.wrap.classList.remove('open');
+                ui.menu.classList.add('hidden');
+            });
+        }
+
+        function refreshCalcCustomSelects() {
+            calcCustomSelectUI.forEach(ui => ui.render());
+        }
+
+        function initCalcCustomSelects(selectIds) {
+            selectIds.forEach(id => {
+                const selectEl = document.getElementById(id);
+                if (!selectEl || calcCustomSelectUI.has(id)) return;
+
+                selectEl.classList.add('calc-native-hidden');
+                const wrap = document.createElement('div');
+                wrap.className = 'calc-custom-select';
+                const trigger = document.createElement('button');
+                trigger.type = 'button';
+                trigger.className = 'calc-custom-trigger';
+                trigger.setAttribute('aria-haspopup', 'listbox');
+                trigger.setAttribute('aria-expanded', 'false');
+                const menu = document.createElement('div');
+                menu.className = 'calc-custom-menu hidden';
+                menu.setAttribute('role', 'listbox');
+                wrap.appendChild(trigger);
+                wrap.appendChild(menu);
+                selectEl.insertAdjacentElement('afterend', wrap);
+
+                const render = () => {
+                    const opts = Array.from(selectEl.options);
+                    const selected = opts.find(opt => opt.value === selectEl.value) || opts[0] || null;
+                    trigger.textContent = selected ? selected.textContent : 'Выберите значение';
+                    menu.innerHTML = opts
+                        .filter(opt => opt.value !== '')
+                        .map(opt => {
+                            const active = selectEl.value === opt.value ? ' active' : '';
+                            return `<button type="button" class="calc-custom-opt${active}" role="option" data-value="${escapeHtml(opt.value)}">${escapeHtml(opt.textContent || '')}</button>`;
+                        })
+                        .join('');
+                };
+
+                trigger.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const isOpen = wrap.classList.contains('open');
+                    closeCalcCustomSelects(isOpen ? '' : id);
+                    if (isOpen) {
+                        wrap.classList.remove('open');
+                        menu.classList.add('hidden');
+                        trigger.setAttribute('aria-expanded', 'false');
+                    } else {
+                        wrap.classList.add('open');
+                        menu.classList.remove('hidden');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                menu.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.calc-custom-opt');
+                    if (!btn) return;
+                    const value = btn.dataset.value || '';
+                    selectEl.value = value;
+                    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    closeCalcCustomSelects();
+                });
+
+                selectEl.addEventListener('change', render);
+                selectEl.addEventListener('input', render);
+
+                calcCustomSelectUI.set(id, { selectEl, wrap, trigger, menu, render });
+                render();
+            });
+
+            if (!calcCustomSelectDocBound) {
+                calcCustomSelectDocBound = true;
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.calc-custom-select')) closeCalcCustomSelects();
+                });
+                window.addEventListener('scroll', () => closeCalcCustomSelects(), true);
+            }
+            refreshCalcCustomSelects();
+        }
+
+        function updateCalorieCalculatorView() {
+            const main = document.getElementById('calcMain');
+            const sub = document.getElementById('calcSub');
+            const bmrEl = document.getElementById('calcBmr');
+            const maintainEl = document.getElementById('calcMaintain');
+            const targetEl = document.getElementById('calcTarget');
+            if (!main || !sub || !bmrEl || !maintainEl || !targetEl) return;
+            const values = collectCalorieCalcInputs();
+            const result = calculateDailyCalorieNorm(values);
+            if (!result) {
+                main.textContent = '0 ккал/день';
+                sub.textContent = 'Выберите параметры для расчета нормы.';
+                bmrEl.textContent = '0';
+                maintainEl.textContent = '0';
+                targetEl.textContent = '0';
+                return;
+            }
+            const bmr = Math.round(result.bmr);
+            const maintain = Math.round(result.maintain);
+            const target = Math.round(result.target);
+            let goalLabel = 'Поддержание';
+            if (values.goalFactor < 1) goalLabel = 'Снижение веса';
+            if (values.goalFactor > 1) goalLabel = 'Набор массы';
+            main.textContent = `${target.toLocaleString('ru-RU')} ккал/день`;
+            sub.textContent = `${goalLabel} • расчет по формуле Mifflin-St Jeor`;
+            bmrEl.textContent = bmr.toLocaleString('ru-RU');
+            maintainEl.textContent = maintain.toLocaleString('ru-RU');
+            targetEl.textContent = target.toLocaleString('ru-RU');
+        }
+
+        function initCalorieCalculator() {
+            const ids = ['calcSex', 'calcAge', 'calcHeight', 'calcWeight', 'calcActivity', 'calcGoal'];
+            const customSelectIds = ['calcSex', 'calcActivity', 'calcGoal'];
+            const elements = ids.map(id => document.getElementById(id)).filter(Boolean);
+            if (!elements.length) return;
+
+            const initial = loadCalorieCalcState();
+            const sexEl = document.getElementById('calcSex');
+            const ageEl = document.getElementById('calcAge');
+            const heightEl = document.getElementById('calcHeight');
+            const weightEl = document.getElementById('calcWeight');
+            const activityEl = document.getElementById('calcActivity');
+            const goalEl = document.getElementById('calcGoal');
+            if (sexEl) sexEl.value = initial.sex || 'male';
+            if (ageEl) ageEl.value = initial.age || '';
+            if (heightEl) heightEl.value = initial.height || '';
+            if (weightEl) weightEl.value = initial.weight || '';
+            if (activityEl) activityEl.value = initial.activity || '1.2';
+            if (goalEl) goalEl.value = initial.goalFactor || '1';
+            initCalcMetricInputs();
+            initCalcCustomSelects(customSelectIds);
+
+            const update = () => {
+                updateCalorieCalculatorView();
+                saveCalorieCalcState();
+                refreshCalcMetricUnitState();
+                refreshCalcCustomSelects();
+            };
+            elements.forEach(el => el.addEventListener('input', update));
+            elements.forEach(el => el.addEventListener('change', update));
+
+            const resetBtn = document.getElementById('calorieCalcReset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    if (sexEl) sexEl.value = 'male';
+                    if (ageEl) ageEl.value = '';
+                    if (heightEl) heightEl.value = '';
+                    if (weightEl) weightEl.value = '';
+                    if (activityEl) activityEl.value = '1.2';
+                    if (goalEl) goalEl.value = '1';
+                    update();
+                });
+            }
+
+            updateCalorieCalculatorView();
         }
 
         function calcBeerCalories(volume, caloriesPer100) {
@@ -2318,6 +3183,7 @@
             document.getElementById('grandTotal').textContent = formatKcal(beerTotal + foodTotal);
             const grandMacrosEl = document.getElementById('grandMacros');
             if (grandMacrosEl) grandMacrosEl.textContent = formatMacrosLine(foodProteinTotal, foodFatTotal, foodCarbTotal);
+            updateMacroPieChart(foodProteinTotal, foodFatTotal, foodCarbTotal);
         }
 
         function setSaveStatus(text, mode) {
@@ -2490,10 +3356,17 @@
                 });
 
                 function sliceList(list) {
-                    if (!list.length) return 'нет данных';
                     const shown = list.slice(0, 3).join(', ');
                     const extra = list.length > 3 ? ` +${list.length - 3}` : '';
                     return `${shown}${extra}`;
+                }
+
+                const detailsRows = [];
+                if (beerList.length) {
+                    detailsRows.push(`<div><span class="text-gray-400">Пиво:</span> ${escapeHtml(sliceList(beerList))}</div>`);
+                }
+                if (foodList.length) {
+                    detailsRows.push(`<div><span class="text-gray-400">Еда:</span> ${escapeHtml(sliceList(foodList))}</div>`);
                 }
 
                 return `
@@ -2508,10 +3381,7 @@
                             </div>
                         </div>
                         <div class="text-xs text-gray-400 mt-1">🍺 ${beers.length} • 🥪 ${foods.length}</div>
-                        <div class="mt-4 space-y-2 text-sm text-gray-300">
-                            <div><span class="text-gray-400">Пиво:</span> ${escapeHtml(sliceList(beerList))}</div>
-                            <div><span class="text-gray-400">Еда:</span> ${escapeHtml(sliceList(foodList))}</div>
-                        </div>
+                        ${detailsRows.length ? `<div class="mt-4 space-y-2 text-sm text-gray-300">${detailsRows.join('')}</div>` : ''}
                     </div>
                 `;
             }).join('');
@@ -2939,6 +3809,8 @@
             }
 
             renderCurrentUserForm(null);
+            initMacroPieInteractions();
+            initCalorieCalculator();
             initFirebase();
             listenSnackDate(state.currentDate);
         }
