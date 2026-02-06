@@ -1288,6 +1288,12 @@
             box-sizing: border-box;
         }
 
+        body.layout-sidebar.music-fullscreen-active .layout-shell,
+        body.layout-sidebar.music-fullscreen-active .sidebar,
+        body.layout-sidebar.music-fullscreen-active .content-shell {
+            transition: none !important;
+        }
+
         .sidebar {
             display: none;
         }
@@ -1549,6 +1555,127 @@
             padding-top: 10px;
             border-top: 1px solid var(--accent-border-10);
         }
+        .sidebar-mini-player {
+            width: 100%;
+            min-width: 0;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow: hidden;
+        }
+        .sidebar-mini-top {
+            display: grid;
+            grid-template-columns: 38px minmax(0, 1fr);
+            gap: 8px;
+            align-items: center;
+            min-width: 0;
+        }
+        .sidebar-mini-cover {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0, 0, 0, 0.35);
+            flex: 0 0 auto;
+        }
+        .sidebar-mini-meta {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sidebar-mini-title {
+            position: relative;
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 12px;
+            color: #fff7ed;
+            font-weight: 700;
+            line-height: 1.2;
+            mask-image: linear-gradient(to right, #000 0%, #000 82%, transparent 100%);
+        }
+        .sidebar-mini-title-track {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+            gap: 24px;
+            transform: translateX(0);
+        }
+        .sidebar-mini-title-track.is-marquee {
+            animation: sidebarMiniMarquee 11s linear infinite;
+        }
+        .sidebar-mini-title-track.is-marquee > span::after {
+            content: attr(data-text);
+            padding-left: 24px;
+        }
+        @keyframes sidebarMiniMarquee {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(-50%)); }
+        }
+        .sidebar-mini-artist {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 10px;
+            color: rgba(226, 232, 240, 0.75);
+            line-height: 1.15;
+        }
+        .sidebar-mini-controls {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: 100%;
+        }
+        .sidebar-mini-btn {
+            min-width: 0;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(255, 255, 255, 0.02);
+            color: rgba(241, 245, 249, 0.94);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+        }
+        .sidebar-mini-btn:hover {
+            border-color: var(--accent-border-40);
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .sidebar-mini-btn:active {
+            transform: scale(0.97);
+        }
+        .sidebar-mini-btn.play {
+            font-size: 14px;
+        }
+        .sidebar-mini-progress {
+            height: 4px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .sidebar-mini-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f59e0b, #fcd34d);
+            transition: width 0.18s linear;
+        }
+        .mobile-sidebar .sidebar-mini-player {
+            margin-bottom: 8px;
+        }
         .sidebar-profile-row {
             display: flex;
             align-items: center;
@@ -1720,6 +1847,9 @@
             border: 0;
             display: block;
             background: transparent;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            will-change: transform;
         }
         body.layout-sidebar.page-backlog-active .content-shell {
             height: calc(100vh - var(--header-offset, 0px));
@@ -2809,6 +2939,27 @@
                 </div>
 
                 <div class="mobile-sidebar-bottom">
+                    <div id="mobileMusicMini" class="sidebar-mini-player" hidden aria-label="Миниплеер">
+                        <div class="sidebar-mini-top">
+                            <img id="mobileMiniCover" class="sidebar-mini-cover" alt="Обложка трека">
+                            <div class="sidebar-mini-meta">
+                                <div class="sidebar-mini-title">
+                                    <div id="mobileMiniTitleTrack" class="sidebar-mini-title-track">
+                                        <span id="mobileMiniTitleText">Трек</span>
+                                    </div>
+                                </div>
+                                <div id="mobileMiniArtist" class="sidebar-mini-artist">Исполнитель</div>
+                            </div>
+                        </div>
+                        <div class="sidebar-mini-controls">
+                            <button id="mobileMiniPrev" type="button" class="sidebar-mini-btn" title="Предыдущий">⏮</button>
+                            <button id="mobileMiniPlay" type="button" class="sidebar-mini-btn play" title="Воспроизвести/Пауза">▶</button>
+                            <button id="mobileMiniNext" type="button" class="sidebar-mini-btn" title="Следующий">⏭</button>
+                        </div>
+                        <div id="mobileMiniProgress" class="sidebar-mini-progress">
+                            <div id="mobileMiniProgressFill" class="sidebar-mini-progress-fill"></div>
+                        </div>
+                    </div>
                     <div class="mobile-sidebar-section">
                         <div class="mobile-sidebar-section-title">Профиль</div>
                         <div class="mobile-profile-row">
@@ -2893,6 +3044,27 @@
                 <div class="sidebar-spacer"></div>
 
                 <div class="sidebar-bottom">
+                    <div id="sidebarMusicMini" class="sidebar-mini-player" hidden aria-label="Миниплеер">
+                        <div class="sidebar-mini-top">
+                            <img id="sidebarMiniCover" class="sidebar-mini-cover" alt="Обложка трека">
+                            <div class="sidebar-mini-meta">
+                                <div class="sidebar-mini-title">
+                                    <div id="sidebarMiniTitleTrack" class="sidebar-mini-title-track">
+                                        <span id="sidebarMiniTitleText">Трек</span>
+                                    </div>
+                                </div>
+                                <div id="sidebarMiniArtist" class="sidebar-mini-artist">Исполнитель</div>
+                            </div>
+                        </div>
+                        <div class="sidebar-mini-controls">
+                            <button id="sidebarMiniPrev" type="button" class="sidebar-mini-btn" title="Предыдущий">⏮</button>
+                            <button id="sidebarMiniPlay" type="button" class="sidebar-mini-btn play" title="Воспроизвести/Пауза">▶</button>
+                            <button id="sidebarMiniNext" type="button" class="sidebar-mini-btn" title="Следующий">⏭</button>
+                        </div>
+                        <div id="sidebarMiniProgress" class="sidebar-mini-progress">
+                            <div id="sidebarMiniProgressFill" class="sidebar-mini-progress-fill"></div>
+                        </div>
+                    </div>
                     <div class="sidebar-profile-row">
                         <div id="profileNavSidebar" class="sidebar-nav" aria-label="Профиль"></div>
                         <div id="snowSlotSidebar"></div>
@@ -3378,6 +3550,11 @@
                     Галерея недоступна на мобильных устройствах из-за высокой нагрузки. Откройте страницу с компьютера.
                 </div>
                 <iframe title="Галерея" data-src="gallery.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_music" data-page="svc_music" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Музыка" data-src="music.html" loading="lazy" scrolling="yes" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
             </div>
         </div>
         <div id="svc_snacks" data-page="svc_snacks" class="page page-service max-w-7xl mx-auto">
@@ -4263,8 +4440,38 @@
             svc_planning: 'svc_planning',
             svc_board: 'svc_board',
             svc_gallery: 'svc_gallery',
+            svc_music: 'svc_music',
             svc_snacks: 'svc_snacks',
             svc_water: 'svc_water'
+        };
+        const SIDEBAR_MUSIC_FALLBACK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23f59e0b'/%3E%3Cstop offset='1' stop-color='%23fcd34d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='16' fill='%230b0f17'/%3E%3Ccircle cx='30' cy='28' r='34' fill='url(%23g)' fill-opacity='.35'/%3E%3Ccircle cx='94' cy='96' r='36' fill='url(%23g)' fill-opacity='.28'/%3E%3Cpath fill='white' fill-opacity='.9' d='M79 28v42c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V41l-30 6v32c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V40l48-10z'/%3E%3C/svg%3E";
+        let activeLayoutPage = 'calendar';
+        let sidebarMusicState = null;
+        const SIDEBAR_MINI_PLAYERS = {
+            desktop: {
+                root: 'sidebarMusicMini',
+                cover: 'sidebarMiniCover',
+                titleTrack: 'sidebarMiniTitleTrack',
+                titleText: 'sidebarMiniTitleText',
+                artist: 'sidebarMiniArtist',
+                prev: 'sidebarMiniPrev',
+                play: 'sidebarMiniPlay',
+                next: 'sidebarMiniNext',
+                progress: 'sidebarMiniProgress',
+                progressFill: 'sidebarMiniProgressFill'
+            },
+            mobile: {
+                root: 'mobileMusicMini',
+                cover: 'mobileMiniCover',
+                titleTrack: 'mobileMiniTitleTrack',
+                titleText: 'mobileMiniTitleText',
+                artist: 'mobileMiniArtist',
+                prev: 'mobileMiniPrev',
+                play: 'mobileMiniPlay',
+                next: 'mobileMiniNext',
+                progress: 'mobileMiniProgress',
+                progressFill: 'mobileMiniProgressFill'
+            }
         };
         const SECTION_TO_PAGE = { calendarSection: 'calendar', backlogSection: 'backlog', beerSection: 'beer' };
         function getPageFromUrl() {
@@ -4439,6 +4646,228 @@
             }
         }
 
+        function getMusicServiceFrame() {
+            return document.querySelector('#svc_music iframe');
+        }
+
+        function getSidebarMiniPlayerRefs() {
+            return Object.values(SIDEBAR_MINI_PLAYERS).map((cfg) => {
+                const root = document.getElementById(cfg.root);
+                if (!root) return null;
+                return {
+                    root,
+                    cover: document.getElementById(cfg.cover),
+                    titleTrack: document.getElementById(cfg.titleTrack),
+                    titleText: document.getElementById(cfg.titleText),
+                    artist: document.getElementById(cfg.artist),
+                    prev: document.getElementById(cfg.prev),
+                    play: document.getElementById(cfg.play),
+                    next: document.getElementById(cfg.next),
+                    progress: document.getElementById(cfg.progress),
+                    progressFill: document.getElementById(cfg.progressFill)
+                };
+            }).filter(Boolean);
+        }
+
+        function postMusicCommand(command, extra = {}) {
+            const frame = getMusicServiceFrame();
+            if (!frame || !frame.contentWindow) return;
+            frame.contentWindow.postMessage({ type: 'music:command', command, ...extra }, '*');
+        }
+
+        function requestMusicStateSnapshot() {
+            const frame = getMusicServiceFrame();
+            if (!frame || !frame.contentWindow) return;
+            frame.contentWindow.postMessage({ type: 'music:request-state' }, '*');
+        }
+
+        function initSidebarMiniPlayerControls() {
+            const players = getSidebarMiniPlayerRefs();
+            if (!players.length) return;
+
+            const bindSeek = (progressEl) => {
+                if (!progressEl) return;
+                const progressFill = progressEl.querySelector('.sidebar-mini-progress-fill');
+                const getRatioByClientX = (clientX) => {
+                    const rect = progressEl.getBoundingClientRect();
+                    if (!rect.width) return null;
+                    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+                };
+                const commitSeek = (ratio) => {
+                    if (!Number.isFinite(ratio)) return;
+                    postMusicCommand('seek-to', { ratio });
+                };
+                const previewSeek = (ratio) => {
+                    if (!progressFill || !Number.isFinite(ratio)) return;
+                    progressFill.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+                };
+
+                let pointerSeekActive = false;
+                let pointerSeekRatio = null;
+                let suppressClickOnce = false;
+
+                progressEl.addEventListener('click', (event) => {
+                    if (suppressClickOnce) {
+                        suppressClickOnce = false;
+                        return;
+                    }
+                    const ratio = getRatioByClientX(event.clientX);
+                    commitSeek(ratio);
+                });
+
+                progressEl.addEventListener('pointerdown', (event) => {
+                    pointerSeekActive = true;
+                    pointerSeekRatio = getRatioByClientX(event.clientX);
+                    previewSeek(pointerSeekRatio);
+                    try { progressEl.setPointerCapture(event.pointerId); } catch (_) {}
+                    event.preventDefault();
+                });
+                progressEl.addEventListener('pointermove', (event) => {
+                    if (!pointerSeekActive) return;
+                    pointerSeekRatio = getRatioByClientX(event.clientX);
+                    previewSeek(pointerSeekRatio);
+                });
+                progressEl.addEventListener('pointerup', () => {
+                    if (!pointerSeekActive) return;
+                    pointerSeekActive = false;
+                    suppressClickOnce = true;
+                    commitSeek(pointerSeekRatio);
+                    setTimeout(() => { suppressClickOnce = false; }, 120);
+                });
+                progressEl.addEventListener('pointercancel', () => {
+                    pointerSeekActive = false;
+                    pointerSeekRatio = null;
+                });
+            };
+
+            players.forEach((player) => {
+                if (player.prev) player.prev.addEventListener('click', () => postMusicCommand('prev'));
+                if (player.play) player.play.addEventListener('click', () => postMusicCommand('play-toggle'));
+                if (player.next) player.next.addEventListener('click', () => postMusicCommand('next'));
+                bindSeek(player.progress);
+            });
+
+            const frame = getMusicServiceFrame();
+            if (frame) {
+                frame.addEventListener('load', () => {
+                    requestMusicStateSnapshot();
+                });
+            }
+        }
+
+        function updateSidebarMiniTitleMarquee(player) {
+            if (!player) return;
+            const titleWrap = player.root.querySelector('.sidebar-mini-title');
+            const titleTrack = player.titleTrack;
+            const titleText = player.titleText;
+            if (!titleWrap || !titleTrack || !titleText) return;
+            const text = String(titleText.textContent || '').trim();
+            titleTrack.classList.remove('is-marquee');
+            titleText.setAttribute('data-text', text);
+            if (!text) return;
+            requestAnimationFrame(() => {
+                if (titleText.scrollWidth > titleWrap.clientWidth + 8) {
+                    titleTrack.classList.add('is-marquee');
+                }
+            });
+        }
+
+        function updateSidebarMiniPlayerVisibility(page = activeLayoutPage) {
+            const hasTrack = !!(sidebarMusicState && sidebarMusicState.hasTrack);
+            const show = hasTrack && page !== 'svc_music';
+            getSidebarMiniPlayerRefs().forEach((player) => {
+                player.root.hidden = !show;
+                if (show) {
+                    requestAnimationFrame(() => updateSidebarMiniTitleMarquee(player));
+                }
+            });
+        }
+
+        function syncMusicFullscreenTransitionMode(page = activeLayoutPage) {
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            const onDesktop = isDesktopLayout();
+            const isMusicPage = page === 'svc_music';
+            const isMusicFullscreen = Boolean(sidebarMusicState && sidebarMusicState.fullscreenOpen);
+            document.body.classList.toggle('music-fullscreen-active', useSidebar && onDesktop && isMusicPage && isMusicFullscreen);
+        }
+
+        function applySidebarMiniPlayerState() {
+            const state = sidebarMusicState || {};
+            const hasTrack = !!state.hasTrack;
+            const title = String(state.title || 'Без названия').trim();
+            const artists = Array.isArray(state.artists)
+                ? state.artists.filter(Boolean).join(', ')
+                : String(state.artists || '').trim();
+            const current = Number(state.currentTime || 0);
+            const duration = Number(state.duration || 0);
+            const progress = duration > 0 ? Math.max(0, Math.min(100, (current / duration) * 100)) : 0;
+            const cover = String(state.coverUrl || '').trim() || SIDEBAR_MUSIC_FALLBACK_COVER;
+
+            getSidebarMiniPlayerRefs().forEach((player) => {
+                if (!player.cover || !player.titleText || !player.artist || !player.play || !player.progressFill) return;
+                if (!hasTrack) {
+                    player.titleText.textContent = 'Трек не выбран';
+                    player.titleText.setAttribute('data-text', 'Трек не выбран');
+                    player.artist.textContent = '';
+                    if ((player.cover.dataset.currentSrc || '') !== SIDEBAR_MUSIC_FALLBACK_COVER) {
+                        player.cover.src = SIDEBAR_MUSIC_FALLBACK_COVER;
+                        player.cover.dataset.currentSrc = SIDEBAR_MUSIC_FALLBACK_COVER;
+                    }
+                    player.play.textContent = '▶';
+                    player.progressFill.style.width = '0%';
+                    return;
+                }
+
+                if ((player.titleText.dataset.currentText || '') !== title) {
+                    player.titleText.textContent = title;
+                    player.titleText.dataset.currentText = title;
+                    player.titleText.setAttribute('data-text', title);
+                }
+                const artistText = artists || 'Неизвестный артист';
+                if ((player.artist.dataset.currentText || '') !== artistText) {
+                    player.artist.textContent = artistText;
+                    player.artist.dataset.currentText = artistText;
+                }
+                if ((player.cover.dataset.currentSrc || '') !== cover) {
+                    player.cover.src = cover;
+                    player.cover.dataset.currentSrc = cover;
+                }
+                player.play.textContent = state.isPlaying ? '⏸' : '▶';
+                player.progressFill.style.width = `${progress}%`;
+                if (!player.root.hidden) {
+                    updateSidebarMiniTitleMarquee(player);
+                }
+            });
+            updateSidebarMiniPlayerVisibility(activeLayoutPage);
+        }
+
+        function handleSidebarMusicStateMessage(payload) {
+            if (!payload || typeof payload !== 'object') return;
+            const artists = Array.isArray(payload.artists)
+                ? payload.artists
+                : (payload.artist ? [payload.artist] : []);
+            sidebarMusicState = {
+                hasTrack: !!payload.hasTrack,
+                trackId: String(payload.trackId || ''),
+                title: String(payload.title || ''),
+                artists,
+                coverUrl: String(payload.coverUrl || ''),
+                isPlaying: !!payload.isPlaying,
+                currentTime: Number(payload.currentTime || 0),
+                duration: Number(payload.duration || 0),
+                fullscreenOpen: !!payload.fullscreenOpen
+            };
+            applySidebarMiniPlayerState();
+            syncMusicFullscreenTransitionMode(activeLayoutPage);
+        }
+
+        window.addEventListener('resize', () => {
+            getSidebarMiniPlayerRefs().forEach((player) => {
+                updateSidebarMiniTitleMarquee(player);
+            });
+            syncMusicFullscreenTransitionMode(activeLayoutPage);
+        });
+
         function syncBacklogHeight() {
             const useSidebar = document.body.classList.contains('layout-sidebar');
             const backlog = document.getElementById('backlogSection');
@@ -4476,6 +4905,7 @@
         function setActivePage(page, options = {}) {
             const fromSection = SECTION_TO_PAGE[page];
             const resolved = PAGE_IDS[page] ? page : (fromSection || 'calendar');
+            activeLayoutPage = resolved;
             localStorage.setItem(PAGE_LS_KEY, resolved);
             if (options.updateUrl !== false) {
                 updatePageUrl(resolved, { push: !!options.push, planningEventId: options.planningEventId });
@@ -4488,10 +4918,10 @@
             const serviceActive = useSidebar && isServicePage;
             document.body.classList.toggle('page-service-active', serviceActive);
             document.documentElement.classList.toggle('page-service-active', serviceActive);
-            const isBoardService = resolved === 'svc_board';
+            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music';
             const chatWrap = document.getElementById('chatBtnWrap');
-            if (chatWrap) chatWrap.style.display = isBoardService ? 'none' : '';
-            if (isBoardService && typeof toggleChat === 'function') {
+            if (chatWrap) chatWrap.style.display = hideChatOnPage ? 'none' : '';
+            if (hideChatOnPage && typeof toggleChat === 'function') {
                 toggleChat(false);
             }
             document.querySelectorAll('.page').forEach((section) => {
@@ -4526,6 +4956,11 @@
             if (useSidebar && resolved === 'svc_planning') {
                 ensureServiceFrame(document.getElementById('svc_planning'));
             }
+            updateSidebarMiniPlayerVisibility(resolved);
+            syncMusicFullscreenTransitionMode(resolved);
+            if (resolved !== 'svc_music') {
+                setTimeout(() => requestMusicStateSnapshot(), 0);
+            }
         }
 
         function setLayoutMode(mode, options = {}) {
@@ -4548,6 +4983,7 @@
             const urlPage = getPageFromUrl() || (getPlanningEventIdFromUrl() ? 'svc_planning' : null);
             const savedPage = urlPage || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
             setActivePage(savedPage, { scroll: false, updateUrl: true });
+            syncMusicFullscreenTransitionMode(savedPage);
             scheduleSidebarLogoFit(60);
         }
 
@@ -4592,6 +5028,10 @@
             btn.classList.toggle('is-open', isOpen);
             btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             document.body.classList.toggle('mobile-menu-open', isOpen);
+            if (isOpen) {
+                applySidebarMiniPlayerState();
+                setTimeout(() => requestMusicStateSnapshot(), 0);
+            }
         }
 
         function closeMobileMenu() {
@@ -4611,6 +5051,15 @@
             menu.addEventListener('click', (e) => {
                 if (e.target.closest('[data-mobile-menu-close]')) {
                     closeMobileMenu();
+                }
+            });
+
+            menu.addEventListener('transitionend', () => {
+                if (menu.classList.contains('is-open')) {
+                    applySidebarMiniPlayerState();
+                    getSidebarMiniPlayerRefs().forEach((player) => {
+                        updateSidebarMiniTitleMarquee(player);
+                    });
                 }
             });
 
@@ -4935,6 +5384,9 @@
             updateUserProfile();
 
             initLayoutShell();
+            initSidebarMiniPlayerControls();
+            applySidebarMiniPlayerState();
+            setTimeout(() => requestMusicStateSnapshot(), 0);
             initMobileMenu();
 
             initBeerSticky();
@@ -4960,6 +5412,10 @@
                     } else if (data.state === 'close') {
                         setIframeKeyboardOverride(false);
                     }
+                    return;
+                }
+                if (data.type === 'music:state') {
+                    handleSidebarMusicStateMessage(data.payload || data);
                     return;
                 }
             });
@@ -5016,6 +5472,7 @@
                 { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
+                { href: 'music.html', icon: '🎧', label: 'Музыка', page: 'svc_music' },
                 { href: 'snacks.html', icon: '🥨', label: 'Перекусы', page: 'svc_snacks' },
                 { href: 'water.html', icon: '💧', label: 'Трекер воды', page: 'svc_water' }
             ];
