@@ -1583,6 +1583,18 @@
             background: rgba(0, 0, 0, 0.35);
             flex: 0 0 auto;
         }
+        .sidebar-mini-jump {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sidebar-mini-jump:hover {
+            filter: brightness(1.06);
+        }
+        .sidebar-mini-jump:focus-visible {
+            outline: 2px solid var(--accent-border-50);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
         .sidebar-mini-meta {
             min-width: 0;
             display: flex;
@@ -4684,6 +4696,27 @@
         function initSidebarMiniPlayerControls() {
             const players = getSidebarMiniPlayerRefs();
             if (!players.length) return;
+            const navigateToMusicPage = () => {
+                openSidebarPage('svc_music');
+            };
+            const bindJumpTarget = (el) => {
+                if (!el) return;
+                el.classList.add('sidebar-mini-jump');
+                if (!el.hasAttribute('tabindex')) {
+                    el.setAttribute('tabindex', '0');
+                }
+                el.setAttribute('role', 'button');
+                el.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    navigateToMusicPage();
+                });
+                el.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ' && event.key !== 'Spacebar') return;
+                    event.preventDefault();
+                    navigateToMusicPage();
+                });
+            };
 
             const bindSeek = (progressEl) => {
                 if (!progressEl) return;
@@ -4741,6 +4774,12 @@
             };
 
             players.forEach((player) => {
+                const cover = player.root.querySelector('.sidebar-mini-cover');
+                const title = player.root.querySelector('.sidebar-mini-title');
+                const artist = player.root.querySelector('.sidebar-mini-artist');
+                bindJumpTarget(cover);
+                bindJumpTarget(title);
+                bindJumpTarget(artist);
                 if (player.prev) player.prev.addEventListener('click', () => postMusicCommand('prev'));
                 if (player.play) player.play.addEventListener('click', () => postMusicCommand('play-toggle'));
                 if (player.next) player.next.addEventListener('click', () => postMusicCommand('next'));
@@ -4803,13 +4842,15 @@
             const progress = duration > 0 ? Math.max(0, Math.min(100, (current / duration) * 100)) : 0;
             const cover = String(state.coverUrl || '').trim() || SIDEBAR_MUSIC_FALLBACK_COVER;
 
+            updateSidebarMiniPlayerVisibility(activeLayoutPage);
             getSidebarMiniPlayerRefs().forEach((player) => {
                 if (!player.cover || !player.titleText || !player.artist || !player.play || !player.progressFill) return;
+                const isVisible = !player.root.hidden;
                 if (!hasTrack) {
                     player.titleText.textContent = 'Трек не выбран';
                     player.titleText.setAttribute('data-text', 'Трек не выбран');
                     player.artist.textContent = '';
-                    if ((player.cover.dataset.currentSrc || '') !== SIDEBAR_MUSIC_FALLBACK_COVER) {
+                    if (isVisible && (player.cover.dataset.currentSrc || '') !== SIDEBAR_MUSIC_FALLBACK_COVER) {
                         player.cover.src = SIDEBAR_MUSIC_FALLBACK_COVER;
                         player.cover.dataset.currentSrc = SIDEBAR_MUSIC_FALLBACK_COVER;
                     }
@@ -4828,7 +4869,7 @@
                     player.artist.textContent = artistText;
                     player.artist.dataset.currentText = artistText;
                 }
-                if ((player.cover.dataset.currentSrc || '') !== cover) {
+                if (isVisible && (player.cover.dataset.currentSrc || '') !== cover) {
                     player.cover.src = cover;
                     player.cover.dataset.currentSrc = cover;
                 }
@@ -4838,7 +4879,6 @@
                     updateSidebarMiniTitleMarquee(player);
                 }
             });
-            updateSidebarMiniPlayerVisibility(activeLayoutPage);
         }
 
         function handleSidebarMusicStateMessage(payload) {
