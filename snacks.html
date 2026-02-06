@@ -289,6 +289,141 @@
             color: #fff;
             box-shadow: 0 8px 14px rgba(251,191,36,0.18);
         }
+        .dish-builder {
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .dish-builder-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .dish-builder-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dish-summary {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(15,15,15,0.55);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .dish-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .ingredient-grid {
+            display: grid;
+            gap: 12px;
+            align-items: center;
+            grid-template-columns: 1fr;
+        }
+        @media (min-width: 640px) {
+            .ingredient-grid {
+                grid-template-columns: minmax(200px, 2.3fr) minmax(80px, 0.7fr) minmax(260px, 1.6fr) 32px;
+            }
+        }
+        .dish-builder.is-collapsed .dish-builder-body {
+            display: none;
+        }
+        .dish-builder.is-collapsed .section-toggle {
+            transform: rotate(-90deg);
+        }
+        .dish-builder.is-collapsed #addIngredientRow {
+            display: none;
+        }
+        .food-row-wrap {
+            position: relative;
+            display: grid;
+            gap: 8px;
+            z-index: 1;
+            isolation: isolate;
+        }
+        .food-row-wrap.suggest-open {
+            z-index: 5000;
+        }
+        .food-row-actions {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            justify-self: end;
+        }
+        .details-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0,0,0,0.35);
+            color: var(--accent-200);
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .details-btn.hidden {
+            display: none;
+        }
+        .food-details {
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(12,12,12,0.6);
+        }
+        .food-details.hidden {
+            display: none;
+        }
+        .food-details-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .food-details-list {
+            margin-top: 8px;
+            display: grid;
+            gap: 6px;
+        }
+        .food-details-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: #e5e7eb;
+        }
+        .food-details-meta {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        .food-row-actions .row-remove {
+            justify-self: auto;
+            transform: none;
+        }
+        .food-row-actions .row-remove:hover {
+            transform: scale(1.05);
+        }
+        .food-details-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .food-details-edit {
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0,0,0,0.35);
+            color: var(--accent-200);
+            font-size: 0.75rem;
+        }
         .store-toggle {
             display: inline-flex;
             flex-wrap: wrap;
@@ -534,6 +669,20 @@
             color: #9ca3af;
             font-size: 0.8rem;
         }
+        .dish-builder {
+            position: relative;
+            z-index: 20;
+        }
+        .dish-builder-body {
+            position: relative;
+            z-index: 40;
+        }
+        .dish-builder .food-name-wrap {
+            z-index: 600;
+        }
+        .dish-builder .food-suggest {
+            z-index: 900;
+        }
         .food-grid {
             display: grid;
             gap: 12px;
@@ -777,6 +926,56 @@
                             <div class="text-right">
                                 <div id="foodTotal" class="text-amber-200 font-semibold">0 ккал</div>
                                 <div id="foodMacrosTotal" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                            </div>
+                        </div>
+                        <div class="dish-builder mt-6 pt-5 is-collapsed" id="dishBuilder">
+                            <div class="dish-builder-head">
+                                <div>
+                                    <div class="text-xs uppercase tracking-[0.3em] text-amber-300/70">Конструктор блюда</div>
+                                    <div class="text-xs text-gray-400 mt-1">Добавьте ингредиенты, укажите вес — мы рассчитаем КБЖУ и добавим блюдо в список.</div>
+                                    <div id="dishBuilderModeLabel" class="text-xs text-amber-200 mt-2 hidden">Редактирование блюда</div>
+                                </div>
+                                <div class="dish-builder-actions">
+                                    <button id="dishBuilderToggle" class="section-toggle" type="button" aria-expanded="false" aria-controls="dishBuilderBody">▾</button>
+                                </div>
+                            </div>
+                            <div id="dishBuilderBody" class="dish-builder-body" aria-hidden="true">
+                            <div class="mt-4">
+                                <label class="text-xs text-gray-400 uppercase tracking-[0.2em]" for="dishNameInput">Название блюда</label>
+                                <input id="dishNameInput" type="text" class="input-field mt-2" placeholder="Например, Салат с курицей" />
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <div class="hidden sm:grid food-grid gap-3 table-head">
+                                    <div>Ингредиент</div>
+                                    <div>Вес, г</div>
+                                    <div>
+                                        <div class="macro-head">
+                                            <span class="nowrap">ККАЛ / 100 г</span>
+                                            <span>Б</span>
+                                            <span>Ж</span>
+                                            <span>У</span>
+                                        </div>
+                                    </div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div id="ingredientRows" class="space-y-2"></div>
+                            </div>
+                            <div class="mt-2">
+                                <button id="addIngredientRow" class="btn-muted btn-compact">+ Ингредиент</button>
+                            </div>
+                            <div class="dish-summary mt-4">
+                                <div class="text-sm text-gray-400">Итого по блюду</div>
+                                <div class="text-right">
+                                    <div id="dishTotalsLine" class="text-amber-200 font-semibold">0 г • 0 ккал</div>
+                                    <div id="dishMacrosLine" class="macro-total">Б 0 • Ж 0 • У 0</div>
+                                    <div id="dishPer100Line" class="text-xs text-gray-400">на 100 г: К 0 • Б 0 • Ж 0 • У 0</div>
+                                </div>
+                            </div>
+                            <div class="dish-actions mt-4">
+                                <button id="addDishToFood" class="btn-amber">Добавить блюдо</button>
+                                <button id="resetDishBuilder" class="btn-muted">Сбросить</button>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -1071,6 +1270,8 @@
                 menu.classList.add('hidden');
                 const card = menu.closest('.card');
                 if (card) card.classList.remove('food-open');
+                const wrap = menu.closest('.food-row-wrap');
+                if (wrap) wrap.classList.remove('suggest-open');
             });
         }
 
@@ -1109,6 +1310,13 @@
                 btn.classList.toggle('active', active);
                 btn.setAttribute('aria-pressed', active ? 'true' : 'false');
             });
+        }
+
+        function setDishBuilderMode(isEditing) {
+            const addDishBtn = document.getElementById('addDishToFood');
+            const modeLabel = document.getElementById('dishBuilderModeLabel');
+            if (addDishBtn) addDishBtn.textContent = isEditing ? 'Сохранить блюдо' : 'Добавить блюдо';
+            if (modeLabel) modeLabel.classList.toggle('hidden', !isEditing);
         }
 
         function normalizeFoodItem(item) {
@@ -1224,6 +1432,279 @@
             return Promise.resolve(null);
         }
 
+        function normalizeIngredientList(raw) {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw.filter(Boolean);
+            if (typeof raw === 'object') return Object.values(raw).filter(Boolean);
+            return [];
+        }
+
+        function computeIngredientsTotals(ingredients) {
+            let totalWeight = 0;
+            let totalCalories = 0;
+            let totalProtein = 0;
+            let totalFat = 0;
+            let totalCarbs = 0;
+            ingredients.forEach(item => {
+                const weight = parseOptionalNumber(item.weight);
+                const kcal = parseOptionalNumber(item.calories);
+                const protein = parseOptionalNumber(item.protein);
+                const fat = parseOptionalNumber(item.fat);
+                const carbs = parseOptionalNumber(item.carbs);
+                const w = Number.isFinite(weight) ? weight : 0;
+                totalWeight += w;
+                totalCalories += calcFoodCalories(w, Number.isFinite(kcal) ? kcal : 0);
+                totalProtein += calcFoodMacro(w, Number.isFinite(protein) ? protein : 0);
+                totalFat += calcFoodMacro(w, Number.isFinite(fat) ? fat : 0);
+                totalCarbs += calcFoodMacro(w, Number.isFinite(carbs) ? carbs : 0);
+            });
+            const per100 = totalWeight > 0 ? 100 / totalWeight : 0;
+            return {
+                totalWeight,
+                totalCalories,
+                totalProtein,
+                totalFat,
+                totalCarbs,
+                per100Kcal: totalWeight ? totalCalories * per100 : 0,
+                per100Protein: totalWeight ? totalProtein * per100 : 0,
+                per100Fat: totalWeight ? totalFat * per100 : 0,
+                per100Carbs: totalWeight ? totalCarbs * per100 : 0
+            };
+        }
+
+        function renderFoodDetails(detailsEl, ingredients) {
+            if (!detailsEl) return;
+            if (!ingredients || !ingredients.length) {
+                detailsEl.classList.add('hidden');
+                detailsEl.innerHTML = '';
+                return;
+            }
+            const totals = computeIngredientsTotals(ingredients);
+            const totalLine = `${formatMacro(totals.totalWeight)} г • ${formatKcal(totals.totalCalories)}`;
+            const per100Line = `на 100 г: К ${formatMacro(totals.per100Kcal)} • Б ${formatMacro(totals.per100Protein)} • Ж ${formatMacro(totals.per100Fat)} • У ${formatMacro(totals.per100Carbs)}`;
+            const itemsHtml = ingredients.map(item => {
+                const name = item.name || 'Ингредиент';
+                const weight = Number.isFinite(parseOptionalNumber(item.weight)) ? formatMacro(item.weight) : '0';
+                const kcal = Number.isFinite(parseOptionalNumber(item.calories)) ? formatMacro(item.calories) : '0';
+                const protein = Number.isFinite(parseOptionalNumber(item.protein)) ? formatMacro(item.protein) : '0';
+                const fat = Number.isFinite(parseOptionalNumber(item.fat)) ? formatMacro(item.fat) : '0';
+                const carbs = Number.isFinite(parseOptionalNumber(item.carbs)) ? formatMacro(item.carbs) : '0';
+                return `
+                    <div class="food-details-item">
+                        <div>${escapeHtml(name)}</div>
+                        <div class="food-details-meta">${weight} г • К ${kcal} • Б ${protein} • Ж ${fat} • У ${carbs}</div>
+                    </div>
+                `;
+            }).join('');
+            detailsEl.innerHTML = `
+                <div class="food-details-head">
+                    <div class="text-xs uppercase tracking-[0.2em] text-amber-300/70">Ингредиенты</div>
+                    <div class="food-details-actions">
+                        <div class="food-details-meta">${totalLine}</div>
+                        <button type="button" class="food-details-edit">Редактировать</button>
+                    </div>
+                </div>
+                <div class="food-details-meta mt-1">${per100Line}</div>
+                <div class="food-details-list">${itemsHtml}</div>
+            `;
+        }
+
+        function collectIngredientList() {
+            const list = [];
+            document.querySelectorAll('[data-ingredient-row]').forEach(row => {
+                const nameInput = row.querySelector('[data-ingredient-name]');
+                const name = nameInput ? nameInput.value.trim() : '';
+                if (!name) return;
+                const weight = parseOptionalNumber(row.querySelector('[data-ingredient-weight]')?.value || '');
+                const calories = parseOptionalNumber(row.querySelector('[data-ingredient-kcal]')?.value || '');
+                const protein = parseOptionalNumber(row.querySelector('[data-ingredient-protein]')?.value || '');
+                const fat = parseOptionalNumber(row.querySelector('[data-ingredient-fat]')?.value || '');
+                const carbs = parseOptionalNumber(row.querySelector('[data-ingredient-carbs]')?.value || '');
+                list.push({
+                    name,
+                    weight: Number.isFinite(weight) ? weight : '',
+                    calories: Number.isFinite(calories) ? calories : '',
+                    protein: Number.isFinite(protein) ? protein : '',
+                    fat: Number.isFinite(fat) ? fat : '',
+                    carbs: Number.isFinite(carbs) ? carbs : ''
+                });
+            });
+            return list;
+        }
+
+        function createIngredientRow(data = {}) {
+            const wrap = document.createElement('div');
+            wrap.className = 'food-row-wrap';
+            const row = document.createElement('div');
+            row.className = 'grid food-grid gap-3 items-center';
+            row.dataset.ingredientRow = '1';
+
+            const nameWrap = document.createElement('div');
+            nameWrap.className = 'food-name-wrap';
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.placeholder = 'Ингредиент';
+            nameInput.className = 'input-field';
+            nameInput.value = data.name || '';
+            nameInput.dataset.ingredientName = '1';
+            nameWrap.appendChild(nameInput);
+            const suggest = document.createElement('div');
+            suggest.className = 'food-suggest hidden';
+            nameWrap.appendChild(suggest);
+
+            const weightWrap = document.createElement('div');
+            weightWrap.className = 'flex items-center gap-2';
+            const weightInput = document.createElement('input');
+            weightInput.type = 'number';
+            weightInput.min = '0';
+            weightInput.step = '1';
+            weightInput.placeholder = 'г';
+            weightInput.className = 'input-field';
+            weightInput.value = data.weight != null ? data.weight : '';
+            weightInput.dataset.ingredientWeight = '1';
+            weightWrap.appendChild(weightInput);
+
+            const macroWrap = document.createElement('div');
+            macroWrap.className = 'macro-wrap';
+            const calInput = document.createElement('input');
+            calInput.type = 'number';
+            calInput.min = '0';
+            calInput.step = '1';
+            calInput.placeholder = '';
+            calInput.className = 'input-field macro-kcal';
+            calInput.value = data.calories != null ? data.calories : '';
+            calInput.dataset.ingredientKcal = '1';
+            macroWrap.appendChild(calInput);
+            const macroGrid = document.createElement('div');
+            macroGrid.className = 'macro-grid';
+            const proteinInput = document.createElement('input');
+            proteinInput.type = 'number';
+            proteinInput.min = '0';
+            proteinInput.step = '0.1';
+            proteinInput.placeholder = '';
+            proteinInput.className = 'input-field macro-input';
+            proteinInput.value = data.protein != null ? data.protein : '';
+            proteinInput.dataset.ingredientProtein = '1';
+            const fatInput = document.createElement('input');
+            fatInput.type = 'number';
+            fatInput.min = '0';
+            fatInput.step = '0.1';
+            fatInput.placeholder = '';
+            fatInput.className = 'input-field macro-input';
+            fatInput.value = data.fat != null ? data.fat : '';
+            fatInput.dataset.ingredientFat = '1';
+            const carbInput = document.createElement('input');
+            carbInput.type = 'number';
+            carbInput.min = '0';
+            carbInput.step = '0.1';
+            carbInput.placeholder = '';
+            carbInput.className = 'input-field macro-input';
+            carbInput.value = data.carbs != null ? data.carbs : '';
+            carbInput.dataset.ingredientCarbs = '1';
+            macroGrid.appendChild(proteinInput);
+            macroGrid.appendChild(fatInput);
+            macroGrid.appendChild(carbInput);
+            macroWrap.appendChild(macroGrid);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'row-remove';
+            removeBtn.textContent = '✕';
+
+            row.appendChild(nameWrap);
+            row.appendChild(weightWrap);
+            row.appendChild(macroWrap);
+            const spacer = document.createElement('div');
+            spacer.className = 'text-sm text-gray-200';
+            row.appendChild(spacer);
+            row.appendChild(removeBtn);
+
+            wrap.appendChild(row);
+
+            setupFoodAutocomplete(nameInput, suggest, (payload) => {
+                const safeValue = (val) => (val === null || val === undefined || val === '' ? '' : String(val));
+                nameInput.value = payload.name || '';
+                calInput.value = safeValue(payload.kcal);
+                proteinInput.value = safeValue(payload.protein);
+                fatInput.value = safeValue(payload.fat);
+                carbInput.value = safeValue(payload.carbs);
+                updateDishTotals();
+            });
+
+            [nameInput, weightInput, calInput, proteinInput, fatInput, carbInput].forEach(input => {
+                input.addEventListener('input', () => {
+                    updateDishTotals();
+                });
+            });
+
+            removeBtn.addEventListener('click', () => {
+                wrap.remove();
+                ensureIngredientRow();
+                updateDishTotals();
+            });
+
+            return wrap;
+        }
+
+        function ensureIngredientRow() {
+            const wrap = document.getElementById('ingredientRows');
+            if (wrap && !wrap.querySelector('[data-ingredient-row]')) {
+                wrap.appendChild(createIngredientRow());
+            }
+        }
+
+        function getDishTotals() {
+            let totalWeight = 0;
+            let totalCalories = 0;
+            let totalProtein = 0;
+            let totalFat = 0;
+            let totalCarbs = 0;
+            document.querySelectorAll('[data-ingredient-row]').forEach(row => {
+                const weightVal = parseOptionalNumber(row.querySelector('[data-ingredient-weight]')?.value || '');
+                const weight = Number.isFinite(weightVal) ? weightVal : 0;
+                const kcalVal = parseOptionalNumber(row.querySelector('[data-ingredient-kcal]')?.value || '');
+                const proteinVal = parseOptionalNumber(row.querySelector('[data-ingredient-protein]')?.value || '');
+                const fatVal = parseOptionalNumber(row.querySelector('[data-ingredient-fat]')?.value || '');
+                const carbVal = parseOptionalNumber(row.querySelector('[data-ingredient-carbs]')?.value || '');
+                totalWeight += weight;
+                totalCalories += calcFoodCalories(weight, Number.isFinite(kcalVal) ? kcalVal : 0);
+                totalProtein += calcFoodMacro(weight, Number.isFinite(proteinVal) ? proteinVal : 0);
+                totalFat += calcFoodMacro(weight, Number.isFinite(fatVal) ? fatVal : 0);
+                totalCarbs += calcFoodMacro(weight, Number.isFinite(carbVal) ? carbVal : 0);
+            });
+            const per100 = totalWeight > 0 ? 100 / totalWeight : 0;
+            const per100Kcal = totalWeight > 0 ? (totalCalories * per100) : 0;
+            const per100Protein = totalWeight > 0 ? (totalProtein * per100) : 0;
+            const per100Fat = totalWeight > 0 ? (totalFat * per100) : 0;
+            const per100Carbs = totalWeight > 0 ? (totalCarbs * per100) : 0;
+            return {
+                totalWeight,
+                totalCalories,
+                totalProtein,
+                totalFat,
+                totalCarbs,
+                per100Kcal,
+                per100Protein,
+                per100Fat,
+                per100Carbs
+            };
+        }
+
+        function updateDishTotals() {
+            const totals = getDishTotals();
+            const totalLine = document.getElementById('dishTotalsLine');
+            const macroLine = document.getElementById('dishMacrosLine');
+            const per100Line = document.getElementById('dishPer100Line');
+            if (totalLine) {
+                const weightText = `${formatMacro(totals.totalWeight)} г`;
+                totalLine.textContent = `${weightText} • ${formatKcal(totals.totalCalories)}`;
+            }
+            if (macroLine) macroLine.textContent = formatMacrosLine(totals.totalProtein, totals.totalFat, totals.totalCarbs);
+            if (per100Line) {
+                per100Line.textContent = `на 100 г: К ${formatMacro(totals.per100Kcal)} • Б ${formatMacro(totals.per100Protein)} • Ж ${formatMacro(totals.per100Fat)} • У ${formatMacro(totals.per100Carbs)}`;
+            }
+        }
+
         function setupFoodAutocomplete(input, suggest, applySelection) {
             let timer = null;
             let controller = null;
@@ -1241,6 +1722,8 @@
                 suggest.classList.add('hidden');
                 const card = suggest.closest('.card');
                 if (card) card.classList.remove('food-open');
+                const wrap = suggest.closest('.food-row-wrap');
+                if (wrap) wrap.classList.remove('suggest-open');
             }
 
             function showSuggest() {
@@ -1248,6 +1731,8 @@
                 suggest.classList.remove('hidden');
                 const card = suggest.closest('.card');
                 if (card) card.classList.add('food-open');
+                const wrap = suggest.closest('.food-row-wrap');
+                if (wrap) wrap.classList.add('suggest-open');
             }
 
             function renderLoading() {
@@ -1542,9 +2027,12 @@
         }
 
         function createFoodRow(data = {}) {
+            const wrap = document.createElement('div');
+            wrap.className = 'food-row-wrap';
             const row = document.createElement('div');
             row.className = 'grid food-grid gap-3 items-center';
             row.dataset.foodRow = '1';
+            if (data && data.id) row.dataset.foodId = String(data.id);
 
             const nameWrap = document.createElement('div');
             nameWrap.className = 'food-name-wrap';
@@ -1654,16 +2142,37 @@
             totalEl.className = 'text-sm font-semibold text-amber-200 flex items-center gap-2';
             totalEl.innerHTML = '<span class="cell-label sm:hidden">Итого</span><span data-food-total>0</span>';
 
+            const detailsBtn = document.createElement('button');
+            detailsBtn.type = 'button';
+            detailsBtn.className = 'details-btn hidden';
+            detailsBtn.textContent = 'i';
+            detailsBtn.title = 'Ингредиенты';
+            detailsBtn.setAttribute('aria-expanded', 'false');
+
             const removeBtn = document.createElement('button');
             removeBtn.type = 'button';
             removeBtn.className = 'row-remove';
             removeBtn.textContent = '✕';
 
+            const actionsWrap = document.createElement('div');
+            actionsWrap.className = 'food-row-actions';
+            actionsWrap.appendChild(detailsBtn);
+            actionsWrap.appendChild(removeBtn);
+
             row.appendChild(nameWrap);
             row.appendChild(weightWrap);
             row.appendChild(calWrap);
             row.appendChild(totalEl);
-            row.appendChild(removeBtn);
+            row.appendChild(actionsWrap);
+
+            const detailsEl = document.createElement('div');
+            detailsEl.className = 'food-details hidden';
+            detailsEl.dataset.foodDetails = '1';
+            detailsEl.id = `food-details-${Math.random().toString(36).slice(2, 9)}`;
+            detailsBtn.setAttribute('aria-controls', detailsEl.id);
+
+            wrap.appendChild(row);
+            wrap.appendChild(detailsEl);
 
             function syncFoodRowValues() {
                 row.dataset.foodWeightValue = weightInput.value || '';
@@ -1720,14 +2229,56 @@
                 if (detailController) detailController.abort();
             });
 
+            detailsBtn.addEventListener('click', () => {
+                const isHidden = detailsEl.classList.contains('hidden');
+                detailsEl.classList.toggle('hidden');
+                detailsBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                const editBtn = detailsEl.querySelector('.food-details-edit');
+                if (editBtn && !editBtn.dataset.bound) {
+                    editBtn.dataset.bound = '1';
+                    editBtn.addEventListener('click', () => {
+                        const list = normalizeIngredientList(row.dataset.foodIngredients ? JSON.parse(row.dataset.foodIngredients) : []);
+                        if (!list.length) return;
+                        const dishBuilder = document.getElementById('dishBuilder');
+                        const dishBuilderBody = document.getElementById('dishBuilderBody');
+                        const dishBuilderToggle = document.getElementById('dishBuilderToggle');
+                        const dishNameInput = document.getElementById('dishNameInput');
+                        const ingWrap = document.getElementById('ingredientRows');
+                        if (!ingWrap) return;
+                        ingWrap.innerHTML = '';
+                        list.forEach(item => {
+                            ingWrap.appendChild(createIngredientRow(item));
+                        });
+                        if (dishNameInput) dishNameInput.value = row.querySelector('[data-food-name]')?.value || '';
+                        updateDishTotals();
+                        if (dishBuilder && dishBuilderBody && dishBuilderToggle) {
+                            dishBuilder.classList.remove('is-collapsed');
+                            dishBuilderBody.setAttribute('aria-hidden', 'false');
+                            dishBuilderToggle.setAttribute('aria-expanded', 'true');
+                        }
+                        row.dataset.foodEditTarget = '1';
+                        setDishBuilderMode(true);
+                    });
+                }
+            });
+
             removeBtn.addEventListener('click', () => {
-                row.remove();
+                wrap.remove();
                 ensureAtLeastOneRow('food');
                 updateTotals();
                 scheduleSave();
             });
 
-            return row;
+            if (data && data.ingredients) {
+                const list = normalizeIngredientList(data.ingredients);
+                if (list.length) {
+                    row.dataset.foodIngredients = JSON.stringify(list);
+                    detailsBtn.classList.remove('hidden');
+                    renderFoodDetails(detailsEl, list);
+                }
+            }
+
+            return wrap;
         }
 
         function ensureAtLeastOneRow(type) {
@@ -1807,15 +2358,26 @@
                 const protein = getFoodInputValue(row, '[data-food-protein]', 'foodProteinValue');
                 const fat = getFoodInputValue(row, '[data-food-fat]', 'foodFatValue');
                 const carbs = getFoodInputValue(row, '[data-food-carbs]', 'foodCarbsValue');
+                const rowId = row.dataset.foodId || '';
+                let ingredients = null;
+                if (row.dataset.foodIngredients) {
+                    try {
+                        const parsed = JSON.parse(row.dataset.foodIngredients);
+                        if (Array.isArray(parsed) && parsed.length) ingredients = parsed;
+                    } catch (_) {}
+                }
                 if (!name && !weight && !calories && !protein && !fat && !carbs) return;
-                foods.push({
+                const foodItem = {
                     name,
                     weight: parseOptionalNumber(weight),
                     calories: parseOptionalNumber(calories),
                     protein: parseOptionalNumber(protein),
                     fat: parseOptionalNumber(fat),
                     carbs: parseOptionalNumber(carbs)
-                });
+                };
+                if (rowId) foodItem.id = rowId;
+                if (ingredients && ingredients.length) foodItem.ingredients = ingredients;
+                foods.push(foodItem);
             });
 
             return { beers, foods };
@@ -2140,6 +2702,13 @@
             const addBeerBtn = document.getElementById('addBeerRow');
             const addFoodBtn = document.getElementById('addFoodRow');
             const storeToggle = document.getElementById('foodStoreToggle');
+            const addIngredientBtn = document.getElementById('addIngredientRow');
+            const addDishBtn = document.getElementById('addDishToFood');
+            const resetDishBtn = document.getElementById('resetDishBuilder');
+            const dishNameInput = document.getElementById('dishNameInput');
+            const dishBuilder = document.getElementById('dishBuilder');
+            const dishBuilderToggle = document.getElementById('dishBuilderToggle');
+            const dishBuilderBody = document.getElementById('dishBuilderBody');
 
             if (addBeerBtn) {
                 addBeerBtn.addEventListener('click', () => {
@@ -2217,6 +2786,102 @@
                 updateStoreFilterUI();
             }
             initSectionToggles();
+
+            const ingredientWrap = document.getElementById('ingredientRows');
+            if (ingredientWrap && !ingredientWrap.querySelector('[data-ingredient-row]')) {
+                ingredientWrap.appendChild(createIngredientRow());
+                updateDishTotals();
+            }
+            setDishBuilderMode(false);
+            if (dishBuilder && dishBuilderToggle && dishBuilderBody) {
+                dishBuilderToggle.addEventListener('click', () => {
+                    const isCollapsed = dishBuilder.classList.contains('is-collapsed');
+                    dishBuilder.classList.toggle('is-collapsed');
+                    dishBuilderToggle.setAttribute('aria-expanded', isCollapsed ? 'true' : 'false');
+                    dishBuilderBody.setAttribute('aria-hidden', isCollapsed ? 'false' : 'true');
+                });
+            }
+            if (addIngredientBtn) {
+                addIngredientBtn.addEventListener('click', () => {
+                    const wrap = document.getElementById('ingredientRows');
+                    if (!wrap) return;
+                    wrap.appendChild(createIngredientRow());
+                    updateDishTotals();
+                });
+            }
+            if (resetDishBtn) {
+                resetDishBtn.addEventListener('click', () => {
+                    const wrap = document.getElementById('ingredientRows');
+                    if (wrap) wrap.innerHTML = '';
+                    if (dishNameInput) dishNameInput.value = '';
+                    const targetRow = document.querySelector('[data-food-edit-target]');
+                    if (targetRow) targetRow.removeAttribute('data-food-edit-target');
+                    setDishBuilderMode(false);
+                    ensureIngredientRow();
+                    updateDishTotals();
+                });
+            }
+            if (addDishBtn) {
+                addDishBtn.addEventListener('click', () => {
+                    const name = dishNameInput ? dishNameInput.value.trim() : '';
+                    if (!name) {
+                        if (dishNameInput) dishNameInput.focus();
+                        return;
+                    }
+                    const ingredients = collectIngredientList();
+                    if (!ingredients.length) return;
+                    const totals = getDishTotals();
+                    if (!totals.totalWeight) return;
+                    const wrap = document.getElementById('foodRows');
+                    if (!wrap) return;
+                    const targetRow = document.querySelector('[data-food-edit-target]');
+                    const payload = {
+                        name,
+                        weight: Math.round(totals.totalWeight * 10) / 10,
+                        calories: Math.round(totals.per100Kcal * 10) / 10,
+                        protein: Math.round(totals.per100Protein * 10) / 10,
+                        fat: Math.round(totals.per100Fat * 10) / 10,
+                        carbs: Math.round(totals.per100Carbs * 10) / 10,
+                        ingredients
+                    };
+                    if (targetRow) {
+                        targetRow.querySelector('[data-food-name]').value = payload.name || '';
+                        targetRow.querySelector('[data-food-weight]').value = payload.weight || '';
+                        targetRow.querySelector('[data-food-calories]').value = payload.calories || '';
+                        targetRow.querySelector('[data-food-protein]').value = payload.protein || '';
+                        targetRow.querySelector('[data-food-fat]').value = payload.fat || '';
+                        targetRow.querySelector('[data-food-carbs]').value = payload.carbs || '';
+                        targetRow.dataset.foodIngredients = JSON.stringify(payload.ingredients || []);
+                        const wrapEl = targetRow.closest('.food-row-wrap');
+                        const detailsBtn = targetRow.querySelector('.details-btn');
+                        const detailsEl = wrapEl ? wrapEl.querySelector('[data-food-details]') : null;
+                        if (detailsBtn) detailsBtn.classList.remove('hidden');
+                        if (detailsEl) {
+                            renderFoodDetails(detailsEl, payload.ingredients || []);
+                            detailsEl.classList.remove('hidden');
+                        }
+                        const syncEvent = new Event('input', { bubbles: true });
+                        targetRow.querySelector('[data-food-name]').dispatchEvent(syncEvent);
+                        targetRow.removeAttribute('data-food-edit-target');
+                        setDishBuilderMode(false);
+                    } else {
+                        const rowWrap = createFoodRow(payload);
+                        wrap.appendChild(rowWrap);
+                    }
+                    updateTotals();
+                    scheduleSave();
+                    if (dishNameInput) dishNameInput.value = '';
+                    const ingWrap = document.getElementById('ingredientRows');
+                    if (ingWrap) ingWrap.innerHTML = '';
+                    ensureIngredientRow();
+                    updateDishTotals();
+                    if (dishBuilder && dishBuilderToggle && dishBuilderBody) {
+                        dishBuilder.classList.add('is-collapsed');
+                        dishBuilderToggle.setAttribute('aria-expanded', 'false');
+                        dishBuilderBody.setAttribute('aria-hidden', 'true');
+                    }
+                });
+            }
 
             if (dateInput) {
                 dateInput.addEventListener('change', () => {
