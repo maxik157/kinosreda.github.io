@@ -289,6 +289,29 @@
             color: #fff;
             box-shadow: 0 8px 14px rgba(251,191,36,0.18);
         }
+        .store-toggle {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(255,255,255,0.04);
+        }
+        .store-btn {
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.65rem;
+            color: #cbd5f5;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .store-btn.active {
+            background: linear-gradient(90deg, rgba(245,158,11,0.25), rgba(251,191,36,0.45));
+            color: #fff;
+            box-shadow: 0 6px 12px rgba(251,191,36,0.18);
+        }
         .section-toggle {
             width: 32px;
             height: 32px;
@@ -719,9 +742,14 @@
                             <h2 class="section-title text-amber-200">Еда</h2>
                         </div>
                         <div class="section-head-right">
-                            <div class="provider-toggle" id="foodProviderToggle" role="group" aria-label="Источник данных">
-                                <button type="button" class="provider-btn" data-provider="fatsecret" aria-pressed="false">FatSecret</button>
-                                <button type="button" class="provider-btn" data-provider="openfoodfacts" aria-pressed="false">OpenFoodFacts</button>
+                            <div class="store-toggle" id="foodStoreToggle" role="group" aria-label="Магазины">
+                                <button type="button" class="store-btn" data-store="all" aria-pressed="false">Все</button>
+                                <button type="button" class="store-btn" data-store="vv" aria-pressed="false">ВкусВилл</button>
+                                <button type="button" class="store-btn" data-store="lenta" aria-pressed="false">Лента</button>
+                                <button type="button" class="store-btn" data-store="magnit" aria-pressed="false">Магнит</button>
+                                <button type="button" class="store-btn" data-store="samokat" aria-pressed="false">Самокат</button>
+                                <button type="button" class="store-btn" data-store="pyatka" aria-pressed="false">Пятерочка</button>
+                                <button type="button" class="store-btn" data-store="perek" aria-pressed="false">Перекресток</button>
                             </div>
                             <button id="addFoodRow" class="btn-amber btn-compact">+ Добавить блюдо</button>
                         </div>
@@ -838,10 +866,16 @@
             saveTimer: null
         };
         const FOOD_SEARCH_BASE = window.FOOD_SEARCH_BASE || window.OPENFOODFACTS_BASE || 'https://realtime.киносреда.рф';
-        const FATSECRET_ENDPOINT = `${FOOD_SEARCH_BASE}/fatsecret/search`;
-        const OPENFOODFACTS_ENDPOINT = `${FOOD_SEARCH_BASE}/openfoodfacts/search`;
-        const FOOD_SEARCH_PROVIDER = window.FOOD_SEARCH_PROVIDER || 'fatsecret';
-        const FOOD_PROVIDER_LS_KEY = 'foodSearchProvider';
+        const LOCALFOODS_ENDPOINT = `${FOOD_SEARCH_BASE}/localfoods/search`;
+        const FOOD_STORE_LS_KEY = 'foodStoreFilter';
+        const FOOD_STORES = [
+            { id: 'vv', label: 'ВкусВилл' },
+            { id: 'lenta', label: 'Лента' },
+            { id: 'magnit', label: 'Магнит' },
+            { id: 'samokat', label: 'Самокат' },
+            { id: 'pyatka', label: 'Пятерочка' },
+            { id: 'perek', label: 'Перекресток' }
+        ];
         const FOOD_SEARCH_MIN_CHARS = 2;
         const FOOD_SEARCH_LIMIT = 20;
         const FOOD_SEARCH_DELAY = 250;
@@ -908,6 +942,13 @@
             text = text.replace(/(\d)\s*g\b/i, '$1 г');
             text = text.replace(/(\d)\s*ml\b/i, '$1 мл');
             return text;
+        }
+
+        function normalizeCompareText(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/ё/g, 'е')
+                .replace(/[^a-zа-я0-9]+/gi, '');
         }
 
         function formatMacrosLine(protein, fat, carbs) {
@@ -1033,29 +1074,41 @@
             });
         }
 
-        function getFoodSearchProvider() {
-            const saved = localStorage.getItem(FOOD_PROVIDER_LS_KEY);
-            if (saved === 'openfoodfacts' || saved === 'fatsecret') return saved;
-            return FOOD_SEARCH_PROVIDER === 'openfoodfacts' ? 'openfoodfacts' : 'fatsecret';
+        function getSelectedStores() {
+            const saved = (localStorage.getItem(FOOD_STORE_LS_KEY) || '').trim();
+            const allIds = FOOD_STORES.map(store => store.id);
+            if (!saved) return allIds;
+            const ids = saved.split(',').map(item => item.trim()).filter(Boolean);
+            const filtered = ids.filter(id => allIds.includes(id));
+            return filtered.length ? filtered : allIds;
         }
 
-        function updateFoodProviderUI() {
-            const wrap = document.getElementById('foodProviderToggle');
+        function setSelectedStores(ids) {
+            const allIds = FOOD_STORES.map(store => store.id);
+            const filtered = ids.filter(id => allIds.includes(id));
+            const value = filtered.length ? filtered.join(',') : allIds.join(',');
+            localStorage.setItem(FOOD_STORE_LS_KEY, value);
+        }
+
+        function ensureStoreSelection() {
+            const saved = (localStorage.getItem(FOOD_STORE_LS_KEY) || '').trim();
+            if (!saved) {
+                setSelectedStores(FOOD_STORES.map(store => store.id));
+            }
+        }
+
+        function updateStoreFilterUI() {
+            const wrap = document.getElementById('foodStoreToggle');
             if (!wrap) return;
-            const current = getFoodSearchProvider();
-            wrap.querySelectorAll('.provider-btn').forEach(btn => {
-                const isActive = btn.dataset.provider === current;
-                btn.classList.toggle('active', isActive);
-                btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            const selected = new Set(getSelectedStores());
+            const allIds = FOOD_STORES.map(store => store.id);
+            const isAll = allIds.every(id => selected.has(id));
+            wrap.querySelectorAll('.store-btn').forEach(btn => {
+                const key = btn.dataset.store || '';
+                const active = key === 'all' ? isAll : selected.has(key);
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
             });
-        }
-
-        function setFoodSearchProvider(provider) {
-            const value = provider === 'openfoodfacts' ? 'openfoodfacts' : 'fatsecret';
-            localStorage.setItem(FOOD_PROVIDER_LS_KEY, value);
-            foodSearchCache.clear();
-            updateFoodProviderUI();
-            closeFoodSuggests();
         }
 
         function normalizeFoodItem(item) {
@@ -1063,6 +1116,7 @@
             const name = item.name || item.food_name || item.product_name || '';
             const brand = item.brand || item.brand_name || item.brands || '';
             const quantity = item.quantity || item.per || item.description || '';
+            const store = item.store || item.store_name || item.storeName || '';
             const kcal = Number.isFinite(Number(item.kcal_100g)) ? Number(item.kcal_100g)
                 : (Number.isFinite(Number(item.kcal)) ? Number(item.kcal) : null);
             const protein = Number.isFinite(Number(item.proteins_100g)) ? Number(item.proteins_100g)
@@ -1072,7 +1126,7 @@
             const carbs = Number.isFinite(Number(item.carbs_100g)) ? Number(item.carbs_100g)
                 : (Number.isFinite(Number(item.carbs)) ? Number(item.carbs) : null);
             const id = item.code || item.id || '';
-            return { name, brand, quantity, kcal, protein, fat, carbs, id };
+            return { name, brand, quantity, store, kcal, protein, fat, carbs, id };
         }
 
         function buildFoodSuggestHtml(items, showEmpty = true) {
@@ -1095,7 +1149,24 @@
                     `Ж ${formatMacroOptional(fat)}`,
                     `У ${formatMacroOptional(carbs)}`
                 ];
-                const extraParts = [quantity, brand].filter(Boolean).map(part => escapeHtml(part));
+                const nameNorm = normalizeCompareText(name);
+                const brandNorm = normalizeCompareText(brand);
+                const storeNorm = normalizeCompareText(item.store);
+                const showBrand = brand && (!brandNorm || !nameNorm.includes(brandNorm));
+                const showStore = item.store && (!storeNorm || (storeNorm !== brandNorm && !nameNorm.includes(storeNorm)));
+                const rawParts = [
+                    quantity || '',
+                    showBrand ? brand : '',
+                    showStore ? item.store : ''
+                ].filter(Boolean);
+                const seen = new Set();
+                const extraParts = rawParts.filter(part => {
+                    const key = normalizeCompareText(part);
+                    if (!key) return false;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).map(part => escapeHtml(part));
                 const extra = extraParts.length ? `<span>${extraParts.join(' • ')}</span>` : '';
                 const dataAttrs = [
                     `data-food-code="${escapeHtml(item.id ? item.id : '')}"`,
@@ -1118,15 +1189,22 @@
         }
 
         function fetchFoodSuggestions(query, page, signal) {
-            const provider = getFoodSearchProvider();
-            const key = `${provider}|${query.toLowerCase()}|${page}`;
+            const storeKey = getSelectedStores().join(',');
+            const key = `localfoods|${storeKey}|${query.toLowerCase()}|${page}`;
             const cached = foodSearchCache.get(key);
             if (cached && (Date.now() - cached.at) < FOOD_SEARCH_CACHE_TTL) {
                 return Promise.resolve(cached.payload || { items: [], hasMore: false });
             }
-            const endpoint = provider === 'openfoodfacts' ? OPENFOODFACTS_ENDPOINT : FATSECRET_ENDPOINT;
-            const url = `${endpoint}?q=${encodeURIComponent(query)}&limit=${FOOD_SEARCH_LIMIT}&page=${page}`;
-            return fetch(url, { signal, credentials: 'include' })
+            const params = new URLSearchParams({
+                q: query,
+                limit: String(FOOD_SEARCH_LIMIT),
+                page: String(page)
+            });
+            if (storeKey && storeKey.split(',').length !== FOOD_STORES.length) {
+                params.set('stores', storeKey);
+            }
+            const url = `${LOCALFOODS_ENDPOINT}?${params.toString()}`;
+            return fetch(url, { signal })
                 .then(res => {
                     if (!res.ok) throw new Error('search_failed');
                     return res.json();
@@ -2061,7 +2139,7 @@
 
             const addBeerBtn = document.getElementById('addBeerRow');
             const addFoodBtn = document.getElementById('addFoodRow');
-            const providerToggle = document.getElementById('foodProviderToggle');
+            const storeToggle = document.getElementById('foodStoreToggle');
 
             if (addBeerBtn) {
                 addBeerBtn.addEventListener('click', () => {
@@ -2109,13 +2187,34 @@
                     if (input) input.focus();
                 });
             }
-            if (providerToggle) {
-                providerToggle.addEventListener('click', (e) => {
-                    const btn = e.target.closest('.provider-btn');
+            if (storeToggle) {
+                ensureStoreSelection();
+                storeToggle.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.store-btn');
                     if (!btn) return;
-                    setFoodSearchProvider(btn.dataset.provider || 'fatsecret');
+                    const storeId = btn.dataset.store || '';
+                    const allIds = FOOD_STORES.map(store => store.id);
+                    let selected = getSelectedStores();
+                    if (storeId === 'all') {
+                        selected = allIds;
+                    } else {
+                        const set = new Set(selected);
+                        if (set.has(storeId)) {
+                            if (set.size === 1) {
+                                return;
+                            }
+                            set.delete(storeId);
+                        } else {
+                            set.add(storeId);
+                        }
+                        selected = Array.from(set);
+                    }
+                    setSelectedStores(selected);
+                    foodSearchCache.clear();
+                    updateStoreFilterUI();
+                    closeFoodSuggests();
                 });
-                updateFoodProviderUI();
+                updateStoreFilterUI();
             }
             initSectionToggles();
 

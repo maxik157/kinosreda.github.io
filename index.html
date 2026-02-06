@@ -6906,7 +6906,9 @@
                 
                 if (watchedColumn && existingCard.columnId === watchedColumn.id && newColumn) {
                     // Move from Watched to New
+                    const nextOrder = getNextCardOrder(newColumn.id);
                     existingCard.columnId = newColumn.id;
+                    existingCard.order = nextOrder;
                     saveData();
                 }
             } else {
@@ -6921,6 +6923,7 @@
                         rating: 0,
                         author: userName,
                         watchCount: 0,
+                        order: getNextCardOrder(newColumn.id),
                         timestamp: Date.now()
                     };
                     data.backlog.cards.push(card);
@@ -7021,6 +7024,74 @@
         }
 
         // Backlog Methods
+        function getCardOrderValue(card) {
+            const val = Number(card && card.order);
+            return Number.isFinite(val) ? val : null;
+        }
+        function getNextCardOrder(columnId) {
+            const cards = data.backlog.cards.filter(c => c.columnId === columnId);
+            const orders = cards.map(getCardOrderValue).filter(v => v !== null);
+            if (!orders.length) return cards.length;
+            return Math.max(...orders) + 1;
+        }
+        function defaultBacklogSort(a, b) {
+            const aLastWatch = a.watchHistory && a.watchHistory.length > 0 ? a.watchHistory[a.watchHistory.length - 1] : 0;
+            const bLastWatch = b.watchHistory && b.watchHistory.length > 0 ? b.watchHistory[b.watchHistory.length - 1] : 0;
+
+            if (aLastWatch === 0 && bLastWatch !== 0) return -1;
+            if (aLastWatch !== 0 && bLastWatch === 0) return 1;
+
+            if (aLastWatch !== 0 && bLastWatch !== 0) {
+                if (aLastWatch !== bLastWatch) {
+                    return aLastWatch - bLastWatch;
+                }
+            }
+
+            const aRating = getCardAvgRating(a);
+            const bRating = getCardAvgRating(b);
+            return bRating - aRating;
+        }
+        function sortCardsByOrder(cards) {
+            cards.sort((a, b) => {
+                const aOrder = getCardOrderValue(a);
+                const bOrder = getCardOrderValue(b);
+                if (aOrder == null && bOrder == null) return 0;
+                if (aOrder == null) return 1;
+                if (bOrder == null) return -1;
+                return aOrder - bOrder;
+            });
+        }
+        function syncColumnOrderFromDom(zone) {
+            if (!zone) return false;
+            const columnId = zone.dataset.columnId;
+            if (!columnId) return false;
+            const ids = Array.from(zone.querySelectorAll('.backlog-card')).map(el => el.dataset.cardId);
+            let changed = false;
+            ids.forEach((id, idx) => {
+                const card = data.backlog.cards.find(c => c.id === id);
+                if (!card) return;
+                if (card.columnId !== columnId) {
+                    card.columnId = columnId;
+                    changed = true;
+                }
+                if (card.order !== idx) {
+                    card.order = idx;
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+        function applyWatchMove(cardId, oldColumnId, newColumnId) {
+            if (!cardId || !oldColumnId || !newColumnId || oldColumnId === newColumnId) return false;
+            const watchedColumn = data.backlog.columns.find(col => col.name === WATCHED_COLUMN_NAME);
+            if (!watchedColumn || newColumnId !== watchedColumn.id || oldColumnId === watchedColumn.id) return false;
+            const card = data.backlog.cards.find(c => c.id === cardId);
+            if (!card) return false;
+            card.watchCount = (card.watchCount || 0) + 1;
+            if (!card.watchHistory) card.watchHistory = [];
+            card.watchHistory.push(Date.now());
+            return true;
+        }
         function renderBacklog() {
             const board = document.getElementById('backlogBoard');
             const columns = data.backlog.columns || [];
@@ -7041,36 +7112,20 @@
                 
                 // Get column sort state
                 const sortState = columnSortState[column.id];
+                const hasOrder = columnCards.some(card => getCardOrderValue(card) !== null);
                 
-                // Sort all cards
-                columnCards.sort((a, b) => {
-                    // If manual rating sort is active, use only that (by avg rating)
-                    if (sortState === 'asc' || sortState === 'desc') {
+                // Sort cards: rating sort overrides manual order
+                if (sortState === 'asc' || sortState === 'desc') {
+                    columnCards.sort((a, b) => {
                         const aRating = getCardAvgRating(a);
                         const bRating = getCardAvgRating(b);
                         return sortState === 'asc' ? aRating - bRating : bRating - aRating;
-                    }
-                    
-                    // Default sorting: first by watch history (no history first, then by earliest date), then by rating (descending)
-                    const aLastWatch = a.watchHistory && a.watchHistory.length > 0 ? a.watchHistory[a.watchHistory.length - 1] : 0;
-                    const bLastWatch = b.watchHistory && b.watchHistory.length > 0 ? b.watchHistory[b.watchHistory.length - 1] : 0;
-                    
-                    // Cards without watch history go first
-                    if (aLastWatch === 0 && bLastWatch !== 0) return -1;
-                    if (aLastWatch !== 0 && bLastWatch === 0) return 1;
-                    
-                    // If both have watch history, sort by earliest watch date first (ascending)
-                    if (aLastWatch !== 0 && bLastWatch !== 0) {
-                        if (aLastWatch !== bLastWatch) {
-                            return aLastWatch - bLastWatch; // Earlier date first
-                        }
-                    }
-                    
-                    // Within same watch status/date group, sort by avg rating (descending - higher first)
-                    const aRating = getCardAvgRating(a);
-                    const bRating = getCardAvgRating(b);
-                    return bRating - aRating;
-                });
+                    });
+                } else if (hasOrder) {
+                    sortCardsByOrder(columnCards);
+                } else {
+                    columnCards.sort(defaultBacklogSort);
+                }
                 
                 return `
                     <div class="backlog-column" data-column-id="${column.id}" draggable="true">
@@ -7141,36 +7196,110 @@
         function setupBacklogDragDrop() {
             let draggedCard = null;
             let draggedColumn = null;
+            let draggedCardStartColumnId = null;
+            let draggedCardStartIndex = -1;
+            let draggedCardDropped = false;
             let touchDrag = null;
             let touchRaf = 0;
             let touchLongPressTimer = 0;
 
-            const handleCardMove = (cardId, newColumnId) => {
-                const card = data.backlog.cards.find(c => c.id === cardId);
-                if (!card) return;
-                const oldColumnId = card.columnId;
-                card.columnId = newColumnId;
-
-                const watchedColumn = data.backlog.columns.find(col => col.name === WATCHED_COLUMN_NAME);
-                if (watchedColumn && newColumnId === watchedColumn.id && oldColumnId !== watchedColumn.id) {
-                    card.watchCount = (card.watchCount || 0) + 1;
-                    if (!card.watchHistory) card.watchHistory = [];
-                    card.watchHistory.push(Date.now());
+            const getDragAfterCard = (zone, y) => {
+                const cards = Array.from(zone.querySelectorAll('.backlog-card:not(.dragging)'));
+                return cards.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset, element: child };
+                    }
+                    return closest;
+                }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+            };
+            const autoScrollZone = (zone, clientY) => {
+                if (!zone) return;
+                const rect = zone.getBoundingClientRect();
+                const threshold = 60;
+                const maxSpeed = 18;
+                let delta = 0;
+                if (clientY < rect.top + threshold) {
+                    const dist = Math.max(0, rect.top + threshold - clientY);
+                    delta = -Math.min(maxSpeed, Math.ceil(dist / 3));
+                } else if (clientY > rect.bottom - threshold) {
+                    const dist = Math.max(0, clientY - (rect.bottom - threshold));
+                    delta = Math.min(maxSpeed, Math.ceil(dist / 3));
                 }
-                saveData();
+                if (delta !== 0) {
+                    zone.scrollTop += delta;
+                }
+            };
+            const reorderCardInZone = (zone, clientY) => {
+                if (!draggedCard || !zone) return;
+                autoScrollZone(zone, clientY);
+                const afterElement = getDragAfterCard(zone, clientY);
+                if (!afterElement) {
+                    zone.appendChild(draggedCard);
+                } else if (afterElement !== draggedCard) {
+                    zone.insertBefore(draggedCard, afterElement);
+                }
+            };
+            const finalizeCardDrop = (zone) => {
+                if (!draggedCard || !zone) return;
+                const newColumnId = zone.dataset.columnId;
+                const oldColumnId = draggedCardStartColumnId;
+
+                if (draggedCard.parentElement !== zone) {
+                    zone.appendChild(draggedCard);
+                }
+
+                const watchChanged = applyWatchMove(draggedCard.dataset.cardId, oldColumnId, newColumnId);
+                let changed = syncColumnOrderFromDom(zone);
+
+                if (oldColumnId && oldColumnId !== newColumnId) {
+                    const oldZone = document.querySelector(`.column-cards[data-column-id="${oldColumnId}"]`);
+                    if (oldZone) {
+                        changed = syncColumnOrderFromDom(oldZone) || changed;
+                    }
+                }
+
+                if (watchChanged || changed) {
+                    saveData();
+                }
             };
             
             // Card drag
             document.querySelectorAll('.backlog-card').forEach(card => {
                 card.addEventListener('dragstart', (e) => {
                     draggedCard = card;
+                    draggedCardDropped = false;
+                    const startZone = card.closest('.column-cards');
+                    draggedCardStartColumnId = startZone ? startZone.dataset.columnId : null;
+                    if (startZone) {
+                        const siblings = Array.from(startZone.querySelectorAll('.backlog-card'));
+                        draggedCardStartIndex = siblings.indexOf(card);
+                    } else {
+                        draggedCardStartIndex = -1;
+                    }
                     card.classList.add('dragging');
                     e.stopPropagation();
                 });
                 
                 card.addEventListener('dragend', () => {
                     card.classList.remove('dragging');
+                    if (!draggedCardDropped && draggedCardStartColumnId) {
+                        const zone = document.querySelector(`.column-cards[data-column-id="${draggedCardStartColumnId}"]`);
+                        if (zone) {
+                            const cards = Array.from(zone.querySelectorAll('.backlog-card'));
+                            const ref = cards[draggedCardStartIndex] || null;
+                            if (ref) {
+                                zone.insertBefore(card, ref);
+                            } else {
+                                zone.appendChild(card);
+                            }
+                        }
+                    }
                     draggedCard = null;
+                    draggedCardStartColumnId = null;
+                    draggedCardStartIndex = -1;
+                    draggedCardDropped = false;
                 });
 
                 card.addEventListener('click', (e) => {
@@ -7185,12 +7314,17 @@
                     if (e.touches.length !== 1) return;
                     const touch = e.touches[0];
                     const rect = card.getBoundingClientRect();
+                    const startZone = card.closest('.column-cards');
+                    const startColumnId = startZone ? startZone.dataset.columnId : null;
+                    const startIndex = startZone ? Array.from(startZone.querySelectorAll('.backlog-card')).indexOf(card) : -1;
                     touchDrag = {
                         card,
                         ghost: null,
                         offsetX: touch.clientX - rect.left,
                         offsetY: touch.clientY - rect.top,
                         currentZone: null,
+                        startColumnId,
+                        startIndex,
                         moved: false,
                         lastX: touch.clientX,
                         lastY: touch.clientY,
@@ -7257,6 +7391,21 @@
                                 if (zone) zone.parentElement.classList.add('drag-over');
                                 touchDrag.currentZone = zone;
                             }
+                            if (zone) {
+                                autoScrollZone(zone, y);
+                                const targetCard = el ? el.closest('.backlog-card') : null;
+                                if (targetCard && targetCard !== card) {
+                                    const rect = targetCard.getBoundingClientRect();
+                                    const before = y < rect.top + rect.height / 2;
+                                    if (before) {
+                                        zone.insertBefore(card, targetCard);
+                                    } else {
+                                        zone.insertBefore(card, targetCard.nextSibling);
+                                    }
+                                } else if (!targetCard) {
+                                    zone.appendChild(card);
+                                }
+                            }
                         });
                     }
                     e.preventDefault();
@@ -7280,8 +7429,30 @@
                     if (touchDrag.active && touchDrag.currentZone) {
                         const cardId = card.dataset.cardId;
                         const newColumnId = touchDrag.currentZone.dataset.columnId;
-                        handleCardMove(cardId, newColumnId);
+                        const oldColumnId = touchDrag.startColumnId;
+                        const watchChanged = applyWatchMove(cardId, oldColumnId, newColumnId);
+                        let changed = syncColumnOrderFromDom(touchDrag.currentZone);
+                        if (oldColumnId && oldColumnId !== newColumnId) {
+                            const oldZone = document.querySelector(`.column-cards[data-column-id="${oldColumnId}"]`);
+                            if (oldZone) {
+                                changed = syncColumnOrderFromDom(oldZone) || changed;
+                            }
+                        }
+                        if (watchChanged || changed) {
+                            saveData();
+                        }
                         e.preventDefault();
+                    } else if (touchDrag.active && touchDrag.startColumnId) {
+                        const zone = document.querySelector(`.column-cards[data-column-id="${touchDrag.startColumnId}"]`);
+                        if (zone) {
+                            const cards = Array.from(zone.querySelectorAll('.backlog-card'));
+                            const ref = cards[touchDrag.startIndex] || null;
+                            if (ref) {
+                                zone.insertBefore(card, ref);
+                            } else {
+                                zone.appendChild(card);
+                            }
+                        }
                     }
 
                     card.classList.remove('dragging');
@@ -7346,6 +7517,7 @@
                     e.preventDefault();
                     if (draggedCard) {
                         zone.parentElement.classList.add('drag-over');
+                        reorderCardInZone(zone, e.clientY);
                     }
                 });
                 
@@ -7358,10 +7530,8 @@
                     zone.parentElement.classList.remove('drag-over');
                     
                     if (!draggedCard) return;
-                    
-                    const cardId = draggedCard.dataset.cardId;
-                    const newColumnId = zone.dataset.columnId;
-                    handleCardMove(cardId, newColumnId);
+                    draggedCardDropped = true;
+                    finalizeCardDrop(zone);
                 });
             });
         }
@@ -7494,7 +7664,9 @@
                 const newColumn = data.backlog.columns.find(col => col.name === NEW_COLUMN_NAME);
                 
                 if (watchedColumn && existingCard.columnId === watchedColumn.id && newColumn) {
+                    const nextOrder = getNextCardOrder(newColumn.id);
                     existingCard.columnId = newColumn.id;
+                    existingCard.order = nextOrder;
                     saveData();
                     closeAddCardModal();
                     return;
@@ -7511,6 +7683,7 @@
                 rating: rating > 0 ? rating : 0,
                 author: userName,
                 watchCount: 0,
+                order: getNextCardOrder(currentColumnId),
                 timestamp: Date.now()
             };
             
