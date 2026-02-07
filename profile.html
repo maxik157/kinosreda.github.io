@@ -350,7 +350,7 @@
             right: 0;
             top: 100%;
             margin-top: 8px;
-            z-index: 100;
+            z-index: 5000;
             background: rgba(3, 7, 18, 0.98);
             border: 1px solid var(--accent-border-30);
             border-radius: 0.75rem;
@@ -360,6 +360,18 @@
             display: none;
         }
         .cs.open .cs-menu { display: block; }
+        .profile-top-card {
+            position: relative;
+            z-index: 120;
+            overflow: visible;
+        }
+        .profile-avatar-card,
+        .profile-avatar-actions {
+            overflow: visible;
+        }
+        .profile-avatar-actions .cs.open {
+            z-index: 6000;
+        }
         .cs-opt {
             width: 100%;
             text-align: left;
@@ -449,6 +461,185 @@
             color: #fca5a5;
             display: none;
         }
+        .profile-avatar-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .profile-avatar-main {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+        .profile-avatar-actions {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: nowrap;
+            width: auto;
+            margin-left: auto;
+        }
+        .profile-avatar-actions #themeCS { width: 170px; }
+        .profile-avatar-actions #logoFontCS { width: 220px; }
+        .profile-avatar-actions .cs { width: auto; }
+        .profile-avatar-actions .cs-btn {
+            width: 100%;
+        }
+        .profile-avatar-trigger {
+            width: 92px;
+            height: 92px;
+            border-radius: 999px;
+            border: 2px solid var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.12);
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fcd34d;
+            font-size: 38px;
+            flex: 0 0 auto;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .profile-avatar-trigger:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245, 158, 11, 0.8);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+        }
+        .profile-avatar-trigger img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .profile-avatar-meta {
+            min-width: 0;
+        }
+        .profile-avatar-name {
+            font-size: 1.18rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+        .profile-avatar-subtitle {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        .profile-avatar-status {
+            margin-top: 6px;
+            font-size: 0.76rem;
+            color: #9ca3af;
+            min-height: 1.1em;
+        }
+        .profile-avatar-status.error { color: #fca5a5; }
+        .profile-avatar-status.success { color: #86efac; }
+        .avatar-modal-card {
+            width: min(560px, 95vw);
+            padding: 20px;
+        }
+        .avatar-crop-shell {
+            position: relative;
+            width: min(420px, 80vw);
+            margin: 12px auto 0;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--accent-border-30);
+            background: #040404;
+        }
+        .avatar-crop-canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+            touch-action: none;
+            cursor: grab;
+        }
+        .avatar-crop-canvas.dragging { cursor: grabbing; }
+        .avatar-controls {
+            display: grid;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .avatar-source-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .avatar-url-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+        }
+        .avatar-url-input {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0, 0, 0, 0.45);
+            color: #fff;
+            padding: 10px 12px;
+            font-size: 0.84rem;
+        }
+        .avatar-url-input:focus {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.7);
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.16);
+        }
+        .avatar-hint {
+            font-size: 0.73rem;
+            color: #9ca3af;
+        }
+        .avatar-btn {
+            border-radius: 10px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(245, 158, 11, 0.14);
+            color: #fcd34d;
+            padding: 10px 12px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .avatar-btn:hover {
+            border-color: rgba(245, 158, 11, 0.75);
+            background: rgba(245, 158, 11, 0.2);
+        }
+        .avatar-zoom {
+            display: grid;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #d1d5db;
+        }
+        .avatar-zoom input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-400);
+        }
+        @media (max-width: 640px) {
+            .profile-avatar-actions {
+                flex-direction: column;
+                width: 100%;
+                align-items: stretch;
+                margin-left: 0;
+            }
+            .profile-avatar-trigger {
+                width: 82px;
+                height: 82px;
+                font-size: 34px;
+            }
+            .avatar-modal-card {
+                width: min(560px, calc(100vw - 20px));
+                padding: 14px;
+            }
+            .avatar-crop-shell {
+                width: min(420px, calc(100vw - 56px));
+            }
+            .avatar-source-grid {
+                grid-template-columns: 1fr;
+            }
+        }
 
         /* Beer theme: make select button text match dropdown option text (neutral like the list) */
         html[data-theme="beer"] .cs-btn {
@@ -533,9 +724,14 @@
         }
         #changePasswordBtn {
             white-space: nowrap;
-            align-self: flex-start;
-            width: fit-content;
+            width: auto;
+            justify-content: center;
             max-width: 100%;
+        }
+        @media (max-width: 640px) {
+            #changePasswordBtn {
+                width: 100%;
+            }
         }
 </style>
 </head>
@@ -544,63 +740,73 @@
 
     
     <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8 safe-wrap">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 safe-wrap">
-            <div class="min-w-0">
-                <h1 class="text-2xl md:text-3xl font-bold text-amber-400 text-glow">Профиль</h1>
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
-                <div class="cs" id="themeCS" style="width: min(180px, 90vw);">
-                    <select id="themeSelect" class="cs-native theme-select">
-                        <option value="beer">Пивной</option>
-                        <option value="white">Белый</option>
-                    </select>
-                    <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                        <span class="cs-label"></span>
-                        <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                            <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+        <section class="card profile-top-card rounded-2xl p-5 glow-amber safe-wrap mb-4">
+            <div class="profile-avatar-card">
+                <div class="profile-avatar-main">
+                    <button type="button" id="avatarOpenBtn" class="profile-avatar-trigger" title="Изменить аватар">
+                        <img id="profileAvatarImg" src="" alt="Аватар" hidden />
+                        <span id="profileAvatarFallback">👤</span>
                     </button>
-                    <div class="cs-menu" role="listbox"></div>
+                    <div class="profile-avatar-meta">
+                        <div class="text-xs text-gray-400">Пользователь</div>
+                        <div id="profileName" class="profile-avatar-name">—</div>
+                        <div class="profile-avatar-subtitle">Нажмите на аватар, чтобы загрузить фото</div>
+                        <div id="avatarStatus" class="profile-avatar-status"></div>
+                    </div>
                 </div>
+                <div class="profile-avatar-actions">
+                    <div class="cs" id="themeCS">
+                        <select id="themeSelect" class="cs-native theme-select">
+                            <option value="beer">Пивной</option>
+                            <option value="white">Белый</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
 
-                <div class="cs" id="logoFontCS" style="width: min(240px, 90vw);">
-                    <select id="logoFontSelect" class="cs-native logo-font-select">
-                        <option value="Rubik Wet Paint">Rubik Wet Paint</option>
-                        <option value="Train One">Train One</option>
-                        <option value="Rubik Moonrocks">Rubik Moonrocks</option>
-                        <option value="Rubik Microbe">Rubik Microbe</option>
-                        <option value="Rubik Puddles">Rubik Puddles</option>
-                        <option value="Stick">Stick</option>
-                        <option value="Press Start 2P">Press Start 2P</option>
-                        <option value="Reggae One">Reggae One</option>
-                        <option value="Dela Gothic One">Dela Gothic One</option>
-                        <option value="Amatic SC">Amatic SC</option>
-                        <option value="Underdog">Underdog</option>
-                        <option value="Stalinist One">Stalinist One</option>
-                        <option value="Lobster">Lobster</option>
-                        <option value="Kablammo">Kablammo</option>
-                        <option value="Comforter">Comforter</option>
-                        <option value="Pacifico">Pacifico</option>
-                        <option value="Ruslan Display">Ruslan Display</option>
-                        <option value="Caveat">Caveat</option>
-                        <option value="Rampart One">Rampart One</option>
-                        <option value="Rubik Scribble">Rubik Scribble</option>
-                    </select>
-                    <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
-                        <span class="cs-label"></span>
-                        <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                            <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
+                    <div class="cs" id="logoFontCS">
+                        <select id="logoFontSelect" class="cs-native logo-font-select">
+                            <option value="Rubik Wet Paint">Rubik Wet Paint</option>
+                            <option value="Train One">Train One</option>
+                            <option value="Rubik Moonrocks">Rubik Moonrocks</option>
+                            <option value="Rubik Microbe">Rubik Microbe</option>
+                            <option value="Rubik Puddles">Rubik Puddles</option>
+                            <option value="Stick">Stick</option>
+                            <option value="Press Start 2P">Press Start 2P</option>
+                            <option value="Reggae One">Reggae One</option>
+                            <option value="Dela Gothic One">Dela Gothic One</option>
+                            <option value="Amatic SC">Amatic SC</option>
+                            <option value="Underdog">Underdog</option>
+                            <option value="Stalinist One">Stalinist One</option>
+                            <option value="Lobster">Lobster</option>
+                            <option value="Kablammo">Kablammo</option>
+                            <option value="Comforter">Comforter</option>
+                            <option value="Pacifico">Pacifico</option>
+                            <option value="Ruslan Display">Ruslan Display</option>
+                            <option value="Caveat">Caveat</option>
+                            <option value="Rampart One">Rampart One</option>
+                            <option value="Rubik Scribble">Rubik Scribble</option>
+                        </select>
+                        <button type="button" class="cs-btn" aria-haspopup="listbox" aria-expanded="false">
+                            <span class="cs-label"></span>
+                            <svg class="cs-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                                <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="cs-menu" role="listbox"></div>
+                    </div>
+
+                    <button id="changePasswordBtn" type="button" class="inline-flex items-center gap-2 text-amber-200 hover:text-amber-100 transition font-medium text-xs md:text-sm px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50">
+                        🔒 <span>Сменить пароль</span>
                     </button>
-                    <div class="cs-menu" role="listbox"></div>
                 </div>
-
-                <button id="changePasswordBtn" type="button" class="inline-flex items-center gap-2 text-amber-200 hover:text-amber-100 transition font-medium text-xs md:text-sm px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:border-amber-500/50">
-                    🔒 <span>Сменить пароль</span>
-                </button>
             </div>
-        </div>
+        </section>
 
         <div class="grid lg:grid-cols-3 gap-4 safe-wrap">
             <!-- Summary -->
@@ -779,6 +985,37 @@
             </div>
         </div>
 
+        <div id="avatarModal" class="modal-overlay" aria-hidden="true">
+            <div class="modal-card avatar-modal-card" role="dialog" aria-modal="true" aria-labelledby="avatarModalTitle">
+                <div class="modal-title" id="avatarModalTitle">Фото профиля</div>
+                <div class="modal-subtitle">Перетаскивайте и увеличивайте фото, чтобы точно вписать его в круг.</div>
+                <input id="avatarFileInput" type="file" accept="image/*" class="hidden" />
+                <div class="avatar-crop-shell">
+                    <canvas id="avatarCropCanvas" class="avatar-crop-canvas" width="420" height="420"></canvas>
+                </div>
+                <div class="avatar-controls">
+                    <div class="avatar-source-grid">
+                        <button type="button" id="avatarPickBtn" class="avatar-btn">Выбрать фотографию</button>
+                        <button type="button" id="avatarPasteBtn" class="avatar-btn">Вставить из буфера</button>
+                    </div>
+                    <div class="avatar-url-row">
+                        <input id="avatarUrlInput" type="url" inputmode="url" class="avatar-url-input" placeholder="https://example.com/photo.jpg" />
+                        <button type="button" id="avatarLoadUrlBtn" class="avatar-btn">Загрузить по ссылке</button>
+                    </div>
+                    <div class="avatar-hint">Можно вставить изображение через Ctrl/Cmd+V, пока модалка открыта.</div>
+                    <label class="avatar-zoom">
+                        <span>Масштаб</span>
+                        <input id="avatarZoomRange" type="range" min="0" max="100" step="1" value="0" />
+                    </label>
+                </div>
+                <div id="avatarModalError" class="modal-error"></div>
+                <div class="modal-actions">
+                    <button type="button" id="avatarModalCancel" class="modal-btn secondary">Отмена</button>
+                    <button type="button" id="avatarModalSave" class="modal-btn">Сохранить аватар</button>
+                </div>
+            </div>
+        </div>
+
         <footer class="text-center py-8 text-gray-700 text-xs">
             <p>🍺 КИНОСРЕДА © 2025 • Сделано с любовью к пиву и кино 🎬</p>
         </footer>
@@ -798,6 +1035,327 @@
 
         let currentUser = null;
         let db = null;
+        const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
+        const POSTIMAGES_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/upload-image';
+        const IMAGE_FETCH_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/fetch-image';
+        const AVATAR_CANVAS_SIZE = 420;
+        const AVATAR_CIRCLE_RADIUS = 148;
+        const AVATAR_OUTPUT_SIZE = 512;
+        const avatarEditor = {
+            image: null,
+            scale: 1,
+            minScale: 1,
+            maxScale: 3,
+            offsetX: 0,
+            offsetY: 0,
+            dragging: false,
+            lastX: 0,
+            lastY: 0
+        };
+
+        function isValidAvatarUrl(url) {
+            const value = String(url || '').trim();
+            if (!value) return false;
+            if (/^data:image\//i.test(value)) return true;
+            return /^https?:\/\//i.test(value);
+        }
+
+        function getCurrentAvatarUrl() {
+            const url = currentUser && currentUser.avatarUrl ? String(currentUser.avatarUrl).trim() : '';
+            return isValidAvatarUrl(url) ? url : '';
+        }
+
+        function setAvatarStatus(message, type) {
+            const statusEl = document.getElementById('avatarStatus');
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            statusEl.classList.remove('error', 'success');
+            if (type) statusEl.classList.add(type);
+        }
+
+        function renderProfileAvatar() {
+            const imgEl = document.getElementById('profileAvatarImg');
+            const fallbackEl = document.getElementById('profileAvatarFallback');
+            if (!imgEl || !fallbackEl) return;
+            const url = getCurrentAvatarUrl();
+            if (!url) {
+                imgEl.hidden = true;
+                imgEl.removeAttribute('src');
+                fallbackEl.hidden = false;
+                return;
+            }
+            imgEl.src = url;
+            imgEl.hidden = false;
+            fallbackEl.hidden = true;
+        }
+
+        function syncCurrentUserStorage() {
+            if (!currentUser) return;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            try {
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'profile:avatar-updated',
+                        user: currentUser.username,
+                        avatarUrl: currentUser.avatarUrl || ''
+                    }, '*');
+                }
+            } catch (_) {}
+        }
+
+        function getPostimagesProxyEndpoint() {
+            if (typeof window.POSTIMAGES_PROXY_ENDPOINT === 'string' && window.POSTIMAGES_PROXY_ENDPOINT.trim()) {
+                return window.POSTIMAGES_PROXY_ENDPOINT.trim();
+            }
+            return POSTIMAGES_PROXY_ENDPOINT;
+        }
+
+        async function uploadToPostimages(imageBlob) {
+            if (!imageBlob) throw new Error('postimages_invalid');
+            if (!POSTIMAGES_API_KEY) throw new Error('postimages_key_missing');
+            const formData = new FormData();
+            formData.append('key', POSTIMAGES_API_KEY);
+            formData.append('image', imageBlob, 'avatar.png');
+            const response = await fetch(getPostimagesProxyEndpoint(), {
+                method: 'POST',
+                body: formData
+            });
+            if (!response.ok) throw new Error('postimages_failed');
+            const rawText = await response.text();
+            let payload = null;
+            try {
+                payload = JSON.parse(rawText);
+            } catch (_) {
+                payload = null;
+            }
+            const link =
+                payload?.url ||
+                payload?.data?.[0]?.link ||
+                payload?.data?.[0]?.short_link ||
+                payload?.data?.[0]?.url ||
+                payload?.data?.[0]?.image_url ||
+                payload?.data?.url ||
+                payload?.data?.link ||
+                payload?.data?.display_url ||
+                payload?.data?.image?.url ||
+                payload?.data?.image?.display_url ||
+                payload?.result?.url ||
+                payload?.result?.link ||
+                payload?.image?.url ||
+                payload?.direct_url ||
+                payload?.image_url ||
+                (typeof rawText === 'string' ? rawText.match(/https?:\/\/[^\s\"']+/)?.[0] : '');
+            if (!link) throw new Error('postimages_no_url');
+            return link;
+        }
+
+        function loadImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error('avatar_read_failed'));
+                reader.onload = () => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error('avatar_image_invalid'));
+                    img.src = String(reader.result || '');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImageFromDataUrl(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => reject(new Error('avatar_image_invalid'));
+                img.src = String(dataUrl || '');
+            });
+        }
+
+        async function fetchImageDataUrl(url) {
+            const value = String(url || '').trim();
+            if (/^data:image\//i.test(value)) return value;
+            const resolved = new URL(value, location.href).href;
+            try {
+                const response = await fetch(resolved);
+                if (!response.ok) throw new Error('avatar_fetch_failed');
+                const blob = await response.blob();
+                return await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onerror = () => reject(new Error('avatar_read_failed'));
+                    reader.onload = () => resolve(String(reader.result || ''));
+                    reader.readAsDataURL(blob);
+                });
+            } catch (_) {
+                const proxyResponse = await fetch(IMAGE_FETCH_PROXY_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: resolved })
+                });
+                if (!proxyResponse.ok) throw new Error('avatar_fetch_failed');
+                const payload = await proxyResponse.json();
+                const base64 = payload?.image_base64 || payload?.result_base64 || '';
+                if (!base64) throw new Error('avatar_fetch_failed');
+                return `data:image/png;base64,${base64}`;
+            }
+        }
+
+        async function loadAvatarFromUrl(url) {
+            const value = String(url || '').trim();
+            if (!value) throw new Error('avatar_url_empty');
+            let dataUrl = '';
+            try {
+                dataUrl = await fetchImageDataUrl(value);
+            } catch (_) {
+                throw new Error('avatar_url_load_failed');
+            }
+            return await loadImageFromDataUrl(dataUrl);
+        }
+
+        async function loadAvatarFromClipboard() {
+            if (!navigator.clipboard || !navigator.clipboard.read) {
+                throw new Error('clipboard_unsupported');
+            }
+            const items = await navigator.clipboard.read();
+            for (const item of items) {
+                const imageType = item.types.find((type) => /^image\//i.test(type));
+                if (!imageType) continue;
+                const blob = await item.getType(imageType);
+                const file = new File([blob], 'clipboard-image.png', { type: imageType });
+                return await loadImageFromFile(file);
+            }
+            throw new Error('clipboard_no_image');
+        }
+
+        function clampAvatarOffsets() {
+            if (!avatarEditor.image) return;
+            const diameter = AVATAR_CIRCLE_RADIUS * 2;
+            const scaledW = avatarEditor.image.width * avatarEditor.scale;
+            const scaledH = avatarEditor.image.height * avatarEditor.scale;
+            const maxX = Math.max(0, (scaledW - diameter) / 2);
+            const maxY = Math.max(0, (scaledH - diameter) / 2);
+            avatarEditor.offsetX = Math.min(maxX, Math.max(-maxX, avatarEditor.offsetX));
+            avatarEditor.offsetY = Math.min(maxY, Math.max(-maxY, avatarEditor.offsetY));
+        }
+
+        function setAvatarScale(nextScale, anchorX = AVATAR_CANVAS_SIZE / 2, anchorY = AVATAR_CANVAS_SIZE / 2) {
+            if (!avatarEditor.image) return;
+            const oldScale = avatarEditor.scale;
+            avatarEditor.scale = Math.min(avatarEditor.maxScale, Math.max(avatarEditor.minScale, nextScale));
+            const appliedScale = avatarEditor.scale;
+            if (Math.abs(appliedScale - oldScale) < 1e-4) return;
+            const cx = AVATAR_CANVAS_SIZE / 2;
+            const cy = AVATAR_CANVAS_SIZE / 2;
+            const relX = anchorX - cx - avatarEditor.offsetX;
+            const relY = anchorY - cy - avatarEditor.offsetY;
+            const ratio = appliedScale / oldScale;
+            avatarEditor.offsetX = avatarEditor.offsetX - relX * (ratio - 1);
+            avatarEditor.offsetY = avatarEditor.offsetY - relY * (ratio - 1);
+            clampAvatarOffsets();
+        }
+
+        function drawAvatarEditor() {
+            const canvas = document.getElementById('avatarCropCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            const size = AVATAR_CANVAS_SIZE;
+            const center = size / 2;
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = '#060606';
+            ctx.fillRect(0, 0, size, size);
+
+            if (avatarEditor.image) {
+                const scaledW = avatarEditor.image.width * avatarEditor.scale;
+                const scaledH = avatarEditor.image.height * avatarEditor.scale;
+                const dx = center - scaledW / 2 + avatarEditor.offsetX;
+                const dy = center - scaledH / 2 + avatarEditor.offsetY;
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(avatarEditor.image, dx, dy, scaledW, scaledH);
+            } else {
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '600 15px Comfortaa, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Выберите фото', center, center);
+            }
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+            ctx.beginPath();
+            ctx.rect(0, 0, size, size);
+            ctx.moveTo(center + AVATAR_CIRCLE_RADIUS, center);
+            ctx.arc(center, center, AVATAR_CIRCLE_RADIUS, 0, Math.PI * 2, true);
+            ctx.fill('evenodd');
+            ctx.beginPath();
+            ctx.arc(center, center, AVATAR_CIRCLE_RADIUS, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.95)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function avatarRangeToScale(value) {
+            const ratio = Math.min(100, Math.max(0, Number(value))) / 100;
+            return avatarEditor.minScale + (avatarEditor.maxScale - avatarEditor.minScale) * ratio;
+        }
+
+        function avatarScaleToRange(scale) {
+            const span = avatarEditor.maxScale - avatarEditor.minScale;
+            if (span <= 0) return 0;
+            return Math.round(((scale - avatarEditor.minScale) / span) * 100);
+        }
+
+        function resetAvatarEditorWithImage(img) {
+            avatarEditor.image = img;
+            const diameter = AVATAR_CIRCLE_RADIUS * 2;
+            const fit = Math.max(diameter / img.width, diameter / img.height);
+            avatarEditor.minScale = fit;
+            avatarEditor.maxScale = Math.max(fit * 4, fit + 0.5);
+            avatarEditor.scale = fit * 1.08;
+            avatarEditor.offsetX = 0;
+            avatarEditor.offsetY = 0;
+            clampAvatarOffsets();
+            const zoomRange = document.getElementById('avatarZoomRange');
+            if (zoomRange) zoomRange.value = String(avatarScaleToRange(avatarEditor.scale));
+            drawAvatarEditor();
+        }
+
+        function resetAvatarEditorState() {
+            avatarEditor.image = null;
+            avatarEditor.scale = 1;
+            avatarEditor.minScale = 1;
+            avatarEditor.maxScale = 3;
+            avatarEditor.offsetX = 0;
+            avatarEditor.offsetY = 0;
+            avatarEditor.dragging = false;
+            drawAvatarEditor();
+        }
+
+        function exportAvatarBlob() {
+            if (!avatarEditor.image) return Promise.resolve(null);
+            const out = document.createElement('canvas');
+            out.width = AVATAR_OUTPUT_SIZE;
+            out.height = AVATAR_OUTPUT_SIZE;
+            const ctx = out.getContext('2d');
+            if (!ctx) return Promise.resolve(null);
+            const previewDiameter = AVATAR_CIRCLE_RADIUS * 2;
+            const map = AVATAR_OUTPUT_SIZE / previewDiameter;
+            const scaledW = avatarEditor.image.width * avatarEditor.scale * map;
+            const scaledH = avatarEditor.image.height * avatarEditor.scale * map;
+            const dx = AVATAR_OUTPUT_SIZE / 2 - scaledW / 2 + avatarEditor.offsetX * map;
+            const dy = AVATAR_OUTPUT_SIZE / 2 - scaledH / 2 + avatarEditor.offsetY * map;
+            ctx.clearRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(avatarEditor.image, dx, dy, scaledW, scaledH);
+            ctx.restore();
+            return new Promise((resolve) => {
+                out.toBlob((blob) => resolve(blob), 'image/png', 0.95);
+            });
+        }
 
         // -----------------
         // Snow mode (shared)
@@ -1564,6 +2122,7 @@
 
             const nameEl = document.getElementById('profileName');
             if (nameEl) nameEl.textContent = currentUser.name;
+            renderProfileAvatar();
 
             // Poop stats controls
             document.querySelectorAll('[data-poop-range]').forEach(btn => {
@@ -1608,6 +2167,215 @@
             const currentPasswordInput = document.getElementById('currentPasswordInput');
             const newPasswordInput = document.getElementById('newPasswordInput');
             const newPasswordRepeatInput = document.getElementById('newPasswordRepeatInput');
+            const avatarOpenBtn = document.getElementById('avatarOpenBtn');
+            const avatarModal = document.getElementById('avatarModal');
+            const avatarModalCancel = document.getElementById('avatarModalCancel');
+            const avatarModalSave = document.getElementById('avatarModalSave');
+            const avatarPickBtn = document.getElementById('avatarPickBtn');
+            const avatarPasteBtn = document.getElementById('avatarPasteBtn');
+            const avatarFileInput = document.getElementById('avatarFileInput');
+            const avatarUrlInput = document.getElementById('avatarUrlInput');
+            const avatarLoadUrlBtn = document.getElementById('avatarLoadUrlBtn');
+            const avatarZoomRange = document.getElementById('avatarZoomRange');
+            const avatarCropCanvas = document.getElementById('avatarCropCanvas');
+            const avatarModalError = document.getElementById('avatarModalError');
+
+            function showAvatarModalError(message) {
+                if (!avatarModalError) return;
+                avatarModalError.textContent = message;
+                avatarModalError.style.display = message ? 'block' : 'none';
+            }
+
+            function openAvatarModal() {
+                if (!avatarModal) return;
+                avatarModal.classList.add('open');
+                avatarModal.setAttribute('aria-hidden', 'false');
+                showAvatarModalError('');
+                resetAvatarEditorState();
+                if (avatarFileInput) avatarFileInput.value = '';
+                const avatarUrlInput = document.getElementById('avatarUrlInput');
+                if (avatarUrlInput) avatarUrlInput.value = '';
+            }
+
+            function closeAvatarModal() {
+                if (!avatarModal) return;
+                avatarModal.classList.remove('open');
+                avatarModal.setAttribute('aria-hidden', 'true');
+                showAvatarModalError('');
+                resetAvatarEditorState();
+            }
+
+            function isAvatarModalOpen() {
+                return !!(avatarModal && avatarModal.classList.contains('open'));
+            }
+
+            async function applyAvatarImage(img) {
+                resetAvatarEditorWithImage(img);
+                showAvatarModalError('');
+            }
+
+            if (avatarOpenBtn) {
+                avatarOpenBtn.addEventListener('click', () => openAvatarModal());
+            }
+            if (avatarModalCancel) {
+                avatarModalCancel.addEventListener('click', () => closeAvatarModal());
+            }
+            if (avatarModal) {
+                avatarModal.addEventListener('click', (e) => {
+                    if (e.target === avatarModal) closeAvatarModal();
+                });
+            }
+            if (avatarPickBtn && avatarFileInput) {
+                avatarPickBtn.addEventListener('click', () => avatarFileInput.click());
+                avatarFileInput.addEventListener('change', async () => {
+                    const file = avatarFileInput.files && avatarFileInput.files[0];
+                    if (!file) return;
+                    if (!file.type || !file.type.startsWith('image/')) {
+                        showAvatarModalError('Выберите изображение.');
+                        return;
+                    }
+                    try {
+                        const img = await loadImageFromFile(file);
+                        await applyAvatarImage(img);
+                    } catch (_) {
+                        showAvatarModalError('Не удалось загрузить изображение.');
+                    }
+                });
+            }
+            if (avatarPasteBtn) {
+                avatarPasteBtn.addEventListener('click', async () => {
+                    try {
+                        const img = await loadAvatarFromClipboard();
+                        await applyAvatarImage(img);
+                    } catch (err) {
+                        if (err && err.message === 'clipboard_unsupported') {
+                            showAvatarModalError('Браузер не поддерживает чтение буфера обмена.');
+                            return;
+                        }
+                        if (err && err.message === 'clipboard_no_image') {
+                            showAvatarModalError('В буфере обмена нет изображения.');
+                            return;
+                        }
+                        showAvatarModalError('Не удалось вставить изображение из буфера.');
+                    }
+                });
+            }
+            if (avatarLoadUrlBtn && avatarUrlInput) {
+                avatarLoadUrlBtn.addEventListener('click', async () => {
+                    const url = avatarUrlInput.value.trim();
+                    if (!url) {
+                        showAvatarModalError('Введите ссылку на изображение.');
+                        return;
+                    }
+                    avatarLoadUrlBtn.disabled = true;
+                    const prevText = avatarLoadUrlBtn.textContent;
+                    avatarLoadUrlBtn.textContent = 'Загружаем...';
+                    try {
+                        const img = await loadAvatarFromUrl(url);
+                        await applyAvatarImage(img);
+                    } catch (_) {
+                        showAvatarModalError('Не удалось загрузить изображение по ссылке.');
+                    } finally {
+                        avatarLoadUrlBtn.disabled = false;
+                        avatarLoadUrlBtn.textContent = prevText || 'Загрузить по ссылке';
+                    }
+                });
+                avatarUrlInput.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    avatarLoadUrlBtn.click();
+                });
+            }
+            document.addEventListener('paste', async (e) => {
+                if (!isAvatarModalOpen()) return;
+                const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+                const imageItem = items.find((item) => item && item.type && item.type.startsWith('image/'));
+                if (!imageItem) return;
+                e.preventDefault();
+                const file = imageItem.getAsFile();
+                if (!file) return;
+                try {
+                    const img = await loadImageFromFile(file);
+                    await applyAvatarImage(img);
+                } catch (_) {
+                    showAvatarModalError('Не удалось вставить изображение из буфера.');
+                }
+            });
+            if (avatarZoomRange) {
+                avatarZoomRange.addEventListener('input', () => {
+                    if (!avatarEditor.image) return;
+                    setAvatarScale(avatarRangeToScale(avatarZoomRange.value));
+                    drawAvatarEditor();
+                });
+            }
+            if (avatarCropCanvas) {
+                avatarCropCanvas.addEventListener('pointerdown', (e) => {
+                    if (!avatarEditor.image) return;
+                    avatarEditor.dragging = true;
+                    avatarEditor.lastX = e.clientX;
+                    avatarEditor.lastY = e.clientY;
+                    avatarCropCanvas.classList.add('dragging');
+                    try { avatarCropCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+                });
+                avatarCropCanvas.addEventListener('pointermove', (e) => {
+                    if (!avatarEditor.dragging || !avatarEditor.image) return;
+                    const dx = e.clientX - avatarEditor.lastX;
+                    const dy = e.clientY - avatarEditor.lastY;
+                    avatarEditor.lastX = e.clientX;
+                    avatarEditor.lastY = e.clientY;
+                    avatarEditor.offsetX += dx;
+                    avatarEditor.offsetY += dy;
+                    clampAvatarOffsets();
+                    drawAvatarEditor();
+                });
+                const stopDrag = () => {
+                    avatarEditor.dragging = false;
+                    avatarCropCanvas.classList.remove('dragging');
+                };
+                avatarCropCanvas.addEventListener('pointerup', stopDrag);
+                avatarCropCanvas.addEventListener('pointercancel', stopDrag);
+                avatarCropCanvas.addEventListener('pointerleave', stopDrag);
+                avatarCropCanvas.addEventListener('wheel', (e) => {
+                    if (!avatarEditor.image) return;
+                    e.preventDefault();
+                    const step = e.deltaY < 0 ? 1.05 : 0.95;
+                    setAvatarScale(avatarEditor.scale * step, e.offsetX, e.offsetY);
+                    if (avatarZoomRange) avatarZoomRange.value = String(avatarScaleToRange(avatarEditor.scale));
+                    drawAvatarEditor();
+                }, { passive: false });
+            }
+            if (avatarModalSave) {
+                avatarModalSave.addEventListener('click', async () => {
+                    if (!avatarEditor.image || !currentUser || !currentUser.username) {
+                        showAvatarModalError('Сначала выберите фотографию.');
+                        return;
+                    }
+                    avatarModalSave.disabled = true;
+                    avatarModalSave.textContent = 'Сохраняем...';
+                    showAvatarModalError('');
+                    setAvatarStatus('Загружаем аватар...', '');
+                    try {
+                        const blob = await exportAvatarBlob();
+                        if (!blob) throw new Error('avatar_export_failed');
+                        const hostedUrl = await uploadToPostimages(blob);
+                        if (!isValidAvatarUrl(hostedUrl)) throw new Error('avatar_upload_failed');
+                        const login = String(currentUser.username).trim().toLowerCase();
+                        await db.ref('users/' + login).update({ avatarUrl: hostedUrl });
+                        currentUser.avatarUrl = hostedUrl;
+                        syncCurrentUserStorage();
+                        renderProfileAvatar();
+                        setAvatarStatus('Аватар обновлён.', 'success');
+                        closeAvatarModal();
+                    } catch (err) {
+                        console.error('Avatar upload error:', err);
+                        showAvatarModalError('Не удалось загрузить аватар. Попробуйте ещё раз.');
+                        setAvatarStatus('Ошибка загрузки аватара.', 'error');
+                    } finally {
+                        avatarModalSave.disabled = false;
+                        avatarModalSave.textContent = 'Сохранить аватар';
+                    }
+                });
+            }
 
             function openChangePasswordModal() {
                 if (!changePasswordModal) return;
@@ -1649,7 +2417,10 @@
                 });
             }
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeChangePasswordModal();
+                if (e.key === 'Escape') {
+                    closeChangePasswordModal();
+                    closeAvatarModal();
+                }
             });
             if (changePasswordForm) {
                 changePasswordForm.addEventListener('submit', async (e) => {
@@ -1692,6 +2463,20 @@
                         }
                     }
                 });
+            }
+            try {
+                const login = String(currentUser.username || '').trim().toLowerCase();
+                if (login) {
+                    const avatarSnap = await db.ref('users/' + login + '/avatarUrl').once('value');
+                    const avatarUrl = avatarSnap.val();
+                    if (isValidAvatarUrl(avatarUrl)) {
+                        currentUser.avatarUrl = String(avatarUrl).trim();
+                        syncCurrentUserStorage();
+                        renderProfileAvatar();
+                    }
+                }
+            } catch (e) {
+                console.warn('Avatar sync skipped:', e);
             }
 
             try {

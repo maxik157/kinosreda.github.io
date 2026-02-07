@@ -477,7 +477,8 @@
                     // Успешный вход
                     localStorage.setItem('currentUser', JSON.stringify({
                         username: login,
-                        name: userData.name
+                        name: userData.name,
+                        avatarUrl: userData.avatarUrl || ''
                     }));
                     window.location.href = 'index.html';
                 } else if (fallbackUser && fallbackUser.password === password) {
