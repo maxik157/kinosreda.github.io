@@ -246,6 +246,19 @@
       margin-bottom: 14px;
     }
 
+    .cover-carousel {
+      position: relative;
+      width: 132px;
+      height: 132px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: pan-y;
+      user-select: none;
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
     .cover-wrap {
       position: relative;
       width: 132px;
@@ -255,6 +268,10 @@
       border: 1px solid var(--line-soft);
       box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
       background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(252, 211, 77, 0.2));
+      z-index: 2;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .cover-wrap img {
@@ -262,6 +279,8 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     .cover-wrap:focus-visible {
@@ -272,6 +291,59 @@
     .cover-wrap.is-disabled {
       cursor: default;
       opacity: 0.9;
+    }
+
+    .cover-peek {
+      position: absolute;
+      top: 50%;
+      width: 88px;
+      height: 88px;
+      border-radius: 16px;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      background: rgba(16, 12, 8, 0.78);
+      padding: 0;
+      overflow: hidden;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+      transform: translate3d(0, -50%, 0) scale(0.93);
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease;
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+    }
+
+    .cover-peek img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
+
+    .cover-peek--prev {
+      left: 0;
+      transform: translate3d(2px, -50%, 0) scale(0.93);
+    }
+
+    .cover-peek--next {
+      right: 0;
+      transform: translate3d(-2px, -50%, 0) scale(0.93);
+    }
+
+    .cover-peek.is-visible {
+      opacity: 0.7;
+      pointer-events: auto;
+    }
+
+    .cover-peek:disabled {
+      pointer-events: none;
+      opacity: 0 !important;
+      visibility: hidden;
     }
 
     .meta-title {
@@ -560,6 +632,9 @@
       background: rgba(20, 15, 9, 0.95);
       border-color: rgba(245, 158, 11, 0.58);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      font-family: "Comfortaa", system-ui, sans-serif;
+      font-weight: 700;
+      text-transform: lowercase;
     }
 
     .add-help-popover {
@@ -835,6 +910,10 @@
       border-color: rgba(252, 211, 77, 0.58);
     }
 
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+
     .icon-btn svg {
       width: 18px;
       height: 18px;
@@ -927,11 +1006,40 @@
       .layout {
         grid-template-columns: 1fr;
       }
+      .panel-body {
+        padding: 12px 8px 14px;
+      }
       .list {
         max-height: min(62vh, 520px);
       }
       .fullscreen-player {
         display: none !important;
+      }
+      .current-track {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .cover-carousel {
+        --mobile-cover-size: min(calc(100vw - 6px), 560px);
+        width: var(--mobile-cover-size);
+        height: auto;
+        max-width: none;
+        margin: 0 -8px;
+        width: calc(100% + 16px);
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border-radius: 28px;
+      }
+      .cover-wrap {
+        width: 92%;
+        height: 92%;
+        border-radius: 26px;
+      }
+      .cover-peek {
+        display: inline-flex;
+        width: 84%;
+        height: 84%;
+        border-radius: 24px;
       }
     }
 
@@ -967,13 +1075,13 @@
       .brand-title {
         font-size: 23px;
       }
-      .current-track {
-        grid-template-columns: 1fr;
+      .cover-carousel {
+        --mobile-cover-size: min(calc(100vw - 4px), 520px);
+        margin: 0 -6px;
+        width: calc(100% + 12px);
       }
       .cover-wrap {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: auto;
       }
       .tool-panel,
       .subgrid,
@@ -1152,6 +1260,50 @@
       transform: scale(0.995);
     }
 
+    @media (hover: none), (pointer: coarse) {
+      .btn:hover {
+        transform: none;
+        border-color: var(--line);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.26);
+      }
+
+      .ctl:hover {
+        transform: none;
+        border-color: rgba(245, 158, 11, 0.36);
+        box-shadow: 0 9px 22px rgba(0, 0, 0, 0.3);
+      }
+
+      .ctl:hover::after {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      .tool-btn:hover {
+        border-color: rgba(245, 158, 11, 0.38);
+        transform: none;
+        box-shadow: none;
+      }
+
+      .track-item:hover {
+        border-color: rgba(245, 158, 11, 0.16);
+      }
+
+      .track-cover-wrap:hover .cover-play-btn {
+        opacity: 0;
+      }
+
+      .icon-btn:hover {
+        transform: none;
+        border-color: rgba(245, 158, 11, 0.34);
+        box-shadow: none;
+      }
+
+      .fullscreen-cover-btn:hover {
+        transform: none;
+        border-color: rgba(245, 158, 11, 0.45);
+      }
+    }
+
     .fullscreen-cover-btn img {
       width: 100%;
       height: 100%;
@@ -1204,8 +1356,16 @@
       <section class="panel">
         <div class="panel-body">
           <div class="current-track">
-            <div class="cover-wrap" id="currentCoverWrap" role="button" tabindex="0" aria-label="Открыть полноэкранный режим">
-              <img id="currentCover" alt="Обложка трека">
+            <div class="cover-carousel" id="coverCarousel">
+              <button id="peekPrevBtn" class="cover-peek cover-peek--prev" type="button" aria-label="Предыдущий трек">
+                <img id="peekPrevCover" alt="Обложка предыдущего трека">
+              </button>
+              <div class="cover-wrap" id="currentCoverWrap" role="button" tabindex="0" aria-label="Открыть полноэкранный режим">
+                <img id="currentCover" alt="Обложка трека">
+              </div>
+              <button id="peekNextBtn" class="cover-peek cover-peek--next" type="button" aria-label="Следующий трек">
+                <img id="peekNextCover" alt="Обложка следующего трека">
+              </button>
             </div>
             <div>
               <h3 class="meta-title" id="currentTitle">Выбери трек</h3>
@@ -1259,7 +1419,7 @@
               <button id="toggleSearchPanelBtn" class="tool-btn" type="button" title="Поиск по списку" aria-label="Поиск по списку">🔎</button>
               <div class="add-help-wrap">
                 <button id="toggleAddPanelBtn" class="tool-btn" type="button" title="Добавить трек" aria-label="Добавить трек">+</button>
-                <button id="toggleAddHelpBtn" class="tool-btn tool-btn--hint" type="button" title="Как добавить трек" aria-label="Инструкция по добавлению трека" aria-expanded="false" aria-controls="addHelpPopover">ℹ</button>
+                <button id="toggleAddHelpBtn" class="tool-btn tool-btn--hint" type="button" title="Как добавить трек" aria-label="Инструкция по добавлению трека" aria-expanded="false" aria-controls="addHelpPopover">i</button>
                 <div id="addHelpPopover" class="add-help-popover" role="dialog" aria-label="Инструкция по добавлению трека">
                   <p class="add-help-text">Откройте меню трека, нажмите «Поделиться», затем «Скопировать ссылку». Вставьте ссылку в поле добавления и нажмите «Добавить».</p>
                 </div>
@@ -1399,12 +1559,21 @@
         pendingPlaybackSnapshot: null,
         playbackRestoreInProgress: false,
         playbackRestored: false,
-        playbackRestoreEpoch: 0
+        playbackRestoreEpoch: 0,
+        coverSwipeInProgress: false,
+        lastOutgoingTrackId: "",
+        lastOutgoingCoverSrc: ""
       };
+      const coverPreloadPromises = new Map();
 
       const els = {
+        coverCarousel: document.getElementById("coverCarousel"),
         currentCoverWrap: document.getElementById("currentCoverWrap"),
         currentCover: document.getElementById("currentCover"),
+        peekPrevBtn: document.getElementById("peekPrevBtn"),
+        peekPrevCover: document.getElementById("peekPrevCover"),
+        peekNextBtn: document.getElementById("peekNextBtn"),
+        peekNextCover: document.getElementById("peekNextCover"),
         currentTitle: document.getElementById("currentTitle"),
         currentArtists: document.getElementById("currentArtists"),
         currentDuration: document.getElementById("currentDuration"),
@@ -1777,6 +1946,21 @@
         return url;
       }
 
+      function preloadCoverImage(src) {
+        const url = String(src || "").trim();
+        if (!url || url === FALLBACK_COVER) return Promise.resolve(url);
+        if (coverPreloadPromises.has(url)) return coverPreloadPromises.get(url);
+        const promise = new Promise((resolve) => {
+          const image = new Image();
+          image.decoding = "async";
+          image.onload = () => resolve(url);
+          image.onerror = () => resolve(url);
+          image.src = url;
+        });
+        coverPreloadPromises.set(url, promise);
+        return promise;
+      }
+
       function extractTrackId(value) {
         const string = String(value || "");
         const matched = string.match(/(\d+)/);
@@ -2117,6 +2301,178 @@
         return list.findIndex((item) => String(item && item.trackId || "") === currentTrackId);
       }
 
+      function getActivePlaybackList() {
+        if (Array.isArray(state.renderedTracks) && state.renderedTracks.length) {
+          return state.renderedTracks;
+        }
+        if (Array.isArray(state.sharedTracks) && state.sharedTracks.length) {
+          return state.sharedTracks;
+        }
+        return [];
+      }
+
+      function getNeighborTracks() {
+        const list = getActivePlaybackList();
+        if (!list.length) return { prev: null, next: null };
+        const currentIndex = getCurrentTrackIndex(list);
+        if (currentIndex < 0) return { prev: null, next: list[0] || null };
+        const prev = currentIndex > 0 ? list[currentIndex - 1] : null;
+        const next = currentIndex < list.length - 1 ? list[currentIndex + 1] : null;
+        return { prev, next };
+      }
+
+      function setPeekTrack(buttonEl, imageEl, track, preferredSrc = "") {
+        if (!buttonEl || !imageEl) return;
+        const hasTrack = Boolean(track && track.trackId);
+        buttonEl.classList.toggle("is-visible", hasTrack);
+        buttonEl.disabled = !hasTrack;
+        if (!hasTrack) {
+          buttonEl.style.opacity = "0";
+          buttonEl.style.pointerEvents = "none";
+          buttonEl.setAttribute("aria-hidden", "true");
+          return;
+        }
+        buttonEl.style.opacity = "";
+        buttonEl.style.pointerEvents = "";
+        buttonEl.setAttribute("aria-hidden", "false");
+        const src = String(preferredSrc || track.coverUrl || FALLBACK_COVER).trim() || FALLBACK_COVER;
+        if (imageEl.dataset.currentSrc !== src) {
+          imageEl.src = src;
+          imageEl.dataset.currentSrc = src;
+        }
+      }
+
+      function syncCoverImageRefs() {
+        if (els.currentCover) {
+          els.currentCover.id = "currentCover";
+          els.currentCover.alt = "Обложка трека";
+        }
+        if (els.peekPrevCover) {
+          els.peekPrevCover.id = "peekPrevCover";
+          els.peekPrevCover.alt = "Предыдущий трек";
+        }
+        if (els.peekNextCover) {
+          els.peekNextCover.id = "peekNextCover";
+          els.peekNextCover.alt = "Следующий трек";
+        }
+      }
+
+      function rotateCoverNodes(direction) {
+        if (!els.currentCoverWrap || !els.peekPrevBtn || !els.peekNextBtn) return false;
+        if (!els.currentCover || !els.peekPrevCover || !els.peekNextCover) return false;
+
+        const prevImg = els.peekPrevCover;
+        const currentImg = els.currentCover;
+        const nextImg = els.peekNextCover;
+
+        if (direction > 0) {
+          els.currentCoverWrap.appendChild(prevImg);
+          els.peekNextBtn.appendChild(currentImg);
+          els.peekPrevBtn.appendChild(nextImg);
+          els.currentCover = prevImg;
+          els.peekNextCover = currentImg;
+          els.peekPrevCover = nextImg;
+        } else {
+          els.currentCoverWrap.appendChild(nextImg);
+          els.peekPrevBtn.appendChild(currentImg);
+          els.peekNextBtn.appendChild(prevImg);
+          els.currentCover = nextImg;
+          els.peekPrevCover = currentImg;
+          els.peekNextCover = prevImg;
+        }
+
+        syncCoverImageRefs();
+        return true;
+      }
+
+      function getCoverSwipeMetrics() {
+        const isMobileView = !isDesktopViewport();
+        const fallbackMain = isMobileView ? 162 : 132;
+        const fallbackSide = isMobileView ? 126 : 88;
+        const carouselWidth = (els.coverCarousel && els.coverCarousel.clientWidth) || (fallbackMain + fallbackSide);
+        const mainSize = (els.currentCoverWrap && els.currentCoverWrap.offsetWidth) || fallbackMain;
+        const sideSize = (els.peekPrevBtn && els.peekPrevBtn.offsetWidth) || (els.peekNextBtn && els.peekNextBtn.offsetWidth) || fallbackSide;
+        const edgeVisible = Math.max(20, Math.min(40, Math.round(sideSize * 0.24)));
+        const baseShift = Math.max(
+          Math.round(sideSize * 0.9),
+          Math.round((carouselWidth / 2) + (sideSize / 2) - edgeVisible)
+        );
+        const maxDrag = Math.max(120, Math.round(mainSize * 0.95));
+        const commitThreshold = Math.max(56, Math.round(mainSize * 0.26));
+        return { baseShift, maxDrag, commitThreshold };
+      }
+
+      function setCoverSwipeTransition(enabled) {
+        const transition = enabled ? "transform 280ms cubic-bezier(0.2, 0.82, 0.22, 1), opacity 260ms ease" : "none";
+        if (els.currentCoverWrap) els.currentCoverWrap.style.transition = transition;
+        if (els.peekPrevBtn) els.peekPrevBtn.style.transition = transition;
+        if (els.peekNextBtn) els.peekNextBtn.style.transition = transition;
+      }
+
+      function renderCoverSwipeOffset(offsetX = 0) {
+        if (!els.currentCoverWrap || !els.peekPrevBtn || !els.peekNextBtn) return;
+        const metrics = getCoverSwipeMetrics();
+        const clamped = Math.max(-metrics.maxDrag, Math.min(metrics.maxDrag, Number(offsetX) || 0));
+        const ratio = Math.max(-1, Math.min(1, clamped / metrics.maxDrag));
+        const mainScale = 1 - Math.abs(ratio) * 0.06;
+
+        const prevBaseX = -metrics.baseShift;
+        const nextBaseX = metrics.baseShift;
+        const prevOffsetX = clamped > 0 ? clamped * 0.88 : clamped * 0.1;
+        const nextOffsetX = clamped < 0 ? clamped * 0.88 : clamped * 0.1;
+        const prevScale = 0.93 + Math.max(0, ratio) * 0.07;
+        const nextScale = 0.93 + Math.max(0, -ratio) * 0.07;
+        const prevOpacity = 0.7 + Math.max(0, ratio) * 0.22;
+        const nextOpacity = 0.7 + Math.max(0, -ratio) * 0.22;
+
+        els.currentCoverWrap.style.transform = `translate3d(${clamped}px, 0, 0) scale(${mainScale})`;
+        els.peekPrevBtn.style.transform = `translate3d(${prevBaseX + prevOffsetX}px, -50%, 0) scale(${prevScale})`;
+        els.peekNextBtn.style.transform = `translate3d(${nextBaseX + nextOffsetX}px, -50%, 0) scale(${nextScale})`;
+
+        if (els.peekPrevBtn.classList.contains("is-visible")) {
+          els.peekPrevBtn.style.opacity = `${Math.max(0, Math.min(1, prevOpacity))}`;
+        }
+        if (els.peekNextBtn.classList.contains("is-visible")) {
+          els.peekNextBtn.style.opacity = `${Math.max(0, Math.min(1, nextOpacity))}`;
+        }
+      }
+
+      function resetCoverSwipeVisuals(animated = false) {
+        setCoverSwipeTransition(animated);
+        renderCoverSwipeOffset(0);
+        if (els.peekPrevBtn) {
+          els.peekPrevBtn.style.opacity = els.peekPrevBtn.disabled ? "0" : "";
+        }
+        if (els.peekNextBtn) {
+          els.peekNextBtn.style.opacity = els.peekNextBtn.disabled ? "0" : "";
+        }
+      }
+
+      function updateCoverPeekUI() {
+        const enabled = !isDesktopViewport();
+        if (!els.coverCarousel || !els.peekPrevBtn || !els.peekNextBtn || !els.peekPrevCover || !els.peekNextCover) return;
+        els.coverCarousel.classList.toggle("is-swipe-enabled", enabled);
+        if (!enabled) {
+          setPeekTrack(els.peekPrevBtn, els.peekPrevCover, null);
+          setPeekTrack(els.peekNextBtn, els.peekNextCover, null);
+          resetCoverSwipeVisuals(false);
+          return;
+        }
+        if (state.coverSwipeInProgress) {
+          return;
+        }
+        const { prev, next } = getNeighborTracks();
+        const prevTrackId = String((prev && prev.trackId) || "");
+        const preferOutgoingPrev = prevTrackId
+          && prevTrackId === String(state.lastOutgoingTrackId || "")
+          && String(state.lastOutgoingCoverSrc || "");
+        setPeekTrack(els.peekPrevBtn, els.peekPrevCover, prev, preferOutgoingPrev ? state.lastOutgoingCoverSrc : "");
+        setPeekTrack(els.peekNextBtn, els.peekNextCover, next);
+        if (!state.coverSwipeInProgress) {
+          resetCoverSwipeVisuals(false);
+        }
+      }
+
       function updateCurrentTrackUI(track) {
         if (!track) {
           if (els.currentCover && els.currentCover.dataset.currentSrc !== FALLBACK_COVER) {
@@ -2135,11 +2491,13 @@
           if (els.currentBitrate) els.currentBitrate.textContent = "stream: —";
           if (els.currentSource) els.currentSource.textContent = "source: shared";
           updateFullscreenEntryAvailability();
+          updateCoverPeekUI();
           updateMediaSession(null);
           notifyParentPlayerState();
           return;
         }
         const coverSrc = track.coverUrl || FALLBACK_COVER;
+        preloadCoverImage(coverSrc);
         if (els.currentCover && els.currentCover.dataset.currentSrc !== coverSrc) {
           els.currentCover.src = coverSrc;
           els.currentCover.dataset.currentSrc = coverSrc;
@@ -2158,6 +2516,7 @@
         if (els.currentBitrate) els.currentBitrate.textContent = track.bitrate ? `stream: ${track.bitrate}` : "stream: auto";
         if (els.currentSource) els.currentSource.textContent = `source: ${state.activeSource}`;
         updateFullscreenEntryAvailability();
+        updateCoverPeekUI();
         updateMediaSession(track);
         notifyParentPlayerState();
       }
@@ -2190,16 +2549,18 @@
         };
       }
 
-      function renderSeekPreview(targetTime, duration) {
+      function renderSeekPreview(targetTime, duration, { updateLabels = true } = {}) {
         const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0;
         const safeTime = Math.max(0, Math.min(safeDuration || 0, Number(targetTime) || 0));
         const progress = safeDuration > 0 ? Math.min(100, (safeTime / safeDuration) * 100) : 0;
         els.progressFill.style.width = `${progress}%`;
-        els.timeCurrent.textContent = formatTime(safeTime);
-        els.timeTotal.textContent = formatTime(safeDuration);
+        if (updateLabels) {
+          els.timeCurrent.textContent = formatTime(safeTime);
+          els.timeTotal.textContent = formatTime(safeDuration);
+        }
         if (els.fsProgressFill) els.fsProgressFill.style.width = `${progress}%`;
-        if (els.fsTimeCurrent) els.fsTimeCurrent.textContent = formatTime(safeTime);
-        if (els.fsTimeTotal) els.fsTimeTotal.textContent = formatTime(safeDuration);
+        if (updateLabels && els.fsTimeCurrent) els.fsTimeCurrent.textContent = formatTime(safeTime);
+        if (updateLabels && els.fsTimeTotal) els.fsTimeTotal.textContent = formatTime(safeDuration);
       }
 
       function seekByClientX(clientX, progressElement = els.progressBar) {
@@ -2369,6 +2730,106 @@
         // Stats panel removed from UI.
       }
 
+      function getTrackRenderSignature(track) {
+        if (!track || typeof track !== "object") return "";
+        const artists = Array.isArray(track.artists) ? track.artists.join("|") : "";
+        return [
+          String(track.key || track.trackId || ""),
+          String(track.title || ""),
+          artists,
+          String(track.coverUrl || ""),
+          String(track.sourceUrl || ""),
+          String(track.addedByName || ""),
+          String(track.addedByUsername || ""),
+          String(track.durationMs || 0),
+          String(track.addedAt || 0)
+        ].join("::");
+      }
+
+      function canPatchRenderedList(prevList, nextList) {
+        if (!Array.isArray(prevList) || !Array.isArray(nextList)) return false;
+        if (prevList.length !== nextList.length) return false;
+        for (let i = 0; i < prevList.length; i += 1) {
+          const prev = prevList[i];
+          const next = nextList[i];
+          const prevKey = String(prev && (prev.key || prev.trackId) || "");
+          const nextKey = String(next && (next.key || next.trackId) || "");
+          if (!prevKey || prevKey !== nextKey) return false;
+        }
+        return true;
+      }
+
+      function updateRenderedLikesUI() {
+        if (!els.sharedList || !Array.isArray(state.renderedTracks) || !state.renderedTracks.length) return;
+        const byKey = new Map(
+          state.renderedTracks.map((track) => [String(track && (track.key || track.trackId) || ""), track])
+        );
+        const items = els.sharedList.querySelectorAll(".track-item");
+        items.forEach((item) => {
+          const key = String(item.dataset.trackKey || item.dataset.trackId || "");
+          const track = byKey.get(key);
+          if (!track) return;
+
+          const likeCount = getLikeCount(track);
+          const likeBtn = item.querySelector('[data-action="like"]');
+          if (likeBtn) {
+            likeBtn.classList.toggle("active", isLikedByMe(track));
+          }
+
+          const meta = item.querySelector(".track-meta-line");
+          if (meta) {
+            const who = track.addedByName || track.addedByUsername || "user";
+            meta.textContent = `Добавил: ${who} • ❤ ${likeCount}`;
+          }
+        });
+      }
+
+      function updateRenderedTrackRows(nextList) {
+        if (!els.sharedList || !Array.isArray(nextList) || !nextList.length) return;
+        const byKey = new Map(
+          nextList.map((track) => [String(track && (track.key || track.trackId) || ""), track])
+        );
+        const items = els.sharedList.querySelectorAll(".track-item");
+        items.forEach((item) => {
+          const key = String(item.dataset.trackKey || item.dataset.trackId || "");
+          const track = byKey.get(key);
+          if (!track) return;
+
+          const titleEl = item.querySelector(".track-info h3");
+          const artistEl = item.querySelector(".track-info p");
+          const metaEl = item.querySelector(".track-meta-line");
+          const coverEl = item.querySelector(".track-cover");
+          const openLink = item.querySelector('.track-actions a.icon-btn');
+          const likeBtn = item.querySelector('[data-action="like"]');
+
+          const nextTitle = String(track.title || "");
+          if (titleEl && titleEl.textContent !== nextTitle) titleEl.textContent = nextTitle;
+
+          const nextArtists = String(track.artists && track.artists.length ? track.artists.join(", ") : "Без артиста");
+          if (artistEl && artistEl.textContent !== nextArtists) artistEl.textContent = nextArtists;
+
+          if (metaEl) {
+            const who = track.addedByName || track.addedByUsername || "user";
+            const nextMeta = `Добавил: ${who} • ❤ ${getLikeCount(track)}`;
+            if (metaEl.textContent !== nextMeta) metaEl.textContent = nextMeta;
+          }
+
+          const nextCover = String(track.coverUrl || FALLBACK_COVER);
+          if (coverEl && (coverEl.getAttribute("src") || "") !== nextCover) {
+            coverEl.setAttribute("src", nextCover);
+          }
+
+          const nextHref = String(track.sourceUrl || "");
+          if (openLink && openLink.getAttribute("href") !== nextHref) {
+            openLink.setAttribute("href", nextHref);
+          }
+
+          if (likeBtn) {
+            likeBtn.classList.toggle("active", isLikedByMe(track));
+          }
+        });
+      }
+
       function shouldEnrichStoredTrack(existing, incoming) {
         const existingArtists = Array.isArray(existing && existing.artists) ? existing.artists.filter(Boolean) : [];
         const incomingArtists = Array.isArray(incoming && incoming.artists) ? incoming.artists.filter(Boolean) : [];
@@ -2535,6 +2996,7 @@
             ? '<li class="empty">По вашему поиску в списке ничего не найдено.</li>'
             : '<li class="empty">Список пока пуст. Добавьте первый трек через кнопку «+».</li>';
           updateStats();
+          updateCoverPeekUI();
           return;
         }
         list.forEach((track) => {
@@ -2542,6 +3004,7 @@
         });
         updateSharedListPlaybackUI();
         updateStats();
+        updateCoverPeekUI();
       }
 
       function renderSearchList() {
@@ -2870,6 +3333,12 @@
 
       async function playTrack(track, source = "shared", options = {}) {
         if (!track || !track.trackId) return;
+        if (!state.coverSwipeInProgress) {
+          const outgoingTrackId = String((state.currentTrack && state.currentTrack.trackId) || "");
+          const outgoingCoverSrc = String((els.currentCover && els.currentCover.dataset.currentSrc) || "");
+          state.lastOutgoingTrackId = outgoingTrackId;
+          state.lastOutgoingCoverSrc = outgoingCoverSrc;
+        }
         const previousTrackId = String(state.currentTrack && state.currentTrack.trackId || "");
         const nextTrackId = String(track.trackId || "");
         const isRestoreFlow = Boolean(options && options.restoreFlow);
@@ -3045,10 +3514,36 @@
         }
         const me = firebaseSafeKey(state.currentUser.username);
         const ref = state.db.ref(`${COMMUNITY_TRACKS_PATH}/${track.key}/likes/${me}`);
-        if (isLikedByMe(track)) {
-          await ref.remove();
-        } else {
-          await ref.set(true);
+        const getLatestTrack = () => state.sharedTracks.find((item) => String(item && item.key || "") === String(track.key || ""));
+        const latestTrack = getLatestTrack() || track;
+        const likedNow = isLikedByMe(latestTrack);
+        const applyLocalLike = (liked) => {
+          const applyTo = (list) => {
+            if (!Array.isArray(list)) return;
+            list.forEach((item) => {
+              if (!item || String(item.key || "") !== String(track.key || "")) return;
+              if (!item.likes || typeof item.likes !== "object") item.likes = {};
+              if (liked) {
+                item.likes[me] = true;
+              } else {
+                delete item.likes[me];
+              }
+            });
+          };
+          applyTo(state.sharedTracks);
+          applyTo(state.renderedTracks);
+          updateRenderedLikesUI();
+        };
+
+        applyLocalLike(!likedNow);
+        try {
+          if (likedNow) {
+            await ref.remove();
+          } else {
+            await ref.set(true);
+          }
+        } catch (error) {
+          applyLocalLike(likedNow);
         }
       }
 
@@ -3067,6 +3562,7 @@
       }
 
       function syncSharedTracks(snapshot) {
+        const prevRendered = Array.isArray(state.renderedTracks) ? [...state.renderedTracks] : [];
         const items = [];
         snapshot.forEach((child) => {
           const raw = child.val() || {};
@@ -3076,7 +3572,17 @@
         });
         state.sharedTracks = items;
         state.sharedTracksLoaded = true;
-        renderSharedList();
+        const nextVisible = getVisibleTracks();
+        const patchOnlyLikes = canPatchRenderedList(prevRendered, nextVisible);
+        if (patchOnlyLikes && els.sharedList && els.sharedList.querySelector(".track-item")) {
+          state.renderedTracks = nextVisible;
+          updateRenderedTrackRows(nextVisible);
+          updateSharedListPlaybackUI();
+          updateStats();
+          updateCoverPeekUI();
+        } else {
+          renderSharedList();
+        }
         tryRestorePlaybackSnapshot();
       }
 
@@ -3169,6 +3675,7 @@
             setFullscreenOpen(false);
           }
           updateFullscreenEntryAvailability();
+          updateCoverPeekUI();
         });
 
         if (els.toggleSearchPanelBtn) {
@@ -3237,6 +3744,232 @@
         els.prevBtn.addEventListener("click", playPrev);
         els.nextBtn.addEventListener("click", playNext);
 
+        if (els.peekPrevBtn) {
+          els.peekPrevBtn.addEventListener("click", async () => {
+            if (els.peekPrevBtn.disabled) return;
+            await playPrev();
+          });
+        }
+        if (els.peekNextBtn) {
+          els.peekNextBtn.addEventListener("click", async () => {
+            if (els.peekNextBtn.disabled) return;
+            await playNext();
+          });
+        }
+
+        const coverSwipeState = {
+          active: false,
+          dragging: false,
+          startX: 0,
+          startY: 0,
+          deltaX: 0,
+          renderX: 0,
+          frameX: 0,
+          rafId: 0,
+          deltaY: 0,
+          animating: false
+        };
+
+        const scheduleCoverSwipeFrame = (value) => {
+          coverSwipeState.frameX = value;
+          if (coverSwipeState.rafId) return;
+          coverSwipeState.rafId = requestAnimationFrame(() => {
+            coverSwipeState.rafId = 0;
+            renderCoverSwipeOffset(coverSwipeState.frameX);
+          });
+        };
+
+        const cancelCoverSwipeFrame = () => {
+          if (!coverSwipeState.rafId) return;
+          cancelAnimationFrame(coverSwipeState.rafId);
+          coverSwipeState.rafId = 0;
+        };
+
+        const animateCoverSwipeBack = () => {
+          cancelCoverSwipeFrame();
+          setCoverSwipeTransition(true);
+          resetCoverSwipeVisuals(true);
+          setTimeout(() => {
+            setCoverSwipeTransition(false);
+          }, 300);
+        };
+
+        const commitCoverSwipe = async (direction) => {
+          if (coverSwipeState.animating) return;
+          const neighbors = getNeighborTracks();
+          const targetTrack = direction > 0 ? neighbors.prev : neighbors.next;
+          const canMovePrev = direction > 0 && targetTrack && els.peekPrevBtn && !els.peekPrevBtn.disabled;
+          const canMoveNext = direction < 0 && targetTrack && els.peekNextBtn && !els.peekNextBtn.disabled;
+          if ((!canMovePrev && !canMoveNext) || !targetTrack) {
+            animateCoverSwipeBack();
+            return;
+          }
+
+          cancelCoverSwipeFrame();
+          coverSwipeState.animating = true;
+          state.coverSwipeInProgress = true;
+          const metrics = getCoverSwipeMetrics();
+          const targetCoverSrc = targetTrack.coverUrl || FALLBACK_COVER;
+          const targetRenderedSrc = direction > 0
+            ? String((els.peekPrevCover && els.peekPrevCover.dataset.currentSrc) || targetCoverSrc)
+            : String((els.peekNextCover && els.peekNextCover.dataset.currentSrc) || targetCoverSrc);
+          const outgoingTrackId = String((state.currentTrack && state.currentTrack.trackId) || "");
+          const outgoingCoverSrc = String((els.currentCover && els.currentCover.dataset.currentSrc) || "");
+          state.lastOutgoingTrackId = outgoingTrackId;
+          state.lastOutgoingCoverSrc = outgoingCoverSrc;
+          setCoverSwipeTransition(true);
+          if (direction > 0) {
+            if (els.currentCoverWrap) els.currentCoverWrap.style.transform = `translate3d(${metrics.baseShift}px, 0, 0) scale(0.94)`;
+            if (els.peekPrevBtn) {
+              els.peekPrevBtn.style.transform = "translate3d(0px, -50%, 0) scale(1)";
+              els.peekPrevBtn.style.opacity = "0.98";
+            }
+          } else {
+            if (els.currentCoverWrap) els.currentCoverWrap.style.transform = `translate3d(${-metrics.baseShift}px, 0, 0) scale(0.94)`;
+            if (els.peekNextBtn) {
+              els.peekNextBtn.style.transform = "translate3d(0px, -50%, 0) scale(1)";
+              els.peekNextBtn.style.opacity = "0.98";
+            }
+          }
+
+          const waitForSwipeTransitionEnd = () => new Promise((resolve) => {
+            if (!els.currentCoverWrap) {
+              resolve();
+              return;
+            }
+            let settled = false;
+            const finalize = () => {
+              if (settled) return;
+              settled = true;
+              els.currentCoverWrap.removeEventListener("transitionend", onEnd);
+              resolve();
+            };
+            const onEnd = (event) => {
+              if (!event || event.target !== els.currentCoverWrap) return;
+              if (event.propertyName && event.propertyName !== "transform") return;
+              finalize();
+            };
+            els.currentCoverWrap.addEventListener("transitionend", onEnd, { once: false });
+            setTimeout(finalize, 360);
+          });
+
+          waitForSwipeTransitionEnd().then(() => {
+            setCoverSwipeTransition(false);
+
+            const rotated = rotateCoverNodes(direction);
+            const activeCurrentSrc = String(
+              (els.currentCover && els.currentCover.dataset.currentSrc)
+              || targetRenderedSrc
+              || targetCoverSrc
+              || FALLBACK_COVER
+            );
+            if (!rotated && els.currentCover && els.currentCover.dataset.currentSrc !== activeCurrentSrc) {
+              els.currentCover.src = activeCurrentSrc;
+              els.currentCover.dataset.currentSrc = activeCurrentSrc;
+            }
+            if (state.fullscreenOpen && els.fullscreenCover && els.fullscreenCover.dataset.currentSrc !== activeCurrentSrc) {
+              els.fullscreenCover.src = activeCurrentSrc;
+              els.fullscreenCover.dataset.currentSrc = activeCurrentSrc;
+            }
+
+            renderCoverSwipeOffset(0);
+            coverSwipeState.animating = false;
+
+            const nextSource = state.activeSource === "search" ? "search" : "shared";
+            if (activeCurrentSrc) {
+              targetTrack.coverUrl = activeCurrentSrc;
+            }
+            if (nextSource === "shared" && Array.isArray(state.renderedTracks) && state.renderedTracks.length) {
+              const nextIndex = state.renderedTracks.findIndex((item) => String(item && item.trackId || "") === String(targetTrack.trackId || ""));
+              if (nextIndex >= 0) state.currentIndex = nextIndex;
+            }
+            playTrack(targetTrack, nextSource)
+              .catch(() => {})
+              .finally(() => {
+                state.coverSwipeInProgress = false;
+                updateCoverPeekUI();
+              });
+          });
+        };
+
+        if (els.coverCarousel) {
+          els.coverCarousel.addEventListener("touchstart", (event) => {
+            if (isDesktopViewport() || coverSwipeState.animating) return;
+            if (!event.touches || !event.touches.length) return;
+            const touch = event.touches[0];
+            coverSwipeState.active = true;
+            coverSwipeState.dragging = false;
+            coverSwipeState.startX = touch.clientX;
+            coverSwipeState.startY = touch.clientY;
+            coverSwipeState.deltaX = 0;
+            coverSwipeState.renderX = 0;
+            coverSwipeState.frameX = 0;
+            coverSwipeState.deltaY = 0;
+            cancelCoverSwipeFrame();
+            setCoverSwipeTransition(false);
+          }, { passive: true });
+
+          els.coverCarousel.addEventListener("touchmove", (event) => {
+            if (!coverSwipeState.active || isDesktopViewport() || coverSwipeState.animating) return;
+            if (!event.touches || !event.touches.length) return;
+            const touch = event.touches[0];
+            coverSwipeState.deltaX = touch.clientX - coverSwipeState.startX;
+            coverSwipeState.deltaY = touch.clientY - coverSwipeState.startY;
+
+            if (!coverSwipeState.dragging) {
+              if (Math.abs(coverSwipeState.deltaX) < 6 && Math.abs(coverSwipeState.deltaY) < 6) return;
+              if (Math.abs(coverSwipeState.deltaX) <= Math.abs(coverSwipeState.deltaY)) {
+                coverSwipeState.active = false;
+                return;
+              }
+              coverSwipeState.dragging = true;
+            }
+            const hasPrev = els.peekPrevBtn && !els.peekPrevBtn.disabled;
+            const hasNext = els.peekNextBtn && !els.peekNextBtn.disabled;
+            let renderX = coverSwipeState.deltaX;
+            if ((renderX > 0 && !hasPrev) || (renderX < 0 && !hasNext)) {
+              renderX *= 0.28;
+            }
+            coverSwipeState.renderX = renderX;
+            event.preventDefault();
+            scheduleCoverSwipeFrame(renderX);
+          }, { passive: false });
+
+          const finishCoverSwipe = async () => {
+            if (!coverSwipeState.active) return;
+            const wasDragging = coverSwipeState.dragging;
+            const deltaX = coverSwipeState.renderX;
+            const metrics = getCoverSwipeMetrics();
+            coverSwipeState.active = false;
+            coverSwipeState.dragging = false;
+            coverSwipeState.deltaX = 0;
+            coverSwipeState.renderX = 0;
+            coverSwipeState.frameX = 0;
+            coverSwipeState.deltaY = 0;
+            cancelCoverSwipeFrame();
+
+            if (!wasDragging || Math.abs(deltaX) < metrics.commitThreshold) {
+              animateCoverSwipeBack();
+              return;
+            }
+            await commitCoverSwipe(deltaX > 0 ? 1 : -1);
+          };
+
+          els.coverCarousel.addEventListener("touchend", () => {
+            finishCoverSwipe();
+          }, { passive: true });
+          els.coverCarousel.addEventListener("touchcancel", () => {
+            coverSwipeState.active = false;
+            coverSwipeState.dragging = false;
+            coverSwipeState.deltaX = 0;
+            coverSwipeState.renderX = 0;
+            coverSwipeState.frameX = 0;
+            coverSwipeState.deltaY = 0;
+            cancelCoverSwipeFrame();
+            animateCoverSwipeBack();
+          }, { passive: true });
+        }
+
         els.repeatBtn.addEventListener("click", () => {
           const current = state.repeatMode;
           const next = current === "off" ? "once" : current === "once" ? "loop" : "off";
@@ -3294,12 +4027,43 @@
           previewTime: null,
           previewDuration: 0,
           startX: 0,
-          startY: 0
+          startY: 0,
+          barLeft: 0,
+          barWidth: 0,
+          duration: 0,
+          rafId: 0,
+          pendingClientX: 0,
+          lastLabelUpdateAt: 0
+        };
+
+        const cancelTouchSeekRaf = () => {
+          if (!touchSeekState.rafId) return;
+          cancelAnimationFrame(touchSeekState.rafId);
+          touchSeekState.rafId = 0;
+        };
+
+        const scheduleTouchSeekPreview = (clientX) => {
+          touchSeekState.pendingClientX = clientX;
+          if (touchSeekState.rafId) return;
+          touchSeekState.rafId = requestAnimationFrame((timestamp) => {
+            touchSeekState.rafId = 0;
+            const width = Number(touchSeekState.barWidth) || 0;
+            const duration = Number(touchSeekState.duration) || Number(els.audio.duration) || 0;
+            if (width <= 0 || !Number.isFinite(duration) || duration <= 0) return;
+            const ratio = Math.max(0, Math.min(1, (touchSeekState.pendingClientX - touchSeekState.barLeft) / width));
+            const targetTime = duration * ratio;
+            touchSeekState.previewTime = targetTime;
+            touchSeekState.previewDuration = duration;
+            const shouldUpdateLabels = !touchSeekState.lastLabelUpdateAt || (timestamp - touchSeekState.lastLabelUpdateAt) >= 90;
+            if (shouldUpdateLabels) touchSeekState.lastLabelUpdateAt = timestamp;
+            renderSeekPreview(targetTime, duration, { updateLabels: shouldUpdateLabels });
+          });
         };
 
         els.progressBar.addEventListener("touchstart", (event) => {
           if (!event.touches || !event.touches.length) return;
           const touch = event.touches[0];
+          const rect = els.progressBar.getBoundingClientRect();
           touchSeekState.active = true;
           touchSeekState.seeking = false;
           touchSeekState.wasPlaying = false;
@@ -3307,6 +4071,12 @@
           touchSeekState.previewDuration = 0;
           touchSeekState.startX = touch.clientX;
           touchSeekState.startY = touch.clientY;
+          touchSeekState.barLeft = rect.left || 0;
+          touchSeekState.barWidth = rect.width || 0;
+          touchSeekState.duration = Number(els.audio.duration) || 0;
+          touchSeekState.pendingClientX = touch.clientX;
+          touchSeekState.lastLabelUpdateAt = 0;
+          cancelTouchSeekRaf();
         }, { passive: true });
 
         els.progressBar.addEventListener("touchmove", (event) => {
@@ -3323,6 +4093,8 @@
               if (touchSeekState.wasPlaying) {
                 els.audio.pause();
               }
+              if (els.progressFill) els.progressFill.style.transition = "none";
+              if (els.fsProgressFill) els.fsProgressFill.style.transition = "none";
             } else {
               touchSeekState.active = false;
               return;
@@ -3330,15 +4102,12 @@
           }
 
           event.preventDefault();
-          const target = getSeekTargetByClientX(touch.clientX);
-          if (!target) return;
-          touchSeekState.previewTime = target.targetTime;
-          touchSeekState.previewDuration = target.duration;
-          renderSeekPreview(target.targetTime, target.duration);
+          scheduleTouchSeekPreview(touch.clientX);
         }, { passive: false });
 
         const finishTouchSeek = async (event, { commit = true } = {}) => {
           if (!touchSeekState.active) return;
+          cancelTouchSeekRaf();
           if (touchSeekState.seeking) {
             if (commit) {
               if (Number.isFinite(touchSeekState.previewTime)) {
@@ -3369,6 +4138,15 @@
           touchSeekState.wasPlaying = false;
           touchSeekState.previewTime = null;
           touchSeekState.previewDuration = 0;
+          touchSeekState.startX = 0;
+          touchSeekState.startY = 0;
+          touchSeekState.barLeft = 0;
+          touchSeekState.barWidth = 0;
+          touchSeekState.duration = 0;
+          touchSeekState.pendingClientX = 0;
+          touchSeekState.lastLabelUpdateAt = 0;
+          if (els.progressFill) els.progressFill.style.transition = "";
+          if (els.fsProgressFill) els.fsProgressFill.style.transition = "";
         };
 
         els.progressBar.addEventListener("touchend", (event) => {
