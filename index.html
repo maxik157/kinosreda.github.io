@@ -3398,7 +3398,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
                                 ➕ Добавить пиво
                             </button>
@@ -4509,6 +4509,7 @@
         const SIDEBAR_MINI_PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>';
         const SIDEBAR_MINI_PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg>';
         let activeLayoutPage = 'calendar';
+        let beerRenderPending = false;
         let sidebarMusicState = null;
         const SIDEBAR_MINI_PLAYERS = {
             desktop: {
@@ -4660,6 +4661,7 @@
                 localStorage.setItem(SIDEBAR_COLLAPSE_LS_KEY, collapsed ? '1' : '0');
             }
             scheduleSidebarLogoFit(60);
+            scheduleSidebarLogoFit(320);
         }
 
         function getScrollContainer() {
@@ -5058,6 +5060,9 @@
             }
             updateSidebarMiniPlayerVisibility(resolved);
             syncMusicFullscreenTransitionMode(resolved);
+            if (resolved === 'beer') {
+                renderBeerRating();
+            }
             if (resolved !== 'svc_music') {
                 setTimeout(() => requestMusicStateSnapshot(), 0);
             }
@@ -5178,6 +5183,14 @@
                     setSidebarCollapsed(collapsed);
                 });
             }
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.addEventListener('transitionend', (event) => {
+                    if (event.propertyName === 'width') {
+                        scheduleSidebarLogoFit();
+                    }
+                });
+            }
             const savedCollapsed = localStorage.getItem(SIDEBAR_COLLAPSE_LS_KEY) === '1';
             setSidebarCollapsed(savedCollapsed, false);
 
@@ -5287,7 +5300,6 @@
             if (!link || !text || !inner) return;
             if (document.body.classList.contains('sidebar-collapsed')) return;
             text.style.fontSize = '';
-            inner.style.transform = 'scaleX(1)';
             const linkRect = link.getBoundingClientRect();
             if (!linkRect.width) return;
             const icon = link.querySelector('.sidebar-logo-icon');
@@ -5301,7 +5313,7 @@
             if (!rawWidth) return;
 
             const ratio = available / rawWidth;
-            inner.style.transform = `scaleX(${ratio})`;
+            inner.style.transform = `scaleX(${Math.min(1, ratio)})`;
         }
 
         function fitMobileLogoText() {
@@ -5310,7 +5322,6 @@
             const inner = text ? text.querySelector('.mobile-brand-text-inner') : null;
             if (!link || !text || !inner) return;
             text.style.fontSize = '';
-            inner.style.transform = 'scaleX(1)';
             const linkRect = link.getBoundingClientRect();
             const available = linkRect.width;
             if (!available) return;
@@ -5319,7 +5330,7 @@
             if (!rawWidth) return;
 
             const ratio = available / rawWidth;
-            inner.style.transform = `scaleX(${ratio})`;
+            inner.style.transform = `scaleX(${Math.min(1, ratio)})`;
         }
 
         function initLogoFitObserver() {
@@ -6295,7 +6306,7 @@
                         return `
                             <div class="beer-option-row w-full flex items-center gap-3 px-3 py-2 ${active ? 'bg-amber-500/10' : ''} hover:bg-amber-500/10 transition" data-beer-id="${id}" data-search="${searchText}">
                                 <span class="beer-option-thumb w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center overflow-hidden text-sm shrink-0" data-preview="${imageUrl}">
-                                    ${imageUrl ? `<img src="${imageUrl}" alt="">` : '🍺'}
+                                    ${imageUrl ? `<img src="${imageUrl}" alt="" loading="lazy" decoding="async">` : '🍺'}
                                 </span>
                                 <span class="flex flex-col min-w-0 flex-1">
                                     <span class="beer-option-name font-semibold truncate ${active ? 'text-amber-200' : 'text-gray-200'}">${name}</span>
@@ -8909,6 +8920,11 @@
         }
 
         function renderBeerRating() {
+            if (activeLayoutPage !== 'beer') {
+                beerRenderPending = true;
+                return;
+            }
+            beerRenderPending = false;
             const tbody = document.getElementById('beerTableBody');
             if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
             updateCaloriesModeLabel();
@@ -9086,7 +9102,7 @@
                                 <div class="beer-thumb" aria-hidden="true" data-preview="${beer.imageUrl || ''}">
                                     ${beer.imageUrl ? `
                                         <div class="beer-thumb-mask">
-                                            <img src="${beer.imageUrl}" alt="">
+                                            <img src="${beer.imageUrl}" alt="" loading="lazy" decoding="async">
                                         </div>
                                     ` : `<span class="beer-thumb-placeholder">🍺</span>`}
                                 </div>

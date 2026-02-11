@@ -567,6 +567,13 @@
       gap: 12px;
     }
 
+    .list-toolbar-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
     .list-toolbar-title {
       margin: 0;
       font-size: 16px;
@@ -574,11 +581,135 @@
       letter-spacing: 0.01em;
     }
 
+    .list-count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(18, 13, 8, 0.72);
+      color: #fcd34d;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
     .list-toolbar-actions {
       display: inline-flex;
       gap: 8px;
       align-items: center;
       flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .added-by-filter {
+      position: relative;
+      width: 190px;
+      max-width: 56vw;
+      flex: 0 1 auto;
+    }
+
+    .added-by-filter-btn {
+      width: 100%;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      background: linear-gradient(155deg, rgba(27, 19, 10, 0.88), rgba(18, 13, 8, 0.7));
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 8px 9px 8px 11px;
+      font: 600 12px/1.2 "Comfortaa", cursive;
+      outline: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    }
+
+    .added-by-filter-btn:hover {
+      border-color: rgba(252, 211, 77, 0.58);
+      box-shadow: 0 10px 18px rgba(84, 54, 13, 0.28);
+    }
+
+    .added-by-filter-btn:focus-visible {
+      border-color: rgba(252, 211, 77, 0.72);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.16);
+    }
+
+    .added-by-filter.is-open .added-by-filter-btn {
+      border-color: rgba(252, 211, 77, 0.72);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.16);
+    }
+
+    .added-by-filter-label {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+      color: #f4e2bf;
+    }
+
+    .added-by-filter-chevron {
+      flex: 0 0 auto;
+      width: 15px;
+      height: 15px;
+      color: #fcd34d;
+      transition: transform 0.16s ease;
+    }
+
+    .added-by-filter.is-open .added-by-filter-chevron {
+      transform: rotate(180deg);
+    }
+
+    .added-by-filter-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      width: 100%;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid rgba(245, 158, 11, 0.38);
+      border-radius: 12px;
+      background: rgba(12, 9, 6, 0.96);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.42);
+      padding: 6px;
+      display: none;
+      z-index: 40;
+    }
+
+    .added-by-filter.is-open .added-by-filter-menu {
+      display: block;
+      animation: add-help-in 0.14s ease;
+    }
+
+    .added-by-filter-option {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: 600 12px/1.25 "Comfortaa", cursive;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .added-by-filter-option:hover {
+      border-color: rgba(245, 158, 11, 0.42);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .added-by-filter-option.is-active {
+      border-color: rgba(252, 211, 77, 0.52);
+      background: rgba(252, 211, 77, 0.12);
+      color: #fcd34d;
     }
 
     .add-help-wrap {
@@ -707,13 +838,62 @@
       display: grid;
     }
 
+    .tool-panel.tool-panel--stack {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: stretch;
+    }
+
     #searchPanel {
       grid-template-columns: minmax(0, 1fr);
+    }
+
+    .add-by-link-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
     }
 
     .tool-panel .btn {
       padding: 11px 12px;
       white-space: nowrap;
+    }
+
+    .ym-search-block {
+      position: relative;
+      display: grid;
+      gap: 8px;
+    }
+
+    .ym-search-wrap {
+      position: relative;
+    }
+
+    .ym-input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ym-search-prompt {
+      margin: 8px 0 2px;
+      font-size: 12px;
+      color: #c6a86f;
+      text-align: center;
+    }
+
+    .ym-search-list {
+      height: min(42vh, 340px);
+      max-height: min(42vh, 340px);
+      min-height: 0;
+      padding-right: 1px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .panel-body.is-add-mode #sharedList {
+      display: none;
     }
 
     .oauth-row {
@@ -1059,6 +1239,30 @@
       .panel {
         height: 100%;
       }
+      .panel-body.is-add-mode {
+        min-height: 0;
+      }
+      .panel-body.is-add-mode .tool-panels {
+        flex: 1 1 auto;
+        min-height: 0;
+        margin-top: 6px;
+      }
+      .panel-body.is-add-mode #addPanel.tool-panel.is-open {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+      }
+      .panel-body.is-add-mode .ym-search-block {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .panel-body.is-add-mode .ym-search-list {
+        flex: 1 1 auto;
+        height: auto;
+        max-height: none;
+        min-height: 0;
+      }
       .cover-wrap {
         cursor: pointer;
       }
@@ -1084,6 +1288,7 @@
         aspect-ratio: auto;
       }
       .tool-panel,
+      .add-by-link-row,
       .subgrid,
       .extras {
         grid-template-columns: 1fr;
@@ -1108,6 +1313,10 @@
       }
       .add-help-popover {
         right: -2px;
+      }
+      .added-by-filter {
+        width: 158px;
+        max-width: 62vw;
       }
     }
 
@@ -1414,8 +1623,27 @@
           </div>
 
           <div class="list-toolbar">
-            <h3 class="list-toolbar-title">Список треков</h3>
+            <div class="list-toolbar-left">
+              <h3 class="list-toolbar-title">Список треков</h3>
+              <span id="trackCountBadge" class="list-count-badge">0</span>
+            </div>
             <div class="list-toolbar-actions">
+              <div id="addedByFilter" class="added-by-filter">
+                <button
+                  id="addedByFilterBtn"
+                  class="added-by-filter-btn"
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="addedByFilterMenu"
+                >
+                  <span id="addedByFilterLabel" class="added-by-filter-label">Все добавившие</span>
+                  <svg class="added-by-filter-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                </button>
+                <div id="addedByFilterMenu" class="added-by-filter-menu" role="listbox" aria-label="Фильтр по автору" hidden></div>
+              </div>
               <button id="toggleSearchPanelBtn" class="tool-btn" type="button" title="Поиск по списку" aria-label="Поиск по списку">🔎</button>
               <div class="add-help-wrap">
                 <button id="toggleAddPanelBtn" class="tool-btn" type="button" title="Добавить трек" aria-label="Добавить трек">+</button>
@@ -1430,9 +1658,17 @@
             <div id="searchPanel" class="tool-panel">
               <input id="searchInput" class="field" type="text" placeholder="Поиск по списку треков">
             </div>
-            <div id="addPanel" class="tool-panel">
-              <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек Яндекс Музыки">
-              <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
+            <div id="addPanel" class="tool-panel tool-panel--stack">
+              <div class="ym-search-block">
+                <div class="ym-search-wrap">
+                  <div class="ym-input-row">
+                    <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек или введите запрос">
+                    <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
+                  </div>
+                  <p id="ymSearchPrompt" class="hint ym-search-prompt">Введите запрос для поиска треков в Яндекс Музыке.</p>
+                </div>
+                <ul id="ymSearchList" class="list ym-search-list"></ul>
+              </div>
             </div>
           </div>
 
@@ -1537,6 +1773,10 @@
         db: null,
         sharedTracks: [],
         renderedTracks: [],
+        renderedTrackDomCount: 0,
+        listChunkSize: 10,
+        listRenderCount: 10,
+        listFingerprint: "",
         currentTrack: null,
         currentStreamMeta: null,
         currentIndex: -1,
@@ -1550,9 +1790,26 @@
         activeSource: "shared",
         pendingResolveId: null,
         listQuery: "",
+        ymSearchQuery: "",
+        ymSearchResults: [],
+        ymSearchTotal: 0,
+        ymSearchPage: 0,
+        ymSearchHasMore: false,
+        ymSearchRenderCount: 0,
+        ymSearchRenderedDomCount: 0,
+        ymSearchDataVersion: 0,
+        ymSearchRenderedVersion: -1,
+        ymSearchChunkSize: 10,
+        ymSearchLoadingMore: false,
+        ymSearchLoading: false,
+        ymSearchRequestSeq: 0,
+        ymSearchDebounceTimer: null,
+        ymSearchRankMode: "auto",
         activeToolPanel: "",
         addHelpOpen: false,
         filter: "all",
+        addedByFilter: "all",
+        addedByOptions: [{ value: "all", label: "Все добавившие" }],
         sort: "new",
         fullscreenOpen: false,
         sharedTracksLoaded: false,
@@ -1617,9 +1874,18 @@
         addPanel: document.getElementById("addPanel"),
         trackUrlInput: document.getElementById("trackUrlInput"),
         addByUrlBtn: document.getElementById("addByUrlBtn"),
+        ymSearchInput: document.getElementById("trackUrlInput"),
+        ymSearchPrompt: document.getElementById("ymSearchPrompt"),
+        ymSearchList: document.getElementById("ymSearchList"),
+        panelBody: document.querySelector(".panel-body"),
         oauthLoginBtn: document.getElementById("oauthLoginBtn"),
         oauthLogoutBtn: document.getElementById("oauthLogoutBtn"),
         sharedList: document.getElementById("sharedList"),
+        trackCountBadge: document.getElementById("trackCountBadge"),
+        addedByFilterRoot: document.getElementById("addedByFilter"),
+        addedByFilterBtn: document.getElementById("addedByFilterBtn"),
+        addedByFilterLabel: document.getElementById("addedByFilterLabel"),
+        addedByFilterMenu: document.getElementById("addedByFilterMenu"),
         filterSelect: document.getElementById("filterSelect"),
         sortSelect: document.getElementById("sortSelect"),
         toasts: document.getElementById("toasts"),
@@ -1784,14 +2050,34 @@
         state.activeToolPanel = panel;
         if (els.searchPanel) els.searchPanel.classList.toggle("is-open", panel === "search");
         if (els.addPanel) els.addPanel.classList.toggle("is-open", panel === "add");
+        if (els.panelBody) els.panelBody.classList.toggle("is-add-mode", panel === "add");
         if (els.toggleSearchPanelBtn) els.toggleSearchPanelBtn.classList.toggle("active", panel === "search");
         if (els.toggleAddPanelBtn) els.toggleAddPanelBtn.classList.toggle("active", panel === "add");
+        if (panel !== "add") {
+          if (state.ymSearchDebounceTimer) {
+            clearTimeout(state.ymSearchDebounceTimer);
+            state.ymSearchDebounceTimer = null;
+          }
+        }
 
         if (panel === "search" && els.searchInput) {
           requestAnimationFrame(() => els.searchInput && els.searchInput.focus());
         }
-        if (panel === "add" && els.trackUrlInput) {
-          requestAnimationFrame(() => els.trackUrlInput && els.trackUrlInput.focus());
+        if (panel === "add") {
+          const addInputValue = String((els.ymSearchInput && els.ymSearchInput.value) || "").trim();
+          state.ymSearchQuery = addInputValue;
+          if (!addInputValue) {
+            state.ymSearchDataVersion += 1;
+            resetYmSearchLazyState();
+          }
+          renderSearchList();
+          requestAnimationFrame(() => {
+            if (els.ymSearchInput) {
+              els.ymSearchInput.focus();
+            } else if (els.trackUrlInput) {
+              els.trackUrlInput.focus();
+            }
+          });
         }
       }
 
@@ -2017,7 +2303,8 @@
         );
         const artists = extractArtists(rawTrack);
         const title = String(rawTrack.title || rawTrack.name || `Трек ${trackId || "без id"}`).trim();
-        const durationMs = Number(rawTrack.durationMs || rawTrack.duration_ms || rawTrack.duration || 0);
+        const rawDuration = Number(rawTrack.durationMs || rawTrack.duration_ms || rawTrack.duration || rawTrack.track_duration || 0);
+        const durationMs = rawDuration > 0 && rawDuration < 10000 ? rawDuration * 1000 : rawDuration;
         const coverUrl = buildCoverUrl(rawTrack);
         const sourceUrl = rawTrack.sourceUrl
           || (albumId
@@ -2697,6 +2984,9 @@
         } else if (state.filter === "liked" && me) {
           list = list.filter((item) => item.likes && item.likes[me]);
         }
+        if (state.addedByFilter && state.addedByFilter !== "all") {
+          list = list.filter((item) => getAddedByKey(item) === state.addedByFilter);
+        }
 
         if (state.sort === "likes") {
           list.sort((a, b) => {
@@ -2724,6 +3014,96 @@
         }
 
         return list;
+      }
+
+      function getAddedByKey(track) {
+        const username = firebaseSafeKey(track && track.addedByUsername);
+        if (username) return `u:${username}`;
+        const name = firebaseSafeKey(track && track.addedByName);
+        if (name) return `n:${name}`;
+        return "unknown";
+      }
+
+      function getAddedByLabel(track) {
+        return String((track && (track.addedByName || track.addedByUsername)) || "Неизвестно").trim() || "Неизвестно";
+      }
+
+      function updateTrackCountBadge(visibleCount = 0, totalCount = 0) {
+        if (!els.trackCountBadge) return;
+        const total = Math.max(0, Number(totalCount || 0));
+        const visible = Math.max(0, Number(visibleCount || 0));
+        const hasQuery = Boolean(String(state.listQuery || "").trim());
+        const hasFilter = state.addedByFilter !== "all" || state.filter !== "all";
+        els.trackCountBadge.textContent = (hasQuery || hasFilter || visible !== total)
+          ? `${visible}/${total}`
+          : String(total);
+      }
+
+      function setAddedByFilterMenuOpen(open) {
+        if (!els.addedByFilterRoot || !els.addedByFilterBtn || !els.addedByFilterMenu) return;
+        const isOpen = !!open;
+        els.addedByFilterRoot.classList.toggle("is-open", isOpen);
+        els.addedByFilterBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        els.addedByFilterMenu.hidden = !isOpen;
+      }
+
+      function updateAddedByFilterLabel() {
+        if (!els.addedByFilterLabel) return;
+        const current = String(state.addedByFilter || "all");
+        const currentOption = state.addedByOptions.find((item) => item.value === current)
+          || state.addedByOptions[0]
+          || { label: "Все добавившие" };
+        els.addedByFilterLabel.textContent = currentOption.label || "Все добавившие";
+      }
+
+      function renderAddedByFilterOptions() {
+        if (!els.addedByFilterMenu) return;
+        els.addedByFilterMenu.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        const current = String(state.addedByFilter || "all");
+        state.addedByOptions.forEach((item) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = `added-by-filter-option${item.value === current ? " is-active" : ""}`;
+          btn.dataset.value = item.value;
+          btn.setAttribute("role", "option");
+          btn.setAttribute("aria-selected", item.value === current ? "true" : "false");
+          btn.textContent = item.label;
+          fragment.appendChild(btn);
+        });
+        els.addedByFilterMenu.appendChild(fragment);
+        updateAddedByFilterLabel();
+      }
+
+      function applyAddedByFilterValue(value, { persist = true, rerender = true, closeMenu = true } = {}) {
+        const normalized = String(value || "all");
+        const exists = state.addedByOptions.some((item) => item.value === normalized);
+        state.addedByFilter = exists ? normalized : "all";
+        renderAddedByFilterOptions();
+        if (rerender) renderSharedList();
+        if (persist) persistPlayerSettings();
+        if (closeMenu) setAddedByFilterMenuOpen(false);
+      }
+
+      function refreshAddedByFilterOptions() {
+        if (!els.addedByFilterMenu) return;
+        const previous = String(state.addedByFilter || "all");
+        const options = new Map();
+        for (const track of state.sharedTracks) {
+          const key = getAddedByKey(track);
+          if (!key || options.has(key)) continue;
+          options.set(key, getAddedByLabel(track));
+        }
+        const sorted = Array.from(options.entries()).sort((a, b) => a[1].localeCompare(b[1], "ru"));
+
+        state.addedByOptions = [{ value: "all", label: "Все добавившие" }];
+        sorted.forEach(([value, label]) => {
+          state.addedByOptions.push({ value, label });
+        });
+
+        const exists = previous === "all" || sorted.some(([value]) => value === previous);
+        state.addedByFilter = exists ? previous : "all";
+        renderAddedByFilterOptions();
       }
 
       function updateStats() {
@@ -2908,7 +3288,7 @@
 
         li.innerHTML = `
           <div class="track-cover-wrap">
-            <img class="track-cover" src="${track.coverUrl || FALLBACK_COVER}" alt="cover">
+            <img class="track-cover" src="${track.coverUrl || FALLBACK_COVER}" alt="cover" loading="lazy" decoding="async">
             <button class="cover-play-btn" data-action="play" title="${isPlaying ? "Пауза" : "Воспроизвести"}">
               <svg viewBox="0 0 24 24">${playIcon}</svg>
             </button>
@@ -2982,51 +3362,330 @@
         return li;
       }
 
+      function getRenderedTrackIdsFingerprint(list) {
+        if (!Array.isArray(list) || !list.length) return `${state.filter}|${state.addedByFilter}|${state.sort}|${state.listQuery}|0`;
+        const ids = list.map((item) => String(item && (item.key || item.trackId) || "")).join("|");
+        return `${state.filter}|${state.addedByFilter}|${state.sort}|${state.listQuery}|${list.length}|${ids}`;
+      }
+
+      function maybeLoadMoreSharedTracks() {
+        if (!els.sharedList) return;
+        const totalCount = Array.isArray(state.renderedTracks) ? state.renderedTracks.length : 0;
+        if (!totalCount || state.renderedTrackDomCount >= totalCount) return;
+        const bottomGap = els.sharedList.scrollHeight - (els.sharedList.scrollTop + els.sharedList.clientHeight);
+        if (bottomGap > 160) return;
+        state.listRenderCount = Math.min(totalCount, state.listRenderCount + state.listChunkSize);
+        renderSharedList();
+      }
+
+      function resetYmSearchLazyState() {
+        state.ymSearchResults = [];
+        state.ymSearchTotal = 0;
+        state.ymSearchPage = 0;
+        state.ymSearchHasMore = false;
+        state.ymSearchRenderCount = 0;
+        state.ymSearchRenderedDomCount = 0;
+        state.ymSearchLoading = false;
+        state.ymSearchLoadingMore = false;
+        state.ymSearchRankMode = "auto";
+      }
+
+      function normalizeYmSearchText(value) {
+        return String(value || "")
+          .toLowerCase()
+          .replace(/ё/g, "е")
+          .replace(/[^\p{L}\p{N}]+/gu, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+
+      function scoreYmSearchField(value, normalizedQuery, tokens) {
+        if (!normalizedQuery) return 0;
+        const normalizedValue = normalizeYmSearchText(value);
+        if (!normalizedValue) return 0;
+
+        let score = 0;
+        if (normalizedValue === normalizedQuery) {
+          score = 100;
+        } else if (normalizedValue.startsWith(`${normalizedQuery} `) || normalizedValue.startsWith(normalizedQuery)) {
+          score = 88;
+        } else if (normalizedValue.includes(` ${normalizedQuery} `) || normalizedValue.includes(normalizedQuery)) {
+          score = 74;
+        }
+
+        if (tokens.length) {
+          let hits = 0;
+          for (const token of tokens) {
+            if (token && normalizedValue.includes(token)) hits += 1;
+          }
+          if (hits === tokens.length) {
+            score = Math.max(score, 64 + Math.min(20, tokens.length * 4));
+          } else if (hits > 0) {
+            score = Math.max(score, 34 + Math.min(20, hits * 5));
+          }
+        }
+
+        return score;
+      }
+
+      function rankYmSearchTracks(tracks = [], query = "", preferredMode = "auto") {
+        const normalizedQuery = normalizeYmSearchText(query);
+        if (!normalizedQuery || !Array.isArray(tracks) || !tracks.length) {
+          return { tracks: Array.isArray(tracks) ? tracks.slice() : [], mode: "auto" };
+        }
+
+        const tokens = normalizedQuery.split(" ").filter(Boolean);
+        const scored = tracks.map((track, index) => {
+          const title = String(track && track.title || "");
+          const artistsJoined = Array.isArray(track && track.artists) ? track.artists.join(" ") : "";
+          const titleScore = scoreYmSearchField(title, normalizedQuery, tokens);
+          const artistScore = scoreYmSearchField(artistsJoined, normalizedQuery, tokens);
+          return {
+            track,
+            index,
+            titleScore,
+            artistScore,
+            bestScore: Math.max(titleScore, artistScore)
+          };
+        });
+
+        let mode = preferredMode === "artist" || preferredMode === "title" ? preferredMode : "auto";
+        if (mode === "auto") {
+          const strongArtistCount = scored.filter((item) => item.artistScore >= 74).length;
+          const strongTitleCount = scored.filter((item) => item.titleScore >= 74).length;
+          const maxArtistScore = scored.reduce((acc, item) => Math.max(acc, item.artistScore), 0);
+          const maxTitleScore = scored.reduce((acc, item) => Math.max(acc, item.titleScore), 0);
+          mode = (
+            strongArtistCount > strongTitleCount
+            || (strongArtistCount === strongTitleCount && maxArtistScore > maxTitleScore + 6)
+          ) ? "artist" : "title";
+        }
+
+        scored.sort((a, b) => {
+          const aPrimary = mode === "artist" ? a.artistScore : a.titleScore;
+          const bPrimary = mode === "artist" ? b.artistScore : b.titleScore;
+          if (bPrimary !== aPrimary) return bPrimary - aPrimary;
+
+          const aSecondary = mode === "artist" ? a.titleScore : a.artistScore;
+          const bSecondary = mode === "artist" ? b.titleScore : b.artistScore;
+          if (bSecondary !== aSecondary) return bSecondary - aSecondary;
+
+          if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
+          return a.index - b.index;
+        });
+
+        return {
+          tracks: scored.map((item) => item.track),
+          mode
+        };
+      }
+
+      async function loadMoreYmSearchTracks() {
+        const query = String(state.ymSearchQuery || "").trim();
+        if (!query) return;
+        if (state.ymSearchLoading || state.ymSearchLoadingMore || !state.ymSearchHasMore) return;
+        const requestSeq = state.ymSearchRequestSeq;
+        const nextPage = Number(state.ymSearchPage || 0) + 1;
+        state.ymSearchLoadingMore = true;
+        renderSearchList();
+        try {
+          const payload = await yandexRequest("/search", {
+            text: query,
+            type: "track",
+            page: nextPage,
+            nocorrect: false
+          });
+          if (requestSeq !== state.ymSearchRequestSeq || query !== String(state.ymSearchQuery || "").trim()) return;
+
+          const mapped = mapYmSearchTracks(getTrackSearchResults(payload));
+          const knownIds = new Set(state.ymSearchResults.map((item) => String(item && item.trackId || "")));
+          const append = mapped.filter((item) => {
+            const id = String(item && item.trackId || "");
+            if (!id || knownIds.has(id)) return false;
+            knownIds.add(id);
+            return true;
+          });
+
+          if (append.length) {
+            state.ymSearchResults.push(...append);
+            const ranked = rankYmSearchTracks(state.ymSearchResults, query, state.ymSearchRankMode || "auto");
+            state.ymSearchResults = ranked.tracks;
+            state.ymSearchRankMode = ranked.mode;
+          }
+
+          const totalRaw = Number((((payload || {}).result || {}).tracks || {}).total || 0);
+          if (Number.isFinite(totalRaw) && totalRaw > 0) {
+            state.ymSearchTotal = totalRaw;
+          } else {
+            state.ymSearchTotal = Math.max(state.ymSearchTotal, state.ymSearchResults.length);
+          }
+          state.ymSearchPage = nextPage;
+          state.ymSearchHasMore = state.ymSearchTotal > state.ymSearchResults.length && mapped.length > 0;
+          if (append.length) {
+            state.ymSearchRenderCount = Math.min(
+              state.ymSearchResults.length,
+              Math.max(state.ymSearchRenderCount, state.ymSearchRenderCount + state.ymSearchChunkSize)
+            );
+          }
+        } catch (_) {
+          state.ymSearchHasMore = false;
+        } finally {
+          if (requestSeq !== state.ymSearchRequestSeq) return;
+          state.ymSearchLoadingMore = false;
+          renderSearchList();
+        }
+      }
+
+      function maybeLoadMoreYmSearchTracks() {
+        if (!els.ymSearchList) return;
+        const totalCount = Array.isArray(state.ymSearchResults) ? state.ymSearchResults.length : 0;
+        if (!totalCount && !state.ymSearchHasMore) return;
+        const bottomGap = els.ymSearchList.scrollHeight - (els.ymSearchList.scrollTop + els.ymSearchList.clientHeight);
+        if (bottomGap > 160) return;
+
+        if (state.ymSearchRenderCount < totalCount) {
+          state.ymSearchRenderCount = Math.min(totalCount, state.ymSearchRenderCount + state.ymSearchChunkSize);
+          renderSearchList();
+          return;
+        }
+
+        if (state.ymSearchHasMore) {
+          loadMoreYmSearchTracks();
+        }
+      }
+
       function renderSharedList() {
         const list = getVisibleTracks();
         state.renderedTracks = list;
+        updateTrackCountBadge(list.length, state.sharedTracks.length);
         if (!els.sharedList) {
           updateStats();
           return;
         }
-        els.sharedList.innerHTML = "";
+        const nextFingerprint = getRenderedTrackIdsFingerprint(list);
+        const shouldResetWindow = state.listFingerprint !== nextFingerprint;
+        if (shouldResetWindow) {
+          state.listFingerprint = nextFingerprint;
+          state.listRenderCount = Math.min(state.listChunkSize, list.length);
+          state.renderedTrackDomCount = 0;
+          els.sharedList.innerHTML = "";
+          els.sharedList.scrollTop = 0;
+        }
         if (!list.length) {
           const hasQuery = Boolean(String(state.listQuery || "").trim());
           els.sharedList.innerHTML = hasQuery
             ? '<li class="empty">По вашему поиску в списке ничего не найдено.</li>'
             : '<li class="empty">Список пока пуст. Добавьте первый трек через кнопку «+».</li>';
+          state.renderedTrackDomCount = 0;
           updateStats();
           updateCoverPeekUI();
           return;
         }
-        list.forEach((track) => {
+
+        const targetCount = Math.min(state.listRenderCount, list.length);
+        if (state.renderedTrackDomCount > targetCount) {
+          state.renderedTrackDomCount = 0;
+          els.sharedList.innerHTML = "";
+        }
+        for (let i = state.renderedTrackDomCount; i < targetCount; i += 1) {
+          const track = list[i];
           els.sharedList.appendChild(createTrackItem(track, "shared"));
-        });
+        }
+        state.renderedTrackDomCount = targetCount;
         updateSharedListPlaybackUI();
         updateStats();
         updateCoverPeekUI();
       }
 
       function renderSearchList() {
-        // Search results block removed from UI.
+        if (!els.ymSearchList) return;
+        const query = String(state.ymSearchQuery || "").trim();
+        const results = Array.isArray(state.ymSearchResults) ? state.ymSearchResults : [];
+        const loading = Boolean(state.ymSearchLoading);
+        const loadingMore = Boolean(state.ymSearchLoadingMore);
+        const isDesktop = window.matchMedia("(min-width: 820px)").matches;
+        const togglePrompt = (visible) => {
+          if (!els.ymSearchPrompt) return;
+          els.ymSearchPrompt.hidden = !visible;
+        };
+
+        const resetSearchDom = () => {
+          state.ymSearchRenderedDomCount = 0;
+          state.ymSearchRenderedVersion = state.ymSearchDataVersion;
+          els.ymSearchList.innerHTML = "";
+        };
+
+        if (!query && !loading) {
+          resetSearchDom();
+          togglePrompt(isDesktop);
+          if (!isDesktop) {
+            els.ymSearchList.innerHTML = '<li class="empty">Введите запрос для поиска треков в Яндекс Музыке.</li>';
+          }
+          updateSharedListPlaybackUI();
+          return;
+        }
+        togglePrompt(false);
+        if (loading) {
+          resetSearchDom();
+          return;
+        }
+        if (!results.length) {
+          resetSearchDom();
+          els.ymSearchList.innerHTML = '<li class="empty">Ничего не найдено. Уточните запрос.</li>';
+          return;
+        }
+
+        const targetCount = Math.min(
+          results.length,
+          Math.max(state.ymSearchChunkSize, Number(state.ymSearchRenderCount || state.ymSearchChunkSize))
+        );
+        state.ymSearchRenderCount = targetCount;
+
+        if (state.ymSearchRenderedVersion !== state.ymSearchDataVersion || state.ymSearchRenderedDomCount > targetCount) {
+          resetSearchDom();
+        }
+
+        const previousLoader = els.ymSearchList.querySelector(".ym-loading-more");
+        if (previousLoader) previousLoader.remove();
+
+        for (let i = state.ymSearchRenderedDomCount; i < targetCount; i += 1) {
+          const track = results[i];
+          if (!track) continue;
+          els.ymSearchList.appendChild(createTrackItem(track, "search"));
+        }
+        state.ymSearchRenderedDomCount = targetCount;
+
+        if (loadingMore) {
+          const loader = document.createElement("li");
+          loader.className = "empty ym-loading-more";
+          loader.textContent = "Загрузка…";
+          els.ymSearchList.appendChild(loader);
+        }
+
+        updateSharedListPlaybackUI();
+
+        requestAnimationFrame(() => {
+          maybeLoadMoreYmSearchTracks();
+        });
       }
 
-      function updateSharedListPlaybackUI() {
-        if (!els.sharedList) return;
+      function updateListPlaybackUI(container, source) {
+        if (!container) return;
         const currentTrack = state.currentTrack;
-        const useSharedSource = state.activeSource === "shared";
+        const sourceNormalized = source === "search" ? "search" : "shared";
+        const useSource = state.activeSource === sourceNormalized;
         const currentKey = String(currentTrack && currentTrack.key || "");
         const currentTrackId = String(currentTrack && currentTrack.trackId || "");
-        const isPlaying = Boolean(useSharedSource && currentTrack && !els.audio.paused);
+        const isPlaying = Boolean(useSource && currentTrack && !els.audio.paused);
         const playMarkup = '<path d="M8 5v14l11-7z"></path>';
         const pauseMarkup = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>';
 
-        const items = els.sharedList.querySelectorAll(".track-item");
+        const items = container.querySelectorAll(".track-item");
         items.forEach((item) => {
           const itemKey = String(item.dataset.trackKey || "");
           const itemTrackId = String(item.dataset.trackId || "");
           const isCurrent = Boolean(
-            useSharedSource
+            useSource
             && currentTrack
             && (
               (currentKey && itemKey && currentKey === itemKey)
@@ -3042,6 +3701,11 @@
           playButton.title = showPause ? "Пауза" : "Воспроизвести";
           icon.innerHTML = showPause ? pauseMarkup : playMarkup;
         });
+      }
+
+      function updateSharedListPlaybackUI() {
+        updateListPlaybackUI(els.sharedList, "shared");
+        updateListPlaybackUI(els.ymSearchList, "search");
       }
 
       async function yandexRequest(path, params = {}) {
@@ -3107,6 +3771,82 @@
       function applyListSearch() {
         state.listQuery = String((els.searchInput && els.searchInput.value) || "").trim();
         renderSharedList();
+      }
+
+      function getTrackSearchResults(payload) {
+        return ((((payload || {}).result || {}).tracks || {}).results || []);
+      }
+
+      function mapYmSearchTracks(rawTracks = []) {
+        const out = [];
+        const seen = new Set();
+        rawTracks.forEach((raw) => {
+          const mapped = toTrackModel(raw, "search");
+          if (!mapped.trackId || seen.has(mapped.trackId)) return;
+          seen.add(mapped.trackId);
+          out.push(mapped);
+        });
+        return out;
+      }
+
+      async function executeYmTrackSearch(query) {
+        const normalized = String(query || "").trim();
+        state.ymSearchQuery = normalized;
+        if (!normalized) {
+          state.ymSearchDataVersion += 1;
+          resetYmSearchLazyState();
+          renderSearchList();
+          return;
+        }
+
+        const requestSeq = ++state.ymSearchRequestSeq;
+        state.ymSearchDataVersion += 1;
+        resetYmSearchLazyState();
+        state.ymSearchLoading = true;
+        renderSearchList();
+        try {
+          const payload = await yandexRequest("/search", {
+            text: normalized,
+            type: "track",
+            page: 0,
+            nocorrect: false
+          });
+          if (requestSeq !== state.ymSearchRequestSeq) return;
+          const mapped = mapYmSearchTracks(getTrackSearchResults(payload));
+          const ranked = rankYmSearchTracks(mapped, normalized, "auto");
+          state.ymSearchResults = ranked.tracks;
+          state.ymSearchRankMode = ranked.mode;
+          const totalRaw = Number((((payload || {}).result || {}).tracks || {}).total || 0);
+          if (Number.isFinite(totalRaw) && totalRaw > 0) {
+            state.ymSearchTotal = totalRaw;
+          } else {
+            state.ymSearchTotal = mapped.length;
+          }
+          state.ymSearchPage = 0;
+          state.ymSearchHasMore = state.ymSearchTotal > state.ymSearchResults.length && mapped.length > 0;
+          state.ymSearchRenderCount = Math.min(state.ymSearchChunkSize, state.ymSearchResults.length);
+          state.ymSearchQuery = normalized;
+          state.ymSearchResults.slice(0, 6).forEach((track) => {
+            preloadCoverImage(track.coverUrl || "");
+          });
+        } catch (_) {
+          if (requestSeq !== state.ymSearchRequestSeq) return;
+          resetYmSearchLazyState();
+        } finally {
+          if (requestSeq !== state.ymSearchRequestSeq) return;
+          state.ymSearchLoading = false;
+          renderSearchList();
+        }
+      }
+
+      function scheduleYmTrackSearch(query) {
+        if (state.ymSearchDebounceTimer) {
+          clearTimeout(state.ymSearchDebounceTimer);
+        }
+        state.ymSearchDebounceTimer = setTimeout(() => {
+          state.ymSearchDebounceTimer = null;
+          executeYmTrackSearch(query);
+        }, 260);
       }
 
       function parseTrackUrl(url) {
@@ -3183,20 +3923,35 @@
         } finally {
           if (els.addByUrlBtn) {
             els.addByUrlBtn.disabled = false;
-            els.addByUrlBtn.textContent = "Добавить по ссылке";
+            els.addByUrlBtn.textContent = "Добавить";
           }
         }
       }
 
-      async function loadTrackByUrl() {
+      async function handleUnifiedTrackInputSubmit() {
         if (!els.trackUrlInput) return;
         const raw = String(els.trackUrlInput.value || "").trim();
-        if (!raw) {
-          toast("Вставь ссылку на трек Яндекс Музыки", "err");
+        if (!raw) return;
+
+        const parsed = parseTrackUrl(raw);
+        if (parsed && parsed.trackId) {
+          if (state.ymSearchDebounceTimer) {
+            clearTimeout(state.ymSearchDebounceTimer);
+            state.ymSearchDebounceTimer = null;
+          }
+          state.ymSearchDataVersion += 1;
+          resetYmSearchLazyState();
+          renderSearchList();
+          await loadTrackByParsed(parsed, { clearInput: true });
           return;
         }
-        const parsed = parseTrackUrl(raw);
-        await loadTrackByParsed(parsed, { clearInput: true });
+
+        state.ymSearchQuery = raw;
+        if (state.ymSearchDebounceTimer) {
+          clearTimeout(state.ymSearchDebounceTimer);
+          state.ymSearchDebounceTimer = null;
+        }
+        await executeYmTrackSearch(raw);
       }
 
       async function resolveStream(track) {
@@ -3458,7 +4213,6 @@
           toast("Невалидный трек", "err");
           return;
         }
-
         const user = state.currentUser || { username: "guest", name: "Guest" };
         const snapshot = await state.db
           .ref(COMMUNITY_TRACKS_PATH)
@@ -3571,6 +4325,7 @@
           items.push(normalized);
         });
         state.sharedTracks = items;
+        refreshAddedByFilterOptions();
         state.sharedTracksLoaded = true;
         const nextVisible = getVisibleTracks();
         const patchOnlyLikes = canPatchRenderedList(prevRendered, nextVisible);
@@ -3599,6 +4354,7 @@
           repeatMode: state.repeatMode,
           shuffle: state.shuffle,
           filter: state.filter,
+          addedByFilter: state.addedByFilter,
           sort: state.sort
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
@@ -3620,6 +4376,10 @@
         if (saved.filter) {
           state.filter = String(saved.filter);
           if (els.filterSelect) els.filterSelect.value = state.filter;
+        }
+        if (saved.addedByFilter) {
+          state.addedByFilter = String(saved.addedByFilter);
+          updateAddedByFilterLabel();
         }
         if (saved.sort) {
           state.sort = String(saved.sort);
@@ -3716,11 +4476,72 @@
             }
           });
         }
-        if (els.addByUrlBtn) els.addByUrlBtn.addEventListener("click", loadTrackByUrl);
-        if (els.trackUrlInput) {
-          els.trackUrlInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") loadTrackByUrl();
-            if (e.key === "Escape") setActiveToolPanel("");
+        if (els.sharedList) {
+          let lazyScrollTicking = false;
+          els.sharedList.addEventListener("scroll", () => {
+            if (lazyScrollTicking) return;
+            lazyScrollTicking = true;
+            requestAnimationFrame(() => {
+              lazyScrollTicking = false;
+              maybeLoadMoreSharedTracks();
+            });
+          }, { passive: true });
+        }
+        if (els.ymSearchList) {
+          let ymLazyScrollTicking = false;
+          els.ymSearchList.addEventListener("scroll", () => {
+            if (ymLazyScrollTicking) return;
+            ymLazyScrollTicking = true;
+            requestAnimationFrame(() => {
+              ymLazyScrollTicking = false;
+              maybeLoadMoreYmSearchTracks();
+            });
+          }, { passive: true });
+        }
+        if (els.addByUrlBtn) {
+          els.addByUrlBtn.addEventListener("click", () => {
+            handleUnifiedTrackInputSubmit();
+          });
+        }
+        if (els.ymSearchInput) {
+          els.ymSearchInput.addEventListener("input", () => {
+            const query = String(els.ymSearchInput.value || "").trim();
+            state.ymSearchQuery = query;
+            if (!query) {
+              state.ymSearchDataVersion += 1;
+              resetYmSearchLazyState();
+              renderSearchList();
+              return;
+            }
+            const parsed = parseTrackUrl(query);
+            if (parsed && parsed.trackId) {
+              if (state.ymSearchDebounceTimer) {
+                clearTimeout(state.ymSearchDebounceTimer);
+                state.ymSearchDebounceTimer = null;
+              }
+              state.ymSearchDataVersion += 1;
+              resetYmSearchLazyState();
+              renderSearchList();
+              return;
+            }
+            scheduleYmTrackSearch(query);
+          });
+          els.ymSearchInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              const query = String(els.ymSearchInput.value || "").trim();
+              if (!query) {
+                state.ymSearchDataVersion += 1;
+                resetYmSearchLazyState();
+                renderSearchList();
+                return;
+              }
+              handleUnifiedTrackInputSubmit();
+              return;
+            }
+            if (event.key === "Escape") {
+              setActiveToolPanel("");
+            }
           });
         }
 
@@ -4161,6 +4982,28 @@
             state.filter = els.filterSelect.value;
             renderSharedList();
             persistPlayerSettings();
+          });
+        }
+        if (els.addedByFilterBtn && els.addedByFilterRoot && els.addedByFilterMenu) {
+          els.addedByFilterBtn.addEventListener("click", () => {
+            const isOpen = els.addedByFilterRoot.classList.contains("is-open");
+            setAddedByFilterMenuOpen(!isOpen);
+          });
+
+          els.addedByFilterMenu.addEventListener("click", (event) => {
+            const option = event.target.closest(".added-by-filter-option");
+            if (!option) return;
+            applyAddedByFilterValue(String(option.dataset.value || "all"));
+          });
+
+          document.addEventListener("click", (event) => {
+            if (!els.addedByFilterRoot.classList.contains("is-open")) return;
+            if (els.addedByFilterRoot.contains(event.target)) return;
+            setAddedByFilterMenuOpen(false);
+          });
+
+          document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") setAddedByFilterMenuOpen(false);
           });
         }
         if (els.sortSelect) {
