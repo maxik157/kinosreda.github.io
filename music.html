@@ -414,13 +414,130 @@
       transition: width 110ms linear;
     }
 
+    .controls-row {
+      --controls-side-width: clamp(240px, 28vw, 430px);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 56px;
+      margin: 14px 0 12px;
+    }
+
     .controls {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 10px;
-      margin: 14px 0 12px;
-      flex-wrap: wrap;
+      margin: 0;
+      flex-wrap: nowrap;
+    }
+
+    .volume-wrap {
+      display: flex;
+      justify-content: flex-start;
+      width: var(--controls-side-width);
+      margin: 0;
+    }
+
+    .controls-spacer {
+      display: none;
+    }
+
+    .volume-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+      padding: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .volume-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      background: rgba(17, 13, 8, 0.86);
+      color: #f8e3bf;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
+      flex: 0 0 auto;
+    }
+
+    .volume-btn:hover {
+      border-color: rgba(252, 211, 77, 0.62);
+      color: var(--accent-2);
+      transform: translateY(-1px);
+    }
+
+    .volume-btn:active {
+      transform: scale(0.96);
+    }
+
+    .volume-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1 1 auto;
+      height: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.24);
+      background: linear-gradient(90deg, rgba(252, 211, 77, 0.35), rgba(252, 211, 77, 0.08));
+      outline: none;
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(252, 211, 77, 0.85);
+      background: linear-gradient(145deg, #fcd34d, #f59e0b);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+    }
+
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgba(252, 211, 77, 0.85);
+      background: linear-gradient(145deg, #fcd34d, #f59e0b);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.28);
+    }
+
+    .volume-value {
+      min-width: 36px;
+      margin-left: 2px;
+      text-align: right;
+      color: #f0d2a0;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      font-variant-numeric: tabular-nums;
+      flex: 0 0 auto;
     }
 
     .ctl {
@@ -861,12 +978,53 @@
 
     .ym-search-block {
       position: relative;
-      display: grid;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       gap: 8px;
     }
 
     .ym-search-wrap {
       position: relative;
+      flex: 0 0 auto;
+    }
+
+    .ym-source-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding: 4px;
+      border: 1px solid var(--line-soft);
+      border-radius: 999px;
+      background: rgba(13, 10, 6, 0.9);
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .ym-source-btn {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-dim);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font: 600 12px/1 "Comfortaa", cursive;
+      cursor: pointer;
+      transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .ym-source-btn.is-active {
+      color: var(--text-main);
+      border-color: rgba(252, 211, 77, 0.34);
+      background: linear-gradient(150deg, rgba(252, 211, 77, 0.22), rgba(245, 158, 11, 0.16));
+    }
+
+    .ym-source-btn:focus-visible {
+      outline: none;
+      border-color: rgba(245, 158, 11, 0.7);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24);
     }
 
     .ym-input-row {
@@ -877,10 +1035,19 @@
     }
 
     .ym-search-prompt {
-      margin: 8px 0 2px;
+      margin: 10px auto 8px;
+      max-width: min(640px, 100%);
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(252, 211, 77, 0.22);
+      background:
+        radial-gradient(140% 140% at 0% 0%, rgba(252, 211, 77, 0.14), rgba(252, 211, 77, 0)),
+        rgba(13, 10, 6, 0.72);
       font-size: 12px;
-      color: #c6a86f;
+      color: #f3d7a4;
       text-align: center;
+      letter-spacing: 0.01em;
+      line-height: 1.45;
     }
 
     .ym-search-list {
@@ -890,6 +1057,10 @@
       padding-right: 1px;
       overflow-y: auto;
       overscroll-behavior: contain;
+      justify-content: flex-start;
+      align-content: flex-start;
+      align-items: stretch;
+      margin-top: 0;
     }
 
     .panel-body.is-add-mode #sharedList {
@@ -1094,6 +1265,13 @@
       transform: scale(0.96);
     }
 
+    .icon-btn:disabled {
+      opacity: 0.62;
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+    }
+
     .icon-btn svg {
       width: 18px;
       height: 18px;
@@ -1141,6 +1319,44 @@
       background: rgba(13, 10, 6, 0.62);
       font-size: 13px;
       line-height: 1.35;
+    }
+
+    .ym-search-notice {
+      display: grid;
+      place-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      border-style: solid;
+      border-width: 1px;
+      border-radius: 14px;
+      padding: 14px 14px;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.45;
+      letter-spacing: 0.01em;
+    }
+
+    .ym-search-notice::before {
+      content: attr(data-icon);
+      font-size: 14px;
+      opacity: 0.95;
+      line-height: 1;
+    }
+
+    .ym-search-notice--info {
+      border-color: rgba(252, 211, 77, 0.34);
+      background:
+        radial-gradient(120% 120% at 0% 0%, rgba(252, 211, 77, 0.14), rgba(252, 211, 77, 0)),
+        rgba(13, 10, 6, 0.68);
+      color: #f2d7a5;
+    }
+
+    .ym-search-notice--warn {
+      border-color: rgba(248, 176, 72, 0.36);
+      background:
+        radial-gradient(120% 120% at 100% 0%, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0)),
+        rgba(13, 10, 6, 0.68);
+      color: #f7d6a0;
     }
 
     .tagline {
@@ -1317,6 +1533,41 @@
       .added-by-filter {
         width: 158px;
         max-width: 62vw;
+      }
+      .controls-row {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .volume-wrap {
+        margin: 0;
+        justify-content: center;
+        width: auto;
+        transform: none;
+      }
+      .controls-spacer {
+        display: none;
+      }
+      .volume-control {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+      }
+      .volume-value {
+        min-width: 40px;
+        font-size: 11px;
+      }
+      .controls {
+        flex-wrap: wrap;
+        position: static;
+        left: auto;
+        transform: none;
+      }
+      .fullscreen-controls-row .fullscreen-controls {
+        position: static;
+        left: auto;
+        transform: none;
       }
     }
 
@@ -1555,7 +1806,40 @@
     }
 
     .fullscreen-controls {
-      margin-bottom: 2px;
+      margin: 0;
+    }
+
+    .fullscreen-controls-row {
+      --fullscreen-side-width: clamp(240px, 28vw, 430px);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 56px;
+      margin-top: 10px;
+    }
+
+    .fullscreen-controls-row .fullscreen-controls {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .fullscreen-controls-row .volume-wrap {
+      width: var(--fullscreen-side-width);
+      margin: 0;
+    }
+
+    .fullscreen-controls-spacer {
+      display: none;
+    }
+
+    .fullscreen-bottom .volume-control {
+      min-width: min(100%, 460px);
+      max-width: min(100%, 620px);
+      background: transparent;
+      border: none;
+      box-shadow: none;
     }
   </style>
 </head>
@@ -1592,34 +1876,51 @@
             </div>
           </div>
 
-          <div class="controls">
-            <button id="shuffleBtn" class="ctl" title="Перемешивание: выключено">
-              <svg id="shuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
-                <polyline points="16 3 21 3 21 8"></polyline>
-                <line x1="4" y1="20" x2="21" y2="3"></line>
-                <polyline points="21 16 21 21 16 21"></polyline>
-                <line x1="15" y1="15" x2="21" y2="21"></line>
-                <line x1="4" y1="4" x2="9" y2="9"></line>
-              </svg>
-            </button>
-            <button id="prevBtn" class="ctl" title="Предыдущий">
-              <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
-            </button>
-            <button id="playBtn" class="ctl ctl--big" title="Play/Pause">
-              <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-            </button>
-            <button id="nextBtn" class="ctl" title="Следующий">
-              <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
-            </button>
-            <button id="repeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
-              <svg id="repeatIcon" class="icon-stroke" viewBox="0 0 24 24">
-                <polyline points="17 1 21 5 17 9"></polyline>
-                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                <polyline points="7 23 3 19 7 15"></polyline>
-                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-              </svg>
-              <span class="ctl-badge">1</span>
-            </button>
+          <div class="controls-row">
+            <div class="controls">
+              <button id="shuffleBtn" class="ctl" title="Перемешивание: выключено">
+                <svg id="shuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+              </button>
+              <button id="prevBtn" class="ctl" title="Предыдущий">
+                <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
+              </button>
+              <button id="playBtn" class="ctl ctl--big" title="Play/Pause">
+                <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+              </button>
+              <button id="nextBtn" class="ctl" title="Следующий">
+                <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
+              </button>
+              <button id="repeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
+                <svg id="repeatIcon" class="icon-stroke" viewBox="0 0 24 24">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+                <span class="ctl-badge">1</span>
+              </button>
+            </div>
+
+            <div class="volume-wrap">
+              <div class="volume-control" aria-label="Громкость">
+                <button id="volumeToggleBtn" class="volume-btn" type="button" title="Выключить звук" aria-label="Включить или выключить звук">
+                  <svg id="volumeIcon" viewBox="0 0 24 24">
+                    <polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>
+                    <path d="M17.8 7a7 7 0 0 1 0 10"></path>
+                  </svg>
+                </button>
+                <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="85" aria-label="Громкость">
+                <span id="volumeValue" class="volume-value">85%</span>
+              </div>
+            </div>
+            <div class="controls-spacer" aria-hidden="true"></div>
           </div>
 
           <div class="list-toolbar">
@@ -1661,11 +1962,15 @@
             <div id="addPanel" class="tool-panel tool-panel--stack">
               <div class="ym-search-block">
                 <div class="ym-search-wrap">
+                  <div class="ym-source-switch" role="tablist" aria-label="Источник поиска">
+                    <button id="ymSourceYandexBtn" class="ym-source-btn is-active" type="button" data-source="yandex" aria-pressed="true">Яндекс Музыка</button>
+                    <button id="ymSourceYoutubeBtn" class="ym-source-btn" type="button" data-source="youtube" aria-pressed="false">YouTube Music</button>
+                  </div>
                   <div class="ym-input-row">
                     <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек или введите запрос">
                     <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
                   </div>
-                  <p id="ymSearchPrompt" class="hint ym-search-prompt">Введите запрос для поиска треков в Яндекс Музыке.</p>
+                  <p id="ymSearchPrompt" class="hint ym-search-prompt">Начните вводить название трека, исполнителя или вставьте ссылку из Яндекс Музыки.</p>
                 </div>
                 <ul id="ymSearchList" class="list ym-search-list"></ul>
               </div>
@@ -1703,34 +2008,50 @@
           <div class="progress-fill" id="fsProgressFill"></div>
         </div>
 
-        <div class="controls fullscreen-controls">
-          <button id="fsShuffleBtn" class="ctl" title="Перемешивание: выключено">
-            <svg id="fsShuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
-              <polyline points="16 3 21 3 21 8"></polyline>
-              <line x1="4" y1="20" x2="21" y2="3"></line>
-              <polyline points="21 16 21 21 16 21"></polyline>
-              <line x1="15" y1="15" x2="21" y2="21"></line>
-              <line x1="4" y1="4" x2="9" y2="9"></line>
-            </svg>
-          </button>
-          <button id="fsPrevBtn" class="ctl" title="Предыдущий">
-            <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
-          </button>
-          <button id="fsPlayBtn" class="ctl ctl--big" title="Play/Pause">
-            <svg id="fsPlayIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-          </button>
-          <button id="fsNextBtn" class="ctl" title="Следующий">
-            <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
-          </button>
-          <button id="fsRepeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
-            <svg id="fsRepeatIcon" class="icon-stroke" viewBox="0 0 24 24">
-              <polyline points="17 1 21 5 17 9"></polyline>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-              <polyline points="7 23 3 19 7 15"></polyline>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-            </svg>
-            <span class="ctl-badge">1</span>
-          </button>
+        <div class="fullscreen-controls-row">
+          <div class="volume-wrap">
+            <div class="volume-control" aria-label="Громкость в полноэкранном режиме">
+              <button id="fsVolumeToggleBtn" class="volume-btn" type="button" title="Выключить звук" aria-label="Включить или выключить звук">
+                <svg id="fsVolumeIcon" viewBox="0 0 24 24">
+                  <polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"></polygon>
+                  <path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>
+                  <path d="M17.8 7a7 7 0 0 1 0 10"></path>
+                </svg>
+              </button>
+              <input id="fsVolumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="85" aria-label="Громкость">
+              <span id="fsVolumeValue" class="volume-value">85%</span>
+            </div>
+          </div>
+          <div class="controls fullscreen-controls">
+            <button id="fsShuffleBtn" class="ctl" title="Перемешивание: выключено">
+              <svg id="fsShuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </button>
+            <button id="fsPrevBtn" class="ctl" title="Предыдущий">
+              <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
+            </button>
+            <button id="fsPlayBtn" class="ctl ctl--big" title="Play/Pause">
+              <svg id="fsPlayIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+            </button>
+            <button id="fsNextBtn" class="ctl" title="Следующий">
+              <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
+            </button>
+            <button id="fsRepeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
+              <svg id="fsRepeatIcon" class="icon-stroke" viewBox="0 0 24 24">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+              <span class="ctl-badge">1</span>
+            </button>
+          </div>
+          <div class="fullscreen-controls-spacer" aria-hidden="true"></div>
         </div>
       </div>
     </div>
@@ -1756,6 +2077,9 @@
       const YANDEX_PROXY_BASE = `${REALTIME_HTTP_BASE}/yandex-music`;
       const YANDEX_RESOLVE_ENDPOINT = `${REALTIME_HTTP_BASE}/ym-resolve-download`;
       const YANDEX_TRACK_LINK_ENDPOINT = `${REALTIME_HTTP_BASE}/ym-track-link`;
+      const YTM_PROXY_BASE = `${REALTIME_HTTP_BASE}/ytm`;
+      const YTM_TRACK_ENDPOINT = `${REALTIME_HTTP_BASE}/ytm/track`;
+      const YTM_STREAM_ENDPOINT = `${REALTIME_HTTP_BASE}/ytm/stream`;
       const YANDEX_OAUTH_CONFIG_ENDPOINT = `${REALTIME_HTTP_BASE}/yandex-oauth/config`;
       const YANDEX_OAUTH_CLIENT_ID_FALLBACK = "3c6ee128ac25410685d426232c743093";
       const YANDEX_OAUTH_AUTHORIZE_URL_FALLBACK = "https://oauth.yandex.ru/authorize";
@@ -1805,6 +2129,7 @@
         ymSearchRequestSeq: 0,
         ymSearchDebounceTimer: null,
         ymSearchRankMode: "auto",
+        ymSearchSource: "yandex",
         activeToolPanel: "",
         addHelpOpen: false,
         filter: "all",
@@ -1819,7 +2144,11 @@
         playbackRestoreEpoch: 0,
         coverSwipeInProgress: false,
         lastOutgoingTrackId: "",
-        lastOutgoingCoverSrc: ""
+        lastOutgoingCoverSrc: "",
+        audioRecoveryInProgress: false,
+        lastAudioRecoveryAt: 0,
+        youtubePrefetchTimer: 0,
+        lastVolumeBeforeMute: 0.85
       };
       const coverPreloadPromises = new Map();
 
@@ -1842,6 +2171,10 @@
         progressFill: document.getElementById("progressFill"),
         playBtn: document.getElementById("playBtn"),
         playIcon: document.getElementById("playIcon"),
+        volumeToggleBtn: document.getElementById("volumeToggleBtn"),
+        volumeIcon: document.getElementById("volumeIcon"),
+        volumeSlider: document.getElementById("volumeSlider"),
+        volumeValue: document.getElementById("volumeValue"),
         shuffleIcon: document.getElementById("shuffleIcon"),
         repeatIcon: document.getElementById("repeatIcon"),
         prevBtn: document.getElementById("prevBtn"),
@@ -1859,6 +2192,10 @@
         fsProgressFill: document.getElementById("fsProgressFill"),
         fsPlayBtn: document.getElementById("fsPlayBtn"),
         fsPlayIcon: document.getElementById("fsPlayIcon"),
+        fsVolumeToggleBtn: document.getElementById("fsVolumeToggleBtn"),
+        fsVolumeIcon: document.getElementById("fsVolumeIcon"),
+        fsVolumeSlider: document.getElementById("fsVolumeSlider"),
+        fsVolumeValue: document.getElementById("fsVolumeValue"),
         fsPrevBtn: document.getElementById("fsPrevBtn"),
         fsNextBtn: document.getElementById("fsNextBtn"),
         fsRepeatBtn: document.getElementById("fsRepeatBtn"),
@@ -1877,6 +2214,8 @@
         ymSearchInput: document.getElementById("trackUrlInput"),
         ymSearchPrompt: document.getElementById("ymSearchPrompt"),
         ymSearchList: document.getElementById("ymSearchList"),
+        ymSourceYandexBtn: document.getElementById("ymSourceYandexBtn"),
+        ymSourceYoutubeBtn: document.getElementById("ymSourceYoutubeBtn"),
         panelBody: document.querySelector(".panel-body"),
         oauthLoginBtn: document.getElementById("oauthLoginBtn"),
         oauthLogoutBtn: document.getElementById("oauthLogoutBtn"),
@@ -1909,6 +2248,7 @@
 
       function buildPlaybackTrackSnapshot(track) {
         if (!track || !track.trackId) return null;
+        const provider = normalizeTrackProvider(track.provider);
         return {
           key: String(track.key || ""),
           trackId: String(track.trackId || ""),
@@ -1918,8 +2258,9 @@
           durationMs: Number(track.durationMs || 0),
           coverUrl: String(track.coverUrl || FALLBACK_COVER),
           sourceUrl: String(track.sourceUrl || ""),
-          streamUrl: String(track.streamUrl || ""),
-          bitrate: String(track.bitrate || ""),
+          streamUrl: provider === "youtube" ? "" : String(track.streamUrl || ""),
+          bitrate: provider === "youtube" ? "" : String(track.bitrate || ""),
+          provider,
           addedByName: String(track.addedByName || ""),
           addedByUsername: String(track.addedByUsername || ""),
           addedAt: Number(track.addedAt || 0),
@@ -2216,6 +2557,44 @@
       }
 
       function buildCoverUrl(rawTrack) {
+        const upscaleCoverUrl = (input) => {
+          let url = String(input || "").trim();
+          if (!url) return "";
+          url = url.replace("%%", "1000x1000");
+          if (url.startsWith("//")) url = `https:${url}`;
+          if (url.startsWith("/")) url = `https://music.yandex.ru${url}`;
+          if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+
+          const provider = normalizeTrackProvider(rawTrack && rawTrack.provider);
+          const isYoutubeLike = provider === "youtube"
+            || /(?:ytimg\.com|googleusercontent\.com|youtube\.com)/i.test(url);
+          if (isYoutubeLike) {
+            url = url.replace(/=w\d+-h\d+[^?&]*/i, "=w1200-h1200-s-l90-rj");
+            url = url.replace(/=s\d+(-[a-z0-9]+)*(-rj)?/i, "=s1200-c-k-c0x00ffffff-no-rj");
+            url = url.replace(/\/s\d+(-[a-z0-9]+)*(-rj)?(?=$|[/?#])/i, "/s1200-c-k-c0x00ffffff-no-rj");
+          }
+
+          const isYandexLike = provider === "yandex" || /(?:music|avatars)\.yandex\./i.test(url);
+          if (isYandexLike) {
+            url = url.replace(/\/\d+x\d+(?=\/)/i, "/1000x1000");
+          }
+          return url;
+        };
+
+        if (Array.isArray(rawTrack && rawTrack.thumbnails) && rawTrack.thumbnails.length) {
+          const thumbs = rawTrack.thumbnails.filter((item) => item && typeof item === "object");
+          thumbs.sort((a, b) => {
+            const aSize = Number(a.width || 0) * Number(a.height || 0);
+            const bSize = Number(b.width || 0) * Number(b.height || 0);
+            return bSize - aSize;
+          });
+          const top = String((thumbs[0] && thumbs[0].url) || "").trim();
+          if (top) return upscaleCoverUrl(top) || FALLBACK_COVER;
+        }
+        if (rawTrack && rawTrack.thumbnail && typeof rawTrack.thumbnail === "object") {
+          const maybeThumb = buildCoverUrl({ thumbnails: rawTrack.thumbnail.thumbnails || [] });
+          if (maybeThumb && maybeThumb !== FALLBACK_COVER) return maybeThumb;
+        }
         const raw = String(
           rawTrack.coverUrl
           || rawTrack.coverUri
@@ -2225,11 +2604,20 @@
           || ""
         ).trim();
         if (!raw) return FALLBACK_COVER;
-        let url = raw.replace("%%", "400x400");
-        if (url.startsWith("//")) url = `https:${url}`;
-        if (url.startsWith("/")) url = `https://music.yandex.ru${url}`;
-        if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
-        return url;
+        return upscaleCoverUrl(raw) || FALLBACK_COVER;
+      }
+
+      function isFallbackCoverUrl(value) {
+        const url = String(value || "").trim();
+        return !url || url === FALLBACK_COVER;
+      }
+
+      function pickBestCoverUrl(...values) {
+        for (const value of values) {
+          const url = String(value || "").trim();
+          if (!isFallbackCoverUrl(url)) return url;
+        }
+        return FALLBACK_COVER;
       }
 
       function preloadCoverImage(src) {
@@ -2247,10 +2635,36 @@
         return promise;
       }
 
-      function extractTrackId(value) {
+      function normalizeTrackProvider(value) {
+        const raw = String(value || "").trim().toLowerCase();
+        if (raw === "youtube" || raw === "yt" || raw === "ytmusic") return "youtube";
+        return "yandex";
+      }
+
+      function extractYandexTrackId(value) {
         const string = String(value || "");
         const matched = string.match(/(\d+)/);
         return matched ? matched[1] : "";
+      }
+
+      function extractYouTubeVideoId(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        const asId = raw.match(/^[A-Za-z0-9_-]{11}$/);
+        if (asId) return asId[0];
+        const watch = raw.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+        if (watch) return watch[1];
+        const short = raw.match(/youtu\.be\/([A-Za-z0-9_-]{11})/i);
+        if (short) return short[1];
+        const path = raw.match(/\/watch\/([A-Za-z0-9_-]{11})/i);
+        if (path) return path[1];
+        return "";
+      }
+
+      function extractTrackId(value, provider = "yandex") {
+        return normalizeTrackProvider(provider) === "youtube"
+          ? extractYouTubeVideoId(value)
+          : extractYandexTrackId(value);
       }
 
       function extractArtists(rawTrack) {
@@ -2290,26 +2704,53 @@
         addName(rawTrack && rawTrack.artist);
         addName(rawTrack && rawTrack.artistsName);
         addName(rawTrack && rawTrack.subtitle);
+        addName(rawTrack && rawTrack.author);
+        addName(rawTrack && rawTrack.uploader);
+        addName(rawTrack && rawTrack.channel);
         return [...new Set(names)];
       }
 
       function toTrackModel(rawTrack, source = "search") {
-        const trackId = extractTrackId(rawTrack.trackId || rawTrack.id || rawTrack.realId || rawTrack.track_id);
-        const albumId = extractTrackId(
-          rawTrack.albumId
-          || (rawTrack.albums && rawTrack.albums[0] && rawTrack.albums[0].id)
-          || (rawTrack.album && rawTrack.album.id)
-          || rawTrack.album_id
+        const provider = normalizeTrackProvider(
+          rawTrack.provider
+          || rawTrack.service
+          || (String(rawTrack.sourceUrl || rawTrack.url || "").includes("youtube") ? "youtube" : "yandex")
         );
+        const trackId = provider === "youtube"
+          ? extractTrackId(
+            rawTrack.videoId
+            || rawTrack.video_id
+            || rawTrack.trackId
+            || rawTrack.id
+            || rawTrack.url
+            || rawTrack.sourceUrl,
+            "youtube"
+          )
+          : extractTrackId(rawTrack.trackId || rawTrack.id || rawTrack.realId || rawTrack.track_id, "yandex");
+        const albumId = provider === "youtube"
+          ? String(
+            rawTrack.albumId
+            || (rawTrack.album && rawTrack.album.id)
+            || rawTrack.album_id
+            || ""
+          ).trim()
+          : extractTrackId(
+            rawTrack.albumId
+            || (rawTrack.albums && rawTrack.albums[0] && rawTrack.albums[0].id)
+            || (rawTrack.album && rawTrack.album.id)
+            || rawTrack.album_id
+          );
         const artists = extractArtists(rawTrack);
         const title = String(rawTrack.title || rawTrack.name || `Трек ${trackId || "без id"}`).trim();
         const rawDuration = Number(rawTrack.durationMs || rawTrack.duration_ms || rawTrack.duration || rawTrack.track_duration || 0);
         const durationMs = rawDuration > 0 && rawDuration < 10000 ? rawDuration * 1000 : rawDuration;
         const coverUrl = buildCoverUrl(rawTrack);
         const sourceUrl = rawTrack.sourceUrl
-          || (albumId
-            ? `https://music.yandex.ru/album/${albumId}/track/${trackId}`
-            : `https://music.yandex.ru/track/${trackId}`);
+          || (provider === "youtube"
+            ? `https://music.youtube.com/watch?v=${trackId}`
+            : (albumId
+              ? `https://music.yandex.ru/album/${albumId}/track/${trackId}`
+              : `https://music.yandex.ru/track/${trackId}`));
         const likes = rawTrack.likes && typeof rawTrack.likes === "object" ? rawTrack.likes : {};
 
         return {
@@ -2327,6 +2768,7 @@
           addedByName: rawTrack.addedByName || "",
           addedByUsername: rawTrack.addedByUsername || "",
           likes,
+          provider,
           source
         };
       }
@@ -2337,6 +2779,7 @@
         const key = String(snapshot.track.key || "");
         const trackId = String(snapshot.track.trackId || "");
         const albumId = String(snapshot.track.albumId || "");
+        const provider = normalizeTrackProvider(snapshot.track.provider);
 
         if (source === "shared" && Array.isArray(state.sharedTracks) && state.sharedTracks.length) {
           const byKey = key
@@ -2347,6 +2790,7 @@
           const byTrack = state.sharedTracks.find((item) => {
             if (!item) return false;
             if (String(item.trackId || "") !== trackId) return false;
+            if (normalizeTrackProvider(item.provider) !== provider) return false;
             const itemAlbum = String(item.albumId || "");
             return !albumId || !itemAlbum || itemAlbum === albumId;
           });
@@ -2423,10 +2867,15 @@
           }
 
           if (snapshot.wasPlaying) {
+            let resumed = false;
             try {
               await els.audio.play();
-              setPlayButtonState(true);
+              resumed = !els.audio.paused && !els.audio.ended;
             } catch (_) {}
+            setPlayButtonState(resumed);
+            if (!resumed) {
+              try { els.audio.pause(); } catch (_) {}
+            }
           } else {
             els.audio.pause();
             setPlayButtonState(false);
@@ -2527,6 +2976,71 @@
         }
         updateSharedListPlaybackUI();
         notifyParentPlayerState();
+      }
+
+      function clampVolume(value) {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return 0.85;
+        return Math.max(0, Math.min(1, numeric));
+      }
+
+      function getVolumeIconMarkup(volume) {
+        const safeVolume = clampVolume(volume);
+        const speaker = '<polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"></polygon>';
+        if (safeVolume <= 0.001) {
+          return `${speaker}<line x1="3" y1="3" x2="21" y2="21"></line>`;
+        }
+        if (safeVolume < 0.55) {
+          return `${speaker}<path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>`;
+        }
+        return `${speaker}<path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path><path d="M17.8 7a7 7 0 0 1 0 10"></path>`;
+      }
+
+      function setVolume(nextVolume, { persist = true, fromAudioEvent = false } = {}) {
+        const volume = clampVolume(nextVolume);
+        if (!fromAudioEvent && els.audio) {
+          els.audio.volume = volume;
+        }
+
+        if (volume > 0.001) {
+          state.lastVolumeBeforeMute = volume;
+        }
+
+        const percent = Math.round(volume * 100);
+        if (els.volumeSlider && String(els.volumeSlider.value) !== String(percent)) {
+          els.volumeSlider.value = String(percent);
+        }
+        if (els.fsVolumeSlider && String(els.fsVolumeSlider.value) !== String(percent)) {
+          els.fsVolumeSlider.value = String(percent);
+        }
+        if (els.volumeValue) {
+          els.volumeValue.textContent = `${percent}%`;
+        }
+        if (els.fsVolumeValue) {
+          els.fsVolumeValue.textContent = `${percent}%`;
+        }
+
+        const iconMarkup = getVolumeIconMarkup(volume);
+        if (els.volumeIcon) els.volumeIcon.innerHTML = iconMarkup;
+        if (els.fsVolumeIcon) els.fsVolumeIcon.innerHTML = iconMarkup;
+
+        const buttonTitle = volume <= 0.001 ? "Включить звук" : "Выключить звук";
+        if (els.volumeToggleBtn) els.volumeToggleBtn.title = buttonTitle;
+        if (els.fsVolumeToggleBtn) els.fsVolumeToggleBtn.title = buttonTitle;
+
+        if (persist) {
+          persistPlayerSettings();
+        }
+      }
+
+      function toggleMuteVolume() {
+        const current = clampVolume(els.audio && els.audio.volume);
+        if (current <= 0.001) {
+          const restoreVolume = clampVolume(state.lastVolumeBeforeMute || 0.85);
+          setVolume(restoreVolume);
+          return;
+        }
+        setVolume(0);
       }
 
       function setShuffleMode(enabled) {
@@ -2850,11 +3364,31 @@
         if (updateLabels && els.fsTimeTotal) els.fsTimeTotal.textContent = formatTime(safeDuration);
       }
 
-      function seekByClientX(clientX, progressElement = els.progressBar) {
+      async function seekByClientX(clientX, progressElement = els.progressBar, options = {}) {
         const target = getSeekTargetByClientX(clientX, progressElement);
         if (!target) return;
-        els.audio.currentTime = target.targetTime;
+        await seekToTime(target.targetTime, options);
+      }
+
+      async function seekToTime(targetTime, { resume = null } = {}) {
+        const duration = Number(els.audio.duration);
+        if (!Number.isFinite(duration) || duration <= 0) return false;
+        const safeTime = Math.max(0, Math.min(duration, Number(targetTime) || 0));
+        const shouldResume = resume == null ? !els.audio.paused : Boolean(resume);
+        if (typeof els.audio.fastSeek === "function") {
+          try {
+            els.audio.fastSeek(safeTime);
+          } catch (_) {
+            els.audio.currentTime = safeTime;
+          }
+        } else {
+          els.audio.currentTime = safeTime;
+        }
         updateProgressUI();
+        if (shouldResume) {
+          try { await els.audio.play(); } catch (_) {}
+        }
+        return true;
       }
 
       function updateMediaSessionPositionState() {
@@ -2955,23 +3489,22 @@
           const offset = Number(details && details.seekOffset) || 10;
           const duration = Number(els.audio.duration);
           if (!Number.isFinite(duration) || duration <= 0) return;
-          els.audio.currentTime = Math.max(0, (Number(els.audio.currentTime) || 0) - offset);
-          updateProgressUI();
+          const nextTime = Math.max(0, (Number(els.audio.currentTime) || 0) - offset);
+          seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekforward", (details) => {
           const offset = Number(details && details.seekOffset) || 10;
           const duration = Number(els.audio.duration);
           if (!Number.isFinite(duration) || duration <= 0) return;
-          els.audio.currentTime = Math.min(duration, (Number(els.audio.currentTime) || 0) + offset);
-          updateProgressUI();
+          const nextTime = Math.min(duration, (Number(els.audio.currentTime) || 0) + offset);
+          seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekto", (details) => {
           const duration = Number(els.audio.duration);
           if (!Number.isFinite(duration) || duration <= 0) return;
           const seekTime = Number(details && details.seekTime);
           if (!Number.isFinite(seekTime)) return;
-          els.audio.currentTime = Math.max(0, Math.min(duration, seekTime));
-          updateProgressUI();
+          seekToTime(Math.max(0, Math.min(duration, seekTime)), { resume: !els.audio.paused });
         });
       }
 
@@ -3115,6 +3648,7 @@
         const artists = Array.isArray(track.artists) ? track.artists.join("|") : "";
         return [
           String(track.key || track.trackId || ""),
+          String(track.provider || "yandex"),
           String(track.title || ""),
           artists,
           String(track.coverUrl || ""),
@@ -3194,14 +3728,29 @@
             if (metaEl.textContent !== nextMeta) metaEl.textContent = nextMeta;
           }
 
-          const nextCover = String(track.coverUrl || FALLBACK_COVER);
-          if (coverEl && (coverEl.getAttribute("src") || "") !== nextCover) {
-            coverEl.setAttribute("src", nextCover);
+          const nextCoverRaw = String(track.coverUrl || "").trim();
+          const nextCover = nextCoverRaw || FALLBACK_COVER;
+          if (coverEl) {
+            const currentCover = String(coverEl.getAttribute("src") || "").trim();
+            const hasRealCurrentCover = !isFallbackCoverUrl(currentCover);
+            const hasRealNextCover = !isFallbackCoverUrl(nextCoverRaw);
+            const shouldReplaceWithReal = hasRealNextCover && currentCover !== nextCover;
+            const shouldBackfillFallback = !hasRealCurrentCover && currentCover !== nextCover;
+            if (shouldReplaceWithReal || shouldBackfillFallback) {
+              coverEl.setAttribute("src", nextCover);
+            }
           }
 
           const nextHref = String(track.sourceUrl || "");
           if (openLink && openLink.getAttribute("href") !== nextHref) {
             openLink.setAttribute("href", nextHref);
+          }
+          if (openLink) {
+            const providerLabel = normalizeTrackProvider(track.provider) === "youtube" ? "YouTube Music" : "Яндекс Музыка";
+            const nextTitle = `Открыть в ${providerLabel}`;
+            if (openLink.getAttribute("title") !== nextTitle) {
+              openLink.setAttribute("title", nextTitle);
+            }
           }
 
           if (likeBtn) {
@@ -3250,6 +3799,49 @@
         }
       }
 
+      function extractYoutubeStreamExpireMs(rawUrl) {
+        const normalized = normalizePlayableUrl(rawUrl);
+        if (!normalized) return 0;
+        try {
+          let parsed = new URL(normalized);
+          if (parsed.pathname === "/ytm-audio-stream") {
+            const nested = String(parsed.searchParams.get("url") || "").trim();
+            if (nested) parsed = new URL(nested);
+          }
+          const expireRaw = String(parsed.searchParams.get("expire") || "").trim();
+          const expireSec = Number(expireRaw);
+          if (Number.isFinite(expireSec) && expireSec > 0) {
+            return expireSec * 1000;
+          }
+        } catch (_) {}
+        return 0;
+      }
+
+      function isFreshYoutubeStreamUrl(rawUrl, minTtlMs = 45_000) {
+        const normalized = normalizePlayableUrl(rawUrl);
+        if (!normalized) return false;
+        const expireMs = extractYoutubeStreamExpireMs(normalized);
+        if (!expireMs) return true;
+        return expireMs > Date.now() + Math.max(5_000, Number(minTtlMs) || 45_000);
+      }
+
+      function getFreshYoutubeCandidate(track, minTtlMs = 45_000) {
+        if (!track) return null;
+        const candidates = Array.isArray(track._streamCandidates) ? track._streamCandidates : [];
+        for (const item of candidates) {
+          if (!item || !item.url) continue;
+          const normalized = normalizePlayableUrl(item.url);
+          if (!normalized) continue;
+          if (isFreshYoutubeStreamUrl(normalized, minTtlMs)) {
+            return {
+              ...item,
+              url: normalized
+            };
+          }
+        }
+        return null;
+      }
+
       async function parseYandexPayload(response) {
         const payloadText = await response.text();
         const payload = safeJson(payloadText, null);
@@ -3282,13 +3874,16 @@
 
         const likeCount = getLikeCount(track);
         const likedByMe = isLikedByMe(track);
+        const provider = normalizeTrackProvider(track.provider);
+        const providerLabel = provider === "youtube" ? "YouTube Music" : "Яндекс Музыка";
+        const coverUrl = pickBestCoverUrl(track.coverUrl);
         const playIcon = isPlaying
           ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>'
           : '<path d="M8 5v14l11-7z"></path>';
 
         li.innerHTML = `
           <div class="track-cover-wrap">
-            <img class="track-cover" src="${track.coverUrl || FALLBACK_COVER}" alt="cover" loading="lazy" decoding="async">
+            <img class="track-cover" src="${coverUrl}" alt="cover" loading="lazy" decoding="async" referrerpolicy="no-referrer">
             <button class="cover-play-btn" data-action="play" title="${isPlaying ? "Пауза" : "Воспроизвести"}">
               <svg viewBox="0 0 24 24">${playIcon}</svg>
             </button>
@@ -3298,8 +3893,8 @@
             <p>${escapeHtml(track.artists && track.artists.length ? track.artists.join(", ") : "Без артиста")}</p>
             <div class="track-meta-line">
               ${context === "shared"
-                ? `Добавил: ${escapeHtml(track.addedByName || track.addedByUsername || "user")} • ❤ ${likeCount}`
-                : `${formatTime((track.durationMs || 0) / 1000)} • id: ${escapeHtml(track.trackId || "—")}`}
+                ? `Добавил: ${escapeHtml(track.addedByName || track.addedByUsername || "user")} • ${escapeHtml(providerLabel)} • ❤ ${likeCount}`
+                : `${formatTime((track.durationMs || 0) / 1000)} • ${escapeHtml(providerLabel)}`}
             </div>
           </div>
           <div class="track-actions">
@@ -3307,12 +3902,15 @@
               <button class="icon-btn ${likedByMe ? "active" : ""}" data-action="like" title="Лайк">
                 <svg viewBox="0 0 24 24"><path d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.88 2 6.03 4.24 4 7.05 4c1.63 0 3.19.79 4.15 2.01C12.16 4.79 13.72 4 15.35 4 18.16 4 20.4 6.03 20.4 8.88c0 3.51-3.14 6.36-8.99 11.46z"></path></svg>
               </button>
+              <button class="icon-btn" data-action="download" title="Скачать трек">
+                <svg viewBox="0 0 24 24"><path d="M11 4h2v8h3l-4 5-4-5h3V4zM5 18h14v2H5z"></path></svg>
+              </button>
             ` : `
               <button class="icon-btn" data-action="add" title="Добавить в общий список">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>
               </button>
             `}
-            <a class="icon-btn" href="${track.sourceUrl}" target="_blank" rel="noopener" title="Открыть в Яндекс Музыке">
+            <a class="icon-btn" href="${track.sourceUrl}" target="_blank" rel="noopener" title="Открыть в ${providerLabel}">
               <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"></path></svg>
             </a>
             ${context === "shared" && canDelete ? `
@@ -3322,6 +3920,16 @@
             ` : ""}
           </div>
         `;
+
+        const coverImage = li.querySelector(".track-cover");
+        if (coverImage) {
+          coverImage.addEventListener("error", () => {
+            const currentSrc = String(coverImage.getAttribute("src") || "").trim();
+            if (!isFallbackCoverUrl(currentSrc)) {
+              coverImage.setAttribute("src", FALLBACK_COVER);
+            }
+          }, { once: true });
+        }
 
         li.addEventListener("click", async (event) => {
           const actionEl = event.target.closest("[data-action]");
@@ -3352,6 +3960,10 @@
           }
           if (action === "like") {
             await toggleLike(track);
+            return;
+          }
+          if (action === "download") {
+            await downloadTrack(track, actionEl);
             return;
           }
           if (action === "remove") {
@@ -3483,6 +4095,7 @@
       async function loadMoreYmSearchTracks() {
         const query = String(state.ymSearchQuery || "").trim();
         if (!query) return;
+        if (normalizeYmSearchSource(state.ymSearchSource) !== "yandex") return;
         if (state.ymSearchLoading || state.ymSearchLoadingMore || !state.ymSearchHasMore) return;
         const requestSeq = state.ymSearchRequestSeq;
         const nextPage = Number(state.ymSearchPage || 0) + 1;
@@ -3600,6 +4213,8 @@
       function renderSearchList() {
         if (!els.ymSearchList) return;
         const query = String(state.ymSearchQuery || "").trim();
+        const parsedTrackLink = parseTrackUrl(query);
+        const sourceMeta = getYmSearchSourceMeta(state.ymSearchSource);
         const results = Array.isArray(state.ymSearchResults) ? state.ymSearchResults : [];
         const loading = Boolean(state.ymSearchLoading);
         const loadingMore = Boolean(state.ymSearchLoadingMore);
@@ -3614,12 +4229,22 @@
           state.ymSearchRenderedVersion = state.ymSearchDataVersion;
           els.ymSearchList.innerHTML = "";
         };
+        const setSearchNotice = (text, mode = "info") => {
+          const safeText = escapeHtml(String(text || "").trim());
+          const normalizedMode = mode === "warn" ? "warn" : "info";
+          const icon = normalizedMode === "warn" ? "⚠" : "⌕";
+          els.ymSearchList.innerHTML = `
+            <li class="empty ym-search-notice ym-search-notice--${normalizedMode}" data-icon="${icon}">
+              ${safeText}
+            </li>
+          `;
+        };
 
         if (!query && !loading) {
           resetSearchDom();
           togglePrompt(isDesktop);
           if (!isDesktop) {
-            els.ymSearchList.innerHTML = '<li class="empty">Введите запрос для поиска треков в Яндекс Музыке.</li>';
+            setSearchNotice(sourceMeta.promptTextMobile || sourceMeta.promptText, "info");
           }
           updateSharedListPlaybackUI();
           return;
@@ -3629,9 +4254,13 @@
           resetSearchDom();
           return;
         }
+        if (parsedTrackLink && parsedTrackLink.trackId && !results.length) {
+          resetSearchDom();
+          return;
+        }
         if (!results.length) {
           resetSearchDom();
-          els.ymSearchList.innerHTML = '<li class="empty">Ничего не найдено. Уточните запрос.</li>';
+          setSearchNotice("Ничего не найдено. Уточните название трека или исполнителя.", "warn");
           return;
         }
 
@@ -3657,8 +4286,9 @@
 
         if (loadingMore) {
           const loader = document.createElement("li");
-          loader.className = "empty ym-loading-more";
-          loader.textContent = "Загрузка…";
+          loader.className = "empty ym-loading-more ym-search-notice ym-search-notice--info";
+          loader.setAttribute("data-icon", "…");
+          loader.textContent = "Загружаем ещё результаты…";
           els.ymSearchList.appendChild(loader);
         }
 
@@ -3713,6 +4343,14 @@
         const headers = { Accept: "application/json" };
         if (state.token) headers.Authorization = `OAuth ${state.token}`;
         const response = await fetch(url.toString(), { headers });
+        return await parseYandexPayload(response);
+      }
+
+      async function ytmRequest(path, params = {}) {
+        const url = buildApiUrl(YTM_PROXY_BASE, path, params);
+        const response = await fetch(url.toString(), {
+          headers: { Accept: "application/json" }
+        });
         return await parseYandexPayload(response);
       }
 
@@ -3777,11 +4415,84 @@
         return ((((payload || {}).result || {}).tracks || {}).results || []);
       }
 
+      function getYtmSearchResults(payload) {
+        const root = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+        return Array.isArray(root.tracks) ? root.tracks : [];
+      }
+
+      function normalizeYmSearchSource(value) {
+        return String(value || "").trim().toLowerCase() === "youtube" ? "youtube" : "yandex";
+      }
+
+      function getYmSearchSourceMeta(source = state.ymSearchSource) {
+        const normalized = normalizeYmSearchSource(source);
+        if (normalized === "youtube") {
+          return {
+            value: "youtube",
+            label: "YouTube Music",
+            promptText: "Введите название трека, исполнителя или вставьте ссылку из YouTube Music.",
+            promptTextMobile: "Начните вводить запрос или вставьте ссылку на трек из YouTube Music."
+          };
+        }
+        return {
+          value: "yandex",
+          label: "Яндекс Музыка",
+          promptText: "Введите название трека, исполнителя или вставьте ссылку из Яндекс Музыки.",
+          promptTextMobile: "Начните вводить запрос или вставьте ссылку на трек из Яндекс Музыки."
+        };
+      }
+
+      function updateYmSearchSourceUi() {
+        const source = normalizeYmSearchSource(state.ymSearchSource);
+        const yandexActive = source === "yandex";
+        if (els.ymSourceYandexBtn) {
+          els.ymSourceYandexBtn.classList.toggle("is-active", yandexActive);
+          els.ymSourceYandexBtn.setAttribute("aria-pressed", yandexActive ? "true" : "false");
+        }
+        if (els.ymSourceYoutubeBtn) {
+          els.ymSourceYoutubeBtn.classList.toggle("is-active", !yandexActive);
+          els.ymSourceYoutubeBtn.setAttribute("aria-pressed", yandexActive ? "false" : "true");
+        }
+        if (els.ymSearchPrompt) {
+          els.ymSearchPrompt.textContent = getYmSearchSourceMeta(source).promptText;
+        }
+      }
+
+      function setYmSearchSource(source, { refresh = true } = {}) {
+        const normalized = normalizeYmSearchSource(source);
+        if (state.ymSearchSource === normalized) {
+          updateYmSearchSourceUi();
+          return;
+        }
+        if (state.ymSearchDebounceTimer) {
+          clearTimeout(state.ymSearchDebounceTimer);
+          state.ymSearchDebounceTimer = null;
+        }
+        state.ymSearchSource = normalized;
+        updateYmSearchSourceUi();
+
+        state.ymSearchDataVersion += 1;
+        resetYmSearchLazyState();
+
+        if (!refresh) {
+          renderSearchList();
+          return;
+        }
+        const query = String((els.ymSearchInput && els.ymSearchInput.value) || "").trim();
+        state.ymSearchQuery = query;
+        const parsed = parseTrackUrl(query);
+        if (!query || (parsed && parsed.trackId)) {
+          renderSearchList();
+          return;
+        }
+        executeYmTrackSearch(query);
+      }
+
       function mapYmSearchTracks(rawTracks = []) {
         const out = [];
         const seen = new Set();
         rawTracks.forEach((raw) => {
-          const mapped = toTrackModel(raw, "search");
+          const mapped = toTrackModel({ ...raw, provider: "yandex" }, "search");
           if (!mapped.trackId || seen.has(mapped.trackId)) return;
           seen.add(mapped.trackId);
           out.push(mapped);
@@ -3789,8 +4500,22 @@
         return out;
       }
 
+      function mapYtmSearchTracks(rawTracks = []) {
+        const out = [];
+        const seen = new Set();
+        rawTracks.forEach((raw) => {
+          const mapped = toTrackModel({ ...raw, provider: "youtube" }, "search");
+          const key = `${normalizeTrackProvider(mapped.provider)}:${String(mapped.trackId || "")}`;
+          if (!mapped.trackId || seen.has(key)) return;
+          seen.add(key);
+          out.push(mapped);
+        });
+        return out;
+      }
+
       async function executeYmTrackSearch(query) {
         const normalized = String(query || "").trim();
+        const source = normalizeYmSearchSource(state.ymSearchSource);
         state.ymSearchQuery = normalized;
         if (!normalized) {
           state.ymSearchDataVersion += 1;
@@ -3805,25 +4530,41 @@
         state.ymSearchLoading = true;
         renderSearchList();
         try {
-          const payload = await yandexRequest("/search", {
-            text: normalized,
-            type: "track",
-            page: 0,
-            nocorrect: false
-          });
+          let tracks = [];
+          let yandexPayload = null;
+          if (source === "youtube") {
+            const ytmPayload = await ytmRequest("/search", {
+              q: normalized,
+              page: 0,
+              limit: 40
+            });
+            tracks = mapYtmSearchTracks(getYtmSearchResults(ytmPayload));
+          } else {
+            yandexPayload = await yandexRequest("/search", {
+              text: normalized,
+              type: "track",
+              page: 0,
+              nocorrect: false
+            });
+            tracks = mapYmSearchTracks(getTrackSearchResults(yandexPayload));
+          }
           if (requestSeq !== state.ymSearchRequestSeq) return;
-          const mapped = mapYmSearchTracks(getTrackSearchResults(payload));
-          const ranked = rankYmSearchTracks(mapped, normalized, "auto");
+
+          const ranked = rankYmSearchTracks(tracks, normalized, "auto");
           state.ymSearchResults = ranked.tracks;
           state.ymSearchRankMode = ranked.mode;
-          const totalRaw = Number((((payload || {}).result || {}).tracks || {}).total || 0);
-          if (Number.isFinite(totalRaw) && totalRaw > 0) {
-            state.ymSearchTotal = totalRaw;
+          if (source === "yandex") {
+            const totalRaw = Number(((((yandexPayload || {}).result || {}).tracks || {}).total) || 0);
+            state.ymSearchTotal = Number.isFinite(totalRaw) && totalRaw > 0
+              ? totalRaw
+              : ranked.tracks.length;
+            state.ymSearchPage = 0;
+            state.ymSearchHasMore = state.ymSearchTotal > ranked.tracks.length && ranked.tracks.length > 0;
           } else {
-            state.ymSearchTotal = mapped.length;
+            state.ymSearchTotal = ranked.tracks.length;
+            state.ymSearchPage = 0;
+            state.ymSearchHasMore = false;
           }
-          state.ymSearchPage = 0;
-          state.ymSearchHasMore = state.ymSearchTotal > state.ymSearchResults.length && mapped.length > 0;
           state.ymSearchRenderCount = Math.min(state.ymSearchChunkSize, state.ymSearchResults.length);
           state.ymSearchQuery = normalized;
           state.ymSearchResults.slice(0, 6).forEach((track) => {
@@ -3852,6 +4593,21 @@
       function parseTrackUrl(url) {
         const value = String(url || "").trim();
         if (!value) return null;
+
+        const ytPatterns = [
+          /(?:music\.)?youtube\.com\/watch\?[^#]*\bv=([A-Za-z0-9_-]{11})/i,
+          /youtu\.be\/([A-Za-z0-9_-]{11})/i
+        ];
+        const ytFull = value.match(ytPatterns[0]) || value.match(ytPatterns[1]);
+        if (ytFull) {
+          return {
+            provider: "youtube",
+            albumId: "",
+            trackId: ytFull[1],
+            sourceUrl: `https://music.youtube.com/watch?v=${ytFull[1]}`
+          };
+        }
+
         const patterns = [
           /music\.yandex\.[^/]+\/album\/(\d+)\/track\/(\d+)/i,
           /music\.yandex\.[^/]+\/track\/(\d+)/i
@@ -3859,6 +4615,7 @@
         const full = value.match(patterns[0]);
         if (full) {
           return {
+            provider: "yandex",
             albumId: full[1],
             trackId: full[2],
             sourceUrl: `https://music.yandex.ru/album/${full[1]}/track/${full[2]}`
@@ -3867,6 +4624,7 @@
         const short = value.match(patterns[1]);
         if (short) {
           return {
+            provider: "yandex",
             albumId: "",
             trackId: short[1],
             sourceUrl: `https://music.yandex.ru/track/${short[1]}`
@@ -3878,7 +4636,7 @@
       async function loadTrackByParsed(parsed, options = {}) {
         const shouldClearInput = Boolean(options.clearInput);
         if (!parsed || !parsed.trackId) {
-          toast("Невалидная ссылка. Пример: music.yandex.ru/album/.../track/...", "err");
+          toast("Невалидная ссылка. Пример: music.yandex.ru/... или music.youtube.com/watch?v=...", "err");
           return;
         }
         if (els.addByUrlBtn) {
@@ -3886,6 +4644,29 @@
           els.addByUrlBtn.textContent = "Загружаю...";
         }
         try {
+          const provider = normalizeTrackProvider(parsed.provider);
+          if (provider === "youtube") {
+            const url = new URL(YTM_TRACK_ENDPOINT);
+            url.searchParams.set("video_id", String(parsed.trackId || ""));
+            const response = await fetch(url.toString(), {
+              headers: { Accept: "application/json" }
+            });
+            const payload = await parseYandexPayload(response);
+            const row = payload && payload.result && payload.result.track
+              ? payload.result.track
+              : payload && payload.result
+                ? payload.result
+                : {};
+            const track = toTrackModel({ ...row, ...parsed, provider: "youtube" }, "search");
+            if (!track.trackId) {
+              throw new Error("Трек YouTube Music не найден");
+            }
+            await addToShared(track);
+            if (shouldClearInput && els.trackUrlInput) els.trackUrlInput.value = "";
+            setActiveToolPanel("");
+            return;
+          }
+
           let arr = [];
           const asArray = (value) => Array.isArray(value) ? value : (value ? [value] : []);
           if (parsed.albumId) {
@@ -3915,7 +4696,7 @@
               }
             } catch (_) {}
           }
-          await addToShared(track);
+          await addToShared({ ...track, provider: "yandex" });
           if (shouldClearInput && els.trackUrlInput) els.trackUrlInput.value = "";
           setActiveToolPanel("");
         } catch (error) {
@@ -3954,8 +4735,154 @@
         await executeYmTrackSearch(raw);
       }
 
+      async function resolveYoutubeStream(track) {
+        if (!track || !track.trackId) return { url: "", bitrate: "" };
+        const prefetchedCandidate = getFreshYoutubeCandidate(track);
+        if (prefetchedCandidate && prefetchedCandidate.url) {
+          track.streamUrl = prefetchedCandidate.url;
+          track.bitrate = prefetchedCandidate.bitrate || track.bitrate || "cached";
+          track._streamResolvedAt = Date.now();
+          return {
+            url: prefetchedCandidate.url,
+            bitrate: prefetchedCandidate.bitrate || track.bitrate || "cached"
+          };
+        }
+
+        const cachedUrl = normalizePlayableUrl(track.streamUrl);
+        if (cachedUrl && isFreshYoutubeStreamUrl(cachedUrl)) {
+          track._streamCandidates = [{
+            url: cachedUrl,
+            bitrate: track.bitrate || "cached",
+            ext: String((track._ytStreamMeta && track._ytStreamMeta.ext) || "").trim()
+          }];
+          return { url: cachedUrl, bitrate: track.bitrate || "cached" };
+        }
+        if (cachedUrl && !isFreshYoutubeStreamUrl(cachedUrl)) {
+          track.streamUrl = "";
+          track.bitrate = "";
+          track._streamCandidates = [];
+        }
+        if (track._streamResolvePromise) {
+          return await track._streamResolvePromise;
+        }
+
+        track._streamResolvePromise = (async () => {
+          const url = new URL(YTM_STREAM_ENDPOINT);
+          url.searchParams.set("video_id", String(track.trackId || ""));
+          const response = await fetch(url.toString(), {
+            headers: { Accept: "application/json" }
+          });
+          const payload = await parseYandexPayload(response);
+          const result = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+          const prepared = [];
+          const seen = new Set();
+          const pushCandidate = (urlValue, meta = {}) => {
+            const normalizedUrl = normalizePlayableUrl(urlValue);
+            if (!normalizedUrl || seen.has(normalizedUrl)) return;
+            seen.add(normalizedUrl);
+            const bitrateKbps = Number(meta.bitrateInKbps || 0);
+            const ext = String(meta.ext || "").trim().toLowerCase();
+            const bitrateLabel = Number.isFinite(bitrateKbps) && bitrateKbps > 0
+              ? `${bitrateKbps}kbps${ext ? ` ${ext}` : ""}`.trim()
+              : (ext || "ytm");
+            prepared.push({
+              url: normalizedUrl,
+              bitrate: bitrateLabel,
+              ext,
+              bitrateInKbps: Number.isFinite(bitrateKbps) && bitrateKbps > 0 ? bitrateKbps : 0
+            });
+          };
+
+          if (Array.isArray(result.streamCandidates)) {
+            result.streamCandidates.forEach((item) => {
+              if (!item || typeof item !== "object") return;
+              pushCandidate(item.directLink || item.url || item.rawDirectLink, item);
+            });
+          }
+
+          pushCandidate(result.directLink, {
+            bitrateInKbps: result.bitrateInKbps,
+            ext: result.ext
+          });
+          pushCandidate(result.resolvedRawDirectLink, {
+            bitrateInKbps: result.bitrateInKbps,
+            ext: result.ext
+          });
+          pushCandidate(result.rawDirectLink, {
+            bitrateInKbps: result.bitrateInKbps,
+            ext: result.ext
+          });
+
+          if (!prepared.length) {
+            throw new Error("Не удалось получить поток YouTube Music");
+          }
+
+          const best = prepared[0];
+          track._ytStreamMeta = {
+            directLink: String(result.directLink || "").trim(),
+            rawDirectLink: String(result.rawDirectLink || "").trim(),
+            bitrateInKbps: Number(best.bitrateInKbps || Number(result.bitrateInKbps || 0) || 0),
+            ext: String(best.ext || result.ext || "").trim().toLowerCase(),
+            mimeType: String(result.mimeType || "").trim(),
+            streamCandidates: prepared
+          };
+          track._ytRangeProbeUrl = "";
+          track._ytRangeSupported = undefined;
+          track._streamCandidates = prepared.map((item) => ({
+            url: item.url,
+            bitrate: item.bitrate,
+            ext: item.ext
+          }));
+          track._streamResolvedAt = Date.now();
+          track.streamUrl = best.url;
+          track.bitrate = best.bitrate || "ytm";
+          return {
+            url: best.url,
+            bitrate: best.bitrate || "ytm"
+          };
+        })();
+
+        try {
+          return await track._streamResolvePromise;
+        } finally {
+          track._streamResolvePromise = null;
+        }
+      }
+
+      function queueYoutubeStreamPrefetch(track) {
+        if (!track || !track.trackId) return;
+        if (normalizeTrackProvider(track.provider) !== "youtube") return;
+        if (track._streamResolvePromise || track._ytPrefetchPending) return;
+        if ((track.streamUrl && isFreshYoutubeStreamUrl(track.streamUrl)) || getFreshYoutubeCandidate(track)) return;
+        track._ytPrefetchPending = true;
+        resolveYoutubeStream(track)
+          .catch(() => {})
+          .finally(() => {
+            track._ytPrefetchPending = false;
+          });
+      }
+
+      function scheduleYoutubeNeighborPrefetch() {
+        if (state.youtubePrefetchTimer) {
+          clearTimeout(state.youtubePrefetchTimer);
+          state.youtubePrefetchTimer = 0;
+        }
+        state.youtubePrefetchTimer = setTimeout(() => {
+          state.youtubePrefetchTimer = 0;
+          if (!state.currentTrack) return;
+          queueYoutubeStreamPrefetch(state.currentTrack);
+          const neighbors = getNeighborTracks();
+          queueYoutubeStreamPrefetch(neighbors.prev);
+          queueYoutubeStreamPrefetch(neighbors.next);
+        }, 180);
+      }
+
       async function resolveStream(track) {
         if (!track || !track.trackId) return { url: "", bitrate: "" };
+        const provider = normalizeTrackProvider(track.provider);
+        if (provider === "youtube") {
+          return resolveYoutubeStream(track);
+        }
         if (track.streamUrl) {
           track._streamCandidates = [{ url: normalizePlayableUrl(track.streamUrl), bitrate: track.bitrate || "cached" }];
           return { url: normalizePlayableUrl(track.streamUrl), bitrate: track.bitrate || "cached" };
@@ -4086,6 +5013,220 @@
         };
       }
 
+      function buildTrackDownloadFilename(track) {
+        const artist = Array.isArray(track && track.artists) ? String(track.artists[0] || "").trim() : "";
+        const title = String(track && track.title || "").trim();
+        const fallback = `track_${String(track && track.trackId || "audio")}`;
+        const raw = [artist, title].filter(Boolean).join(" - ") || title || fallback;
+        const safe = raw
+          .replace(/[\\/:*?"<>|]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const provider = normalizeTrackProvider(track && track.provider);
+        const youtubeExt = provider === "youtube"
+          ? String(track && track._ytStreamMeta && track._ytStreamMeta.ext || "").trim().toLowerCase()
+          : "";
+        const extension = provider === "youtube"
+          ? (youtubeExt || "m4a")
+          : "mp3";
+        return `${safe || fallback}.${extension}`;
+      }
+
+      function withFileExtension(filename, ext) {
+        const name = String(filename || "").trim();
+        const safeExt = String(ext || "").trim().replace(/^\./, "").toLowerCase();
+        if (!name) return safeExt ? `track.${safeExt}` : "track";
+        if (!safeExt) return name;
+        if (/\.[A-Za-z0-9]{2,5}$/.test(name)) {
+          return name.replace(/\.[A-Za-z0-9]{2,5}$/, `.${safeExt}`);
+        }
+        return `${name}.${safeExt}`;
+      }
+
+      function buildYouTubeDownloadUrl(rawUrl, filename = "", format = "") {
+        const normalized = normalizePlayableUrl(rawUrl);
+        if (!normalized) return "";
+        try {
+          const normalizedFormat = String(format || "").trim().toLowerCase();
+          const parsed = new URL(normalized);
+          const sameRealtimeHost = parsed.hostname === new URL(REALTIME_HTTP_BASE).hostname;
+          if (sameRealtimeHost && parsed.pathname === "/ytm-audio-stream") {
+            parsed.searchParams.set("download", "1");
+            if (filename) parsed.searchParams.set("filename", filename);
+            if (normalizedFormat) parsed.searchParams.set("format", normalizedFormat);
+            return parsed.toString();
+          }
+          const proxyUrl = new URL(`${REALTIME_HTTP_BASE}/ytm-audio-stream`);
+          proxyUrl.searchParams.set("url", parsed.toString());
+          proxyUrl.searchParams.set("download", "1");
+          if (filename) proxyUrl.searchParams.set("filename", filename);
+          if (normalizedFormat) proxyUrl.searchParams.set("format", normalizedFormat);
+          return proxyUrl.toString();
+        } catch (_) {
+          return "";
+        }
+      }
+
+      async function fetchWithTimeout(url, options = {}, timeoutMs = 30_000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+
+      async function downloadYouTubeAsChunkedBlob(downloadUrl) {
+        const chunkSize = 512 * 1024;
+        const maxChunks = 256;
+        const maxTotalBytes = 128 * 1024 * 1024;
+        const parts = [];
+        let offset = 0;
+        let total = 0;
+
+        for (let i = 0; i < maxChunks; i += 1) {
+          const end = offset + chunkSize - 1;
+          const response = await fetchWithTimeout(downloadUrl, {
+            headers: {
+              Accept: "audio/*,*/*;q=0.9",
+              Range: `bytes=${offset}-${end}`
+            }
+          }, 30_000);
+          if (!response.ok) break;
+          const chunk = await response.arrayBuffer();
+          const chunkSizeBytes = chunk.byteLength || 0;
+          if (!chunkSizeBytes) break;
+          parts.push(chunk);
+          total += chunkSizeBytes;
+          offset += chunkSizeBytes;
+
+          if (total >= maxTotalBytes) break;
+          if (chunkSizeBytes < chunkSize) break;
+          if (response.status === 200 && !response.headers.get("content-range") && chunkSizeBytes > chunkSize) break;
+        }
+
+        if (!total) {
+          throw new Error("youtube_chunk_download_failed");
+        }
+        return new Blob(parts, { type: "audio/mp4" });
+      }
+
+      function triggerBlobDownload(blob, filename) {
+        if (!blob || blob.size <= 0) return "";
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        link.rel = "noopener";
+        link.style.display = "none";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return url;
+      }
+
+      async function downloadTrack(track, actionEl = null) {
+        if (!track || !track.trackId) return;
+        const button = actionEl && actionEl.closest ? actionEl.closest('[data-action="download"]') : null;
+        if (button && button.disabled) return;
+        if (button) button.disabled = true;
+
+        let objectUrl = "";
+        try {
+          const provider = normalizeTrackProvider(track.provider);
+          const filename = buildTrackDownloadFilename(track);
+          if (provider === "youtube") {
+            const stream = await resolveYoutubeStream(track);
+            const candidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
+              ? track._streamCandidates
+              : (stream.url ? [stream] : []);
+            const proxied = candidates.find((item) => /\/ytm-audio-stream\?/i.test(String(item && item.url || "")));
+            const baseUrl = normalizePlayableUrl((proxied && proxied.url) || stream.url || "");
+            if (!baseUrl) return;
+
+            let youtubeDownloaded = false;
+            const mp3Filename = withFileExtension(filename, "mp3");
+            const mp3DownloadUrl = buildYouTubeDownloadUrl(baseUrl, mp3Filename, "mp3");
+            const sourceDownloadUrl = buildYouTubeDownloadUrl(baseUrl, filename);
+
+            if (mp3DownloadUrl) {
+              try {
+                const response = await fetchWithTimeout(mp3DownloadUrl, {
+                  headers: { Accept: "audio/mpeg,audio/mp3,*/*;q=0.8" }
+                }, 180_000);
+                const ctype = String(response.headers.get("content-type") || "").toLowerCase();
+                if (response.ok && (ctype.includes("audio/mpeg") || ctype.includes("audio/mp3"))) {
+                  const blob = await response.blob();
+                  objectUrl = triggerBlobDownload(blob, mp3Filename);
+                  youtubeDownloaded = Boolean(objectUrl);
+                }
+              } catch (_) {}
+            }
+
+            try {
+              if (!youtubeDownloaded && sourceDownloadUrl) {
+                const chunkedBlob = await downloadYouTubeAsChunkedBlob(sourceDownloadUrl);
+                objectUrl = triggerBlobDownload(chunkedBlob, filename);
+                youtubeDownloaded = Boolean(objectUrl);
+              }
+            } catch (_) {}
+
+            if (!youtubeDownloaded) {
+              try {
+                if (sourceDownloadUrl) {
+                  const response = await fetchWithTimeout(sourceDownloadUrl, {
+                    headers: { Accept: "audio/*,*/*;q=0.9" }
+                  }, 120_000);
+                  if (response.ok) {
+                    const blob = await response.blob();
+                    objectUrl = triggerBlobDownload(blob, filename);
+                    youtubeDownloaded = Boolean(objectUrl);
+                  }
+                }
+              } catch (_) {}
+            }
+
+            if (!youtubeDownloaded && sourceDownloadUrl) {
+              const link = document.createElement("a");
+              link.href = sourceDownloadUrl;
+              link.download = filename;
+              link.rel = "noopener";
+              link.style.display = "none";
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+            }
+            return;
+          }
+
+          const stream = await resolveStream(track);
+          const candidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
+            ? track._streamCandidates
+            : (stream.url ? [stream] : []);
+          const best = candidates[0] && candidates[0].url ? candidates[0] : null;
+          if (!best) return;
+
+          const directUrl = normalizePlayableUrl(best.url);
+          if (!directUrl) return;
+
+          const response = await fetch(directUrl, { headers: { Accept: "audio/*,*/*;q=0.9" } });
+          if (!response.ok) return;
+          const blob = await response.blob();
+          if (!blob || blob.size <= 0) return;
+          objectUrl = triggerBlobDownload(blob, filename);
+        } catch (_) {
+          // Silent: page works without toasts for playback actions.
+        } finally {
+          if (button) button.disabled = false;
+          if (objectUrl) {
+            setTimeout(() => {
+              try { URL.revokeObjectURL(objectUrl); } catch (_) {}
+            }, 60_000);
+          }
+        }
+      }
+
       async function playTrack(track, source = "shared", options = {}) {
         if (!track || !track.trackId) return;
         if (!state.coverSwipeInProgress) {
@@ -4157,10 +5298,14 @@
             throw lastError || new Error("Нет поддерживаемого источника аудио");
           }
 
-          setPlayButtonState(true);
+          const isActuallyPlaying = !els.audio.paused && !els.audio.ended;
+          setPlayButtonState(isActuallyPlaying);
           if (els.currentBitrate) els.currentBitrate.textContent = `stream: ${track.bitrate || "auto"}`;
           updateSharedListPlaybackUI();
           persistPlaybackSnapshot(true);
+          if (normalizeTrackProvider(track.provider) === "youtube") {
+            scheduleYoutubeNeighborPrefetch();
+          }
         } catch (error) {
           track.streamUrl = "";
           track.bitrate = "";
@@ -4213,6 +5358,7 @@
           toast("Невалидный трек", "err");
           return;
         }
+        const provider = normalizeTrackProvider(track.provider);
         const user = state.currentUser || { username: "guest", name: "Guest" };
         const snapshot = await state.db
           .ref(COMMUNITY_TRACKS_PATH)
@@ -4221,30 +5367,37 @@
           .once("value");
 
         if (snapshot.exists()) {
+          let hasSameProviderTrack = false;
           let enriched = false;
           const updates = {};
           snapshot.forEach((child) => {
             const existing = child.val() || {};
+            if (normalizeTrackProvider(existing.provider) !== provider) return;
+            hasSameProviderTrack = true;
             if (!shouldEnrichStoredTrack(existing, track)) return;
             updates[`${child.key}/title`] = track.title || existing.title || "";
             updates[`${child.key}/artists`] = (track.artists && track.artists.length) ? track.artists : (existing.artists || []);
             updates[`${child.key}/durationMs`] = Number(track.durationMs || existing.durationMs || 0);
             updates[`${child.key}/coverUrl`] = track.coverUrl || existing.coverUrl || FALLBACK_COVER;
             updates[`${child.key}/sourceUrl`] = track.sourceUrl || existing.sourceUrl || "";
+            updates[`${child.key}/provider`] = provider;
             enriched = true;
           });
-          if (enriched) {
+          if (hasSameProviderTrack && enriched) {
             await state.db.ref(COMMUNITY_TRACKS_PATH).update(updates);
             toast("Трек уже был в списке: метаданные обновлены");
-          } else {
-            toast("Этот трек уже есть в общем списке");
+            return;
           }
-          return;
+          if (hasSameProviderTrack) {
+            toast("Этот трек уже есть в общем списке");
+            return;
+          }
         }
 
         const payload = {
           trackId: track.trackId,
           albumId: track.albumId || "",
+          provider,
           title: track.title || "",
           artists: track.artists || [],
           durationMs: Number(track.durationMs || 0),
@@ -4316,12 +5469,24 @@
       }
 
       function syncSharedTracks(snapshot) {
+        const previousByKey = new Map(
+          (Array.isArray(state.sharedTracks) ? state.sharedTracks : [])
+            .map((item) => [String(item && (item.key || item.trackId) || ""), item])
+        );
         const prevRendered = Array.isArray(state.renderedTracks) ? [...state.renderedTracks] : [];
         const items = [];
         snapshot.forEach((child) => {
           const raw = child.val() || {};
           const normalized = toTrackModel({ ...raw, key: child.key }, "shared");
           if (!normalized.trackId) return;
+          const prev = previousByKey.get(String(normalized.key || normalized.trackId || ""));
+          normalized.coverUrl = pickBestCoverUrl(
+            normalized.coverUrl,
+            prev && prev.coverUrl,
+            state.currentTrack
+            && String(state.currentTrack.trackId || "") === String(normalized.trackId || "")
+            && state.currentTrack.coverUrl
+          );
           items.push(normalized);
         });
         state.sharedTracks = items;
@@ -4355,7 +5520,8 @@
           shuffle: state.shuffle,
           filter: state.filter,
           addedByFilter: state.addedByFilter,
-          sort: state.sort
+          sort: state.sort,
+          volume: Number(els.audio && els.audio.volume != null ? els.audio.volume : 0.85)
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
       }
@@ -4384,6 +5550,13 @@
         if (saved.sort) {
           state.sort = String(saved.sort);
           if (els.sortSelect) els.sortSelect.value = state.sort;
+        }
+        if (saved.volume != null) {
+          const rawVolume = Number(saved.volume);
+          if (Number.isFinite(rawVolume)) {
+            const normalized = rawVolume > 1 ? rawVolume / 100 : rawVolume;
+            setVolume(normalized, { persist: false });
+          }
         }
       }
 
@@ -4501,6 +5674,16 @@
         if (els.addByUrlBtn) {
           els.addByUrlBtn.addEventListener("click", () => {
             handleUnifiedTrackInputSubmit();
+          });
+        }
+        if (els.ymSourceYandexBtn) {
+          els.ymSourceYandexBtn.addEventListener("click", () => {
+            setYmSearchSource("yandex");
+          });
+        }
+        if (els.ymSourceYoutubeBtn) {
+          els.ymSourceYoutubeBtn.addEventListener("click", () => {
+            setYmSearchSource("youtube");
           });
         }
         if (els.ymSearchInput) {
@@ -4817,12 +6000,12 @@
           });
         }
 
-        els.progressBar.addEventListener("click", (event) => {
-          seekByClientX(event.clientX);
+        els.progressBar.addEventListener("click", async (event) => {
+          await seekByClientX(event.clientX);
         });
         if (els.fsProgressBar) {
-          els.fsProgressBar.addEventListener("click", (event) => {
-            seekByClientX(event.clientX, els.fsProgressBar);
+          els.fsProgressBar.addEventListener("click", async (event) => {
+            await seekByClientX(event.clientX, els.fsProgressBar);
           });
         }
         if (els.fsPlayBtn) {
@@ -4838,6 +6021,32 @@
         if (els.fsNextBtn) {
           els.fsNextBtn.addEventListener("click", () => {
             els.nextBtn.click();
+          });
+        }
+        if (els.volumeToggleBtn) {
+          els.volumeToggleBtn.addEventListener("click", () => {
+            toggleMuteVolume();
+          });
+        }
+        if (els.fsVolumeToggleBtn) {
+          els.fsVolumeToggleBtn.addEventListener("click", () => {
+            toggleMuteVolume();
+          });
+        }
+        if (els.volumeSlider) {
+          els.volumeSlider.addEventListener("input", () => {
+            setVolume(Number(els.volumeSlider.value || 0) / 100, { persist: false });
+          });
+          els.volumeSlider.addEventListener("change", () => {
+            persistPlayerSettings();
+          });
+        }
+        if (els.fsVolumeSlider) {
+          els.fsVolumeSlider.addEventListener("input", () => {
+            setVolume(Number(els.fsVolumeSlider.value || 0) / 100, { persist: false });
+          });
+          els.fsVolumeSlider.addEventListener("change", () => {
+            persistPlayerSettings();
           });
         }
 
@@ -4932,18 +6141,13 @@
           if (touchSeekState.seeking) {
             if (commit) {
               if (Number.isFinite(touchSeekState.previewTime)) {
-                const duration = Number(els.audio.duration);
-                const targetTime = Math.max(0, Math.min(Number.isFinite(duration) ? duration : 0, touchSeekState.previewTime));
-                els.audio.currentTime = targetTime;
-                updateProgressUI();
+                await seekToTime(touchSeekState.previewTime, {
+                  resume: touchSeekState.wasPlaying
+                });
               } else if (event.changedTouches && event.changedTouches.length) {
-                seekByClientX(event.changedTouches[0].clientX);
-              }
-
-              if (touchSeekState.wasPlaying) {
-                try {
-                  await els.audio.play();
-                } catch (_) {}
+                await seekByClientX(event.changedTouches[0].clientX, els.progressBar, {
+                  resume: touchSeekState.wasPlaying
+                });
               }
             } else {
               updateProgressUI();
@@ -5046,6 +6250,28 @@
             try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
           }
         });
+        els.audio.addEventListener("volumechange", () => {
+          setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
+        });
+        els.audio.addEventListener("error", async () => {
+          const track = state.currentTrack;
+          if (!track || normalizeTrackProvider(track.provider) !== "youtube") return;
+          if (state.audioRecoveryInProgress) return;
+          const now = Date.now();
+          if (now - Number(state.lastAudioRecoveryAt || 0) < 2500) return;
+          state.lastAudioRecoveryAt = now;
+          state.audioRecoveryInProgress = true;
+          try {
+            track.streamUrl = "";
+            track._streamCandidates = [];
+            track._streamResolvePromise = null;
+            await playTrack(track, state.activeSource || "shared", { restoreFlow: true });
+          } catch (_) {
+            // Silent recovery attempt.
+          } finally {
+            state.audioRecoveryInProgress = false;
+          }
+        });
         els.audio.addEventListener("ended", async () => {
           if (state.repeatMode === "loop" && state.currentTrack) {
             try {
@@ -5114,8 +6340,9 @@
             const ratio = Number(data.ratio);
             const duration = Number(els.audio.duration);
             if (!Number.isFinite(ratio) || !Number.isFinite(duration) || duration <= 0) return;
-            els.audio.currentTime = Math.max(0, Math.min(duration, duration * ratio));
-            updateProgressUI();
+            await seekToTime(Math.max(0, Math.min(duration, duration * ratio)), {
+              resume: !els.audio.paused
+            });
             return;
           }
           if (command === "play-toggle") {
@@ -5168,16 +6395,17 @@
         configureMediaSessionActions();
         setRepeatMode("off");
         setShuffleMode(false);
-        restoreSettings();
-
-        els.audio.volume = 0.85;
         els.audio.playbackRate = 1;
+        setVolume(0.85, { persist: false });
+        restoreSettings();
+        setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
 
         updateCurrentTrackUI(null);
         updateProgressUI();
         setFullscreenOpen(false);
         setAddHelpOpen(false);
         setActiveToolPanel("");
+        updateYmSearchSourceUi();
         renderSharedList();
         renderSearchList();
         bindSharedTracks();
