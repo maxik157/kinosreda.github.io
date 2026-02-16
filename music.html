@@ -2090,6 +2090,7 @@
       const SETTINGS_KEY = "musicPlayerSettings";
       const PLAYBACK_STATE_KEY = "musicPlaybackStateV1";
       const PLAYBACK_PERSIST_INTERVAL_SEC = 2;
+      const MAX_PLAYBACK_CANDIDATE_ATTEMPTS = 2;
       const FALLBACK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 360'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23f59e0b'/%3E%3Cstop offset='1' stop-color='%23fcd34d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='360' height='360' fill='%23070e1d'/%3E%3Ccircle cx='96' cy='104' r='118' fill='url(%23g)' fill-opacity='.4'/%3E%3Ccircle cx='288' cy='300' r='118' fill='url(%23g)' fill-opacity='.3'/%3E%3Cpath fill='white' fill-opacity='.87' d='M244 96v124c0 26-18 42-45 42-23 0-40-14-40-35s17-35 40-35c7 0 13 1 19 4v-70l-88 18v98c0 26-18 42-45 42-23 0-40-14-40-35s17-35 40-35c7 0 13 1 19 4V110l140-29z'/%3E%3C/svg%3E";
 
       const state = {
@@ -2148,10 +2149,16 @@
         audioRecoveryInProgress: false,
         lastAudioRecoveryAt: 0,
         youtubePrefetchTimer: 0,
-        lastVolumeBeforeMute: 0.85
+        playIntentToken: 0,
+        playIntentTimer: 0,
+        playIntentTrackId: "",
+        lastVolumeBeforeMute: 0.85,
+        playTrackInProgress: false,
+        playTrackRequestId: 0
       };
       const coverPreloadPromises = new Map();
       const youtubeStreamMetaCache = new Map();
+      const youtubeStreamResolvePromises = new Map();
 
       const els = {
         coverCarousel: document.getElementById("coverCarousel"),
@@ -2579,7 +2586,7 @@
           if (isYandexLike) {
             url = url.replace(/\/\d+x\d+(?=\/)/i, "/1000x1000");
           }
-          return url;
+          return toRealtimeCoverProxyUrl(url);
         };
 
         if (Array.isArray(rawTrack && rawTrack.thumbnails) && rawTrack.thumbnails.length) {
@@ -2613,16 +2620,64 @@
         return !url || url === FALLBACK_COVER;
       }
 
+      function shouldProxyCoverHost(hostname) {
+        const host = String(hostname || "").trim().toLowerCase();
+        if (!host) return false;
+        return host === "ytimg.com"
+          || host.endsWith(".ytimg.com")
+          || host === "googleusercontent.com"
+          || host.endsWith(".googleusercontent.com")
+          || host === "ggpht.com"
+          || host.endsWith(".ggpht.com");
+      }
+
+      function toRealtimeCoverProxyUrl(rawUrl) {
+        const value = String(rawUrl || "").trim();
+        if (!value || value === FALLBACK_COVER) return value;
+        try {
+          const parsed = new URL(value, window.location.origin);
+          if (!/^https?:$/i.test(parsed.protocol)) return value;
+          if (parsed.pathname === "/fetch-image") return parsed.toString();
+          if (!shouldProxyCoverHost(parsed.hostname)) return parsed.toString();
+          const proxyUrl = new URL(`${REALTIME_HTTP_BASE}/fetch-image`);
+          proxyUrl.searchParams.set("url", parsed.toString());
+          return proxyUrl.toString();
+        } catch (_) {
+          return value;
+        }
+      }
+
       function pickBestCoverUrl(...values) {
         for (const value of values) {
-          const url = String(value || "").trim();
+          const url = toRealtimeCoverProxyUrl(String(value || "").trim());
           if (!isFallbackCoverUrl(url)) return url;
         }
         return FALLBACK_COVER;
       }
 
+      function bindImageFallback(imageEl) {
+        if (!imageEl || imageEl.dataset.fallbackBound === "1") return;
+        imageEl.dataset.fallbackBound = "1";
+        imageEl.addEventListener("error", () => {
+          const currentSrc = String(imageEl.getAttribute("src") || "").trim();
+          if (currentSrc === FALLBACK_COVER) return;
+          imageEl.setAttribute("src", FALLBACK_COVER);
+          imageEl.dataset.currentSrc = FALLBACK_COVER;
+        });
+      }
+
+      function setImageSourceSafe(imageEl, src) {
+        if (!imageEl) return;
+        bindImageFallback(imageEl);
+        const nextSrc = toRealtimeCoverProxyUrl(String(src || "").trim()) || FALLBACK_COVER;
+        if (imageEl.dataset.currentSrc !== nextSrc) {
+          imageEl.src = nextSrc;
+          imageEl.dataset.currentSrc = nextSrc;
+        }
+      }
+
       function preloadCoverImage(src) {
-        const url = String(src || "").trim();
+        const url = toRealtimeCoverProxyUrl(String(src || "").trim());
         if (!url || url === FALLBACK_COVER) return Promise.resolve(url);
         if (coverPreloadPromises.has(url)) return coverPreloadPromises.get(url);
         const promise = new Promise((resolve) => {
@@ -2989,6 +3044,27 @@
         return !paused && !ended && !seeking && readyState >= 3;
       }
 
+      function getBufferedRatio() {
+        const audio = els.audio;
+        if (!audio || !audio.buffered || !audio.buffered.length) return 0;
+        try {
+          const end = Number(audio.buffered.end(audio.buffered.length - 1) || 0);
+          const duration = getKnownTrackDurationSec();
+          if (!Number.isFinite(end) || end <= 0 || !Number.isFinite(duration) || duration <= 0) return 0;
+          return Math.max(0, Math.min(1, end / duration));
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function getKnownTrackDurationSec() {
+        const audioDuration = Number(els.audio && els.audio.duration);
+        if (Number.isFinite(audioDuration) && audioDuration > 0) return audioDuration;
+        const fallbackDuration = Number(state.currentTrack && state.currentTrack.durationMs || 0) / 1000;
+        if (Number.isFinite(fallbackDuration) && fallbackDuration > 0) return fallbackDuration;
+        return 0;
+      }
+
       function clampVolume(value) {
         const numeric = Number(value);
         if (!Number.isFinite(numeric)) return 0.85;
@@ -3159,16 +3235,14 @@
           buttonEl.style.opacity = "0";
           buttonEl.style.pointerEvents = "none";
           buttonEl.setAttribute("aria-hidden", "true");
+          setImageSourceSafe(imageEl, FALLBACK_COVER);
           return;
         }
         buttonEl.style.opacity = "";
         buttonEl.style.pointerEvents = "";
         buttonEl.setAttribute("aria-hidden", "false");
         const src = String(preferredSrc || track.coverUrl || FALLBACK_COVER).trim() || FALLBACK_COVER;
-        if (imageEl.dataset.currentSrc !== src) {
-          imageEl.src = src;
-          imageEl.dataset.currentSrc = src;
-        }
+        setImageSourceSafe(imageEl, src);
       }
 
       function syncCoverImageRefs() {
@@ -3304,16 +3378,10 @@
 
       function updateCurrentTrackUI(track) {
         if (!track) {
-          if (els.currentCover && els.currentCover.dataset.currentSrc !== FALLBACK_COVER) {
-            els.currentCover.src = FALLBACK_COVER;
-            els.currentCover.dataset.currentSrc = FALLBACK_COVER;
-          }
+          setImageSourceSafe(els.currentCover, FALLBACK_COVER);
           els.currentTitle.textContent = "Выбери трек";
           els.currentArtists.textContent = "";
-          if (state.fullscreenOpen && els.fullscreenCover && els.fullscreenCover.dataset.currentSrc !== FALLBACK_COVER) {
-            els.fullscreenCover.src = FALLBACK_COVER;
-            els.fullscreenCover.dataset.currentSrc = FALLBACK_COVER;
-          }
+          if (state.fullscreenOpen) setImageSourceSafe(els.fullscreenCover, FALLBACK_COVER);
           if (els.fullscreenTitle) els.fullscreenTitle.textContent = "Выбери трек";
           if (els.fullscreenArtists) els.fullscreenArtists.textContent = "";
           if (els.currentDuration) els.currentDuration.textContent = "00:00";
@@ -3327,16 +3395,10 @@
         }
         const coverSrc = track.coverUrl || FALLBACK_COVER;
         preloadCoverImage(coverSrc);
-        if (els.currentCover && els.currentCover.dataset.currentSrc !== coverSrc) {
-          els.currentCover.src = coverSrc;
-          els.currentCover.dataset.currentSrc = coverSrc;
-        }
+        setImageSourceSafe(els.currentCover, coverSrc);
         els.currentTitle.textContent = track.title || "Без названия";
         els.currentArtists.textContent = track.artists && track.artists.length ? track.artists.join(", ") : "Неизвестный артист";
-        if (state.fullscreenOpen && els.fullscreenCover && els.fullscreenCover.dataset.currentSrc !== coverSrc) {
-          els.fullscreenCover.src = coverSrc;
-          els.fullscreenCover.dataset.currentSrc = coverSrc;
-        }
+        if (state.fullscreenOpen) setImageSourceSafe(els.fullscreenCover, coverSrc);
         if (els.fullscreenTitle) els.fullscreenTitle.textContent = track.title || "Без названия";
         if (els.fullscreenArtists) {
           els.fullscreenArtists.textContent = track.artists && track.artists.length ? track.artists.join(", ") : "Неизвестный артист";
@@ -3365,11 +3427,102 @@
         persistPlaybackSnapshot(false);
       }
 
+      function waitForAudioPlaybackStart(timeoutMs = 2200) {
+        if (isAudioActuallyPlaying()) return Promise.resolve(true);
+        return new Promise((resolve) => {
+          let done = false;
+          let timer = 0;
+          const finish = (started) => {
+            if (done) return;
+            done = true;
+            if (timer) clearTimeout(timer);
+            els.audio.removeEventListener("playing", onPlaying);
+            els.audio.removeEventListener("timeupdate", onTimeUpdate);
+            els.audio.removeEventListener("error", onFailed);
+            els.audio.removeEventListener("stalled", onFailed);
+            resolve(Boolean(started));
+          };
+          const onPlaying = () => finish(true);
+          const onTimeUpdate = () => {
+            if (isAudioActuallyPlaying()) finish(true);
+          };
+          const onFailed = () => finish(false);
+          els.audio.addEventListener("playing", onPlaying, { once: true });
+          els.audio.addEventListener("timeupdate", onTimeUpdate);
+          els.audio.addEventListener("error", onFailed, { once: true });
+          els.audio.addEventListener("stalled", onFailed, { once: true });
+          timer = setTimeout(() => finish(isAudioActuallyPlaying()), Math.max(700, Number(timeoutMs) || 2200));
+        });
+      }
+
+      function clearPlayIntent() {
+        state.playIntentToken += 1;
+        state.playIntentTrackId = "";
+        if (state.playIntentTimer) {
+          clearTimeout(state.playIntentTimer);
+          state.playIntentTimer = 0;
+        }
+      }
+
+      function hasActivePlayIntent() {
+        const trackId = String(state.currentTrack && state.currentTrack.trackId || "");
+        return Boolean(trackId && state.playIntentTrackId && trackId === state.playIntentTrackId);
+      }
+
+      function armPlayIntent(trackId, timeoutMs = 15000, minBufferedRatio = 0.1) {
+        const id = String(trackId || "").trim();
+        if (!id) return;
+        clearPlayIntent();
+        const token = state.playIntentToken;
+        const startedAt = Date.now();
+        state.playIntentTrackId = id;
+        let attemptedOnce = false;
+
+        const step = () => {
+          if (token !== state.playIntentToken) return;
+          const currentTrackId = String(state.currentTrack && state.currentTrack.trackId || "");
+          if (!currentTrackId || currentTrackId !== id) {
+            clearPlayIntent();
+            return;
+          }
+          if (isAudioActuallyPlaying()) {
+            clearPlayIntent();
+            setPlayButtonState(true);
+            return;
+          }
+          const bufferedRatio = getBufferedRatio();
+          const shouldAttemptPlay = !attemptedOnce || bufferedRatio >= Math.max(0, Math.min(1, Number(minBufferedRatio) || 0));
+          if (!shouldAttemptPlay) {
+            state.playIntentTimer = setTimeout(step, 220);
+            return;
+          }
+          attemptedOnce = true;
+          Promise.resolve(els.audio.play())
+            .catch(() => {})
+            .finally(() => {
+              if (token !== state.playIntentToken) return;
+              if (isAudioActuallyPlaying()) {
+                clearPlayIntent();
+                setPlayButtonState(true);
+                return;
+              }
+              if ((Date.now() - startedAt) >= Math.max(1200, Number(timeoutMs) || 15000)) {
+                clearPlayIntent();
+                setPlayButtonState(false);
+                return;
+              }
+              state.playIntentTimer = setTimeout(step, 280);
+            });
+        };
+
+        step();
+      }
+
       function getSeekTargetByClientX(clientX, progressElement = els.progressBar) {
         if (!progressElement) return null;
         const rect = progressElement.getBoundingClientRect();
         const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        const duration = els.audio.duration;
+        const duration = getKnownTrackDurationSec();
         if (!Number.isFinite(duration) || duration <= 0) return null;
         return {
           ratio,
@@ -3399,7 +3552,7 @@
       }
 
       async function seekToTime(targetTime, { resume = null } = {}) {
-        const duration = Number(els.audio.duration);
+        const duration = getKnownTrackDurationSec();
         if (!Number.isFinite(duration) || duration <= 0) return false;
         const safeTime = Math.max(0, Math.min(duration, Number(targetTime) || 0));
         const shouldResume = resume == null ? !els.audio.paused : Boolean(resume);
@@ -3422,13 +3575,7 @@
       function updateMediaSessionPositionState() {
         try {
           if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
-          let duration = Number(els.audio.duration);
-          if (!Number.isFinite(duration) || duration <= 0) {
-            const fallbackDuration = Number(state.currentTrack && state.currentTrack.durationMs || 0) / 1000;
-            if (Number.isFinite(fallbackDuration) && fallbackDuration > 0) {
-              duration = fallbackDuration;
-            }
-          }
+          const duration = getKnownTrackDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           navigator.mediaSession.setPositionState({
             duration,
@@ -3521,7 +3668,15 @@
 
         safeSet("play", async () => {
           try {
+            const hasSource = String(els.audio.src || "").trim().length > 0;
+            if (!hasSource && state.currentTrack) {
+              await playTrack(state.currentTrack, state.activeSource || "shared");
+              return;
+            }
+            armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
             await els.audio.play();
+            const started = await waitForAudioPlaybackStart(2200);
+            if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
           } catch (_) {}
         });
         safeSet("pause", () => {
@@ -3538,20 +3693,20 @@
         });
         safeSet("seekbackward", (details) => {
           const offset = Number(details && details.seekOffset) || 10;
-          const duration = Number(els.audio.duration);
+          const duration = getKnownTrackDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const nextTime = Math.max(0, (Number(els.audio.currentTime) || 0) - offset);
           seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekforward", (details) => {
           const offset = Number(details && details.seekOffset) || 10;
-          const duration = Number(els.audio.duration);
+          const duration = getKnownTrackDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const nextTime = Math.min(duration, (Number(els.audio.currentTime) || 0) + offset);
           seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekto", (details) => {
-          const duration = Number(els.audio.duration);
+          const duration = getKnownTrackDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const seekTime = Number(details && details.seekTime);
           if (!Number.isFinite(seekTime)) return;
@@ -3853,11 +4008,35 @@
         return url;
       }
 
+      function isLikelyYouTubeStreamHost(hostname) {
+        const host = String(hostname || "").trim().toLowerCase();
+        if (!host) return false;
+        return host === "googlevideo.com"
+          || host.endsWith(".googlevideo.com")
+          || host === "youtube.com"
+          || host.endsWith(".youtube.com")
+          || host === "ytimg.com"
+          || host.endsWith(".ytimg.com")
+          || host === "googleusercontent.com"
+          || host.endsWith(".googleusercontent.com");
+      }
+
       function normalizePlayableUrl(rawUrl) {
         const value = String(rawUrl || "").trim();
         if (!value) return "";
         try {
           const parsed = new URL(value);
+          if (parsed.pathname === "/ytm-audio-stream") {
+            const nestedRaw = String(parsed.searchParams.get("url") || "").trim();
+            if (!parsed.searchParams.get("mode") && nestedRaw) {
+              try {
+                const nested = new URL(nestedRaw);
+                if (isLikelyYouTubeStreamHost(nested.hostname)) {
+                  parsed.searchParams.set("mode", "proxy");
+                }
+              } catch (_) {}
+            }
+          }
           if (window.location.protocol === "https:" && parsed.protocol === "http:" && parsed.hostname === window.location.hostname) {
             parsed.protocol = "https:";
             return parsed.toString();
@@ -3866,6 +4045,36 @@
         } catch (_) {
           return value;
         }
+      }
+
+      function toRealtimeYtmAudioProxyUrl(rawUrl, mode = "proxy") {
+        const normalized = normalizePlayableUrl(rawUrl);
+        if (!normalized) return "";
+        try {
+          const parsed = new URL(normalized);
+          if (parsed.pathname === "/ytm-audio-stream") {
+            if (!parsed.searchParams.get("mode")) {
+              parsed.searchParams.set("mode", String(mode || "proxy").toLowerCase() === "direct" ? "direct" : "proxy");
+            }
+            return parsed.toString();
+          }
+          if (!isLikelyYouTubeStreamHost(parsed.hostname)) return normalized;
+          const proxied = new URL(`${REALTIME_HTTP_BASE}/ytm-audio-stream`);
+          proxied.searchParams.set("url", parsed.toString());
+          proxied.searchParams.set("mode", String(mode || "proxy").toLowerCase() === "direct" ? "direct" : "proxy");
+          return proxied.toString();
+        } catch (_) {
+          return normalized;
+        }
+      }
+
+      function buildRealtimeYtmStreamByVideoId(videoId, mode = "proxy") {
+        const id = String(videoId || "").trim();
+        if (!id) return "";
+        const url = new URL(`${REALTIME_HTTP_BASE}/ytm-audio-stream`);
+        url.searchParams.set("video_id", id);
+        url.searchParams.set("mode", String(mode || "proxy").toLowerCase() === "direct" ? "direct" : "proxy");
+        return url.toString();
       }
 
       function extractYoutubeStreamExpireMs(rawUrl) {
@@ -3917,14 +4126,13 @@
         return `yt:${String(track.trackId || "").trim()}`;
       }
 
-      function getCachedYouTubeCandidates(track, minTtlMs = 45_000) {
+      function getCachedYouTubeCandidates(track, minTtlMs = 45_000, { allowExpired = false } = {}) {
         const key = getYouTubeStreamCacheKey(track);
         if (!key) return [];
         const entry = youtubeStreamMetaCache.get(key);
         if (!entry || typeof entry !== "object") return [];
         const expiresAt = Number(entry.expiresAt || 0);
-        if (expiresAt > 0 && expiresAt <= Date.now() + Math.max(3_000, Number(minTtlMs || 45_000) - 15_000)) {
-          youtubeStreamMetaCache.delete(key);
+        if (!allowExpired && expiresAt > 0 && expiresAt <= Date.now() + Math.max(3_000, Number(minTtlMs || 45_000) - 15_000)) {
           return [];
         }
         const candidates = Array.isArray(entry.candidates) ? entry.candidates : [];
@@ -3934,7 +4142,7 @@
             bitrate: String(item && item.bitrate || "").trim(),
             ext: String(item && item.ext || "").trim()
           }))
-          .filter((item) => item.url && isFreshYoutubeStreamUrl(item.url, minTtlMs));
+          .filter((item) => item.url && (allowExpired || isFreshYoutubeStreamUrl(item.url, minTtlMs)));
       }
 
       function setCachedYouTubeCandidates(track, candidates = []) {
@@ -4073,21 +4281,7 @@
 
         const coverImage = li.querySelector(".track-cover");
         if (coverImage) {
-          coverImage.addEventListener("error", () => {
-            const currentSrc = String(coverImage.getAttribute("src") || "").trim();
-            if (!isFallbackCoverUrl(currentSrc)) {
-              coverImage.setAttribute("src", FALLBACK_COVER);
-            }
-          }, { once: true });
-        }
-
-        const playActionBtn = li.querySelector('[data-action="play"]');
-        if (playActionBtn) {
-          const warmup = () => {
-            warmupTrackStream(track);
-          };
-          playActionBtn.addEventListener("pointerdown", warmup, { passive: true });
-          playActionBtn.addEventListener("touchstart", warmup, { passive: true });
+          bindImageFallback(coverImage);
         }
 
         li.addEventListener("click", async (event) => {
@@ -4100,17 +4294,25 @@
             if (isSameTrack) {
               try {
                 if (els.audio.paused) {
+                  armPlayIntent(String(track.trackId || ""), 12000, 0.1);
                   await els.audio.play();
-                  setPlayButtonState(true);
+                  const started = await waitForAudioPlaybackStart(2200);
+                  setPlayButtonState(started);
+                  if (!started) {
+                    armPlayIntent(String(track.trackId || ""), 8000, 0.1);
+                  } else {
+                    clearPlayIntent();
+                  }
                 } else {
                   els.audio.pause();
+                  clearPlayIntent();
                   setPlayButtonState(false);
                 }
                 updateSharedListPlaybackUI();
               } catch (_) {}
               return;
             }
-            await playTrack(track, source);
+            await playTrack(track, source, { userGesture: true });
             return;
           }
           if (action === "add") {
@@ -4902,9 +5104,20 @@
         await executeYmTrackSearch(raw);
       }
 
-      async function resolveYoutubeStream(track) {
+      async function resolveYoutubeStream(track, options = {}) {
+        const allowStaleFallback = options && options.allowStaleFallback !== false;
+        const forceRefresh = Boolean(options && options.forceRefresh);
         if (!track || !track.trackId) return { url: "", bitrate: "" };
-        const cachedCandidates = getCachedYouTubeCandidates(track);
+        const trackIdKey = String(track.trackId || "");
+        if (!trackIdKey) return { url: "", bitrate: "" };
+        if (forceRefresh) {
+          clearCachedYouTubeCandidates(track);
+          track._streamCandidates = [];
+          track.streamUrl = "";
+          track.bitrate = "";
+        }
+
+        const cachedCandidates = forceRefresh ? [] : getCachedYouTubeCandidates(track);
         if (cachedCandidates.length) {
           track._streamCandidates = cachedCandidates.map((item) => ({
             url: item.url,
@@ -4920,7 +5133,26 @@
             bitrate: cachedBest.bitrate || "cached"
           };
         }
-        const prefetchedCandidate = getFreshYoutubeCandidate(track);
+        const staleCandidates = !forceRefresh && allowStaleFallback
+          ? getCachedYouTubeCandidates(track, 5_000, { allowExpired: true })
+          : [];
+        if (staleCandidates.length) {
+          track._streamCandidates = staleCandidates.map((item) => ({
+            url: item.url,
+            bitrate: item.bitrate || "cached",
+            ext: item.ext || ""
+          }));
+          const staleBest = track._streamCandidates[0];
+          track.streamUrl = staleBest.url;
+          track.bitrate = staleBest.bitrate || "cached";
+          track._streamResolvedAt = Date.now();
+
+          return {
+            url: staleBest.url,
+            bitrate: staleBest.bitrate || "cached"
+          };
+        }
+        const prefetchedCandidate = forceRefresh ? null : getFreshYoutubeCandidate(track);
         if (prefetchedCandidate && prefetchedCandidate.url) {
           track.streamUrl = prefetchedCandidate.url;
           track.bitrate = prefetchedCandidate.bitrate || track.bitrate || "cached";
@@ -4932,7 +5164,7 @@
           };
         }
 
-        const cachedUrl = normalizePlayableUrl(track.streamUrl);
+        const cachedUrl = forceRefresh ? "" : normalizePlayableUrl(track.streamUrl);
         if (cachedUrl && isFreshYoutubeStreamUrl(cachedUrl)) {
           track._streamCandidates = [{
             url: cachedUrl,
@@ -4947,6 +5179,10 @@
           track.bitrate = "";
           track._streamCandidates = [];
         }
+        const sharedResolvePromise = youtubeStreamResolvePromises.get(trackIdKey);
+        if (sharedResolvePromise) {
+          return await sharedResolvePromise;
+        }
         if (track._streamResolvePromise) {
           return await track._streamResolvePromise;
         }
@@ -4959,10 +5195,12 @@
           });
           const payload = await parseYandexPayload(response);
           const result = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+          const resolvedViaMode = String(result.resolvedVia || "").trim().toLowerCase() === "direct" ? "direct" : "proxy";
           const prepared = [];
           const seen = new Set();
           const pushCandidate = (urlValue, meta = {}) => {
-            const normalizedUrl = normalizePlayableUrl(urlValue);
+            const proxiedUrl = toRealtimeYtmAudioProxyUrl(urlValue, resolvedViaMode);
+            const normalizedUrl = normalizePlayableUrl(proxiedUrl);
             if (!normalizedUrl || seen.has(normalizedUrl)) return;
             seen.add(normalizedUrl);
             const bitrateKbps = Number(meta.bitrateInKbps || 0);
@@ -4986,14 +5224,6 @@
           }
 
           pushCandidate(result.directLink, {
-            bitrateInKbps: result.bitrateInKbps,
-            ext: result.ext
-          });
-          pushCandidate(result.resolvedRawDirectLink, {
-            bitrateInKbps: result.bitrateInKbps,
-            ext: result.ext
-          });
-          pushCandidate(result.rawDirectLink, {
             bitrateInKbps: result.bitrateInKbps,
             ext: result.ext
           });
@@ -5027,11 +5257,13 @@
             bitrate: best.bitrate || "ytm"
           };
         })();
+        youtubeStreamResolvePromises.set(trackIdKey, track._streamResolvePromise);
 
         try {
           return await track._streamResolvePromise;
         } finally {
           track._streamResolvePromise = null;
+          youtubeStreamResolvePromises.delete(trackIdKey);
         }
       }
 
@@ -5059,7 +5291,6 @@
         state.youtubePrefetchTimer = setTimeout(() => {
           state.youtubePrefetchTimer = 0;
           if (!state.currentTrack) return;
-          if (isConstrainedNetworkForPrefetch()) return;
           const neighbors = getNeighborTracks();
           queueYoutubeStreamPrefetch(neighbors.next);
         }, 180);
@@ -5417,6 +5648,8 @@
 
       async function playTrack(track, source = "shared", options = {}) {
         if (!track || !track.trackId) return;
+        const userGesture = Boolean(options && options.userGesture);
+        const forceResolveRefresh = Boolean(options && options.forceResolveRefresh);
         if (!state.coverSwipeInProgress) {
           const outgoingTrackId = String((state.currentTrack && state.currentTrack.trackId) || "");
           const outgoingCoverSrc = String((els.currentCover && els.currentCover.dataset.currentSrc) || "");
@@ -5447,32 +5680,102 @@
         }
 
         setPlayButtonState(false);
+        clearPlayIntent();
+        if (userGesture) {
+          armPlayIntent(String(track.trackId || ""), 18000, 0.1);
+        }
+        const playRequestId = ++state.playTrackRequestId;
+        state.playTrackInProgress = true;
+        const isObsoleteRequest = () => state.playTrackRequestId !== playRequestId;
         try {
-          const stream = await resolveStream(track);
-          const candidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
-            ? track._streamCandidates
-            : (stream.url ? [stream] : []);
-          if (!candidates.length) throw new Error("Stream URL не найден");
-
           let started = false;
           let lastError = null;
           let lastCandidateHost = "";
-          for (const candidate of candidates) {
+          const provider = normalizeTrackProvider(track.provider);
+
+          const tryStartCandidate = async (candidate, { startupTimeoutMs = 5200 } = {}) => {
+            if (!candidate || !candidate.url) return false;
+            if (isObsoleteRequest()) return false;
             try {
+              const candidateUrl = normalizePlayableUrl(candidate.url);
+              if (!candidateUrl) return false;
               try {
-                lastCandidateHost = new URL(candidate.url).host || "";
+                lastCandidateHost = new URL(candidateUrl).host || "";
               } catch (_) {
                 lastCandidateHost = "";
               }
-
-              els.audio.src = candidate.url;
+              const currentSource = normalizePlayableUrl(els.audio.currentSrc || els.audio.src || "");
+              const sameSource = currentSource && currentSource === candidateUrl;
+              if (!sameSource) {
+                try { els.audio.pause(); } catch (_) {}
+                els.audio.src = candidateUrl;
+                els.audio.preload = "auto";
+              }
               els.audio.playbackRate = 1;
-              await els.audio.play();
-              track.streamUrl = candidate.url;
+              if (provider === "youtube" && userGesture) {
+                Promise.resolve(els.audio.play()).catch(() => {});
+                track.streamUrl = candidateUrl;
+                track.bitrate = candidate.bitrate || "";
+                state.currentStreamMeta = { url: candidateUrl, bitrate: candidate.bitrate || "" };
+                return true;
+              }
+              await new Promise((resolve, reject) => {
+                let settled = false;
+                let timer = 0;
+                let playResolved = false;
+                const finish = (fn) => {
+                  if (settled) return;
+                  settled = true;
+                  cleanup();
+                  fn();
+                };
+                const onPlaying = () => finish(resolve);
+                const onCanPlay = () => {
+                  if (playResolved || !els.audio.paused) {
+                    finish(resolve);
+                  }
+                };
+                const onError = () => {
+                  const code = els.audio && els.audio.error ? Number(els.audio.error.code || 0) : 0;
+                  finish(() => reject(new Error(code ? `media_error_${code}` : "media_error")));
+                };
+                const cleanup = () => {
+                  if (timer) clearTimeout(timer);
+                  els.audio.removeEventListener("playing", onPlaying);
+                  els.audio.removeEventListener("canplay", onCanPlay);
+                  els.audio.removeEventListener("error", onError);
+                };
+
+                els.audio.addEventListener("playing", onPlaying, { once: true });
+                els.audio.addEventListener("canplay", onCanPlay, { once: true });
+                els.audio.addEventListener("error", onError, { once: true });
+                timer = setTimeout(() => {
+                  finish(() => reject(new Error("startup_timeout")));
+                }, Math.max(1200, Number(startupTimeoutMs) || 5200));
+
+                Promise.resolve(els.audio.play())
+                  .then(() => {
+                    playResolved = true;
+                    if (!settled && (els.audio.readyState >= 2 || !els.audio.paused)) {
+                      finish(resolve);
+                    }
+                  })
+                  .catch((error) => {
+                    finish(() => reject(error || new Error("play_failed")));
+                  });
+              });
+              if (isObsoleteRequest()) return false;
+              track.streamUrl = candidateUrl;
               track.bitrate = candidate.bitrate || "";
-              state.currentStreamMeta = { url: candidate.url, bitrate: candidate.bitrate || "" };
-              started = true;
-              break;
+              state.currentStreamMeta = { url: candidateUrl, bitrate: candidate.bitrate || "" };
+              if (els.audio.paused) {
+                const retryOnce = () => {
+                  els.audio.removeEventListener("canplay", retryOnce);
+                  Promise.resolve(els.audio.play()).catch(() => {});
+                };
+                els.audio.addEventListener("canplay", retryOnce, { once: true });
+              }
+              return true;
             } catch (error) {
               const mediaErrorCode = els.audio && els.audio.error ? els.audio.error.code : 0;
               if (mediaErrorCode) {
@@ -5480,13 +5783,73 @@
               } else {
                 lastError = error;
               }
+              try { els.audio.pause(); } catch (_) {}
+              return false;
+            }
+          };
+
+          if (provider === "youtube") {
+            const optimisticCandidates = [];
+            const optimisticSeen = new Set();
+            const appendOptimistic = (candidate) => {
+              const url = normalizePlayableUrl(candidate && candidate.url);
+              if (!url || optimisticSeen.has(url)) return;
+              optimisticSeen.add(url);
+              optimisticCandidates.push({
+                url,
+                bitrate: String(candidate && candidate.bitrate || "").trim(),
+                ext: String(candidate && candidate.ext || "").trim()
+              });
+            };
+
+            appendOptimistic({
+              url: buildRealtimeYtmStreamByVideoId(track.trackId, "proxy"),
+              bitrate: track.bitrate || "ytm"
+            });
+
+            const optimisticTryList = optimisticCandidates.slice(0, 1);
+            for (const candidate of optimisticTryList) {
+              const startupTimeoutMs = userGesture ? 12000 : 9000;
+              if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
+                started = true;
+                break;
+              }
             }
           }
+
+          if (!started) {
+            const stream = provider === "youtube"
+              ? await resolveYoutubeStream(track, {
+                allowStaleFallback: false,
+                forceRefresh: forceResolveRefresh
+              })
+              : await resolveStream(track);
+            if (isObsoleteRequest()) return;
+            const candidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
+              ? track._streamCandidates
+              : (stream.url ? [stream] : []);
+            if (!candidates.length) throw new Error("Stream URL не найден");
+
+            const resolvedTryList = candidates.slice(0, provider === "youtube" ? 1 : MAX_PLAYBACK_CANDIDATE_ATTEMPTS);
+            for (const candidate of resolvedTryList) {
+              if (await tryStartCandidate(candidate, { startupTimeoutMs: provider === "youtube" ? 10000 : 5200 })) {
+                started = true;
+                break;
+              }
+            }
+          }
+
           if (!started) {
             throw lastError || new Error("Нет поддерживаемого источника аудио");
           }
+          if (isObsoleteRequest()) return;
 
           const isActuallyPlaying = isAudioActuallyPlaying();
+          if (isActuallyPlaying) {
+            clearPlayIntent();
+          } else if (userGesture) {
+            armPlayIntent(String(track.trackId || ""), 12000, 0.1);
+          }
           setPlayButtonState(isActuallyPlaying);
           if (els.currentBitrate) els.currentBitrate.textContent = `stream: ${track.bitrate || "auto"}`;
           updateSharedListPlaybackUI();
@@ -5495,21 +5858,27 @@
             scheduleYoutubeNeighborPrefetch();
           }
         } catch (error) {
+          if (isObsoleteRequest()) return;
           track.streamUrl = "";
           track.bitrate = "";
+          clearPlayIntent();
           setPlayButtonState(false);
           updateSharedListPlaybackUI();
           persistPlaybackSnapshot(true);
+        } finally {
+          if (state.playTrackRequestId === playRequestId) {
+            state.playTrackInProgress = false;
+          }
         }
       }
 
-      async function playNext() {
+      async function playNext(options = {}) {
         const source = state.activeSource === "search" ? "search" : "shared";
         const list = getPlaybackListBySource(source);
         if (!list.length) return;
         if (state.shuffle) {
           const randomTrack = list[Math.floor(Math.random() * list.length)];
-          await playTrack(randomTrack, source);
+          await playTrack(randomTrack, source, options);
           return;
         }
 
@@ -5520,11 +5889,11 @@
         const target = list[nextIndex];
         if (target) {
           state.currentIndex = nextIndex;
-          await playTrack(target, source);
+          await playTrack(target, source, options);
         }
       }
 
-      async function playPrev() {
+      async function playPrev(options = {}) {
         const source = state.activeSource === "search" ? "search" : "shared";
         const list = getPlaybackListBySource(source);
         if (!list.length) return;
@@ -5535,7 +5904,7 @@
         const target = list[prevIndex];
         if (target) {
           state.currentIndex = prevIndex;
-          await playTrack(target, source);
+          await playTrack(target, source, options);
         }
       }
 
@@ -5918,42 +6287,53 @@
           });
         }
 
-        const warmupCurrentTrack = () => {
-          warmupTrackStream(state.currentTrack);
-        };
-        els.playBtn.addEventListener("pointerdown", warmupCurrentTrack, { passive: true });
-        els.playBtn.addEventListener("touchstart", warmupCurrentTrack, { passive: true });
-
         els.playBtn.addEventListener("click", async () => {
           if (!state.currentTrack) {
             const fallback = state.renderedTracks[0];
-            if (fallback) await playTrack(fallback, "shared");
+            if (fallback) await playTrack(fallback, "shared", { userGesture: true });
             return;
           }
           if (els.audio.paused) {
             try {
-              await els.audio.play();
-              setPlayButtonState(true);
+              const hasSource = String(els.audio.src || "").trim().length > 0;
+              if (!hasSource) {
+                await playTrack(state.currentTrack, state.activeSource || "shared", { userGesture: true });
+              } else {
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
+                await els.audio.play();
+                const started = await waitForAudioPlaybackStart(2200);
+                setPlayButtonState(started);
+                if (!started) {
+                  armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
+                } else {
+                  clearPlayIntent();
+                }
+              }
             } catch (_) {}
           } else {
             els.audio.pause();
+            clearPlayIntent();
             setPlayButtonState(false);
           }
         });
 
-        els.prevBtn.addEventListener("click", playPrev);
-        els.nextBtn.addEventListener("click", playNext);
+        els.prevBtn.addEventListener("click", () => {
+          playPrev({ userGesture: true });
+        });
+        els.nextBtn.addEventListener("click", () => {
+          playNext({ userGesture: true });
+        });
 
         if (els.peekPrevBtn) {
           els.peekPrevBtn.addEventListener("click", async () => {
             if (els.peekPrevBtn.disabled) return;
-            await playPrev();
+            await playPrev({ userGesture: true });
           });
         }
         if (els.peekNextBtn) {
           els.peekNextBtn.addEventListener("click", async () => {
             if (els.peekNextBtn.disabled) return;
-            await playNext();
+            await playNext({ userGesture: true });
           });
         }
 
@@ -6083,7 +6463,7 @@
               const nextIndex = state.renderedTracks.findIndex((item) => String(item && item.trackId || "") === String(targetTrack.trackId || ""));
               if (nextIndex >= 0) state.currentIndex = nextIndex;
             }
-            playTrack(targetTrack, nextSource)
+            playTrack(targetTrack, nextSource, { userGesture: true })
               .catch(() => {})
               .finally(() => {
                 state.coverSwipeInProgress = false;
@@ -6452,8 +6832,17 @@
           updateMediaSession(state.currentTrack);
         });
         els.audio.addEventListener("canplay", () => {
+          if (hasActivePlayIntent() && els.audio.paused) {
+            Promise.resolve(els.audio.play()).catch(() => {});
+          }
           setPlayButtonState(isAudioActuallyPlaying());
           updateMediaSessionPositionState();
+        });
+        els.audio.addEventListener("progress", () => {
+          if (!hasActivePlayIntent()) return;
+          if (!els.audio.paused) return;
+          if (getBufferedRatio() < 0.1) return;
+          Promise.resolve(els.audio.play()).catch(() => {});
         });
         els.audio.addEventListener("waiting", () => {
           setPlayButtonState(false);
@@ -6462,6 +6851,7 @@
           }
         });
         els.audio.addEventListener("playing", () => {
+          clearPlayIntent();
           setPlayButtonState(true);
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
@@ -6488,7 +6878,11 @@
         els.audio.addEventListener("error", async () => {
           const track = state.currentTrack;
           if (!track || normalizeTrackProvider(track.provider) !== "youtube") return;
+          if (state.playTrackInProgress) return;
           if (state.audioRecoveryInProgress) return;
+          const currentTime = Number(els.audio.currentTime || 0);
+          const likelyStartupFailure = currentTime < 0.2 && !isAudioActuallyPlaying();
+          if (likelyStartupFailure && !hasActivePlayIntent()) return;
           const now = Date.now();
           if (now - Number(state.lastAudioRecoveryAt || 0) < 2500) return;
           state.lastAudioRecoveryAt = now;
@@ -6498,7 +6892,10 @@
             track._streamCandidates = [];
             track._streamResolvePromise = null;
             clearCachedYouTubeCandidates(track);
-            await playTrack(track, state.activeSource || "shared", { restoreFlow: true });
+            await playTrack(track, state.activeSource || "shared", {
+              restoreFlow: true,
+              forceResolveRefresh: true
+            });
           } catch (_) {
             // Silent recovery attempt.
           } finally {
@@ -6506,6 +6903,7 @@
           }
         });
         els.audio.addEventListener("ended", async () => {
+          clearPlayIntent();
           setPlayButtonState(false);
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
@@ -6567,11 +6965,11 @@
           const command = String(data.command || "").trim();
 
           if (command === "prev") {
-            await playPrev();
+            await playPrev({ userGesture: true });
             return;
           }
           if (command === "next") {
-            await playNext();
+            await playNext({ userGesture: true });
             return;
           }
           if (command === "seek-to") {
@@ -6586,16 +6984,20 @@
           if (command === "play-toggle") {
             if (!state.currentTrack) {
               const fallback = state.renderedTracks[0];
-              if (fallback) await playTrack(fallback, "shared");
+              if (fallback) await playTrack(fallback, "shared", { userGesture: true });
               return;
             }
             if (els.audio.paused) {
               try {
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
                 await els.audio.play();
-                setPlayButtonState(true);
+                const started = await waitForAudioPlaybackStart(2200);
+                setPlayButtonState(started);
+                if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
               } catch (_) {}
             } else {
               els.audio.pause();
+              clearPlayIntent();
               setPlayButtonState(false);
             }
             return;
@@ -6637,6 +7039,10 @@
         setVolume(0.85, { persist: false });
         restoreSettings();
         setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
+
+        [els.currentCover, els.fullscreenCover, els.peekPrevCover, els.peekNextCover].forEach((img) => {
+          bindImageFallback(img);
+        });
 
         updateCurrentTrackUI(null);
         updateProgressUI();
