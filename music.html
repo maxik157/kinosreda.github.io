@@ -2151,6 +2151,7 @@
         lastVolumeBeforeMute: 0.85
       };
       const coverPreloadPromises = new Map();
+      const youtubeStreamMetaCache = new Map();
 
       const els = {
         coverCarousel: document.getElementById("coverCarousel"),
@@ -2956,7 +2957,7 @@
         if (normalized) {
           updateCurrentTrackUI(state.currentTrack);
           updateProgressUI();
-          setPlayButtonState(!els.audio.paused);
+          setPlayButtonState(isAudioActuallyPlaying());
         }
         notifyParentPlayerState();
       }
@@ -2976,6 +2977,16 @@
         }
         updateSharedListPlaybackUI();
         notifyParentPlayerState();
+      }
+
+      function isAudioActuallyPlaying() {
+        const audio = els.audio;
+        if (!audio) return false;
+        const readyState = Number(audio.readyState || 0);
+        const paused = Boolean(audio.paused);
+        const ended = Boolean(audio.ended);
+        const seeking = Boolean(audio.seeking);
+        return !paused && !ended && !seeking && readyState >= 3;
       }
 
       function clampVolume(value) {
@@ -3411,7 +3422,13 @@
       function updateMediaSessionPositionState() {
         try {
           if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
-          const duration = Number(els.audio.duration);
+          let duration = Number(els.audio.duration);
+          if (!Number.isFinite(duration) || duration <= 0) {
+            const fallbackDuration = Number(state.currentTrack && state.currentTrack.durationMs || 0) / 1000;
+            if (Number.isFinite(fallbackDuration) && fallbackDuration > 0) {
+              duration = fallbackDuration;
+            }
+          }
           if (!Number.isFinite(duration) || duration <= 0) return;
           navigator.mediaSession.setPositionState({
             duration,
@@ -3472,7 +3489,7 @@
           title: String(track && track.title || ""),
           artists: Array.isArray(track && track.artists) ? track.artists : [],
           coverUrl: String(track && track.coverUrl || FALLBACK_COVER),
-          isPlaying: Boolean(track && !els.audio.paused),
+          isPlaying: Boolean(track && isAudioActuallyPlaying()),
           currentTime: Number(els.audio.currentTime || 0),
           duration: Number.isFinite(duration) && duration > 0 ? duration : fallbackDuration,
           fullscreenOpen: Boolean(state.fullscreenOpen)
@@ -3894,6 +3911,87 @@
         return null;
       }
 
+      function getYouTubeStreamCacheKey(track) {
+        if (!track || !track.trackId) return "";
+        if (normalizeTrackProvider(track.provider) !== "youtube") return "";
+        return `yt:${String(track.trackId || "").trim()}`;
+      }
+
+      function getCachedYouTubeCandidates(track, minTtlMs = 45_000) {
+        const key = getYouTubeStreamCacheKey(track);
+        if (!key) return [];
+        const entry = youtubeStreamMetaCache.get(key);
+        if (!entry || typeof entry !== "object") return [];
+        const expiresAt = Number(entry.expiresAt || 0);
+        if (expiresAt > 0 && expiresAt <= Date.now() + Math.max(3_000, Number(minTtlMs || 45_000) - 15_000)) {
+          youtubeStreamMetaCache.delete(key);
+          return [];
+        }
+        const candidates = Array.isArray(entry.candidates) ? entry.candidates : [];
+        return candidates
+          .map((item) => ({
+            url: normalizePlayableUrl(item && item.url),
+            bitrate: String(item && item.bitrate || "").trim(),
+            ext: String(item && item.ext || "").trim()
+          }))
+          .filter((item) => item.url && isFreshYoutubeStreamUrl(item.url, minTtlMs));
+      }
+
+      function setCachedYouTubeCandidates(track, candidates = []) {
+        const key = getYouTubeStreamCacheKey(track);
+        if (!key) return;
+        const prepared = (Array.isArray(candidates) ? candidates : [])
+          .map((item) => ({
+            url: normalizePlayableUrl(item && item.url),
+            bitrate: String(item && item.bitrate || "").trim(),
+            ext: String(item && item.ext || "").trim()
+          }))
+          .filter((item) => item.url);
+        if (!prepared.length) {
+          youtubeStreamMetaCache.delete(key);
+          return;
+        }
+
+        let expiresAt = Date.now() + 120_000;
+        let minExpire = Number.POSITIVE_INFINITY;
+        prepared.forEach((item) => {
+          const exp = extractYoutubeStreamExpireMs(item.url);
+          if (exp > 0) minExpire = Math.min(minExpire, exp);
+        });
+        if (Number.isFinite(minExpire)) {
+          expiresAt = Math.max(Date.now() + 10_000, minExpire - 25_000);
+        }
+
+        youtubeStreamMetaCache.set(key, {
+          expiresAt,
+          candidates: prepared
+        });
+      }
+
+      function clearCachedYouTubeCandidates(track) {
+        const key = getYouTubeStreamCacheKey(track);
+        if (!key) return;
+        youtubeStreamMetaCache.delete(key);
+      }
+
+      function isConstrainedNetworkForPrefetch() {
+        try {
+          const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+          const effectiveType = String(connection && connection.effectiveType || "").toLowerCase();
+          const saveData = Boolean(connection && connection.saveData);
+          if (saveData) return true;
+          if (effectiveType.includes("2g") || effectiveType.includes("3g")) return true;
+        } catch (_) {}
+        return !isDesktopViewport();
+      }
+
+      function warmupTrackStream(track) {
+        if (!track || !track.trackId) return;
+        if (normalizeTrackProvider(track.provider) === "youtube") {
+          queueYoutubeStreamPrefetch(track);
+        }
+      }
+
       async function parseYandexPayload(response) {
         const payloadText = await response.text();
         const payload = safeJson(payloadText, null);
@@ -3981,6 +4079,15 @@
               coverImage.setAttribute("src", FALLBACK_COVER);
             }
           }, { once: true });
+        }
+
+        const playActionBtn = li.querySelector('[data-action="play"]');
+        if (playActionBtn) {
+          const warmup = () => {
+            warmupTrackStream(track);
+          };
+          playActionBtn.addEventListener("pointerdown", warmup, { passive: true });
+          playActionBtn.addEventListener("touchstart", warmup, { passive: true });
         }
 
         li.addEventListener("click", async (event) => {
@@ -4366,7 +4473,7 @@
         const useSource = state.activeSource === sourceNormalized;
         const currentKey = String(currentTrack && currentTrack.key || "");
         const currentTrackId = String(currentTrack && currentTrack.trackId || "");
-        const isPlaying = Boolean(useSource && currentTrack && !els.audio.paused);
+        const isPlaying = Boolean(useSource && currentTrack && isAudioActuallyPlaying());
         const playMarkup = '<path d="M8 5v14l11-7z"></path>';
         const pauseMarkup = '<path d="M7 5h4v14H7zM13 5h4v14h-4z"></path>';
 
@@ -4797,11 +4904,28 @@
 
       async function resolveYoutubeStream(track) {
         if (!track || !track.trackId) return { url: "", bitrate: "" };
+        const cachedCandidates = getCachedYouTubeCandidates(track);
+        if (cachedCandidates.length) {
+          track._streamCandidates = cachedCandidates.map((item) => ({
+            url: item.url,
+            bitrate: item.bitrate || "cached",
+            ext: item.ext || ""
+          }));
+          const cachedBest = track._streamCandidates[0];
+          track.streamUrl = cachedBest.url;
+          track.bitrate = cachedBest.bitrate || "cached";
+          track._streamResolvedAt = Date.now();
+          return {
+            url: cachedBest.url,
+            bitrate: cachedBest.bitrate || "cached"
+          };
+        }
         const prefetchedCandidate = getFreshYoutubeCandidate(track);
         if (prefetchedCandidate && prefetchedCandidate.url) {
           track.streamUrl = prefetchedCandidate.url;
           track.bitrate = prefetchedCandidate.bitrate || track.bitrate || "cached";
           track._streamResolvedAt = Date.now();
+          setCachedYouTubeCandidates(track, Array.isArray(track._streamCandidates) ? track._streamCandidates : [prefetchedCandidate]);
           return {
             url: prefetchedCandidate.url,
             bitrate: prefetchedCandidate.bitrate || track.bitrate || "cached"
@@ -4815,6 +4939,7 @@
             bitrate: track.bitrate || "cached",
             ext: String((track._ytStreamMeta && track._ytStreamMeta.ext) || "").trim()
           }];
+          setCachedYouTubeCandidates(track, track._streamCandidates);
           return { url: cachedUrl, bitrate: track.bitrate || "cached" };
         }
         if (cachedUrl && !isFreshYoutubeStreamUrl(cachedUrl)) {
@@ -4896,6 +5021,7 @@
           track._streamResolvedAt = Date.now();
           track.streamUrl = best.url;
           track.bitrate = best.bitrate || "ytm";
+          setCachedYouTubeCandidates(track, track._streamCandidates);
           return {
             url: best.url,
             bitrate: best.bitrate || "ytm"
@@ -4912,8 +5038,11 @@
       function queueYoutubeStreamPrefetch(track) {
         if (!track || !track.trackId) return;
         if (normalizeTrackProvider(track.provider) !== "youtube") return;
+        if (isConstrainedNetworkForPrefetch() && track !== state.currentTrack) return;
         if (track._streamResolvePromise || track._ytPrefetchPending) return;
-        if ((track.streamUrl && isFreshYoutubeStreamUrl(track.streamUrl)) || getFreshYoutubeCandidate(track)) return;
+        if ((track.streamUrl && isFreshYoutubeStreamUrl(track.streamUrl))
+          || getFreshYoutubeCandidate(track)
+          || getCachedYouTubeCandidates(track).length) return;
         track._ytPrefetchPending = true;
         resolveYoutubeStream(track)
           .catch(() => {})
@@ -4930,9 +5059,8 @@
         state.youtubePrefetchTimer = setTimeout(() => {
           state.youtubePrefetchTimer = 0;
           if (!state.currentTrack) return;
-          queueYoutubeStreamPrefetch(state.currentTrack);
+          if (isConstrainedNetworkForPrefetch()) return;
           const neighbors = getNeighborTracks();
-          queueYoutubeStreamPrefetch(neighbors.prev);
           queueYoutubeStreamPrefetch(neighbors.next);
         }, 180);
       }
@@ -5358,7 +5486,7 @@
             throw lastError || new Error("Нет поддерживаемого источника аудио");
           }
 
-          const isActuallyPlaying = !els.audio.paused && !els.audio.ended;
+          const isActuallyPlaying = isAudioActuallyPlaying();
           setPlayButtonState(isActuallyPlaying);
           if (els.currentBitrate) els.currentBitrate.textContent = `stream: ${track.bitrate || "auto"}`;
           updateSharedListPlaybackUI();
@@ -5789,6 +5917,12 @@
             }
           });
         }
+
+        const warmupCurrentTrack = () => {
+          warmupTrackStream(state.currentTrack);
+        };
+        els.playBtn.addEventListener("pointerdown", warmupCurrentTrack, { passive: true });
+        els.playBtn.addEventListener("touchstart", warmupCurrentTrack, { passive: true });
 
         els.playBtn.addEventListener("click", async () => {
           if (!state.currentTrack) {
@@ -6302,10 +6436,10 @@
         els.audio.addEventListener("ratechange", updateProgressUI);
         els.audio.addEventListener("timeupdate", updateProgressUI);
         els.audio.addEventListener("play", () => {
-          setPlayButtonState(true);
+          setPlayButtonState(isAudioActuallyPlaying());
           persistPlaybackSnapshot(true);
           if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
+            try { navigator.mediaSession.playbackState = isAudioActuallyPlaying() ? "playing" : "paused"; } catch (_) {}
           }
           updateMediaSession(state.currentTrack);
         });
@@ -6317,16 +6451,36 @@
           }
           updateMediaSession(state.currentTrack);
         });
+        els.audio.addEventListener("canplay", () => {
+          setPlayButtonState(isAudioActuallyPlaying());
+          updateMediaSessionPositionState();
+        });
         els.audio.addEventListener("waiting", () => {
+          setPlayButtonState(false);
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
           }
         });
         els.audio.addEventListener("playing", () => {
+          setPlayButtonState(true);
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
           }
           updateMediaSessionPositionState();
+        });
+        els.audio.addEventListener("stalled", () => {
+          setPlayButtonState(false);
+          if ("mediaSession" in navigator) {
+            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
+          }
+        });
+        els.audio.addEventListener("suspend", () => {
+          if (!isAudioActuallyPlaying()) {
+            setPlayButtonState(false);
+            if ("mediaSession" in navigator) {
+              try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
+            }
+          }
         });
         els.audio.addEventListener("volumechange", () => {
           setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
@@ -6343,6 +6497,7 @@
             track.streamUrl = "";
             track._streamCandidates = [];
             track._streamResolvePromise = null;
+            clearCachedYouTubeCandidates(track);
             await playTrack(track, state.activeSource || "shared", { restoreFlow: true });
           } catch (_) {
             // Silent recovery attempt.
@@ -6351,6 +6506,10 @@
           }
         });
         els.audio.addEventListener("ended", async () => {
+          setPlayButtonState(false);
+          if ("mediaSession" in navigator) {
+            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
+          }
           if (state.repeatMode === "loop" && state.currentTrack) {
             try {
               els.audio.currentTime = 0;
