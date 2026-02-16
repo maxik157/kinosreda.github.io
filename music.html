@@ -3404,6 +3404,17 @@
         } catch (_) {}
       }
 
+      function buildMediaSessionArtwork(coverUrl) {
+        const src = String(coverUrl || FALLBACK_COVER).trim() || FALLBACK_COVER;
+        if (!src) return [];
+        const sizes = [96, 128, 192, 256, 384, 512, 1024];
+        return sizes.map((size) => ({
+          src,
+          sizes: `${size}x${size}`,
+          type: "image/jpeg"
+        }));
+      }
+
       function updateMediaSession(track) {
         if (!("mediaSession" in navigator)) return;
         try {
@@ -3422,7 +3433,8 @@
             navigator.mediaSession.metadata = new MediaMetadata({
               title,
               artist,
-              album: "Киносреда"
+              album: "Киносреда",
+              artwork: buildMediaSessionArtwork(artworkSrc)
             });
             lastMediaSessionKey = mediaKey;
           }
@@ -3477,6 +3489,9 @@
           } catch (_) {}
         });
         safeSet("pause", () => {
+          els.audio.pause();
+        });
+        safeSet("stop", () => {
           els.audio.pause();
         });
         safeSet("previoustrack", () => {
@@ -6235,6 +6250,9 @@
         }
 
         els.audio.addEventListener("loadedmetadata", updateProgressUI);
+        els.audio.addEventListener("durationchange", updateProgressUI);
+        els.audio.addEventListener("seeked", updateProgressUI);
+        els.audio.addEventListener("ratechange", updateProgressUI);
         els.audio.addEventListener("timeupdate", updateProgressUI);
         els.audio.addEventListener("play", () => {
           setPlayButtonState(true);
@@ -6242,6 +6260,7 @@
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
           }
+          updateMediaSession(state.currentTrack);
         });
         els.audio.addEventListener("pause", () => {
           setPlayButtonState(false);
@@ -6249,6 +6268,18 @@
           if ("mediaSession" in navigator) {
             try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
           }
+          updateMediaSession(state.currentTrack);
+        });
+        els.audio.addEventListener("waiting", () => {
+          if ("mediaSession" in navigator) {
+            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
+          }
+        });
+        els.audio.addEventListener("playing", () => {
+          if ("mediaSession" in navigator) {
+            try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
+          }
+          updateMediaSessionPositionState();
         });
         els.audio.addEventListener("volumechange", () => {
           setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
@@ -6314,6 +6345,7 @@
           if (document.visibilityState === "hidden") {
             persistPlaybackSnapshot(true);
           }
+          updateMediaSession(state.currentTrack);
         });
 
         window.addEventListener("message", async (event) => {
