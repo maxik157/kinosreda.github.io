@@ -4543,12 +4543,15 @@
         function shouldProxySidebarCoverHost(hostname) {
             const host = String(hostname || '').trim().toLowerCase();
             if (!host) return false;
-            return host === 'ytimg.com'
-                || host.endsWith('.ytimg.com')
-                || host === 'googleusercontent.com'
+            return host === 'googleusercontent.com'
                 || host.endsWith('.googleusercontent.com')
                 || host === 'ggpht.com'
                 || host.endsWith('.ggpht.com');
+        }
+
+        function isBlockedSidebarCoverHost(hostname) {
+            const host = String(hostname || '').trim().toLowerCase();
+            return host === 'ytimg.com' || host.endsWith('.ytimg.com');
         }
 
         function toSidebarCoverUrl(rawUrl) {
@@ -4558,6 +4561,7 @@
                 const parsed = new URL(value, window.location.origin);
                 if (!/^https?:$/i.test(parsed.protocol)) return value;
                 if (parsed.pathname === '/fetch-image') return parsed.toString();
+                if (isBlockedSidebarCoverHost(parsed.hostname)) return SIDEBAR_MUSIC_FALLBACK_COVER;
                 if (!shouldProxySidebarCoverHost(parsed.hostname)) return parsed.toString();
                 const proxyUrl = new URL(`${SIDEBAR_REALTIME_BASE}/fetch-image`);
                 proxyUrl.searchParams.set('url', parsed.toString());

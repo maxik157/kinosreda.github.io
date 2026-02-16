@@ -2623,12 +2623,15 @@
       function shouldProxyCoverHost(hostname) {
         const host = String(hostname || "").trim().toLowerCase();
         if (!host) return false;
-        return host === "ytimg.com"
-          || host.endsWith(".ytimg.com")
-          || host === "googleusercontent.com"
+        return host === "googleusercontent.com"
           || host.endsWith(".googleusercontent.com")
           || host === "ggpht.com"
           || host.endsWith(".ggpht.com");
+      }
+
+      function isBlockedCoverHost(hostname) {
+        const host = String(hostname || "").trim().toLowerCase();
+        return host === "ytimg.com" || host.endsWith(".ytimg.com");
       }
 
       function toRealtimeCoverProxyUrl(rawUrl) {
@@ -2638,6 +2641,7 @@
           const parsed = new URL(value, window.location.origin);
           if (!/^https?:$/i.test(parsed.protocol)) return value;
           if (parsed.pathname === "/fetch-image") return parsed.toString();
+          if (isBlockedCoverHost(parsed.hostname)) return FALLBACK_COVER;
           if (!shouldProxyCoverHost(parsed.hostname)) return parsed.toString();
           const proxyUrl = new URL(`${REALTIME_HTTP_BASE}/fetch-image`);
           proxyUrl.searchParams.set("url", parsed.toString());
@@ -3469,6 +3473,31 @@
         return Boolean(trackId && state.playIntentTrackId && trackId === state.playIntentTrackId);
       }
 
+      function getPlayIntentTimeoutMs() {
+        return isDesktopViewport() ? 12000 : 32000;
+      }
+
+      function getPlayIntentRetryTimeoutMs() {
+        return isDesktopViewport() ? 8000 : 20000;
+      }
+
+      function getInitialResolvePlayIntentTimeoutMs() {
+        return isDesktopViewport() ? 18000 : 45000;
+      }
+
+      function getPlaybackStartWaitTimeoutMs() {
+        return isDesktopViewport() ? 2200 : 8500;
+      }
+
+      function getYoutubeOptimisticStartupTimeoutMs(userGesture) {
+        if (!userGesture) return 9000;
+        return isDesktopViewport() ? 12000 : 30000;
+      }
+
+      function getYoutubeResolvedStartupTimeoutMs() {
+        return isDesktopViewport() ? 10000 : 26000;
+      }
+
       function armPlayIntent(trackId, timeoutMs = 15000, minBufferedRatio = 0.1) {
         const id = String(trackId || "").trim();
         if (!id) return;
@@ -3673,10 +3702,10 @@
               await playTrack(state.currentTrack, state.activeSource || "shared");
               return;
             }
-            armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
+            armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
             await els.audio.play();
-            const started = await waitForAudioPlaybackStart(2200);
-            if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
+            const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
+            if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
           } catch (_) {}
         });
         safeSet("pause", () => {
@@ -4294,12 +4323,12 @@
             if (isSameTrack) {
               try {
                 if (els.audio.paused) {
-                  armPlayIntent(String(track.trackId || ""), 12000, 0.1);
+                  armPlayIntent(String(track.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
                   await els.audio.play();
-                  const started = await waitForAudioPlaybackStart(2200);
+                  const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                   setPlayButtonState(started);
                   if (!started) {
-                    armPlayIntent(String(track.trackId || ""), 8000, 0.1);
+                    armPlayIntent(String(track.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
                   } else {
                     clearPlayIntent();
                   }
@@ -5682,7 +5711,7 @@
         setPlayButtonState(false);
         clearPlayIntent();
         if (userGesture) {
-          armPlayIntent(String(track.trackId || ""), 18000, 0.1);
+          armPlayIntent(String(track.trackId || ""), getInitialResolvePlayIntentTimeoutMs(), 0.1);
         }
         const playRequestId = ++state.playTrackRequestId;
         state.playTrackInProgress = true;
@@ -5712,13 +5741,6 @@
                 els.audio.preload = "auto";
               }
               els.audio.playbackRate = 1;
-              if (provider === "youtube" && userGesture) {
-                Promise.resolve(els.audio.play()).catch(() => {});
-                track.streamUrl = candidateUrl;
-                track.bitrate = candidate.bitrate || "";
-                state.currentStreamMeta = { url: candidateUrl, bitrate: candidate.bitrate || "" };
-                return true;
-              }
               await new Promise((resolve, reject) => {
                 let settled = false;
                 let timer = 0;
@@ -5809,7 +5831,7 @@
 
             const optimisticTryList = optimisticCandidates.slice(0, 1);
             for (const candidate of optimisticTryList) {
-              const startupTimeoutMs = userGesture ? 12000 : 9000;
+              const startupTimeoutMs = getYoutubeOptimisticStartupTimeoutMs(userGesture);
               if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
                 started = true;
                 break;
@@ -5830,9 +5852,11 @@
               : (stream.url ? [stream] : []);
             if (!candidates.length) throw new Error("Stream URL не найден");
 
-            const resolvedTryList = candidates.slice(0, provider === "youtube" ? 1 : MAX_PLAYBACK_CANDIDATE_ATTEMPTS);
+            const youtubeAttempts = isDesktopViewport() ? 1 : 2;
+            const resolvedTryList = candidates.slice(0, provider === "youtube" ? youtubeAttempts : MAX_PLAYBACK_CANDIDATE_ATTEMPTS);
             for (const candidate of resolvedTryList) {
-              if (await tryStartCandidate(candidate, { startupTimeoutMs: provider === "youtube" ? 10000 : 5200 })) {
+              const startupTimeoutMs = provider === "youtube" ? getYoutubeResolvedStartupTimeoutMs() : 5200;
+              if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
                 started = true;
                 break;
               }
@@ -5848,7 +5872,7 @@
           if (isActuallyPlaying) {
             clearPlayIntent();
           } else if (userGesture) {
-            armPlayIntent(String(track.trackId || ""), 12000, 0.1);
+            armPlayIntent(String(track.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
           }
           setPlayButtonState(isActuallyPlaying);
           if (els.currentBitrate) els.currentBitrate.textContent = `stream: ${track.bitrate || "auto"}`;
@@ -6299,12 +6323,12 @@
               if (!hasSource) {
                 await playTrack(state.currentTrack, state.activeSource || "shared", { userGesture: true });
               } else {
-                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
                 await els.audio.play();
-                const started = await waitForAudioPlaybackStart(2200);
+                const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                 setPlayButtonState(started);
                 if (!started) {
-                  armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
+                  armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
                 } else {
                   clearPlayIntent();
                 }
@@ -6989,11 +7013,11 @@
             }
             if (els.audio.paused) {
               try {
-                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 12000, 0.1);
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
                 await els.audio.play();
-                const started = await waitForAudioPlaybackStart(2200);
+                const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                 setPlayButtonState(started);
-                if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), 8000, 0.1);
+                if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
               } catch (_) {}
             } else {
               els.audio.pause();
