@@ -676,8 +676,134 @@
       box-shadow: 0 0 0 3px rgba(252, 211, 77, 0.2);
     }
 
+    .desktop-player-column {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      gap: 0;
+      min-width: 0;
+    }
+
+    .desktop-library-column {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .desktop-layout-toggle {
+      --toggle-thumb-size: 28px;
+      --toggle-thumb-offset: 3px;
+      --toggle-travel: 44px;
+      --toggle-center-start: calc(var(--toggle-thumb-offset) + (var(--toggle-thumb-size) / 2));
+      --toggle-center-end: calc(var(--toggle-center-start) + var(--toggle-travel));
+      position: relative;
+      width: 78px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      background: linear-gradient(150deg, rgba(25, 18, 10, 0.92), rgba(14, 10, 6, 0.88));
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.24s ease, box-shadow 0.24s ease;
+      box-shadow: 0 12px 22px rgba(0, 0, 0, 0.28);
+      isolation: isolate;
+    }
+
+    .desktop-layout-toggle::after {
+      content: none;
+    }
+
+    .desktop-layout-toggle:hover {
+      border-color: rgba(252, 211, 77, 0.58);
+      box-shadow: 0 16px 28px rgba(84, 54, 13, 0.32);
+    }
+
+    .desktop-layout-toggle:active {
+      transform: none;
+    }
+
+    .desktop-layout-toggle:focus-visible {
+      outline: none;
+      border-color: rgba(252, 211, 77, 0.78);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.22);
+    }
+
+    .desktop-layout-toggle__icon {
+      position: absolute;
+      top: 50%;
+      z-index: 2;
+      width: 14px;
+      height: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(244, 226, 191, 0.72);
+      opacity: 0.62;
+      transform: translate3d(-50%, -50%, 0) scale(1);
+      transition: color 0.3s ease, opacity 0.3s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .desktop-layout-toggle__icon--stack {
+      left: var(--toggle-center-start);
+    }
+
+    .desktop-layout-toggle__icon--split {
+      left: var(--toggle-center-end);
+    }
+
+    .desktop-layout-toggle__icon svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .desktop-layout-toggle__thumb {
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      left: var(--toggle-thumb-offset);
+      width: var(--toggle-thumb-size);
+      height: var(--toggle-thumb-size);
+      border-radius: 50%;
+      border: 1px solid rgba(252, 211, 77, 0.54);
+      background:
+        radial-gradient(circle at 32% 28%, rgba(255, 242, 210, 0.96), rgba(252, 211, 77, 0.84) 52%, rgba(245, 158, 11, 0.62) 100%);
+      box-shadow: 0 10px 16px rgba(0, 0, 0, 0.28);
+      transform: translate3d(0, -50%, 0);
+      transition: transform 0.56s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.34s ease;
+      will-change: transform;
+    }
+
+    .desktop-layout-toggle:not(.is-active) .desktop-layout-toggle__icon--stack {
+      color: #fff2d0;
+      opacity: 1;
+      transform: translate3d(-50%, -50%, 0) scale(1.08);
+    }
+
+    .desktop-layout-toggle.is-active .desktop-layout-toggle__icon--split {
+      color: #fff2d0;
+      opacity: 1;
+      transform: translate3d(-50%, -50%, 0) scale(1.08);
+    }
+
+    .desktop-layout-toggle.is-active .desktop-layout-toggle__thumb {
+      transform: translate3d(var(--toggle-travel), -50%, 0);
+      box-shadow: 0 12px 20px rgba(252, 211, 77, 0.24), 0 8px 14px rgba(0, 0, 0, 0.3);
+    }
+
     .list-toolbar {
-      margin-top: 14px;
+      margin-top: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -938,6 +1064,78 @@
       }
     }
 
+    @keyframes desktop-layout-flare {
+      0% {
+        opacity: 0;
+        transform: translate3d(-10%, 0, 0) scale(0.94);
+      }
+      52% {
+        opacity: 0.58;
+      }
+      100% {
+        opacity: 0;
+        transform: translate3d(8%, 0, 0) scale(1.04);
+      }
+    }
+
+    @keyframes desktop-toggle-shine {
+      0% {
+        opacity: 0;
+        transform: translateX(-62%);
+      }
+      25% {
+        opacity: 0.78;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(58%);
+      }
+    }
+
+    @keyframes desktop-player-to-split {
+      from {
+        opacity: 0.72;
+        transform: translate3d(-18px, 0, 0) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    @keyframes desktop-list-to-split {
+      from {
+        opacity: 0.72;
+        transform: translate3d(22px, 0, 0) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    @keyframes desktop-player-to-stack {
+      from {
+        opacity: 0.78;
+        transform: translate3d(-12px, 0, 0) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+
+    @keyframes desktop-list-to-stack {
+      from {
+        opacity: 0.78;
+        transform: translate3d(14px, 0, 0) scale(0.99);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+      }
+    }
+
     .tool-panels {
       margin-top: 10px;
       display: grid;
@@ -1099,6 +1297,51 @@
     .select:focus {
       border-color: rgba(245, 158, 11, 0.65);
       box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
+    }
+
+    .input-clear-wrap {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .input-clear-wrap .field {
+      padding-right: 40px;
+    }
+
+    .input-clear-btn {
+      position: absolute;
+      top: 50%;
+      right: 9px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      background: rgba(20, 14, 8, 0.9);
+      color: #f4dcae;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font: 700 14px/1 "Comfortaa", cursive;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-50%) scale(0.88);
+      transition: opacity 0.16s ease, transform 0.16s ease, border-color 0.16s ease;
+    }
+
+    .input-clear-wrap.has-value .input-clear-btn {
+      opacity: 0.96;
+      pointer-events: auto;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .input-clear-btn:hover {
+      border-color: rgba(252, 211, 77, 0.58);
+    }
+
+    .input-clear-btn:active {
+      transform: translateY(-50%) scale(0.94);
     }
 
     .hint {
@@ -1455,6 +1698,236 @@
       .panel {
         height: 100%;
       }
+      .panel-body {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 12px;
+        align-content: stretch;
+        transition: grid-template-columns 0.74s cubic-bezier(0.22, 1, 0.36, 1), gap 0.74s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .desktop-player-column {
+        flex: 0 0 auto;
+      }
+      .desktop-library-column {
+        min-height: 0;
+      }
+      .panel.is-desktop-stack {
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+      .panel.is-desktop-split {
+        border: none;
+        background: transparent;
+        box-shadow: none;
+        overflow: visible;
+      }
+      .panel.is-desktop-split .panel-body {
+        padding: 0;
+      }
+      .panel.is-desktop-stack .panel-body {
+        padding: 0;
+        gap: 0;
+        border: 1px solid rgba(245, 158, 11, 0.17);
+        border-radius: 22px;
+        background: var(--glass);
+        backdrop-filter: blur(14px);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .panel.is-desktop-stack .desktop-player-column,
+      .panel.is-desktop-stack .desktop-library-column {
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        backdrop-filter: none;
+        box-shadow: none;
+      }
+      .panel.is-desktop-stack .desktop-player-column {
+        padding: 16px 18px 12px;
+      }
+      .panel.is-desktop-stack .desktop-library-column {
+        padding: 0 18px 16px;
+      }
+      .panel.is-desktop-stack .list-toolbar {
+        margin-top: 14px;
+      }
+      .desktop-layout-toggle {
+        display: inline-flex;
+        position: relative;
+        order: 0;
+        margin-left: 0;
+        margin-right: 2px;
+        top: auto;
+        right: auto;
+        z-index: auto;
+      }
+      .list-toolbar-actions {
+        flex-wrap: nowrap;
+      }
+      .panel-body.is-desktop-split {
+        display: grid;
+        grid-template-columns: minmax(340px, 0.98fr) minmax(380px, 1.02fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 16px;
+        align-content: stretch;
+      }
+      .panel-body.is-desktop-split .desktop-player-column,
+      .panel-body.is-desktop-split .desktop-library-column {
+        border: 1px solid rgba(245, 158, 11, 0.17);
+        border-radius: 18px;
+        background:
+          radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.14), rgba(252, 211, 77, 0)),
+          rgba(10, 8, 5, 0.56);
+        padding: 14px;
+        min-height: 0;
+        backdrop-filter: blur(7px);
+        box-shadow: none;
+      }
+      .panel-body.is-desktop-split .desktop-player-column {
+        --split-player-content-width: clamp(320px, 94%, 620px);
+        --split-volume-width: clamp(210px, 58%, 300px);
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 18px 16px 14px;
+        gap: 14px;
+        overflow: hidden;
+      }
+      .panel-body.is-desktop-split .current-track {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        gap: 14px;
+        width: var(--split-player-content-width);
+        margin-inline: auto;
+        margin-bottom: 0;
+        min-height: 0;
+      }
+      .panel-body.is-desktop-split .cover-carousel {
+        width: min(100%, 56vh);
+        max-width: 580px;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        margin-inline: auto;
+        overflow: hidden;
+        overflow: clip;
+        border-radius: 24px;
+      }
+      .panel-body.is-desktop-split .cover-wrap {
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+        box-shadow: none;
+      }
+      .panel-body.is-desktop-split .cover-wrap img {
+        object-fit: contain;
+        background: transparent;
+      }
+      .panel-body.is-desktop-split .current-track > div:last-child {
+        width: 100%;
+        margin-top: 12px;
+      }
+      .panel-body.is-desktop-split .meta-title {
+        margin-bottom: 10px;
+      }
+      .panel-body.is-desktop-split .meta-artists {
+        margin-bottom: 0;
+      }
+      .panel-body.is-desktop-split .progress-wrap {
+        width: var(--split-player-content-width);
+        margin-inline: auto;
+        margin-top: 4px;
+      }
+      .panel-body.is-desktop-split .controls-row {
+        width: var(--split-player-content-width);
+        min-height: 0;
+        margin: 22px auto 10px;
+        padding-top: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        overflow: hidden;
+      }
+      .panel-body.is-desktop-split .controls {
+        position: static;
+        left: auto;
+        transform: none;
+        width: auto;
+        max-width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        min-width: 0;
+        flex-wrap: nowrap;
+      }
+      .panel-body.is-desktop-split .ctl {
+        width: clamp(42px, 3.4vw, 50px);
+        height: clamp(42px, 3.4vw, 50px);
+        min-width: 0;
+        flex: 0 0 auto;
+      }
+      .panel-body.is-desktop-split .ctl--big {
+        width: clamp(50px, 4.1vw, 60px);
+        height: clamp(50px, 4.1vw, 60px);
+      }
+      .panel-body.is-desktop-split .ctl svg {
+        width: 18px;
+        height: 18px;
+      }
+      .panel-body.is-desktop-split .ctl--big svg {
+        width: 22px;
+        height: 22px;
+      }
+      .panel-body.is-desktop-split .volume-wrap {
+        width: var(--split-player-content-width);
+        display: flex;
+        justify-content: center;
+      }
+      .panel-body.is-desktop-split .volume-control {
+        width: var(--split-volume-width);
+        margin: 0 auto;
+      }
+      .panel-body.is-desktop-split .desktop-library-column {
+        padding: 14px 14px 12px;
+      }
+      .panel-body.is-desktop-split .list-toolbar {
+        margin-top: 0;
+      }
+      .panel-body.is-desktop-split .tool-panels {
+        margin-top: 8px;
+      }
+      .panel-body.is-desktop-split .oauth-row {
+        margin-top: 10px;
+      }
+      .panel-body.is-desktop-split #sharedList {
+        margin-top: 10px;
+      }
+      .panel-body.is-layout-animating {
+        overflow: hidden;
+      }
+      .panel-body.is-layout-animating::after {
+        content: none;
+      }
+      .panel-body.is-layout-animating .desktop-layout-toggle::after {
+        animation: none;
+      }
+      .panel-body[data-layout-transition="to-split"].is-layout-animating .desktop-player-column {
+        animation: desktop-player-to-split 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .panel-body[data-layout-transition="to-split"].is-layout-animating .desktop-library-column {
+        animation: desktop-list-to-split 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .panel-body[data-layout-transition="to-stack"].is-layout-animating .desktop-player-column {
+        animation: desktop-player-to-stack 0.66s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .panel-body[data-layout-transition="to-stack"].is-layout-animating .desktop-library-column {
+        animation: desktop-list-to-stack 0.66s cubic-bezier(0.22, 1, 0.36, 1);
+      }
       .panel-body.is-add-mode {
         min-height: 0;
       }
@@ -1744,6 +2217,12 @@
         box-shadow: none;
       }
 
+      .desktop-layout-toggle:hover {
+        border-color: rgba(245, 158, 11, 0.34);
+        transform: none;
+        box-shadow: 0 12px 22px rgba(0, 0, 0, 0.28);
+      }
+
       .track-item:hover {
         border-color: rgba(245, 158, 11, 0.16);
       }
@@ -1848,140 +2327,160 @@
     <main class="layout">
       <section class="panel">
         <div class="panel-body">
-          <div class="current-track">
-            <div class="cover-carousel" id="coverCarousel">
-              <button id="peekPrevBtn" class="cover-peek cover-peek--prev" type="button" aria-label="Предыдущий трек">
-                <img id="peekPrevCover" alt="Обложка предыдущего трека">
-              </button>
-              <div class="cover-wrap" id="currentCoverWrap" role="button" tabindex="0" aria-label="Открыть полноэкранный режим">
-                <img id="currentCover" alt="Обложка трека">
+          <div class="desktop-player-column">
+            <div class="current-track">
+              <div class="cover-carousel" id="coverCarousel">
+                <button id="peekPrevBtn" class="cover-peek cover-peek--prev" type="button" aria-label="Предыдущий трек">
+                  <img id="peekPrevCover" alt="Обложка предыдущего трека">
+                </button>
+                <div class="cover-wrap" id="currentCoverWrap" role="button" tabindex="0" aria-label="Открыть полноэкранный режим">
+                  <img id="currentCover" alt="Обложка трека">
+                </div>
+                <button id="peekNextBtn" class="cover-peek cover-peek--next" type="button" aria-label="Следующий трек">
+                  <img id="peekNextCover" alt="Обложка следующего трека">
+                </button>
               </div>
-              <button id="peekNextBtn" class="cover-peek cover-peek--next" type="button" aria-label="Следующий трек">
-                <img id="peekNextCover" alt="Обложка следующего трека">
-              </button>
-            </div>
-            <div>
-              <h3 class="meta-title" id="currentTitle">Выбери трек</h3>
-              <p class="meta-artists" id="currentArtists"></p>
-            </div>
-          </div>
-
-          <div class="progress-wrap">
-            <div class="progress-times">
-              <span id="timeCurrent">00:00</span>
-              <span id="timeTotal">00:00</span>
-            </div>
-            <div class="progress" id="progressBar" aria-label="Позиция трека">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-          </div>
-
-          <div class="controls-row">
-            <div class="controls">
-              <button id="shuffleBtn" class="ctl" title="Перемешивание: выключено">
-                <svg id="shuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
-                  <polyline points="16 3 21 3 21 8"></polyline>
-                  <line x1="4" y1="20" x2="21" y2="3"></line>
-                  <polyline points="21 16 21 21 16 21"></polyline>
-                  <line x1="15" y1="15" x2="21" y2="21"></line>
-                  <line x1="4" y1="4" x2="9" y2="9"></line>
-                </svg>
-              </button>
-              <button id="prevBtn" class="ctl" title="Предыдущий">
-                <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
-              </button>
-              <button id="playBtn" class="ctl ctl--big" title="Play/Pause">
-                <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
-              </button>
-              <button id="nextBtn" class="ctl" title="Следующий">
-                <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
-              </button>
-              <button id="repeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
-                <svg id="repeatIcon" class="icon-stroke" viewBox="0 0 24 24">
-                  <polyline points="17 1 21 5 17 9"></polyline>
-                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                  <polyline points="7 23 3 19 7 15"></polyline>
-                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                </svg>
-                <span class="ctl-badge">1</span>
-              </button>
+              <div>
+                <h3 class="meta-title" id="currentTitle">Выбери трек</h3>
+                <p class="meta-artists" id="currentArtists"></p>
+              </div>
             </div>
 
-            <div class="volume-wrap">
-              <div class="volume-control" aria-label="Громкость">
-                <button id="volumeToggleBtn" class="volume-btn" type="button" title="Выключить звук" aria-label="Включить или выключить звук">
-                  <svg id="volumeIcon" viewBox="0 0 24 24">
-                    <polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"></polygon>
-                    <path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>
-                    <path d="M17.8 7a7 7 0 0 1 0 10"></path>
+            <div class="progress-wrap">
+              <div class="progress-times">
+                <span id="timeCurrent">00:00</span>
+                <span id="timeTotal">00:00</span>
+              </div>
+              <div class="progress" id="progressBar" aria-label="Позиция трека">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+            </div>
+
+            <div class="controls-row">
+              <div class="controls">
+                <button id="shuffleBtn" class="ctl" title="Перемешивание: выключено">
+                  <svg id="shuffleIcon" class="icon-stroke" viewBox="0 0 24 24">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
                   </svg>
                 </button>
-                <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="85" aria-label="Громкость">
-                <span id="volumeValue" class="volume-value">85%</span>
+                <button id="prevBtn" class="ctl" title="Предыдущий">
+                  <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zM9 12l9 6V6z"></path></svg>
+                </button>
+                <button id="playBtn" class="ctl ctl--big" title="Play/Pause">
+                  <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+                <button id="nextBtn" class="ctl" title="Следующий">
+                  <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l9-6-9-6z"></path></svg>
+                </button>
+                <button id="repeatBtn" class="ctl" title="Повтор: выключен" data-mode="off">
+                  <svg id="repeatIcon" class="icon-stroke" viewBox="0 0 24 24">
+                    <polyline points="17 1 21 5 17 9"></polyline>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <polyline points="7 23 3 19 7 15"></polyline>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                  </svg>
+                  <span class="ctl-badge">1</span>
+                </button>
               </div>
+
+              <div class="volume-wrap">
+                <div class="volume-control" aria-label="Громкость">
+                  <button id="volumeToggleBtn" class="volume-btn" type="button" title="Выключить звук" aria-label="Включить или выключить звук">
+                    <svg id="volumeIcon" viewBox="0 0 24 24">
+                      <polygon points="11 5 6 9 3 9 3 15 6 15 11 19 11 5"></polygon>
+                      <path d="M15 9.5a3.5 3.5 0 0 1 0 5"></path>
+                      <path d="M17.8 7a7 7 0 0 1 0 10"></path>
+                    </svg>
+                  </button>
+                  <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" step="1" value="85" aria-label="Громкость">
+                  <span id="volumeValue" class="volume-value">85%</span>
+                </div>
+              </div>
+              <div class="controls-spacer" aria-hidden="true"></div>
             </div>
-            <div class="controls-spacer" aria-hidden="true"></div>
           </div>
 
-          <div class="list-toolbar">
-            <div class="list-toolbar-left">
-              <h3 class="list-toolbar-title">Список треков</h3>
-              <span id="trackCountBadge" class="list-count-badge">0</span>
-            </div>
-            <div class="list-toolbar-actions">
-              <div id="addedByFilter" class="added-by-filter">
-                <button
-                  id="addedByFilterBtn"
-                  class="added-by-filter-btn"
-                  type="button"
-                  aria-haspopup="listbox"
-                  aria-expanded="false"
-                  aria-controls="addedByFilterMenu"
-                >
-                  <span id="addedByFilterLabel" class="added-by-filter-label">Все добавившие</span>
-                  <svg class="added-by-filter-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
-                </button>
-                <div id="addedByFilterMenu" class="added-by-filter-menu" role="listbox" aria-label="Фильтр по автору" hidden></div>
+          <div class="desktop-library-column">
+            <div class="list-toolbar">
+              <div class="list-toolbar-left">
+                <h3 class="list-toolbar-title">Список треков</h3>
+                <span id="trackCountBadge" class="list-count-badge">0</span>
               </div>
-              <button id="toggleSearchPanelBtn" class="tool-btn" type="button" title="Поиск по списку" aria-label="Поиск по списку">🔎</button>
-              <div class="add-help-wrap">
-                <button id="toggleAddPanelBtn" class="tool-btn" type="button" title="Добавить трек" aria-label="Добавить трек">+</button>
-                <button id="toggleAddHelpBtn" class="tool-btn tool-btn--hint" type="button" title="Как добавить трек" aria-label="Инструкция по добавлению трека" aria-expanded="false" aria-controls="addHelpPopover">i</button>
-                <div id="addHelpPopover" class="add-help-popover" role="dialog" aria-label="Инструкция по добавлению трека">
-                  <p class="add-help-text">Откройте меню трека, нажмите «Поделиться», затем «Скопировать ссылку». Вставьте ссылку в поле добавления и нажмите «Добавить».</p>
+              <div class="list-toolbar-actions">
+                <button id="desktopLayoutToggleBtn" class="desktop-layout-toggle" type="button" title="Разделить плеер и список" aria-label="Переключить вид: плеер слева, список справа" aria-pressed="false">
+                  <span class="desktop-layout-toggle__icon desktop-layout-toggle__icon--stack" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <line x1="4" y1="6" x2="20" y2="6"></line>
+                      <line x1="4" y1="12" x2="20" y2="12"></line>
+                      <line x1="4" y1="18" x2="20" y2="18"></line>
+                    </svg>
+                  </span>
+                  <span class="desktop-layout-toggle__icon desktop-layout-toggle__icon--split" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <rect x="4" y="5" width="7" height="14" rx="1.8"></rect>
+                      <rect x="13" y="5" width="7" height="14" rx="1.8"></rect>
+                    </svg>
+                  </span>
+                  <span class="desktop-layout-toggle__thumb" aria-hidden="true"></span>
+                </button>
+                <div id="addedByFilter" class="added-by-filter">
+                  <button
+                    id="addedByFilterBtn"
+                    class="added-by-filter-btn"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-controls="addedByFilterMenu"
+                  >
+                    <span id="addedByFilterLabel" class="added-by-filter-label">Все добавившие</span>
+                    <svg class="added-by-filter-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </button>
+                  <div id="addedByFilterMenu" class="added-by-filter-menu" role="listbox" aria-label="Фильтр по автору" hidden></div>
+                </div>
+                <button id="toggleSearchPanelBtn" class="tool-btn" type="button" title="Поиск по списку" aria-label="Поиск по списку">🔎</button>
+                <div class="add-help-wrap">
+                  <button id="toggleAddPanelBtn" class="tool-btn" type="button" title="Добавить трек" aria-label="Добавить трек">+</button>
+                  <button id="toggleAddHelpBtn" class="tool-btn tool-btn--hint" type="button" title="Как добавить трек" aria-label="Инструкция по добавлению трека" aria-expanded="false" aria-controls="addHelpPopover">i</button>
+                  <div id="addHelpPopover" class="add-help-popover" role="dialog" aria-label="Инструкция по добавлению трека">
+                    <p class="add-help-text">Откройте меню трека, нажмите «Поделиться», затем «Скопировать ссылку». Вставьте ссылку в поле добавления и нажмите «Добавить».</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="tool-panels">
-            <div id="searchPanel" class="tool-panel">
-              <input id="searchInput" class="field" type="text" placeholder="Поиск по списку треков">
-            </div>
-            <div id="addPanel" class="tool-panel tool-panel--stack">
-              <div class="ym-search-block">
-                <div class="ym-search-wrap">
-                  <div class="ym-source-switch" role="tablist" aria-label="Источник поиска">
-                    <button id="ymSourceYandexBtn" class="ym-source-btn is-active" type="button" data-source="yandex" aria-pressed="true">Яндекс Музыка</button>
-                    <button id="ymSourceYoutubeBtn" class="ym-source-btn" type="button" data-source="youtube" aria-pressed="false">YouTube Music</button>
+            <div class="tool-panels">
+              <div id="searchPanel" class="tool-panel">
+                <input id="searchInput" class="field" type="text" placeholder="Поиск по списку треков">
+              </div>
+              <div id="addPanel" class="tool-panel tool-panel--stack">
+                <div class="ym-search-block">
+                  <div class="ym-search-wrap">
+                    <div class="ym-source-switch" role="tablist" aria-label="Источник поиска">
+                      <button id="ymSourceYandexBtn" class="ym-source-btn is-active" type="button" data-source="yandex" aria-pressed="true">Яндекс Музыка</button>
+                      <button id="ymSourceYoutubeBtn" class="ym-source-btn" type="button" data-source="youtube" aria-pressed="false">YouTube Music</button>
+                    </div>
+                    <div class="ym-input-row">
+                      <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек или введите запрос">
+                      <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
+                    </div>
+                    <p id="ymSearchPrompt" class="hint ym-search-prompt">Начните вводить название трека, исполнителя или вставьте ссылку из Яндекс Музыки.</p>
                   </div>
-                  <div class="ym-input-row">
-                    <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек или введите запрос">
-                    <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
-                  </div>
-                  <p id="ymSearchPrompt" class="hint ym-search-prompt">Начните вводить название трека, исполнителя или вставьте ссылку из Яндекс Музыки.</p>
+                  <ul id="ymSearchList" class="list ym-search-list"></ul>
                 </div>
-                <ul id="ymSearchList" class="list ym-search-list"></ul>
               </div>
             </div>
-          </div>
 
-          <div class="oauth-row">
-            <button id="oauthLogoutBtn" class="btn btn--ghost">Выйти</button>
-          </div>
+            <div class="oauth-row">
+              <button id="oauthLogoutBtn" class="btn btn--ghost">Выйти</button>
+            </div>
 
-          <ul id="sharedList" class="list"></ul>
+            <ul id="sharedList" class="list"></ul>
+          </div>
         </div>
       </section>
     </main>
@@ -2131,6 +2630,8 @@
         ymSearchDebounceTimer: null,
         ymSearchRankMode: "auto",
         ymSearchSource: "yandex",
+        desktopSplitPreferred: false,
+        desktopLayoutAppliedSplit: false,
         activeToolPanel: "",
         addHelpOpen: false,
         filter: "all",
@@ -2214,6 +2715,7 @@
         fsShuffleBtn: document.getElementById("fsShuffleBtn"),
         fsShuffleIcon: document.getElementById("fsShuffleIcon"),
         searchInput: document.getElementById("searchInput"),
+        desktopLayoutToggleBtn: document.getElementById("desktopLayoutToggleBtn"),
         toggleSearchPanelBtn: document.getElementById("toggleSearchPanelBtn"),
         toggleAddPanelBtn: document.getElementById("toggleAddPanelBtn"),
         toggleAddHelpBtn: document.getElementById("toggleAddHelpBtn"),
@@ -2227,6 +2729,7 @@
         ymSearchList: document.getElementById("ymSearchList"),
         ymSourceYandexBtn: document.getElementById("ymSourceYandexBtn"),
         ymSourceYoutubeBtn: document.getElementById("ymSourceYoutubeBtn"),
+        panelRoot: document.querySelector(".panel"),
         panelBody: document.querySelector(".panel-body"),
         oauthLoginBtn: document.getElementById("oauthLoginBtn"),
         oauthLogoutBtn: document.getElementById("oauthLogoutBtn"),
@@ -2242,6 +2745,7 @@
         audio: document.getElementById("audio")
       };
       let fullscreenResizeTimeout = null;
+      let desktopLayoutAnimTimeout = null;
       let lastPersistedSecond = -1;
       let lastPersistedTrackKey = "";
       let lastPersistedPaused = true;
@@ -3006,6 +3510,70 @@
         const wideEnough = window.matchMedia("(min-width: 820px)").matches;
         const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
         return wideEnough && finePointer;
+      }
+
+      function clearDesktopLayoutAnimation() {
+        if (desktopLayoutAnimTimeout) {
+          clearTimeout(desktopLayoutAnimTimeout);
+          desktopLayoutAnimTimeout = null;
+        }
+        if (!els.panelBody) return;
+        els.panelBody.classList.remove("is-layout-animating");
+        delete els.panelBody.dataset.layoutTransition;
+      }
+
+      function isDesktopSplitActive() {
+        return isDesktopViewport() && Boolean(state.desktopSplitPreferred);
+      }
+
+      function syncDesktopLayoutToggleButton() {
+        if (!els.desktopLayoutToggleBtn) return;
+        const desktop = isDesktopViewport();
+        const active = desktop && Boolean(state.desktopSplitPreferred);
+        els.desktopLayoutToggleBtn.hidden = !desktop;
+        els.desktopLayoutToggleBtn.disabled = !desktop;
+        els.desktopLayoutToggleBtn.classList.toggle("is-active", active);
+        els.desktopLayoutToggleBtn.setAttribute("aria-pressed", active ? "true" : "false");
+        els.desktopLayoutToggleBtn.title = active
+          ? "Вернуться к обычному виду"
+          : "Разделить плеер и список";
+      }
+
+      function applyDesktopLayoutMode({ animate = false } = {}) {
+        if (!els.panelBody) return;
+        const wasSplit = Boolean(state.desktopLayoutAppliedSplit);
+        const nextSplit = isDesktopSplitActive();
+        const changed = wasSplit !== nextSplit;
+
+        if (changed && animate && isDesktopViewport()) {
+          els.panelBody.dataset.layoutTransition = nextSplit ? "to-split" : "to-stack";
+          els.panelBody.classList.add("is-layout-animating");
+          if (desktopLayoutAnimTimeout) {
+            clearTimeout(desktopLayoutAnimTimeout);
+            desktopLayoutAnimTimeout = null;
+          }
+          desktopLayoutAnimTimeout = setTimeout(() => {
+            desktopLayoutAnimTimeout = null;
+            clearDesktopLayoutAnimation();
+          }, 980);
+        } else {
+          clearDesktopLayoutAnimation();
+        }
+
+        els.panelBody.classList.toggle("is-desktop-split", nextSplit);
+        state.desktopLayoutAppliedSplit = nextSplit;
+        if (els.panelRoot) {
+          const stackDesktop = isDesktopViewport() && !nextSplit;
+          els.panelRoot.classList.toggle("is-desktop-split", nextSplit);
+          els.panelRoot.classList.toggle("is-desktop-stack", stackDesktop);
+        }
+        syncDesktopLayoutToggleButton();
+      }
+
+      function setDesktopSplitPreferred(nextValue, { animate = true, persist = true } = {}) {
+        state.desktopSplitPreferred = Boolean(nextValue);
+        applyDesktopLayoutMode({ animate });
+        if (persist) persistPlayerSettings();
       }
 
       function hasSelectedTrack() {
@@ -6582,7 +7150,8 @@
           filter: state.filter,
           addedByFilter: state.addedByFilter,
           sort: state.sort,
-          volume: Number(els.audio && els.audio.volume != null ? els.audio.volume : 0.85)
+          volume: Number(els.audio && els.audio.volume != null ? els.audio.volume : 0.85),
+          desktopSplitPreferred: Boolean(state.desktopSplitPreferred)
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
       }
@@ -6619,6 +7188,9 @@
             setVolume(normalized, { persist: false });
           }
         }
+        if (typeof saved.desktopSplitPreferred === "boolean") {
+          state.desktopSplitPreferred = saved.desktopSplitPreferred;
+        }
       }
 
       function escapeHtml(value) {
@@ -6628,6 +7200,55 @@
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#39;");
+      }
+
+      function initClearButtonsForTextInputs() {
+        const selector = [
+          "input.field[type='text']",
+          "input.field[type='search']",
+          "input.field[type='url']",
+          "input.field:not([type])"
+        ].join(", ");
+
+        const inputs = Array.from(document.querySelectorAll(selector));
+        inputs.forEach((input) => {
+          if (!input || input.dataset.clearEnhanced === "1") return;
+          if (input.disabled || input.readOnly) return;
+          const parent = input.parentNode;
+          if (!parent) return;
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "input-clear-wrap";
+          parent.insertBefore(wrapper, input);
+          wrapper.appendChild(input);
+
+          const clearBtn = document.createElement("button");
+          clearBtn.type = "button";
+          clearBtn.className = "input-clear-btn";
+          clearBtn.setAttribute("aria-label", "Очистить поле");
+          clearBtn.textContent = "×";
+          wrapper.appendChild(clearBtn);
+
+          const syncVisibility = () => {
+            wrapper.classList.toggle("has-value", String(input.value || "").length > 0);
+          };
+
+          clearBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!input.value) return;
+            input.value = "";
+            syncVisibility();
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+            input.focus();
+          });
+
+          input.addEventListener("input", syncVisibility);
+          input.addEventListener("change", syncVisibility);
+          input.dataset.clearEnhanced = "1";
+          syncVisibility();
+        });
       }
 
       function bindEvents() {
@@ -6669,8 +7290,16 @@
             setFullscreenOpen(false);
           }
           updateFullscreenEntryAvailability();
+          applyDesktopLayoutMode({ animate: false });
           updateCoverPeekUI();
         });
+
+        if (els.desktopLayoutToggleBtn) {
+          els.desktopLayoutToggleBtn.addEventListener("click", () => {
+            if (!isDesktopViewport()) return;
+            setDesktopSplitPreferred(!state.desktopSplitPreferred, { animate: true, persist: true });
+          });
+        }
 
         if (els.toggleSearchPanelBtn) {
           els.toggleSearchPanelBtn.addEventListener("click", () => {
@@ -7535,6 +8164,7 @@
         if (!state.db) {
           state.sharedTracksLoaded = true;
         }
+        initClearButtonsForTextInputs();
         bindEvents();
         configureMediaSessionActions();
         setRepeatMode("off");
@@ -7542,6 +8172,7 @@
         els.audio.playbackRate = 1;
         setVolume(0.85, { persist: false });
         restoreSettings();
+        applyDesktopLayoutMode({ animate: false });
         setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
 
         [els.currentCover, els.fullscreenCover, els.peekPrevCover, els.peekNextCover].forEach((img) => {
