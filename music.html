@@ -3150,6 +3150,14 @@
         return 0;
       }
 
+      function getMediaSessionDurationSec() {
+        const trackDuration = Number(state.currentTrack && state.currentTrack.durationMs || 0) / 1000;
+        if (Number.isFinite(trackDuration) && trackDuration > 0) return trackDuration;
+        const audioDuration = Number(els.audio && els.audio.duration);
+        if (Number.isFinite(audioDuration) && audioDuration > 0) return audioDuration;
+        return 0;
+      }
+
       function setDurationPending(trackId, pending = true) {
         const id = String(trackId || "").trim();
         if (!id) return;
@@ -3719,7 +3727,7 @@
       function updateMediaSessionPositionState() {
         try {
           if (!("mediaSession" in navigator) || typeof navigator.mediaSession.setPositionState !== "function") return;
-          const duration = getKnownTrackDurationSec();
+          const duration = getMediaSessionDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           navigator.mediaSession.setPositionState({
             duration,
@@ -3837,20 +3845,20 @@
         });
         safeSet("seekbackward", (details) => {
           const offset = Number(details && details.seekOffset) || 10;
-          const duration = getKnownTrackDurationSec();
+          const duration = getMediaSessionDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const nextTime = Math.max(0, (Number(els.audio.currentTime) || 0) - offset);
           seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekforward", (details) => {
           const offset = Number(details && details.seekOffset) || 10;
-          const duration = getKnownTrackDurationSec();
+          const duration = getMediaSessionDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const nextTime = Math.min(duration, (Number(els.audio.currentTime) || 0) + offset);
           seekToTime(nextTime, { resume: !els.audio.paused });
         });
         safeSet("seekto", (details) => {
-          const duration = getKnownTrackDurationSec();
+          const duration = getMediaSessionDurationSec();
           if (!Number.isFinite(duration) || duration <= 0) return;
           const seekTime = Number(details && details.seekTime);
           if (!Number.isFinite(seekTime)) return;
