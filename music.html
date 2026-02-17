@@ -808,6 +808,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .list-toolbar-left {
@@ -815,6 +816,7 @@
       align-items: center;
       gap: 8px;
       min-width: 0;
+      flex: 1 1 320px;
     }
 
     .list-toolbar-title {
@@ -822,6 +824,269 @@
       font-size: 16px;
       color: #f5d49a;
       letter-spacing: 0.01em;
+    }
+
+    .playlist-selector {
+      position: relative;
+      width: 100%;
+      min-width: 0;
+      max-width: 560px;
+      flex: 1 1 300px;
+    }
+
+    .playlist-selector-btn {
+      width: 100%;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      background:
+        radial-gradient(140% 120% at 0% 0%, rgba(252, 211, 77, 0.16), rgba(252, 211, 77, 0)),
+        linear-gradient(155deg, rgba(27, 19, 10, 0.9), rgba(18, 13, 8, 0.78));
+      color: var(--text-main);
+      border-radius: 12px;
+      padding: 9px 12px;
+      text-align: left;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      grid-template-areas: "name count chevron";
+      align-items: center;
+      column-gap: 8px;
+      cursor: pointer;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .playlist-selector-btn:hover {
+      border-color: rgba(252, 211, 77, 0.6);
+      box-shadow: 0 10px 18px rgba(84, 54, 13, 0.32);
+      transform: translateY(-1px);
+    }
+
+    .playlist-selector-btn:focus-visible {
+      outline: none;
+      border-color: rgba(252, 211, 77, 0.72);
+      box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.18);
+    }
+
+    .playlist-selector-name {
+      grid-area: name;
+      min-width: 0;
+      font-family: "Comfortaa", cursive;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff4de;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .playlist-selector-count {
+      grid-area: count;
+      justify-self: end;
+      margin-right: 2px;
+      min-width: 22px;
+      height: 20px;
+      padding: 0 6px;
+      font-size: 11px;
+    }
+
+    .playlist-selector-chevron {
+      grid-area: chevron;
+      justify-self: end;
+      width: 16px;
+      height: 16px;
+      color: #fcd34d;
+      transition: transform 0.16s ease;
+    }
+
+    .playlist-selector.is-open .playlist-selector-chevron {
+      transform: rotate(180deg);
+    }
+
+    .playlist-selector-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      width: 100%;
+      max-height: min(55vh, 380px);
+      overflow-y: auto;
+      border: 1px solid rgba(245, 158, 11, 0.42);
+      border-radius: 12px;
+      background: rgba(12, 9, 6, 0.98);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.45);
+      padding: 8px;
+      z-index: 50;
+    }
+
+    .playlist-selector.is-drop-up .playlist-selector-menu {
+      top: auto;
+      bottom: calc(100% + 8px);
+    }
+
+    .playlist-menu-create {
+      width: 100%;
+      border: 1px solid rgba(252, 211, 77, 0.52);
+      background:
+        radial-gradient(140% 120% at 0% 0%, rgba(252, 211, 77, 0.22), rgba(252, 211, 77, 0)),
+        rgba(28, 20, 10, 0.9);
+      color: #fff0d1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      text-align: left;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: "Comfortaa", cursive;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.2;
+      cursor: pointer;
+      margin-bottom: 8px;
+      transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .playlist-menu-create:hover {
+      border-color: rgba(252, 211, 77, 0.72);
+      box-shadow: 0 10px 18px rgba(90, 58, 15, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .playlist-menu-create-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(252, 211, 77, 0.52);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fcd34d;
+      font-weight: 700;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .playlist-menu-create-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .playlist-selector-group-label {
+      margin: 3px 5px 6px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #bf9a5d;
+    }
+
+    .playlist-option {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 9px 10px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+      font-family: "Comfortaa", cursive;
+      transition: border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .playlist-option-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px;
+      align-items: stretch;
+    }
+
+    .playlist-option-row + .playlist-option-row {
+      margin-top: 0;
+    }
+
+    .playlist-option-edit {
+      width: 34px;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      border-radius: 10px;
+      background: rgba(20, 14, 8, 0.74);
+      color: #f6d9a2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+      padding: 0;
+      min-height: 100%;
+    }
+
+    .playlist-option-edit:hover {
+      border-color: rgba(252, 211, 77, 0.56);
+      background: rgba(252, 211, 77, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .playlist-option-edit svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    .playlist-option-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .playlist-option:hover {
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.1);
+    }
+
+    .playlist-option.is-active {
+      border-color: rgba(252, 211, 77, 0.58);
+      background: rgba(252, 211, 77, 0.12);
+    }
+
+    .playlist-option-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f8e8cb;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .playlist-option-count {
+      min-width: 24px;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(252, 211, 77, 0.38);
+      color: #fcd34d;
+      background: rgba(252, 211, 77, 0.1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      flex: 0 0 auto;
+    }
+
+    .playlist-option-meta {
+      font-size: 11px;
+      color: #cba777;
+      line-height: 1.3;
+    }
+
+    .playlist-menu-empty {
+      border: 1px dashed rgba(245, 158, 11, 0.36);
+      border-radius: 10px;
+      padding: 10px;
+      color: #cda974;
+      font-size: 12px;
+      text-align: center;
     }
 
     .list-count-badge {
@@ -1641,6 +1906,126 @@
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
+    .playlist-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      place-items: center;
+      padding: 18px;
+      background: rgba(3, 3, 3, 0.55);
+      backdrop-filter: blur(6px);
+    }
+
+    .playlist-modal-backdrop.is-open {
+      display: grid;
+    }
+
+    .playlist-modal-backdrop[hidden] {
+      display: none !important;
+    }
+
+    .playlist-modal {
+      width: min(520px, calc(100vw - 24px));
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      border-radius: 18px;
+      background:
+        radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.16), rgba(252, 211, 77, 0)),
+        rgba(13, 10, 6, 0.96);
+      box-shadow: 0 26px 50px rgba(0, 0, 0, 0.5);
+      padding: 16px;
+      animation: playlist-modal-in 0.2s ease;
+    }
+
+    @keyframes playlist-modal-in {
+      from { opacity: 0; transform: translateY(10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .playlist-modal-head {
+      margin-bottom: 12px;
+    }
+
+    .playlist-modal-title {
+      margin: 0;
+      font-size: 20px;
+      color: #fff3db;
+    }
+
+    .playlist-modal-subtitle {
+      margin: 6px 0 0;
+      color: #cba777;
+      font-size: 12px;
+    }
+
+    .playlist-modal-body {
+      display: grid;
+      gap: 10px;
+    }
+
+    .playlist-modal-label {
+      margin: 0;
+      color: #e8c88f;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .playlist-type-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .playlist-type-btn {
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      background: rgba(18, 13, 8, 0.72);
+      color: var(--text-main);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: left;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+      transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+    }
+
+    .playlist-type-btn:hover {
+      border-color: rgba(252, 211, 77, 0.56);
+      transform: translateY(-1px);
+    }
+
+    .playlist-type-btn.is-active {
+      border-color: rgba(252, 211, 77, 0.7);
+      background: rgba(252, 211, 77, 0.13);
+    }
+
+    .playlist-type-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fbe8c8;
+    }
+
+    .playlist-type-note {
+      font-size: 11px;
+      color: #cfae79;
+    }
+
+    .playlist-modal-actions {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .playlist-modal-delete {
+      margin-right: auto;
+    }
+
+    .playlist-modal-delete.is-confirm {
+      border-color: rgba(255, 101, 132, 0.72);
+      background: linear-gradient(145deg, rgba(255, 101, 132, 0.36), rgba(255, 101, 132, 0.14));
+    }
+
     @media (max-width: 819px) {
       .layout {
         grid-template-columns: 1fr;
@@ -1679,6 +2064,30 @@
         width: 84%;
         height: 84%;
         border-radius: 24px;
+      }
+      .playlist-selector {
+        min-width: 0;
+        width: 100%;
+        max-width: none;
+      }
+      .playlist-selector-menu {
+        position: absolute;
+        left: 0;
+        right: auto;
+        width: 100%;
+        top: calc(100% + 8px);
+        bottom: auto;
+        max-height: min(72dvh, 520px);
+        z-index: 70;
+        border-radius: 14px;
+      }
+      .panel,
+      .panel-body,
+      .desktop-library-column {
+        overflow: visible;
+      }
+      .playlist-type-switch {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1764,9 +2173,6 @@
         top: auto;
         right: auto;
         z-index: auto;
-      }
-      .list-toolbar-actions {
-        flex-wrap: nowrap;
       }
       .panel-body.is-desktop-split {
         display: grid;
@@ -1898,8 +2304,28 @@
       .panel-body.is-desktop-split .list-toolbar {
         margin-top: 0;
       }
+      .panel-body.is-desktop-split .list-toolbar-actions {
+        justify-content: flex-start;
+      }
       .panel-body.is-desktop-split .tool-panels {
         margin-top: 8px;
+      }
+      .panel-body.is-desktop-split .add-help-popover {
+        top: calc(100% + 10px);
+        bottom: auto;
+        right: 0;
+        left: auto;
+        width: min(320px, calc(100vw - 48px));
+      }
+      .panel-body.is-desktop-split .add-help-popover::before {
+        top: -6px;
+        bottom: auto;
+        right: 12px;
+        border-right: none;
+        border-bottom: none;
+        border-left: 1px solid rgba(245, 158, 11, 0.36);
+        border-top: 1px solid rgba(245, 158, 11, 0.36);
+        transform: rotate(45deg);
       }
       .panel-body.is-desktop-split .oauth-row {
         margin-top: 10px;
@@ -2407,8 +2833,23 @@
           <div class="desktop-library-column">
             <div class="list-toolbar">
               <div class="list-toolbar-left">
-                <h3 class="list-toolbar-title">Список треков</h3>
-                <span id="trackCountBadge" class="list-count-badge">0</span>
+                <div id="playlistSelector" class="playlist-selector">
+                  <button
+                    id="playlistSelectorBtn"
+                    class="playlist-selector-btn"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-controls="playlistSelectorMenu"
+                  >
+                    <span id="playlistSelectorName" class="playlist-selector-name">Общий плейлист</span>
+                    <span id="trackCountBadge" class="list-count-badge playlist-selector-count">0</span>
+                    <svg class="playlist-selector-chevron" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M5 7l5 6 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </button>
+                  <div id="playlistSelectorMenu" class="playlist-selector-menu" role="listbox" aria-label="Выбор плейлиста" hidden></div>
+                </div>
               </div>
               <div class="list-toolbar-actions">
                 <button id="desktopLayoutToggleBtn" class="desktop-layout-toggle" type="button" title="Разделить плеер и список" aria-label="Переключить вид: плеер слева, список справа" aria-pressed="false">
@@ -2556,6 +2997,36 @@
     </div>
   </div>
 
+  <div id="playlistModalBackdrop" class="playlist-modal-backdrop" hidden>
+    <div id="playlistModal" class="playlist-modal" role="dialog" aria-modal="true" aria-labelledby="playlistModalTitle">
+      <div class="playlist-modal-head">
+        <h3 id="playlistModalTitle" class="playlist-modal-title">Новый плейлист</h3>
+        <p id="playlistModalSubtitle" class="playlist-modal-subtitle">Выберите тип и укажите название.</p>
+      </div>
+      <div class="playlist-modal-body">
+        <label class="playlist-modal-label" for="playlistNameInput">Название плейлиста</label>
+        <input id="playlistNameInput" class="field" type="text" maxlength="60" placeholder="Например: Любимые треки">
+
+        <p class="playlist-modal-label">Тип плейлиста</p>
+        <div class="playlist-type-switch" role="radiogroup" aria-label="Тип плейлиста">
+          <button id="playlistTypeSharedBtn" class="playlist-type-btn is-active" type="button" data-scope="shared" role="radio" aria-checked="true">
+            <span class="playlist-type-title">Общий</span>
+            <span class="playlist-type-note">Виден всем пользователям</span>
+          </button>
+          <button id="playlistTypePrivateBtn" class="playlist-type-btn" type="button" data-scope="private" role="radio" aria-checked="false">
+            <span class="playlist-type-title">Приватный</span>
+            <span class="playlist-type-note">Виден только вам</span>
+          </button>
+        </div>
+      </div>
+      <div class="playlist-modal-actions">
+        <button id="playlistModalDeleteBtn" class="btn btn--danger playlist-modal-delete" type="button" hidden>Удалить</button>
+        <button id="playlistModalCancelBtn" class="btn btn--ghost" type="button">Отмена</button>
+        <button id="playlistModalCreateBtn" class="btn btn--accent" type="button">Создать</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toasts" class="toasts"></div>
   <audio id="audio" preload="metadata" playsinline crossorigin="anonymous"></audio>
 
@@ -2582,7 +3053,11 @@
       const YANDEX_OAUTH_CONFIG_ENDPOINT = `${REALTIME_HTTP_BASE}/yandex-oauth/config`;
       const YANDEX_OAUTH_CLIENT_ID_FALLBACK = "3c6ee128ac25410685d426232c743093";
       const YANDEX_OAUTH_AUTHORIZE_URL_FALLBACK = "https://oauth.yandex.ru/authorize";
-      const COMMUNITY_TRACKS_PATH = "music/communityTracks";
+      const LEGACY_COMMUNITY_TRACKS_PATH = "music/communityTracks";
+      const PLAYLISTS_META_PATH = "music/playlistsMeta";
+      const PLAYLIST_TRACKS_ROOT_PATH = "music/playlistsTracks";
+      const PLAYLISTS_MIGRATION_STATE_PATH = "music/migrations/legacyTracksToPlaylistsV1";
+      const DEFAULT_SHARED_PLAYLIST_ID = "shared-default";
       const TOKEN_KEY = "ymAuthToken";
       const TOKEN_COOKIE_KEY = "ym_auth_token";
       const OAUTH_STATE_KEY = "ymOAuthState";
@@ -2595,6 +3070,15 @@
       const state = {
         currentUser: null,
         db: null,
+        playlists: [],
+        playlistTrackCounts: {},
+        activePlaylistId: DEFAULT_SHARED_PLAYLIST_ID,
+        playlistCreateScope: "shared",
+        playlistCreateModalOpen: false,
+        playlistModalMode: "create",
+        playlistModalPlaylistId: "",
+        playlistDeleteConfirmPending: false,
+        boundTracksPath: "",
         sharedTracks: [],
         renderedTracks: [],
         renderedTrackDomCount: 0,
@@ -2716,6 +3200,20 @@
         fsShuffleIcon: document.getElementById("fsShuffleIcon"),
         searchInput: document.getElementById("searchInput"),
         desktopLayoutToggleBtn: document.getElementById("desktopLayoutToggleBtn"),
+        playlistSelectorRoot: document.getElementById("playlistSelector"),
+        playlistSelectorBtn: document.getElementById("playlistSelectorBtn"),
+        playlistSelectorName: document.getElementById("playlistSelectorName"),
+        playlistSelectorMenu: document.getElementById("playlistSelectorMenu"),
+        playlistModalBackdrop: document.getElementById("playlistModalBackdrop"),
+        playlistModal: document.getElementById("playlistModal"),
+        playlistModalTitle: document.getElementById("playlistModalTitle"),
+        playlistModalSubtitle: document.getElementById("playlistModalSubtitle"),
+        playlistNameInput: document.getElementById("playlistNameInput"),
+        playlistTypeSharedBtn: document.getElementById("playlistTypeSharedBtn"),
+        playlistTypePrivateBtn: document.getElementById("playlistTypePrivateBtn"),
+        playlistModalDeleteBtn: document.getElementById("playlistModalDeleteBtn"),
+        playlistModalCancelBtn: document.getElementById("playlistModalCancelBtn"),
+        playlistModalCreateBtn: document.getElementById("playlistModalCreateBtn"),
         toggleSearchPanelBtn: document.getElementById("toggleSearchPanelBtn"),
         toggleAddPanelBtn: document.getElementById("toggleAddPanelBtn"),
         toggleAddHelpBtn: document.getElementById("toggleAddHelpBtn"),
@@ -4443,13 +4941,17 @@
           } catch (_) {}
         };
 
-        const list = getPlaybackListBySource(state.activeSource);
-        const currentIndex = getCurrentTrackIndex(list);
-        const hasPrev = currentIndex > 0;
-        const hasNext = currentIndex >= 0 && currentIndex < (list.length - 1);
+        let queue = state.activeSource === "search"
+          ? (Array.isArray(state.ymSearchResults) ? state.ymSearchResults : [])
+          : (Array.isArray(state.sharedTracks) ? state.sharedTracks : []);
+        if (!queue.length) {
+          queue = getPlaybackListBySource(state.activeSource);
+        }
+        const hasTrack = Boolean(state.currentTrack && state.currentTrack.trackId);
+        const hasQueueControls = queue.length > 1;
 
-        safeSet("previoustrack", hasPrev ? () => { playPrev(); } : null);
-        safeSet("nexttrack", hasNext ? () => { playNext(); } : null);
+        safeSet("previoustrack", (hasTrack && hasQueueControls) ? () => { playPrev(); } : null);
+        safeSet("nexttrack", (hasTrack && hasQueueControls) ? () => { playNext(); } : null);
       }
 
       function getVisibleTracks() {
@@ -4505,6 +5007,642 @@
         return String((track && (track.addedByName || track.addedByUsername)) || "Неизвестно").trim() || "Неизвестно";
       }
 
+      function normalizePlaylistScope(value) {
+        return String(value || "").toLowerCase() === "private" ? "private" : "shared";
+      }
+
+      function getPlaylistScopeLabel(scope) {
+        return normalizePlaylistScope(scope) === "private" ? "Приватный" : "Общий";
+      }
+
+      function getDefaultSharedPlaylistMeta() {
+        return {
+          id: DEFAULT_SHARED_PLAYLIST_ID,
+          title: "Общий плейлист",
+          scope: "shared",
+          ownerUsername: "",
+          ownerName: "Kinosreda",
+          createdAt: 0,
+          updatedAt: 0
+        };
+      }
+
+      function getPlaylistTracksPath(playlistId = state.activePlaylistId) {
+        const normalized = String(playlistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
+        return `${PLAYLIST_TRACKS_ROOT_PATH}/${normalized}`;
+      }
+
+      function getActivePlaylistMeta() {
+        const id = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        return state.playlists.find((item) => String(item.id || "") === id) || getDefaultSharedPlaylistMeta();
+      }
+
+      function canAccessPlaylist(raw) {
+        const scope = normalizePlaylistScope(raw && raw.scope);
+        if (scope === "shared") return true;
+        if (!state.currentUser) return false;
+        const me = firebaseSafeKey(state.currentUser.username);
+        const owner = firebaseSafeKey(raw && raw.ownerUsername);
+        if (owner && owner === me) return true;
+        return me === "max";
+      }
+
+      function canManagePlaylistMeta(raw) {
+        const id = String(raw && raw.id || "").trim();
+        if (!id || id === DEFAULT_SHARED_PLAYLIST_ID) return false;
+        if (!state.currentUser) return false;
+        const me = firebaseSafeKey(state.currentUser.username);
+        if (!me) return false;
+        if (me === "max") return true;
+        const owner = firebaseSafeKey(raw && raw.ownerUsername);
+        return Boolean(owner && owner === me);
+      }
+
+      function normalizePlaylistMeta(raw, key = "") {
+        const normalizedKey = String(key || "").trim();
+        if (!normalizedKey) return null;
+        const scope = normalizePlaylistScope(raw && raw.scope);
+        const title = String(raw && raw.title || "").trim() || "Плейлист";
+        return {
+          id: normalizedKey,
+          title,
+          scope,
+          ownerUsername: String(raw && raw.ownerUsername || ""),
+          ownerName: String(raw && raw.ownerName || ""),
+          createdAt: Number(raw && raw.createdAt || 0),
+          updatedAt: Number(raw && raw.updatedAt || 0)
+        };
+      }
+
+      function sortPlaylists(list) {
+        return [...list].sort((a, b) => {
+          const aScope = normalizePlaylistScope(a && a.scope);
+          const bScope = normalizePlaylistScope(b && b.scope);
+          if (aScope !== bScope) return aScope === "shared" ? -1 : 1;
+          if (a.id === DEFAULT_SHARED_PLAYLIST_ID) return -1;
+          if (b.id === DEFAULT_SHARED_PLAYLIST_ID) return 1;
+          return String(a.title || "").localeCompare(String(b.title || ""), "ru");
+        });
+      }
+
+      function setPlaylistMenuOpen(open) {
+        if (!els.playlistSelectorRoot || !els.playlistSelectorBtn || !els.playlistSelectorMenu) return;
+        const isOpen = !!open;
+        els.playlistSelectorRoot.classList.toggle("is-open", isOpen);
+        els.playlistSelectorBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        els.playlistSelectorMenu.hidden = !isOpen;
+        if (isOpen) {
+          requestAnimationFrame(() => {
+            updatePlaylistMenuPosition();
+          });
+        } else {
+          clearPlaylistMenuInlineStyles();
+        }
+      }
+
+      function clearPlaylistMenuInlineStyles() {
+        if (!els.playlistSelectorMenu) return;
+        if (els.playlistSelectorRoot) {
+          els.playlistSelectorRoot.classList.remove("is-drop-up");
+        }
+        els.playlistSelectorMenu.style.left = "";
+        els.playlistSelectorMenu.style.right = "";
+        els.playlistSelectorMenu.style.top = "";
+        els.playlistSelectorMenu.style.bottom = "";
+        els.playlistSelectorMenu.style.width = "";
+        els.playlistSelectorMenu.style.maxHeight = "";
+      }
+
+      function updatePlaylistMenuPosition() {
+        if (!els.playlistSelectorMenu || !els.playlistSelectorBtn || !els.playlistSelectorRoot) return;
+        if (isDesktopViewport()) {
+          clearPlaylistMenuInlineStyles();
+          return;
+        }
+
+        const viewportHeight = Math.max(0, Number(window.innerHeight) || 0);
+        if (!viewportHeight) return;
+
+        const rect = els.playlistSelectorBtn.getBoundingClientRect();
+        const screenPadding = 8;
+        const offset = 8;
+        const minHeight = 140;
+        const desiredHeight = Math.min(520, Math.floor(viewportHeight * 0.72));
+        const spaceBelow = Math.max(0, viewportHeight - rect.bottom - screenPadding - offset);
+        const spaceAbove = Math.max(0, rect.top - screenPadding - offset);
+
+        let dropUp = false;
+        if (spaceBelow < minHeight && spaceAbove > spaceBelow) {
+          dropUp = true;
+        }
+
+        let maxHeight = Math.min(desiredHeight, dropUp ? spaceAbove : spaceBelow);
+        if (!Number.isFinite(maxHeight) || maxHeight < minHeight) {
+          const fallback = Math.max(spaceBelow, spaceAbove);
+          maxHeight = Math.max(100, Math.min(desiredHeight, fallback));
+          dropUp = spaceAbove > spaceBelow;
+        }
+
+        els.playlistSelectorRoot.classList.toggle("is-drop-up", dropUp);
+        els.playlistSelectorMenu.style.left = "";
+        els.playlistSelectorMenu.style.right = "";
+        els.playlistSelectorMenu.style.top = "";
+        els.playlistSelectorMenu.style.bottom = "";
+        els.playlistSelectorMenu.style.width = "";
+        els.playlistSelectorMenu.style.maxHeight = `${Math.max(120, Math.floor(maxHeight))}px`;
+      }
+
+      function updatePlaylistSelectorUi() {
+        if (!els.playlistSelectorName) return;
+        const active = getActivePlaylistMeta();
+        els.playlistSelectorName.textContent = String(active.title || "Плейлист");
+      }
+
+      function getPlaylistTrackCount(playlistId) {
+        const id = String(playlistId || "").trim();
+        if (!id) return 0;
+        const stored = Number(state.playlistTrackCounts && state.playlistTrackCounts[id]);
+        if (Number.isFinite(stored) && stored >= 0) return stored;
+        if (id === String(state.activePlaylistId || "") && Array.isArray(state.sharedTracks)) {
+          return state.sharedTracks.length;
+        }
+        return 0;
+      }
+
+      function getPlaylistMetaLine(playlist) {
+        const scopeLabel = getPlaylistScopeLabel(playlist && playlist.scope);
+        const scope = normalizePlaylistScope(playlist && playlist.scope);
+        if (scope !== "private") return scopeLabel;
+        const owner = String((playlist && (playlist.ownerName || playlist.ownerUsername)) || "").trim();
+        if (!owner) return scopeLabel;
+        return `${scopeLabel} • ${owner}`;
+      }
+
+      function syncPlaylistTrackCounts(snapshot) {
+        const counts = {};
+        if (snapshot && typeof snapshot.forEach === "function") {
+          snapshot.forEach((playlistNode) => {
+            const id = String(playlistNode && playlistNode.key || "").trim();
+            if (!id) return;
+            let count = 0;
+            if (typeof playlistNode.numChildren === "function") {
+              count = Number(playlistNode.numChildren() || 0);
+            } else {
+              const raw = playlistNode.val();
+              if (raw && typeof raw === "object") count = Object.keys(raw).length;
+            }
+            counts[id] = Math.max(0, count);
+          });
+        }
+        if (!Object.prototype.hasOwnProperty.call(counts, DEFAULT_SHARED_PLAYLIST_ID)) {
+          counts[DEFAULT_SHARED_PLAYLIST_ID] = 0;
+        }
+        state.playlistTrackCounts = counts;
+        renderPlaylistSelectorMenu();
+      }
+
+      function bindPlaylistTrackCounts() {
+        if (!state.db) {
+          state.playlistTrackCounts = {
+            [DEFAULT_SHARED_PLAYLIST_ID]: Array.isArray(state.sharedTracks) ? state.sharedTracks.length : 0
+          };
+          renderPlaylistSelectorMenu();
+          return;
+        }
+        const ref = state.db.ref(PLAYLIST_TRACKS_ROOT_PATH);
+        ref.off("value", syncPlaylistTrackCounts);
+        ref.on("value", syncPlaylistTrackCounts, () => {
+          state.playlistTrackCounts = {
+            [DEFAULT_SHARED_PLAYLIST_ID]: 0
+          };
+          renderPlaylistSelectorMenu();
+        });
+      }
+
+      function renderPlaylistSelectorMenu() {
+        if (!els.playlistSelectorMenu) return;
+        els.playlistSelectorMenu.innerHTML = "";
+        const fragment = document.createDocumentFragment();
+        const current = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+
+        const createBtn = document.createElement("button");
+        createBtn.type = "button";
+        createBtn.className = "playlist-menu-create";
+        createBtn.dataset.action = "create-playlist";
+        createBtn.innerHTML = `
+          <span class="playlist-menu-create-icon">+</span>
+          <span class="playlist-menu-create-label">Создать плейлист</span>
+        `;
+        fragment.appendChild(createBtn);
+
+        const shared = state.playlists.filter((item) => normalizePlaylistScope(item.scope) === "shared");
+        const privates = state.playlists.filter((item) => normalizePlaylistScope(item.scope) === "private");
+
+        const renderGroup = (label, rows) => {
+          if (!rows.length) return;
+          const title = document.createElement("p");
+          title.className = "playlist-selector-group-label";
+          title.textContent = label;
+          fragment.appendChild(title);
+          rows.forEach((playlist) => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = `playlist-option${playlist.id === current ? " is-active" : ""}`;
+            btn.dataset.playlistId = String(playlist.id || "");
+            btn.setAttribute("role", "option");
+            btn.setAttribute("aria-selected", playlist.id === current ? "true" : "false");
+            const count = getPlaylistTrackCount(playlist.id);
+            btn.innerHTML = `
+              <span class="playlist-option-head">
+                <span class="playlist-option-name">${escapeHtml(playlist.title || "Плейлист")}</span>
+                <span class="playlist-option-count">${count}</span>
+              </span>
+              <span class="playlist-option-meta">${escapeHtml(getPlaylistMetaLine(playlist))}</span>
+            `;
+            if (canManagePlaylistMeta(playlist)) {
+              const row = document.createElement("div");
+              row.className = "playlist-option-row";
+              const editBtn = document.createElement("button");
+              editBtn.type = "button";
+              editBtn.className = "playlist-option-edit";
+              editBtn.dataset.action = "edit-playlist";
+              editBtn.dataset.playlistId = String(playlist.id || "");
+              editBtn.title = "Редактировать плейлист";
+              editBtn.setAttribute("aria-label", `Редактировать плейлист ${String(playlist.title || "Плейлист")}`);
+              editBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.95l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l8.79-8.79.92.92-8.79 8.79zM20.7 7.04c.39-.39.39-1.02 0-1.41l-2.33-2.33a1 1 0 0 0-1.41 0l-1.82 1.82 3.75 3.75 1.81-1.83z"></path></svg>';
+              row.appendChild(btn);
+              row.appendChild(editBtn);
+              fragment.appendChild(row);
+              return;
+            }
+            fragment.appendChild(btn);
+          });
+        };
+
+        renderGroup("Общие", shared);
+        renderGroup("Приватные", privates);
+
+        if (!fragment.childNodes.length) {
+          const empty = document.createElement("div");
+          empty.className = "playlist-menu-empty";
+          empty.textContent = "Плейлисты пока не созданы.";
+          fragment.appendChild(empty);
+        }
+
+        els.playlistSelectorMenu.appendChild(fragment);
+        if (els.playlistSelectorRoot && els.playlistSelectorRoot.classList.contains("is-open")) {
+          requestAnimationFrame(() => {
+            updatePlaylistMenuPosition();
+          });
+        }
+      }
+
+      function setPlaylistCreateScope(scope = "shared") {
+        const normalized = normalizePlaylistScope(scope);
+        state.playlistCreateScope = normalized;
+        if (state.playlistDeleteConfirmPending) {
+          state.playlistDeleteConfirmPending = false;
+        }
+        if (els.playlistTypeSharedBtn) {
+          const active = normalized === "shared";
+          els.playlistTypeSharedBtn.classList.toggle("is-active", active);
+          els.playlistTypeSharedBtn.setAttribute("aria-checked", active ? "true" : "false");
+        }
+        if (els.playlistTypePrivateBtn) {
+          const active = normalized === "private";
+          els.playlistTypePrivateBtn.classList.toggle("is-active", active);
+          els.playlistTypePrivateBtn.setAttribute("aria-checked", active ? "true" : "false");
+        }
+        if (state.playlistCreateModalOpen) {
+          syncPlaylistModalUi();
+        }
+      }
+
+      function syncPlaylistModalUi() {
+        const editMode = state.playlistModalMode === "edit";
+        if (els.playlistModalTitle) {
+          els.playlistModalTitle.textContent = editMode ? "Редактировать плейлист" : "Новый плейлист";
+        }
+        if (els.playlistModalSubtitle) {
+          els.playlistModalSubtitle.textContent = editMode
+            ? "Измените тип, название или удалите плейлист."
+            : "Выберите тип и укажите название.";
+        }
+        if (els.playlistModalCreateBtn) {
+          els.playlistModalCreateBtn.textContent = editMode ? "Сохранить" : "Создать";
+        }
+        if (els.playlistModalDeleteBtn) {
+          const canDelete = editMode && canManagePlaylistMeta(getActiveEditingPlaylistMeta());
+          const pending = canDelete && state.playlistDeleteConfirmPending;
+          els.playlistModalDeleteBtn.hidden = !canDelete;
+          els.playlistModalDeleteBtn.classList.toggle("is-confirm", pending);
+          els.playlistModalDeleteBtn.textContent = pending ? "Удалить?" : "Удалить";
+        }
+      }
+
+      function getActiveEditingPlaylistMeta() {
+        const editingId = String(state.playlistModalPlaylistId || "").trim();
+        if (!editingId) return null;
+        return state.playlists.find((item) => String(item && item.id || "") === editingId) || null;
+      }
+
+      function openPlaylistCreateModal() {
+        state.playlistModalMode = "create";
+        state.playlistModalPlaylistId = "";
+        state.playlistDeleteConfirmPending = false;
+        if (els.playlistNameInput) {
+          els.playlistNameInput.value = "";
+        }
+        setPlaylistCreateScope("shared");
+        syncPlaylistModalUi();
+        setPlaylistCreateModalOpen(true);
+      }
+
+      function openPlaylistEditModal(playlistId) {
+        const id = String(playlistId || "").trim();
+        if (!id) return;
+        const playlist = state.playlists.find((item) => String(item && item.id || "") === id);
+        if (!playlist) {
+          toast("Плейлист не найден", "err");
+          return;
+        }
+        if (!canManagePlaylistMeta(playlist)) {
+          toast("Недостаточно прав для редактирования", "err");
+          return;
+        }
+        state.playlistModalMode = "edit";
+        state.playlistModalPlaylistId = id;
+        state.playlistDeleteConfirmPending = false;
+        if (els.playlistNameInput) {
+          els.playlistNameInput.value = String(playlist.title || "");
+        }
+        setPlaylistCreateScope(playlist.scope);
+        syncPlaylistModalUi();
+        setPlaylistCreateModalOpen(true);
+      }
+
+      function setPlaylistCreateModalOpen(open) {
+        const normalized = !!open;
+        state.playlistCreateModalOpen = normalized;
+        if (els.playlistModalBackdrop) {
+          els.playlistModalBackdrop.classList.toggle("is-open", normalized);
+          els.playlistModalBackdrop.hidden = !normalized;
+        }
+        if (!normalized) {
+          state.playlistDeleteConfirmPending = false;
+          syncPlaylistModalUi();
+          return;
+        }
+        syncPlaylistModalUi();
+        requestAnimationFrame(() => {
+          if (els.playlistNameInput) els.playlistNameInput.focus();
+        });
+      }
+
+      function getPlaylistModalPayload() {
+        const title = String((els.playlistNameInput && els.playlistNameInput.value) || "").trim();
+        if (!title) {
+          toast("Введите название плейлиста", "err");
+          return null;
+        }
+        if (title.length < 2) {
+          toast("Название слишком короткое", "err");
+          return null;
+        }
+        const scope = normalizePlaylistScope(state.playlistCreateScope);
+        return {
+          title: title.slice(0, 60),
+          scope
+        };
+      }
+
+      function setActivePlaylistId(nextId, { persist = true, rebindTracks = true } = {}) {
+        const normalized = String(nextId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
+        if (state.activePlaylistId === normalized && !rebindTracks) return;
+        state.activePlaylistId = normalized;
+        updatePlaylistSelectorUi();
+        renderPlaylistSelectorMenu();
+        if (persist) persistPlayerSettings();
+        if (rebindTracks) {
+          state.listQuery = "";
+          if (els.searchInput) els.searchInput.value = "";
+          applyAddedByFilterValue("all", { persist: false, rerender: false, closeMenu: false });
+          bindSharedTracks();
+        }
+      }
+
+      async function createPlaylistFromModal() {
+        if (!state.db) {
+          toast("Firebase недоступен, создание плейлистов отключено", "err");
+          return;
+        }
+        if (!state.currentUser) {
+          toast("Нужна авторизация", "err");
+          return;
+        }
+        const payloadBase = getPlaylistModalPayload();
+        if (!payloadBase) return;
+        const payload = {
+          ...payloadBase,
+          ownerUsername: state.currentUser.username || "",
+          ownerName: state.currentUser.name || "",
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        const ref = await state.db.ref(PLAYLISTS_META_PATH).push(payload);
+        const newId = String(ref.key || "");
+        if (newId) {
+          state.playlistTrackCounts[newId] = 0;
+          setPlaylistCreateModalOpen(false);
+          setPlaylistMenuOpen(false);
+          setActivePlaylistId(newId, { persist: true, rebindTracks: true });
+          toast("Плейлист создан");
+        }
+      }
+
+      async function updatePlaylistFromModal() {
+        if (!state.db) {
+          toast("Firebase недоступен, редактирование отключено", "err");
+          return;
+        }
+        if (!state.currentUser) {
+          toast("Нужна авторизация", "err");
+          return;
+        }
+        const playlist = getActiveEditingPlaylistMeta();
+        if (!playlist) {
+          toast("Плейлист не найден", "err");
+          return;
+        }
+        if (!canManagePlaylistMeta(playlist)) {
+          toast("Недостаточно прав для редактирования", "err");
+          return;
+        }
+        const payload = getPlaylistModalPayload();
+        if (!payload) return;
+        await state.db.ref(`${PLAYLISTS_META_PATH}/${playlist.id}`).update({
+          ...payload,
+          updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        setPlaylistCreateModalOpen(false);
+        setPlaylistMenuOpen(false);
+        if (String(state.activePlaylistId || "") === String(playlist.id || "")) {
+          updatePlaylistSelectorUi();
+        }
+        toast("Плейлист обновлён");
+      }
+
+      async function deletePlaylistFromModal() {
+        if (!state.db) {
+          toast("Firebase недоступен, удаление отключено", "err");
+          return;
+        }
+        if (!state.currentUser) {
+          toast("Нужна авторизация", "err");
+          return;
+        }
+        const playlist = getActiveEditingPlaylistMeta();
+        if (!playlist) {
+          toast("Плейлист не найден", "err");
+          return;
+        }
+        if (!canManagePlaylistMeta(playlist)) {
+          toast("Недостаточно прав для удаления", "err");
+          return;
+        }
+        const playlistId = String(playlist.id || "");
+        if (!playlistId || playlistId === DEFAULT_SHARED_PLAYLIST_ID) {
+          toast("Этот плейлист нельзя удалить", "err");
+          return;
+        }
+        if (!state.playlistDeleteConfirmPending) {
+          state.playlistDeleteConfirmPending = true;
+          syncPlaylistModalUi();
+          toast("Нажмите ещё раз, чтобы подтвердить удаление");
+          return;
+        }
+
+        const removingActive = String(state.activePlaylistId || "") === playlistId;
+        const updates = {
+          [`${PLAYLISTS_META_PATH}/${playlistId}`]: null,
+          [`${PLAYLIST_TRACKS_ROOT_PATH}/${playlistId}`]: null
+        };
+        await state.db.ref().update(updates);
+        delete state.playlistTrackCounts[playlistId];
+        state.playlistDeleteConfirmPending = false;
+
+        setPlaylistCreateModalOpen(false);
+        setPlaylistMenuOpen(false);
+        if (removingActive) {
+          setActivePlaylistId(DEFAULT_SHARED_PLAYLIST_ID, { persist: true, rebindTracks: true });
+        } else {
+          renderPlaylistSelectorMenu();
+        }
+        toast("Плейлист удалён");
+      }
+
+      async function submitPlaylistModal() {
+        if (state.playlistModalMode === "edit") {
+          await updatePlaylistFromModal();
+          return;
+        }
+        await createPlaylistFromModal();
+      }
+
+      function syncPlaylists(snapshot) {
+        const previousPlaylistId = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        const items = [];
+        if (snapshot && typeof snapshot.forEach === "function") {
+          snapshot.forEach((child) => {
+            const normalized = normalizePlaylistMeta(child.val() || {}, child.key);
+            if (!normalized) return;
+            if (!canAccessPlaylist(normalized)) return;
+            items.push(normalized);
+          });
+        }
+
+        if (!items.some((item) => item.id === DEFAULT_SHARED_PLAYLIST_ID)) {
+          items.push(getDefaultSharedPlaylistMeta());
+        }
+        state.playlists = sortPlaylists(items);
+
+        const hasActive = state.playlists.some((item) => String(item.id || "") === String(state.activePlaylistId || ""));
+        if (!hasActive) {
+          state.activePlaylistId = DEFAULT_SHARED_PLAYLIST_ID;
+        }
+        updatePlaylistSelectorUi();
+        renderPlaylistSelectorMenu();
+        const changedPlaylist = previousPlaylistId !== String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        if (changedPlaylist || !state.boundTracksPath) {
+          bindSharedTracks();
+        }
+      }
+
+      async function ensureDefaultPlaylistAndMigrateLegacyTracks() {
+        if (!state.db) return;
+        const defaultMeta = getDefaultSharedPlaylistMeta();
+        const defaultMetaRef = state.db.ref(`${PLAYLISTS_META_PATH}/${DEFAULT_SHARED_PLAYLIST_ID}`);
+        const defaultSnapshot = await defaultMetaRef.once("value");
+        if (!defaultSnapshot.exists()) {
+          await defaultMetaRef.set({
+            title: defaultMeta.title,
+            scope: "shared",
+            ownerUsername: "",
+            ownerName: defaultMeta.ownerName,
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+          });
+        }
+
+        const migrationSnapshot = await state.db.ref(PLAYLISTS_MIGRATION_STATE_PATH).once("value");
+        const migrationDone = Boolean(migrationSnapshot && migrationSnapshot.val() && migrationSnapshot.val().done);
+        if (migrationDone) return;
+
+        const legacySnapshot = await state.db.ref(LEGACY_COMMUNITY_TRACKS_PATH).once("value");
+        const updates = {};
+        let moved = 0;
+        if (legacySnapshot && legacySnapshot.exists()) {
+          legacySnapshot.forEach((child) => {
+            const value = child.val();
+            if (!value || typeof value !== "object") return;
+            const key = String(child.key || "").trim();
+            if (!key) return;
+            updates[`${PLAYLIST_TRACKS_ROOT_PATH}/${DEFAULT_SHARED_PLAYLIST_ID}/${key}`] = value;
+            moved += 1;
+          });
+          updates[LEGACY_COMMUNITY_TRACKS_PATH] = null;
+        }
+        updates[PLAYLISTS_MIGRATION_STATE_PATH] = {
+          done: true,
+          moved,
+          at: firebase.database.ServerValue.TIMESTAMP
+        };
+        if (Object.keys(updates).length) {
+          await state.db.ref().update(updates);
+        }
+      }
+
+      function bindPlaylists() {
+        if (!state.db) {
+          state.playlists = [getDefaultSharedPlaylistMeta()];
+          state.playlistTrackCounts = { [DEFAULT_SHARED_PLAYLIST_ID]: Array.isArray(state.sharedTracks) ? state.sharedTracks.length : 0 };
+          state.activePlaylistId = state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID;
+          updatePlaylistSelectorUi();
+          renderPlaylistSelectorMenu();
+          return;
+        }
+        state.db.ref(PLAYLISTS_META_PATH).off();
+        state.db.ref(PLAYLISTS_META_PATH).on("value", syncPlaylists, () => {
+          state.playlists = [getDefaultSharedPlaylistMeta()];
+          state.playlistTrackCounts = { [DEFAULT_SHARED_PLAYLIST_ID]: 0 };
+          state.activePlaylistId = DEFAULT_SHARED_PLAYLIST_ID;
+          updatePlaylistSelectorUi();
+          renderPlaylistSelectorMenu();
+          bindSharedTracks();
+          toast("Ошибка загрузки плейлистов", "err");
+        });
+      }
+
       function updateTrackCountBadge(visibleCount = 0, totalCount = 0) {
         if (!els.trackCountBadge) return;
         const total = Math.max(0, Number(totalCount || 0));
@@ -4519,6 +5657,7 @@
       function setAddedByFilterMenuOpen(open) {
         if (!els.addedByFilterRoot || !els.addedByFilterBtn || !els.addedByFilterMenu) return;
         const isOpen = !!open;
+        if (isOpen) setPlaylistMenuOpen(false);
         els.addedByFilterRoot.classList.toggle("is-open", isOpen);
         els.addedByFilterBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
         els.addedByFilterMenu.hidden = !isOpen;
@@ -4971,11 +6110,18 @@
       }
 
       function createTrackItem(track, context) {
+        const activePlaylist = getActivePlaylistMeta();
+        const me = firebaseSafeKey(state.currentUser && state.currentUser.username);
+        const playlistOwner = firebaseSafeKey(activePlaylist && activePlaylist.ownerUsername);
+        const canManagePlaylist = normalizePlaylistScope(activePlaylist && activePlaylist.scope) === "private"
+          && me
+          && (playlistOwner === me || me === "max");
         const isCurrent = state.currentTrack && state.currentTrack.trackId === track.trackId && state.activeSource === context;
         const isPlaying = Boolean(isCurrent && !els.audio.paused);
         const canDelete = state.currentUser && (
           firebaseSafeKey(track.addedByUsername) === firebaseSafeKey(state.currentUser.username)
           || firebaseSafeKey(state.currentUser.username) === "max"
+          || canManagePlaylist
         );
 
         const li = document.createElement("li");
@@ -5017,7 +6163,7 @@
                 <svg viewBox="0 0 24 24"><path d="M11 4h2v8h3l-4 5-4-5h3V4zM5 18h14v2H5z"></path></svg>
               </button>
             ` : `
-              <button class="icon-btn" data-action="add" title="Добавить в общий список">
+              <button class="icon-btn" data-action="add" title="Добавить в текущий плейлист">
                 <svg viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>
               </button>
             `}
@@ -6978,17 +8124,19 @@
 
       async function addToShared(track) {
         if (!state.db) {
-          toast("Firebase недоступен, общий список отключен", "err");
+          toast("Firebase недоступен, плейлисты отключены", "err");
           return;
         }
         if (!track || !track.trackId) {
           toast("Невалидный трек", "err");
           return;
         }
+        const tracksPath = getPlaylistTracksPath();
+        const activePlaylist = getActivePlaylistMeta();
         const provider = normalizeTrackProvider(track.provider);
         const user = state.currentUser || { username: "guest", name: "Guest" };
         const snapshot = await state.db
-          .ref(COMMUNITY_TRACKS_PATH)
+          .ref(tracksPath)
           .orderByChild("trackId")
           .equalTo(track.trackId)
           .once("value");
@@ -7011,12 +8159,12 @@
             enriched = true;
           });
           if (hasSameProviderTrack && enriched) {
-            await state.db.ref(COMMUNITY_TRACKS_PATH).update(updates);
-            toast("Трек уже был в списке: метаданные обновлены");
+            await state.db.ref(tracksPath).update(updates);
+            toast("Трек уже есть в плейлисте: метаданные обновлены");
             return;
           }
           if (hasSameProviderTrack) {
-            toast("Этот трек уже есть в общем списке");
+            toast("Этот трек уже есть в плейлисте");
             return;
           }
         }
@@ -7036,8 +8184,8 @@
           likes: {}
         };
 
-        await state.db.ref(COMMUNITY_TRACKS_PATH).push(payload);
-        toast("Трек добавлен в общий список");
+        await state.db.ref(tracksPath).push(payload);
+        toast(`Трек добавлен в плейлист «${activePlaylist.title || "Плейлист"}»`);
       }
 
       async function toggleLike(track) {
@@ -7047,7 +8195,7 @@
           return;
         }
         const me = firebaseSafeKey(state.currentUser.username);
-        const ref = state.db.ref(`${COMMUNITY_TRACKS_PATH}/${track.key}/likes/${me}`);
+        const ref = state.db.ref(`${getPlaylistTracksPath()}/${track.key}/likes/${me}`);
         const getLatestTrack = () => state.sharedTracks.find((item) => String(item && item.key || "") === String(track.key || ""));
         const latestTrack = getLatestTrack() || track;
         const likedNow = isLikedByMe(latestTrack);
@@ -7083,15 +8231,22 @@
 
       async function removeTrack(track) {
         if (!state.db || !track || !track.key) return;
+        const activePlaylist = getActivePlaylistMeta();
+        const me = firebaseSafeKey(state.currentUser && state.currentUser.username);
+        const playlistOwner = firebaseSafeKey(activePlaylist && activePlaylist.ownerUsername);
+        const canManagePlaylist = normalizePlaylistScope(activePlaylist && activePlaylist.scope) === "private"
+          && me
+          && (playlistOwner === me || me === "max");
         const canDelete = state.currentUser && (
           firebaseSafeKey(track.addedByUsername) === firebaseSafeKey(state.currentUser.username)
           || firebaseSafeKey(state.currentUser.username) === "max"
+          || canManagePlaylist
         );
         if (!canDelete) {
           toast("Удалять может только автор трека или admin", "err");
           return;
         }
-        await state.db.ref(`${COMMUNITY_TRACKS_PATH}/${track.key}`).remove();
+        await state.db.ref(`${getPlaylistTracksPath()}/${track.key}`).remove();
         toast("Трек удалён");
       }
 
@@ -7117,6 +8272,9 @@
           items.push(normalized);
         });
         state.sharedTracks = items;
+        const activeId = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        state.playlistTrackCounts[activeId] = items.length;
+        renderPlaylistSelectorMenu();
         refreshAddedByFilterOptions();
         state.sharedTracksLoaded = true;
         const nextVisible = getVisibleTracks();
@@ -7134,12 +8292,26 @@
       }
 
       function bindSharedTracks() {
-        if (!state.db) return;
-        state.db.ref(COMMUNITY_TRACKS_PATH).off();
-        state.db.ref(COMMUNITY_TRACKS_PATH).on("value", syncSharedTracks, () => {
+        if (!state.db) {
+          state.sharedTracks = [];
+          state.renderedTracks = [];
+          state.sharedTracksLoaded = true;
+          renderSharedList();
+          return;
+        }
+        const tracksPath = getPlaylistTracksPath();
+        if (state.boundTracksPath) {
+          state.db.ref(state.boundTracksPath).off();
+        }
+        state.boundTracksPath = tracksPath;
+        state.sharedTracksLoaded = false;
+        state.sharedTracks = [];
+        state.renderedTracks = [];
+        renderSharedList();
+        state.db.ref(tracksPath).on("value", syncSharedTracks, () => {
           state.sharedTracksLoaded = true;
           tryRestorePlaybackSnapshot();
-          toast("Ошибка подписки на общий список", "err");
+          toast("Ошибка подписки на плейлист", "err");
         });
       }
 
@@ -7151,7 +8323,8 @@
           addedByFilter: state.addedByFilter,
           sort: state.sort,
           volume: Number(els.audio && els.audio.volume != null ? els.audio.volume : 0.85),
-          desktopSplitPreferred: Boolean(state.desktopSplitPreferred)
+          desktopSplitPreferred: Boolean(state.desktopSplitPreferred),
+          activePlaylistId: String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID)
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
       }
@@ -7190,6 +8363,9 @@
         }
         if (typeof saved.desktopSplitPreferred === "boolean") {
           state.desktopSplitPreferred = saved.desktopSplitPreferred;
+        }
+        if (saved.activePlaylistId) {
+          state.activePlaylistId = String(saved.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
         }
       }
 
@@ -7283,6 +8459,12 @@
           if (event.key === "Escape" && state.addHelpOpen) {
             setAddHelpOpen(false);
           }
+          if (event.key === "Escape" && state.playlistCreateModalOpen) {
+            setPlaylistCreateModalOpen(false);
+          }
+          if (event.key === "Escape") {
+            setPlaylistMenuOpen(false);
+          }
         });
         window.addEventListener("resize", () => {
           markFullscreenResizing();
@@ -7292,7 +8474,14 @@
           updateFullscreenEntryAvailability();
           applyDesktopLayoutMode({ animate: false });
           updateCoverPeekUI();
+          if (els.playlistSelectorRoot && els.playlistSelectorRoot.classList.contains("is-open")) {
+            updatePlaylistMenuPosition();
+          }
         });
+        window.addEventListener("scroll", () => {
+          if (!els.playlistSelectorRoot || !els.playlistSelectorRoot.classList.contains("is-open")) return;
+          updatePlaylistMenuPosition();
+        }, { passive: true });
 
         if (els.desktopLayoutToggleBtn) {
           els.desktopLayoutToggleBtn.addEventListener("click", () => {
@@ -7300,6 +8489,98 @@
             setDesktopSplitPreferred(!state.desktopSplitPreferred, { animate: true, persist: true });
           });
         }
+        if (els.playlistSelectorBtn) {
+          els.playlistSelectorBtn.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const root = els.playlistSelectorRoot;
+            const isOpen = !!(root && root.classList.contains("is-open"));
+            if (!isOpen) setAddedByFilterMenuOpen(false);
+            setPlaylistMenuOpen(!isOpen);
+          });
+        }
+        if (els.playlistSelectorMenu) {
+          els.playlistSelectorMenu.addEventListener("click", (event) => {
+            const createAction = event.target.closest("[data-action='create-playlist']");
+            if (createAction) {
+              setPlaylistMenuOpen(false);
+              openPlaylistCreateModal();
+              return;
+            }
+            const editAction = event.target.closest("[data-action='edit-playlist']");
+            if (editAction) {
+              const playlistId = String(editAction.dataset.playlistId || "").trim();
+              if (!playlistId) return;
+              setPlaylistMenuOpen(false);
+              openPlaylistEditModal(playlistId);
+              return;
+            }
+            const option = event.target.closest(".playlist-option");
+            if (!option) return;
+            const playlistId = String(option.dataset.playlistId || "").trim();
+            if (!playlistId) return;
+            if (playlistId === String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID)) {
+              setPlaylistMenuOpen(false);
+              return;
+            }
+            setPlaylistMenuOpen(false);
+            setActivePlaylistId(playlistId, { persist: true, rebindTracks: true });
+          });
+        }
+        if (els.playlistTypeSharedBtn) {
+          els.playlistTypeSharedBtn.addEventListener("click", () => {
+            setPlaylistCreateScope("shared");
+          });
+        }
+        if (els.playlistTypePrivateBtn) {
+          els.playlistTypePrivateBtn.addEventListener("click", () => {
+            setPlaylistCreateScope("private");
+          });
+        }
+        if (els.playlistModalCancelBtn) {
+          els.playlistModalCancelBtn.addEventListener("click", () => {
+            setPlaylistCreateModalOpen(false);
+          });
+        }
+        if (els.playlistModalCreateBtn) {
+          els.playlistModalCreateBtn.addEventListener("click", () => {
+            submitPlaylistModal().catch((error) => {
+              toast(`Не удалось сохранить плейлист: ${error.message || error}`, "err");
+            });
+          });
+        }
+        if (els.playlistModalDeleteBtn) {
+          els.playlistModalDeleteBtn.addEventListener("click", () => {
+            deletePlaylistFromModal().catch((error) => {
+              toast(`Не удалось удалить плейлист: ${error.message || error}`, "err");
+            });
+          });
+        }
+        if (els.playlistModalBackdrop) {
+          els.playlistModalBackdrop.addEventListener("click", (event) => {
+            if (event.target !== els.playlistModalBackdrop) return;
+            setPlaylistCreateModalOpen(false);
+          });
+        }
+        if (els.playlistNameInput) {
+          els.playlistNameInput.addEventListener("input", () => {
+            if (!state.playlistDeleteConfirmPending) return;
+            state.playlistDeleteConfirmPending = false;
+            syncPlaylistModalUi();
+          });
+          els.playlistNameInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            submitPlaylistModal().catch((error) => {
+              toast(`Не удалось сохранить плейлист: ${error.message || error}`, "err");
+            });
+          });
+        }
+        document.addEventListener("click", (event) => {
+          if (state.playlistCreateModalOpen) return;
+          if (!els.playlistSelectorRoot || !els.playlistSelectorRoot.classList.contains("is-open")) return;
+          if (els.playlistSelectorRoot.contains(event.target)) return;
+          setPlaylistMenuOpen(false);
+        });
 
         if (els.toggleSearchPanelBtn) {
           els.toggleSearchPanelBtn.addEventListener("click", () => {
@@ -8155,6 +9436,8 @@
 
       function init() {
         state.currentUser = getCurrentUser();
+        state.playlists = [getDefaultSharedPlaylistMeta()];
+        state.activePlaylistId = DEFAULT_SHARED_PLAYLIST_ID;
         queuePlaybackRestoreFromStorage();
         extractOAuthTokenFromHash();
         hydrateTokenFromStorage();
@@ -8172,6 +9455,9 @@
         els.audio.playbackRate = 1;
         setVolume(0.85, { persist: false });
         restoreSettings();
+        updatePlaylistSelectorUi();
+        renderPlaylistSelectorMenu();
+        setPlaylistCreateModalOpen(false);
         applyDesktopLayoutMode({ animate: false });
         setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
 
@@ -8187,7 +9473,18 @@
         updateYmSearchSourceUi();
         renderSharedList();
         renderSearchList();
-        bindSharedTracks();
+        if (state.db) {
+          ensureDefaultPlaylistAndMigrateLegacyTracks()
+            .catch(() => {})
+            .finally(() => {
+              bindPlaylistTrackCounts();
+              bindPlaylists();
+            });
+        } else {
+          bindPlaylistTrackCounts();
+          bindPlaylists();
+          bindSharedTracks();
+        }
         tryRestorePlaybackSnapshot();
         requestStateToParent();
 
