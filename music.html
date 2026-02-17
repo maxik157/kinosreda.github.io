@@ -2058,7 +2058,7 @@
   </div>
 
   <div id="toasts" class="toasts"></div>
-  <audio id="audio" preload="none" playsinline></audio>
+  <audio id="audio" preload="metadata" playsinline crossorigin="anonymous"></audio>
 
   <script>
     (() => {
@@ -2154,11 +2154,14 @@
         playIntentTrackId: "",
         lastVolumeBeforeMute: 0.85,
         playTrackInProgress: false,
-        playTrackRequestId: 0
+        playTrackRequestId: 0,
+        durationPendingTrackId: "",
+        durationPendingTimer: 0
       };
       const coverPreloadPromises = new Map();
       const youtubeStreamMetaCache = new Map();
       const youtubeStreamResolvePromises = new Map();
+      const safariYoutubeBlobCache = new Map();
 
       const els = {
         coverCarousel: document.getElementById("coverCarousel"),
@@ -2770,6 +2773,45 @@
         return [...new Set(names)];
       }
 
+      function parseDurationMsFromRawTrack(rawTrack) {
+        const parseFromString = (value) => {
+          const text = String(value || "").trim();
+          if (!text) return 0;
+          const numeric = Number(text.replace(",", "."));
+          if (Number.isFinite(numeric) && numeric > 0) {
+            return numeric < 10000 ? Math.round(numeric * 1000) : Math.round(numeric);
+          }
+          const parts = text.split(":").map((part) => part.trim());
+          if (!parts.length || parts.some((part) => !/^\d+$/.test(part))) return 0;
+          let totalSeconds = 0;
+          for (const part of parts) totalSeconds = (totalSeconds * 60) + Number(part);
+          if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return 0;
+          return totalSeconds * 1000;
+        };
+
+        const rawCandidates = [
+          rawTrack && rawTrack.durationMs,
+          rawTrack && rawTrack.duration_ms,
+          rawTrack && rawTrack.durationMS,
+          rawTrack && rawTrack.durationSec,
+          rawTrack && rawTrack.duration_sec,
+          rawTrack && rawTrack.lengthSeconds,
+          rawTrack && rawTrack.length_seconds,
+          rawTrack && rawTrack.duration,
+          rawTrack && rawTrack.track_duration
+        ];
+
+        for (const value of rawCandidates) {
+          if (value == null || value === "") continue;
+          if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+            return value < 10000 ? Math.round(value * 1000) : Math.round(value);
+          }
+          const parsedFromString = parseFromString(value);
+          if (parsedFromString > 0) return parsedFromString;
+        }
+        return 0;
+      }
+
       function toTrackModel(rawTrack, source = "search") {
         const provider = normalizeTrackProvider(
           rawTrack.provider
@@ -2802,8 +2844,7 @@
           );
         const artists = extractArtists(rawTrack);
         const title = String(rawTrack.title || rawTrack.name || `Трек ${trackId || "без id"}`).trim();
-        const rawDuration = Number(rawTrack.durationMs || rawTrack.duration_ms || rawTrack.duration || rawTrack.track_duration || 0);
-        const durationMs = rawDuration > 0 && rawDuration < 10000 ? rawDuration * 1000 : rawDuration;
+        const durationMs = parseDurationMsFromRawTrack(rawTrack);
         const coverUrl = buildCoverUrl(rawTrack);
         const sourceUrl = rawTrack.sourceUrl
           || (provider === "youtube"
@@ -3038,6 +3079,22 @@
         notifyParentPlayerState();
       }
 
+      function syncPlayPauseUi() {
+        const audio = els.audio;
+        if (!audio) return;
+        const hasTrack = Boolean(state.currentTrack && state.currentTrack.trackId);
+        const logicallyPlaying = Boolean(
+          hasTrack
+          && !audio.paused
+          && !audio.ended
+          && (audio.readyState >= 2 || hasActivePlayIntent())
+        );
+        setPlayButtonState(logicallyPlaying);
+        if ("mediaSession" in navigator) {
+          try { navigator.mediaSession.playbackState = logicallyPlaying ? "playing" : "paused"; } catch (_) {}
+        }
+      }
+
       function isAudioActuallyPlaying() {
         const audio = els.audio;
         if (!audio) return false;
@@ -3045,7 +3102,7 @@
         const paused = Boolean(audio.paused);
         const ended = Boolean(audio.ended);
         const seeking = Boolean(audio.seeking);
-        return !paused && !ended && !seeking && readyState >= 3;
+        return !paused && !ended && !seeking && readyState >= 2;
       }
 
       function getBufferedRatio() {
@@ -3061,12 +3118,58 @@
         }
       }
 
-      function getKnownTrackDurationSec() {
-        const audioDuration = Number(els.audio && els.audio.duration);
-        if (Number.isFinite(audioDuration) && audioDuration > 0) return audioDuration;
+      function getTrackDurationFallbackSec() {
+        const currentTrackId = String(state.currentTrack && state.currentTrack.trackId || "");
+        if (currentTrackId && state.durationPendingTrackId === currentTrackId) {
+          return 0;
+        }
         const fallbackDuration = Number(state.currentTrack && state.currentTrack.durationMs || 0) / 1000;
         if (Number.isFinite(fallbackDuration) && fallbackDuration > 0) return fallbackDuration;
         return 0;
+      }
+
+      function getKnownTrackDurationSec() {
+        const provider = normalizeTrackProvider(state.currentTrack && state.currentTrack.provider);
+        const fallbackDuration = getTrackDurationFallbackSec();
+        // For YouTube streams (especially Safari/iOS), media element duration can
+        // be unstable/incorrect for chunked proxy playback. Prefer metadata duration.
+        if (provider === "youtube" && fallbackDuration > 0) {
+          return fallbackDuration;
+        }
+        const audioDuration = Number(els.audio && els.audio.duration);
+        if (Number.isFinite(audioDuration) && audioDuration > 0) {
+          if (fallbackDuration > 0) {
+            const allowedDrift = Math.max(8, fallbackDuration * 0.3);
+            if (Math.abs(audioDuration - fallbackDuration) > allowedDrift) {
+              return fallbackDuration;
+            }
+          }
+          return audioDuration;
+        }
+        if (fallbackDuration > 0) return fallbackDuration;
+        return 0;
+      }
+
+      function setDurationPending(trackId, pending = true) {
+        const id = String(trackId || "").trim();
+        if (!id) return;
+        if (state.durationPendingTimer) {
+          clearTimeout(state.durationPendingTimer);
+          state.durationPendingTimer = 0;
+        }
+        if (pending) {
+          state.durationPendingTrackId = id;
+          state.durationPendingTimer = setTimeout(() => {
+            state.durationPendingTimer = 0;
+            if (state.durationPendingTrackId === id) {
+              state.durationPendingTrackId = "";
+              updateCurrentTrackUI(state.currentTrack);
+              updateProgressUI();
+            }
+          }, 5000);
+        } else if (state.durationPendingTrackId === id) {
+          state.durationPendingTrackId = "";
+        }
       }
 
       function clampVolume(value) {
@@ -3382,6 +3485,11 @@
 
       function updateCurrentTrackUI(track) {
         if (!track) {
+          state.durationPendingTrackId = "";
+          if (state.durationPendingTimer) {
+            clearTimeout(state.durationPendingTimer);
+            state.durationPendingTimer = 0;
+          }
           setImageSourceSafe(els.currentCover, FALLBACK_COVER);
           els.currentTitle.textContent = "Выбери трек";
           els.currentArtists.textContent = "";
@@ -3407,7 +3515,9 @@
         if (els.fullscreenArtists) {
           els.fullscreenArtists.textContent = track.artists && track.artists.length ? track.artists.join(", ") : "Неизвестный артист";
         }
-        if (els.currentDuration) els.currentDuration.textContent = formatTime((track.durationMs || 0) / 1000);
+        const trackId = String(track.trackId || "");
+        const durationPending = Boolean(trackId && state.durationPendingTrackId === trackId);
+        if (els.currentDuration) els.currentDuration.textContent = durationPending ? "--:--" : formatTime((track.durationMs || 0) / 1000);
         if (els.currentBitrate) els.currentBitrate.textContent = track.bitrate ? `stream: ${track.bitrate}` : "stream: auto";
         if (els.currentSource) els.currentSource.textContent = `source: ${state.activeSource}`;
         updateFullscreenEntryAvailability();
@@ -3417,15 +3527,18 @@
       }
 
       function updateProgressUI() {
-        const current = els.audio.currentTime || 0;
-        const total = els.audio.duration || ((state.currentTrack && state.currentTrack.durationMs) ? state.currentTrack.durationMs / 1000 : 0);
+        const rawCurrent = Number(els.audio.currentTime || 0);
+        const total = getKnownTrackDurationSec();
+        const trackId = String(state.currentTrack && state.currentTrack.trackId || "");
+        const durationPending = Boolean(trackId && state.durationPendingTrackId === trackId);
+        const current = total > 0 ? Math.max(0, Math.min(total, rawCurrent)) : Math.max(0, rawCurrent);
         const progress = total > 0 ? Math.min(100, (current / total) * 100) : 0;
         els.progressFill.style.width = `${progress}%`;
         els.timeCurrent.textContent = formatTime(current);
-        els.timeTotal.textContent = formatTime(total);
+        els.timeTotal.textContent = durationPending ? "--:--" : formatTime(total);
         if (els.fsProgressFill) els.fsProgressFill.style.width = `${progress}%`;
         if (els.fsTimeCurrent) els.fsTimeCurrent.textContent = formatTime(current);
-        if (els.fsTimeTotal) els.fsTimeTotal.textContent = formatTime(total);
+        if (els.fsTimeTotal) els.fsTimeTotal.textContent = durationPending ? "--:--" : formatTime(total);
         updateMediaSessionPositionState();
         notifyParentPlayerState();
         persistPlaybackSnapshot(false);
@@ -3490,15 +3603,15 @@
       }
 
       function getYoutubeOptimisticStartupTimeoutMs(userGesture) {
-        if (!userGesture) return 9000;
-        return isDesktopViewport() ? 12000 : 30000;
+        if (!userGesture) return 7000;
+        return isDesktopViewport() ? 9000 : 12000;
       }
 
       function getYoutubeResolvedStartupTimeoutMs() {
-        return isDesktopViewport() ? 10000 : 26000;
+        return isDesktopViewport() ? 9000 : 14000;
       }
 
-      function armPlayIntent(trackId, timeoutMs = 15000, minBufferedRatio = 0.1) {
+      function armPlayIntent(trackId, timeoutMs = 15000, minBufferedRatio = 0.02) {
         const id = String(trackId || "").trim();
         if (!id) return;
         clearPlayIntent();
@@ -3520,7 +3633,9 @@
             return;
           }
           const bufferedRatio = getBufferedRatio();
-          const shouldAttemptPlay = !attemptedOnce || bufferedRatio >= Math.max(0, Math.min(1, Number(minBufferedRatio) || 0));
+          const readyState = Number(els.audio && els.audio.readyState || 0);
+          const minRatio = Math.max(0, Math.min(1, Number(minBufferedRatio) || 0));
+          const shouldAttemptPlay = !attemptedOnce || readyState >= 2 || bufferedRatio >= minRatio;
           if (!shouldAttemptPlay) {
             state.playIntentTimer = setTimeout(step, 220);
             return;
@@ -3615,7 +3730,7 @@
       }
 
       function buildMediaSessionArtwork(coverUrl) {
-        const src = String(coverUrl || FALLBACK_COVER).trim() || FALLBACK_COVER;
+        const src = toRealtimeCoverProxyUrl(String(coverUrl || '').trim()) || FALLBACK_COVER;
         if (!src) return [];
         const sizes = [96, 128, 192, 256, 384, 512, 1024];
         return sizes.map((size) => ({
@@ -3702,10 +3817,10 @@
               await playTrack(state.currentTrack, state.activeSource || "shared");
               return;
             }
-            armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
+            armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.02);
             await els.audio.play();
             const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
-            if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
+            if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.02);
           } catch (_) {}
         });
         safeSet("pause", () => {
@@ -4106,6 +4221,39 @@
         return url.toString();
       }
 
+      function isLikelySafariBrowser() {
+        const ua = String((navigator && navigator.userAgent) || "");
+        if (!/Safari/i.test(ua)) return false;
+        return !/(Chrome|CriOS|Edg|OPR|Firefox|FxiOS|SamsungBrowser)/i.test(ua);
+      }
+
+      function canBrowserPlayYouTubeAudioCandidate(candidate) {
+        let ext = String(candidate && candidate.ext || "").trim().toLowerCase();
+        if (!ext) {
+          try {
+            const parsed = new URL(String(candidate && candidate.url || ""));
+            const nestedRaw = String(parsed.searchParams.get("url") || "").trim();
+            const target = nestedRaw ? new URL(nestedRaw) : parsed;
+            const mime = String(target.searchParams.get("mime") || "").toLowerCase();
+            if (mime.includes("audio/mp4")) ext = "m4a";
+            else if (mime.includes("audio/webm")) ext = "webm";
+            else if (mime.includes("audio/mpeg")) ext = "mp3";
+            if (!ext) {
+              const itag = Number(target.searchParams.get("itag") || 0);
+              if ([139, 140, 141].includes(itag)) ext = "m4a";
+              else if ([249, 250, 251].includes(itag)) ext = "webm";
+            }
+          } catch (_) {}
+        }
+        let mime = "";
+        if (ext === "m4a" || ext === "mp4" || ext === "aac") mime = "audio/mp4";
+        else if (ext === "webm" || ext === "opus") mime = "audio/webm";
+        else if (ext === "mp3" || ext === "mpeg") mime = "audio/mpeg";
+        if (!mime || !els.audio || typeof els.audio.canPlayType !== "function") return true;
+        const support = String(els.audio.canPlayType(mime) || "").trim().toLowerCase();
+        return support === "probably" || support === "maybe";
+      }
+
       function extractYoutubeStreamExpireMs(rawUrl) {
         const normalized = normalizePlayableUrl(rawUrl);
         if (!normalized) return 0;
@@ -4323,12 +4471,12 @@
             if (isSameTrack) {
               try {
                 if (els.audio.paused) {
-                  armPlayIntent(String(track.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
+                  armPlayIntent(String(track.trackId || ""), getPlayIntentTimeoutMs(), 0.02);
                   await els.audio.play();
                   const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                   setPlayButtonState(started);
                   if (!started) {
-                    armPlayIntent(String(track.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
+                    armPlayIntent(String(track.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.02);
                   } else {
                     clearPlayIntent();
                   }
@@ -5133,12 +5281,63 @@
         await executeYmTrackSearch(raw);
       }
 
+      async function refreshYoutubeTrackDuration(track) {
+        if (!track || normalizeTrackProvider(track.provider) !== "youtube") return;
+        const videoId = String(track.trackId || "").trim();
+        if (!videoId) return;
+        const now = Date.now();
+        if (track._durationRefreshPromise) {
+          try { await track._durationRefreshPromise; } catch (_) {}
+          return;
+        }
+        if (track._durationMetaUpdatedAt && (now - Number(track._durationMetaUpdatedAt || 0)) < 15 * 60 * 1000) {
+          return;
+        }
+        track._durationRefreshPromise = (async () => {
+          const url = new URL(YTM_TRACK_ENDPOINT);
+          url.searchParams.set("video_id", videoId);
+          const response = await fetch(url.toString(), {
+            headers: { Accept: "application/json" }
+          });
+          const payload = await parseYandexPayload(response);
+          const row = payload && payload.result && payload.result.track
+            ? payload.result.track
+            : payload && payload.result
+              ? payload.result
+              : {};
+          const resolvedDurationMs = parseDurationMsFromRawTrack(row);
+          if (resolvedDurationMs > 0) {
+            track.durationMs = resolvedDurationMs;
+            track._durationMetaUpdatedAt = Date.now();
+            const activeTrackId = String(state.currentTrack && state.currentTrack.trackId || "");
+            if (activeTrackId && activeTrackId === videoId) {
+              setDurationPending(videoId, false);
+              updateCurrentTrackUI(state.currentTrack);
+              updateProgressUI();
+            }
+          }
+        })();
+        try {
+          await track._durationRefreshPromise;
+        } finally {
+          track._durationRefreshPromise = null;
+        }
+      }
+
       async function resolveYoutubeStream(track, options = {}) {
         const allowStaleFallback = options && options.allowStaleFallback !== false;
         const forceRefresh = Boolean(options && options.forceRefresh);
         if (!track || !track.trackId) return { url: "", bitrate: "" };
         const trackIdKey = String(track.trackId || "");
         if (!trackIdKey) return { url: "", bitrate: "" };
+        const forceProxyForSafari = isLikelySafariBrowser();
+        const adaptYoutubePlaybackUrl = (value, modeHint = "proxy") => {
+          const normalizedMode = String(modeHint || "proxy").toLowerCase() === "direct" ? "direct" : "proxy";
+          const safeMode = forceProxyForSafari ? "proxy" : normalizedMode;
+          const normalized = normalizePlayableUrl(toRealtimeYtmAudioProxyUrl(value, safeMode));
+          if (!normalized) return "";
+          return normalized;
+        };
         if (forceRefresh) {
           clearCachedYouTubeCandidates(track);
           track._streamCandidates = [];
@@ -5149,11 +5348,12 @@
         const cachedCandidates = forceRefresh ? [] : getCachedYouTubeCandidates(track);
         if (cachedCandidates.length) {
           track._streamCandidates = cachedCandidates.map((item) => ({
-            url: item.url,
+            url: adaptYoutubePlaybackUrl(item.url),
             bitrate: item.bitrate || "cached",
             ext: item.ext || ""
-          }));
+          })).filter((item) => item.url);
           const cachedBest = track._streamCandidates[0];
+          if (!cachedBest) return { url: "", bitrate: "" };
           track.streamUrl = cachedBest.url;
           track.bitrate = cachedBest.bitrate || "cached";
           track._streamResolvedAt = Date.now();
@@ -5167,11 +5367,12 @@
           : [];
         if (staleCandidates.length) {
           track._streamCandidates = staleCandidates.map((item) => ({
-            url: item.url,
+            url: adaptYoutubePlaybackUrl(item.url),
             bitrate: item.bitrate || "cached",
             ext: item.ext || ""
-          }));
+          })).filter((item) => item.url);
           const staleBest = track._streamCandidates[0];
+          if (!staleBest) return { url: "", bitrate: "" };
           track.streamUrl = staleBest.url;
           track.bitrate = staleBest.bitrate || "cached";
           track._streamResolvedAt = Date.now();
@@ -5183,17 +5384,23 @@
         }
         const prefetchedCandidate = forceRefresh ? null : getFreshYoutubeCandidate(track);
         if (prefetchedCandidate && prefetchedCandidate.url) {
-          track.streamUrl = prefetchedCandidate.url;
+          const prefetchedUrl = adaptYoutubePlaybackUrl(prefetchedCandidate.url);
+          track.streamUrl = prefetchedUrl;
           track.bitrate = prefetchedCandidate.bitrate || track.bitrate || "cached";
           track._streamResolvedAt = Date.now();
-          setCachedYouTubeCandidates(track, Array.isArray(track._streamCandidates) ? track._streamCandidates : [prefetchedCandidate]);
+          setCachedYouTubeCandidates(
+            track,
+            Array.isArray(track._streamCandidates)
+              ? track._streamCandidates
+              : [{ ...prefetchedCandidate, url: prefetchedUrl }]
+          );
           return {
-            url: prefetchedCandidate.url,
+            url: prefetchedUrl,
             bitrate: prefetchedCandidate.bitrate || track.bitrate || "cached"
           };
         }
 
-        const cachedUrl = forceRefresh ? "" : normalizePlayableUrl(track.streamUrl);
+        const cachedUrl = forceRefresh ? "" : adaptYoutubePlaybackUrl(track.streamUrl);
         if (cachedUrl && isFreshYoutubeStreamUrl(cachedUrl)) {
           track._streamCandidates = [{
             url: cachedUrl,
@@ -5224,12 +5431,16 @@
           });
           const payload = await parseYandexPayload(response);
           const result = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+          const resolvedDurationSec = Number(result.durationSec || 0);
+          if (Number.isFinite(resolvedDurationSec) && resolvedDurationSec > 0) {
+            // Keep metadata duration immutable for YouTube tracks.
+            // Stream-level duration often drifts on proxy/chunked playback.
+          }
           const resolvedViaMode = String(result.resolvedVia || "").trim().toLowerCase() === "direct" ? "direct" : "proxy";
           const prepared = [];
           const seen = new Set();
           const pushCandidate = (urlValue, meta = {}) => {
-            const proxiedUrl = toRealtimeYtmAudioProxyUrl(urlValue, resolvedViaMode);
-            const normalizedUrl = normalizePlayableUrl(proxiedUrl);
+            const normalizedUrl = adaptYoutubePlaybackUrl(urlValue, resolvedViaMode);
             if (!normalizedUrl || seen.has(normalizedUrl)) return;
             seen.add(normalizedUrl);
             const bitrateKbps = Number(meta.bitrateInKbps || 0);
@@ -5261,18 +5472,32 @@
             throw new Error("Не удалось получить поток YouTube Music");
           }
 
-          const best = prepared[0];
+          if (isLikelySafariBrowser()) {
+            const extRank = (extValue) => {
+              const ext = String(extValue || "").trim().toLowerCase();
+              if (ext === "m4a" || ext === "mp4" || ext === "aac") return 3;
+              if (ext === "mp3" || ext === "mpeg") return 2;
+              if (ext === "webm" || ext === "opus") return 1;
+              return 0;
+            };
+            prepared.sort((a, b) => extRank(b.ext) - extRank(a.ext));
+          }
+
+          const playablePrepared = prepared.filter((item) => canBrowserPlayYouTubeAudioCandidate(item));
+          const finalPrepared = playablePrepared.length ? playablePrepared : prepared;
+
+          const best = finalPrepared[0];
           track._ytStreamMeta = {
             directLink: String(result.directLink || "").trim(),
             rawDirectLink: String(result.rawDirectLink || "").trim(),
             bitrateInKbps: Number(best.bitrateInKbps || Number(result.bitrateInKbps || 0) || 0),
             ext: String(best.ext || result.ext || "").trim().toLowerCase(),
             mimeType: String(result.mimeType || "").trim(),
-            streamCandidates: prepared
+            streamCandidates: finalPrepared
           };
           track._ytRangeProbeUrl = "";
           track._ytRangeSupported = undefined;
-          track._streamCandidates = prepared.map((item) => ({
+          track._streamCandidates = finalPrepared.map((item) => ({
             url: item.url,
             bitrate: item.bitrate,
             ext: item.ext
@@ -5525,6 +5750,95 @@
         }
       }
 
+      function pruneSafariYoutubeBlobCache(force = false) {
+        const now = Date.now();
+        const entries = Array.from(safariYoutubeBlobCache.entries());
+        entries.forEach(([key, entry]) => {
+          if (!entry || typeof entry !== "object") {
+            safariYoutubeBlobCache.delete(key);
+            return;
+          }
+          const expired = force || (Number(entry.expiresAt || 0) > 0 && Number(entry.expiresAt || 0) <= now);
+          if (!expired) return;
+          safariYoutubeBlobCache.delete(key);
+          const objectUrl = String(entry.objectUrl || "");
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch (_) {}
+          }
+        });
+        const remaining = Array.from(safariYoutubeBlobCache.entries())
+          .filter(([, entry]) => entry && entry.objectUrl)
+          .sort((a, b) => Number(b[1].updatedAt || 0) - Number(a[1].updatedAt || 0));
+        const maxEntries = 4;
+        for (let i = maxEntries; i < remaining.length; i += 1) {
+          const [key, entry] = remaining[i];
+          safariYoutubeBlobCache.delete(key);
+          const objectUrl = String(entry && entry.objectUrl || "");
+          if (objectUrl) {
+            try { URL.revokeObjectURL(objectUrl); } catch (_) {}
+          }
+        }
+      }
+
+      async function getSafariYoutubeBlobPlaybackUrl(rawUrl) {
+        const sourceUrl = normalizePlayableUrl(rawUrl);
+        if (!sourceUrl) return "";
+        pruneSafariYoutubeBlobCache(false);
+        const cacheKey = sourceUrl;
+        const cached = safariYoutubeBlobCache.get(cacheKey);
+        if (cached && typeof cached === "object" && cached.objectUrl && Number(cached.expiresAt || 0) > Date.now()) {
+          cached.updatedAt = Date.now();
+          return String(cached.objectUrl || "");
+        }
+        if (cached && cached.promise) {
+          try {
+            const objectUrl = await cached.promise;
+            if (objectUrl) return objectUrl;
+          } catch (_) {}
+        }
+
+        const pending = (async () => {
+          const response = await fetchWithTimeout(sourceUrl, {
+            headers: {
+              Accept: "audio/mp4,audio/*,*/*;q=0.9"
+            }
+          }, 35_000);
+          if (!response.ok) {
+            throw new Error(`safari_blob_fetch_failed_${response.status}`);
+          }
+          const blob = await response.blob();
+          if (!blob || Number(blob.size || 0) <= 0) {
+            throw new Error("safari_blob_empty");
+          }
+          const objectUrl = URL.createObjectURL(blob);
+          safariYoutubeBlobCache.set(cacheKey, {
+            objectUrl,
+            updatedAt: Date.now(),
+            expiresAt: Date.now() + 15 * 60 * 1000
+          });
+          pruneSafariYoutubeBlobCache(false);
+          return objectUrl;
+        })();
+
+        safariYoutubeBlobCache.set(cacheKey, {
+          objectUrl: "",
+          promise: pending,
+          updatedAt: Date.now(),
+          expiresAt: Date.now() + 15 * 60 * 1000
+        });
+
+        try {
+          const objectUrl = await pending;
+          return String(objectUrl || "");
+        } finally {
+          const latest = safariYoutubeBlobCache.get(cacheKey);
+          if (latest && latest.promise) {
+            delete latest.promise;
+            safariYoutubeBlobCache.set(cacheKey, latest);
+          }
+        }
+      }
+
       async function downloadYouTubeAsChunkedBlob(downloadUrl) {
         const chunkSize = 512 * 1024;
         const maxChunks = 256;
@@ -5679,6 +5993,18 @@
         if (!track || !track.trackId) return;
         const userGesture = Boolean(options && options.userGesture);
         const forceResolveRefresh = Boolean(options && options.forceResolveRefresh);
+        const requestedProvider = normalizeTrackProvider(track.provider);
+        const requestedTrackId = String(track.trackId || "");
+        if (!forceResolveRefresh
+          && state.playTrackInProgress
+          && state.currentTrack
+          && normalizeTrackProvider(state.currentTrack.provider) === requestedProvider
+          && String(state.currentTrack.trackId || "") === requestedTrackId) {
+          if (userGesture) {
+          armPlayIntent(requestedTrackId, getPlayIntentTimeoutMs(), 0.02);
+          }
+          return;
+        }
         if (!state.coverSwipeInProgress) {
           const outgoingTrackId = String((state.currentTrack && state.currentTrack.trackId) || "");
           const outgoingCoverSrc = String((els.currentCover && els.currentCover.dataset.currentSrc) || "");
@@ -5694,7 +6020,22 @@
         if (!previousTrackId || previousTrackId !== nextTrackId) {
           try { els.audio.pause(); } catch (_) {}
           try { els.audio.currentTime = 0; } catch (_) {}
+          try {
+            els.audio.removeAttribute("src");
+            els.audio.load();
+          } catch (_) {}
         }
+        if (requestedProvider === "youtube") {
+          setDurationPending(nextTrackId, true);
+          // Refresh duration from dedicated track metadata endpoint to avoid
+          // Safari/proxy duration drift.
+          refreshYoutubeTrackDuration(track).catch(() => {
+            setDurationPending(nextTrackId, false);
+          });
+        } else {
+          setDurationPending(nextTrackId, false);
+        }
+        renderSeekPreview(0, 0, { updateLabels: true });
         state.activeSource = source;
         state.currentTrack = track;
         state.repeatOnceConsumed = false;
@@ -5708,97 +6049,186 @@
           state.currentIndex = -1;
         }
 
-        setPlayButtonState(false);
+        syncPlayPauseUi();
         clearPlayIntent();
         if (userGesture) {
-          armPlayIntent(String(track.trackId || ""), getInitialResolvePlayIntentTimeoutMs(), 0.1);
+          armPlayIntent(String(track.trackId || ""), getInitialResolvePlayIntentTimeoutMs(), 0.02);
         }
         const playRequestId = ++state.playTrackRequestId;
         state.playTrackInProgress = true;
-        const isObsoleteRequest = () => state.playTrackRequestId !== playRequestId;
+        const requestedTrackKey = `${requestedProvider}:${requestedTrackId}`;
+        const isObsoleteRequest = () => {
+          if (state.playTrackRequestId !== playRequestId) return true;
+          const activeTrack = state.currentTrack || null;
+          const activeKey = `${normalizeTrackProvider(activeTrack && activeTrack.provider)}:${String(activeTrack && activeTrack.trackId || "")}`;
+          return activeKey !== requestedTrackKey;
+        };
         try {
           let started = false;
+          let bootstrapStarted = false;
           let lastError = null;
           let lastCandidateHost = "";
-          const provider = normalizeTrackProvider(track.provider);
+          const attemptedCandidateKeys = new Set();
+          const provider = requestedProvider;
+          const buildCandidateAttemptKey = (urlValue) => {
+            const normalized = normalizePlayableUrl(urlValue);
+            if (!normalized) return "";
+            try {
+              const parsed = new URL(normalized);
+              if (parsed.pathname === "/ytm-audio-stream") {
+                const videoId = String(parsed.searchParams.get("video_id") || "").trim();
+                const mode = String(parsed.searchParams.get("mode") || "").trim().toLowerCase();
+                if (videoId) {
+                  return `${parsed.origin}${parsed.pathname}|video_id=${videoId}|mode=${mode || "proxy"}`;
+                }
+              }
+            } catch (_) {}
+            return normalized;
+          };
 
           const tryStartCandidate = async (candidate, { startupTimeoutMs = 5200 } = {}) => {
             if (!candidate || !candidate.url) return false;
             if (isObsoleteRequest()) return false;
+            const candidateKey = buildCandidateAttemptKey(candidate.url);
+            if (candidateKey && attemptedCandidateKeys.has(candidateKey)) {
+              return false;
+            }
+            if (candidateKey) attemptedCandidateKeys.add(candidateKey);
             try {
-              const candidateUrl = normalizePlayableUrl(candidate.url);
-              if (!candidateUrl) return false;
-              try {
-                lastCandidateHost = new URL(candidateUrl).host || "";
-              } catch (_) {
-                lastCandidateHost = "";
-              }
-              const currentSource = normalizePlayableUrl(els.audio.currentSrc || els.audio.src || "");
-              const sameSource = currentSource && currentSource === candidateUrl;
-              if (!sameSource) {
-                try { els.audio.pause(); } catch (_) {}
-                els.audio.src = candidateUrl;
-                els.audio.preload = "auto";
-              }
-              els.audio.playbackRate = 1;
-              await new Promise((resolve, reject) => {
-                let settled = false;
-                let timer = 0;
-                let playResolved = false;
-                const finish = (fn) => {
-                  if (settled) return;
-                  settled = true;
-                  cleanup();
-                  fn();
-                };
-                const onPlaying = () => finish(resolve);
-                const onCanPlay = () => {
-                  if (playResolved || !els.audio.paused) {
-                    finish(resolve);
-                  }
-                };
-                const onError = () => {
-                  const code = els.audio && els.audio.error ? Number(els.audio.error.code || 0) : 0;
-                  finish(() => reject(new Error(code ? `media_error_${code}` : "media_error")));
-                };
-                const cleanup = () => {
-                  if (timer) clearTimeout(timer);
-                  els.audio.removeEventListener("playing", onPlaying);
-                  els.audio.removeEventListener("canplay", onCanPlay);
-                  els.audio.removeEventListener("error", onError);
-                };
-
-                els.audio.addEventListener("playing", onPlaying, { once: true });
-                els.audio.addEventListener("canplay", onCanPlay, { once: true });
-                els.audio.addEventListener("error", onError, { once: true });
-                timer = setTimeout(() => {
-                  finish(() => reject(new Error("startup_timeout")));
-                }, Math.max(1200, Number(startupTimeoutMs) || 5200));
-
-                Promise.resolve(els.audio.play())
-                  .then(() => {
-                    playResolved = true;
-                    if (!settled && (els.audio.readyState >= 2 || !els.audio.paused)) {
+              const startFromUrl = async (candidateUrl, bitrateLabel = "", options = {}) => {
+                if (!candidateUrl) return false;
+                const forceBlob = Boolean(options && options.forceBlob);
+                const shouldUseSafariBlob = forceBlob && provider === "youtube" && isLikelySafariBrowser() && !/^blob:/i.test(String(candidateUrl || ""));
+                let playbackUrl = candidateUrl;
+                if (shouldUseSafariBlob) {
+                  try {
+                    const blobUrl = await getSafariYoutubeBlobPlaybackUrl(candidateUrl);
+                    if (blobUrl) playbackUrl = blobUrl;
+                  } catch (_) {}
+                }
+                if (isObsoleteRequest()) return false;
+                try {
+                  lastCandidateHost = new URL(playbackUrl).host || "";
+                } catch (_) {
+                  lastCandidateHost = "";
+                }
+                const currentSource = String(els.audio.currentSrc || els.audio.src || "").trim();
+                const sameSource = currentSource && currentSource === String(playbackUrl || "").trim();
+                if (!sameSource) {
+                  if (isObsoleteRequest()) return false;
+                  try { els.audio.pause(); } catch (_) {}
+                  els.audio.src = playbackUrl;
+                  els.audio.preload = "auto";
+                }
+                if (isObsoleteRequest()) return false;
+                els.audio.playbackRate = 1;
+                await new Promise((resolve, reject) => {
+                  let settled = false;
+                  let timer = 0;
+                  let playResolved = false;
+                  const finish = (fn) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    fn();
+                  };
+                  const onPlaying = () => finish(resolve);
+                  const onCanPlay = () => {
+                    if (playResolved || !els.audio.paused) {
                       finish(resolve);
                     }
-                  })
-                  .catch((error) => {
-                    finish(() => reject(error || new Error("play_failed")));
-                  });
-              });
-              if (isObsoleteRequest()) return false;
-              track.streamUrl = candidateUrl;
-              track.bitrate = candidate.bitrate || "";
-              state.currentStreamMeta = { url: candidateUrl, bitrate: candidate.bitrate || "" };
-              if (els.audio.paused) {
-                const retryOnce = () => {
-                  els.audio.removeEventListener("canplay", retryOnce);
-                  Promise.resolve(els.audio.play()).catch(() => {});
-                };
-                els.audio.addEventListener("canplay", retryOnce, { once: true });
-              }
-              return true;
+                  };
+                  const onError = () => {
+                    const code = els.audio && els.audio.error ? Number(els.audio.error.code || 0) : 0;
+                    finish(() => reject(new Error(code ? `media_error_${code}` : "media_error")));
+                  };
+                  const cleanup = () => {
+                    if (timer) clearTimeout(timer);
+                    els.audio.removeEventListener("playing", onPlaying);
+                    els.audio.removeEventListener("canplay", onCanPlay);
+                    els.audio.removeEventListener("error", onError);
+                  };
+
+                  els.audio.addEventListener("playing", onPlaying, { once: true });
+                  els.audio.addEventListener("canplay", onCanPlay, { once: true });
+                  els.audio.addEventListener("error", onError, { once: true });
+                  timer = setTimeout(() => {
+                    finish(() => reject(new Error("startup_timeout")));
+                  }, Math.max(1200, Number(startupTimeoutMs) || 5200));
+
+                  Promise.resolve(els.audio.play())
+                    .then(() => {
+                      playResolved = true;
+                      if (!settled && (els.audio.readyState >= 2 || !els.audio.paused)) {
+                        finish(resolve);
+                      }
+                    })
+                    .catch((error) => {
+                      const errMessage = String(error && (error.message || error.name) || "").toLowerCase();
+                      const isAbortLike = errMessage.includes("abort");
+                      if (isAbortLike) {
+                        setTimeout(() => {
+                          if (settled || isObsoleteRequest()) return;
+                          Promise.resolve(els.audio.play())
+                            .then(() => {
+                              playResolved = true;
+                              if (!settled && (els.audio.readyState >= 2 || !els.audio.paused)) {
+                                finish(resolve);
+                              }
+                            })
+                            .catch((retryError) => {
+                              finish(() => reject(retryError || error || new Error("play_failed")));
+                            });
+                        }, 120);
+                        return;
+                      }
+                      finish(() => reject(error || new Error("play_failed")));
+                    });
+                });
+                if (isObsoleteRequest()) return false;
+                track.streamUrl = candidateUrl;
+                track.bitrate = bitrateLabel || candidate.bitrate || "";
+                state.currentStreamMeta = { url: candidateUrl, bitrate: bitrateLabel || candidate.bitrate || "" };
+                if (els.audio.paused) {
+                  const retryOnce = () => {
+                    els.audio.removeEventListener("canplay", retryOnce);
+                    Promise.resolve(els.audio.play()).catch(() => {});
+                  };
+                  els.audio.addEventListener("canplay", retryOnce, { once: true });
+                }
+                return true;
+              };
+
+              const primaryUrl = normalizePlayableUrl(candidate.url);
+              if (!primaryUrl) return false;
+              const startedFromPrimary = await startFromUrl(primaryUrl, candidate.bitrate || "");
+              return Boolean(startedFromPrimary);
             } catch (error) {
+              const errorMessage = String(error && error.message || error || "").toLowerCase();
+              const candidateExt = String(
+                (candidate && candidate.ext)
+                || (track && track._ytStreamMeta && track._ytStreamMeta.ext)
+                || ""
+              ).trim().toLowerCase();
+              const shouldUseBlobCompatFallback = candidateExt === "webm" || candidateExt === "opus";
+              const shouldTrySafariBlobFallback = provider === "youtube"
+                && isLikelySafariBrowser()
+                && shouldUseBlobCompatFallback
+                && !isObsoleteRequest()
+                && (
+                  errorMessage.includes("media_error_4")
+                  || errorMessage.includes("not supported")
+                  || errorMessage.includes("supported source")
+                );
+              if (shouldTrySafariBlobFallback) {
+                try {
+                  const primaryUrl = normalizePlayableUrl(candidate.url);
+                  if (primaryUrl) {
+                    const startedViaBlob = await startFromUrl(primaryUrl, candidate.bitrate || "", { forceBlob: true });
+                    if (startedViaBlob) return true;
+                  }
+                } catch (_) {}
+              }
               const mediaErrorCode = els.audio && els.audio.error ? els.audio.error.code : 0;
               if (mediaErrorCode) {
                 lastError = new Error(`MediaError code ${mediaErrorCode}${lastCandidateHost ? ` (${lastCandidateHost})` : ""}`);
@@ -5811,6 +6241,26 @@
           };
 
           if (provider === "youtube") {
+            if (userGesture) {
+              try {
+                const bootstrapUrl = normalizePlayableUrl(buildRealtimeYtmStreamByVideoId(track.trackId, "proxy"));
+                if (bootstrapUrl) {
+                  const currentSource = String(els.audio.currentSrc || els.audio.src || "").trim();
+                  if (currentSource !== bootstrapUrl) {
+                    try { els.audio.pause(); } catch (_) {}
+                    els.audio.src = bootstrapUrl;
+                    els.audio.preload = "auto";
+                  }
+                  await Promise.resolve(els.audio.play());
+                  track.streamUrl = bootstrapUrl;
+                  track.bitrate = track.bitrate || "ytm";
+                  state.currentStreamMeta = { url: bootstrapUrl, bitrate: track.bitrate || "ytm" };
+                  started = true;
+                  bootstrapStarted = true;
+                }
+              } catch (_) {}
+            }
+
             const optimisticCandidates = [];
             const optimisticSeen = new Set();
             const appendOptimistic = (candidate) => {
@@ -5824,17 +6274,24 @@
               });
             };
 
-            appendOptimistic({
-              url: buildRealtimeYtmStreamByVideoId(track.trackId, "proxy"),
-              bitrate: track.bitrate || "ytm"
-            });
+            const freshCandidate = getFreshYoutubeCandidate(track, 45_000);
+            if (freshCandidate && freshCandidate.url) {
+              appendOptimistic({
+                url: freshCandidate.url,
+                bitrate: freshCandidate.bitrate || track.bitrate || "ytm",
+                ext: freshCandidate.ext || ""
+              });
+            }
 
-            const optimisticTryList = optimisticCandidates.slice(0, 1);
-            for (const candidate of optimisticTryList) {
-              const startupTimeoutMs = getYoutubeOptimisticStartupTimeoutMs(userGesture);
-              if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
-                started = true;
-                break;
+            const skipOptimisticForSafari = isLikelySafariBrowser();
+            if (!skipOptimisticForSafari) {
+              const optimisticTryList = optimisticCandidates.slice(0, 1);
+              for (const candidate of optimisticTryList) {
+                const startupTimeoutMs = getYoutubeOptimisticStartupTimeoutMs(userGesture);
+                if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
+                  started = true;
+                  break;
+                }
               }
             }
           }
@@ -5852,7 +6309,7 @@
               : (stream.url ? [stream] : []);
             if (!candidates.length) throw new Error("Stream URL не найден");
 
-            const youtubeAttempts = isDesktopViewport() ? 1 : 2;
+            const youtubeAttempts = isLikelySafariBrowser() ? 1 : (isDesktopViewport() ? 1 : 2);
             const resolvedTryList = candidates.slice(0, provider === "youtube" ? youtubeAttempts : MAX_PLAYBACK_CANDIDATE_ATTEMPTS);
             for (const candidate of resolvedTryList) {
               const startupTimeoutMs = provider === "youtube" ? getYoutubeResolvedStartupTimeoutMs() : 5200;
@@ -5863,6 +6320,16 @@
             }
           }
 
+          if (provider === "youtube" && bootstrapStarted) {
+            resolveYoutubeStream(track, { allowStaleFallback: false })
+              .then(() => {
+                if (!state.currentTrack) return;
+                if (String(state.currentTrack.trackId || "") !== String(track.trackId || "")) return;
+                updateCurrentTrackUI(state.currentTrack);
+              })
+              .catch(() => {});
+          }
+
           if (!started) {
             throw lastError || new Error("Нет поддерживаемого источника аудио");
           }
@@ -5871,8 +6338,9 @@
           const isActuallyPlaying = isAudioActuallyPlaying();
           if (isActuallyPlaying) {
             clearPlayIntent();
-          } else if (userGesture) {
-            armPlayIntent(String(track.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
+          } else {
+            const replayTimeout = userGesture ? getPlayIntentTimeoutMs() : getPlayIntentRetryTimeoutMs();
+            armPlayIntent(String(track.trackId || ""), replayTimeout, 0.01);
           }
           setPlayButtonState(isActuallyPlaying);
           if (els.currentBitrate) els.currentBitrate.textContent = `stream: ${track.bitrate || "auto"}`;
@@ -6093,6 +6561,8 @@
         if (!state.db) return;
         state.db.ref(COMMUNITY_TRACKS_PATH).off();
         state.db.ref(COMMUNITY_TRACKS_PATH).on("value", syncSharedTracks, () => {
+          state.sharedTracksLoaded = true;
+          tryRestorePlaybackSnapshot();
           toast("Ошибка подписки на общий список", "err");
         });
       }
@@ -6323,12 +6793,12 @@
               if (!hasSource) {
                 await playTrack(state.currentTrack, state.activeSource || "shared", { userGesture: true });
               } else {
-                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.02);
                 await els.audio.play();
                 const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                 setPlayButtonState(started);
                 if (!started) {
-                  armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
+                  armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.02);
                 } else {
                   clearPlayIntent();
                 }
@@ -6840,61 +7310,53 @@
         els.audio.addEventListener("ratechange", updateProgressUI);
         els.audio.addEventListener("timeupdate", updateProgressUI);
         els.audio.addEventListener("play", () => {
-          setPlayButtonState(isAudioActuallyPlaying());
+          syncPlayPauseUi();
           persistPlaybackSnapshot(true);
-          if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = isAudioActuallyPlaying() ? "playing" : "paused"; } catch (_) {}
-          }
           updateMediaSession(state.currentTrack);
         });
         els.audio.addEventListener("pause", () => {
-          setPlayButtonState(false);
+          syncPlayPauseUi();
           persistPlaybackSnapshot(true);
-          if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
-          }
           updateMediaSession(state.currentTrack);
         });
         els.audio.addEventListener("canplay", () => {
           if (hasActivePlayIntent() && els.audio.paused) {
             Promise.resolve(els.audio.play()).catch(() => {});
           }
-          setPlayButtonState(isAudioActuallyPlaying());
+          syncPlayPauseUi();
           updateMediaSessionPositionState();
+        });
+        els.audio.addEventListener("loadeddata", () => {
+          if (hasActivePlayIntent() && els.audio.paused) {
+            Promise.resolve(els.audio.play()).catch(() => {});
+          }
+          updateProgressUI();
+        });
+        els.audio.addEventListener("canplaythrough", () => {
+          if (hasActivePlayIntent() && els.audio.paused) {
+            Promise.resolve(els.audio.play()).catch(() => {});
+          }
+          updateProgressUI();
         });
         els.audio.addEventListener("progress", () => {
           if (!hasActivePlayIntent()) return;
           if (!els.audio.paused) return;
-          if (getBufferedRatio() < 0.1) return;
+          if (getBufferedRatio() < 0.02) return;
           Promise.resolve(els.audio.play()).catch(() => {});
         });
         els.audio.addEventListener("waiting", () => {
-          setPlayButtonState(false);
-          if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
-          }
+          syncPlayPauseUi();
         });
         els.audio.addEventListener("playing", () => {
           clearPlayIntent();
-          setPlayButtonState(true);
-          if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = "playing"; } catch (_) {}
-          }
+          syncPlayPauseUi();
           updateMediaSessionPositionState();
         });
         els.audio.addEventListener("stalled", () => {
-          setPlayButtonState(false);
-          if ("mediaSession" in navigator) {
-            try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
-          }
+          syncPlayPauseUi();
         });
         els.audio.addEventListener("suspend", () => {
-          if (!isAudioActuallyPlaying()) {
-            setPlayButtonState(false);
-            if ("mediaSession" in navigator) {
-              try { navigator.mediaSession.playbackState = "paused"; } catch (_) {}
-            }
-          }
+          syncPlayPauseUi();
         });
         els.audio.addEventListener("volumechange", () => {
           setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
@@ -6902,6 +7364,9 @@
         els.audio.addEventListener("error", async () => {
           const track = state.currentTrack;
           if (!track || normalizeTrackProvider(track.provider) !== "youtube") return;
+          // Safari can emit transient media errors during range probing; auto-recovery here
+          // causes request storms and long startup loops.
+          if (isLikelySafariBrowser()) return;
           if (state.playTrackInProgress) return;
           if (state.audioRecoveryInProgress) return;
           const currentTime = Number(els.audio.currentTime || 0);
@@ -6965,9 +7430,11 @@
 
         window.addEventListener("pagehide", () => {
           persistPlaybackSnapshot(true);
+          pruneSafariYoutubeBlobCache(true);
         });
         window.addEventListener("beforeunload", () => {
           persistPlaybackSnapshot(true);
+          pruneSafariYoutubeBlobCache(true);
         });
         document.addEventListener("visibilitychange", () => {
           if (document.visibilityState === "hidden") {
@@ -7013,11 +7480,11 @@
             }
             if (els.audio.paused) {
               try {
-                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.1);
+                armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentTimeoutMs(), 0.02);
                 await els.audio.play();
                 const started = await waitForAudioPlaybackStart(getPlaybackStartWaitTimeoutMs());
                 setPlayButtonState(started);
-                if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.1);
+                if (!started) armPlayIntent(String(state.currentTrack && state.currentTrack.trackId || ""), getPlayIntentRetryTimeoutMs(), 0.02);
               } catch (_) {}
             } else {
               els.audio.pause();
@@ -7034,6 +7501,11 @@
           if (!window.firebase || !firebaseConfig.databaseURL) {
             throw new Error("Firebase SDK/config не загружены");
           }
+          try {
+            if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceWebSockets === "function") {
+              firebase.database.INTERNAL.forceWebSockets();
+            }
+          } catch (_) {}
           if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
           }
