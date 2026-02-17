@@ -49,6 +49,7 @@
       --danger: #ff6584;
       --ok: #8df8af;
       --shadow: 0 24px 54px rgba(0, 0, 0, 0.45);
+      --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     * {
@@ -2027,14 +2028,40 @@
     }
 
     @media (max-width: 819px) {
+      .page {
+        min-height: 100svh;
+        min-height: 100dvh;
+        padding-bottom: calc(22px + var(--mobile-safe-bottom));
+      }
       .layout {
         grid-template-columns: 1fr;
       }
       .panel-body {
-        padding: 12px 8px 14px;
+        padding: 12px 8px calc(14px + var(--mobile-safe-bottom));
       }
       .list {
-        max-height: min(62vh, 520px);
+        max-height: min(68dvh, 620px);
+        min-height: 170px;
+        padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom));
+        scroll-padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom));
+        -webkit-overflow-scrolling: touch;
+      }
+      .list.is-sparse {
+        min-height: clamp(260px, 42dvh, 430px);
+        overflow: visible;
+      }
+      .list.is-empty {
+        min-height: clamp(260px, 42dvh, 430px);
+        overflow: visible;
+      }
+      .list.is-empty .empty {
+        min-height: clamp(210px, 34dvh, 360px);
+        display: grid;
+        place-items: center;
+      }
+      .field,
+      .select {
+        font-size: 16px;
       }
       .fullscreen-player {
         display: none !important;
@@ -2388,8 +2415,9 @@
 
     @media (max-width: 680px) {
       .page {
-        padding: 12px 8px 16px;
-        min-height: auto;
+        padding: 12px 8px calc(16px + var(--mobile-safe-bottom));
+        min-height: 100svh;
+        min-height: 100dvh;
       }
       .brand-title {
         font-size: 23px;
@@ -6445,6 +6473,9 @@
           els.sharedList.innerHTML = "";
           els.sharedList.scrollTop = 0;
         }
+        const isSparseList = list.length > 0 && list.length <= 3;
+        els.sharedList.classList.toggle("is-empty", !list.length);
+        els.sharedList.classList.toggle("is-sparse", isSparseList);
         if (!list.length) {
           const hasQuery = Boolean(String(state.listQuery || "").trim());
           els.sharedList.innerHTML = hasQuery
