@@ -701,6 +701,7 @@
       display: none;
     }
 
+
     .desktop-layout-toggle {
       --toggle-thumb-size: 28px;
       --toggle-thumb-offset: 3px;
@@ -2311,6 +2312,14 @@
       }
       .layout {
         grid-template-columns: 1fr;
+        flex: 0 0 auto;
+        min-height: auto;
+      }
+      .panel {
+        min-height: auto;
+      }
+      .desktop-player-column {
+        min-height: auto;
       }
       .panel-body {
         padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
@@ -2322,15 +2331,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        position: fixed;
-        left: 8px;
-        right: 8px;
-        width: auto;
+        position: static;
+        width: 100%;
         max-width: none;
         height: 42px;
-        margin: 0;
-        bottom: calc(10px + var(--mobile-bottom-guard));
-        z-index: 95;
+        margin-top: 10px;
+        margin-bottom: calc(18px + var(--mobile-bottom-guard) + 28px);
         border: 1px solid rgba(245, 158, 11, 0.34);
         border-radius: 12px;
         background: linear-gradient(150deg, rgba(25, 18, 10, 0.9), rgba(14, 10, 6, 0.82));
