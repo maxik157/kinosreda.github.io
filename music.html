@@ -2307,13 +2307,13 @@
       .page {
         min-height: 100svh;
         min-height: 100dvh;
-        padding-bottom: calc(88px + var(--mobile-bottom-guard));
+        padding-bottom: calc(132px + var(--mobile-bottom-guard));
       }
       .layout {
         grid-template-columns: 1fr;
       }
       .panel-body {
-        padding: 12px 8px calc(24px + var(--mobile-bottom-guard));
+        padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
       }
       .panel-body.is-mobile-library-open {
         padding: 0;
@@ -2322,10 +2322,15 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 100%;
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        width: auto;
+        max-width: none;
         height: 42px;
-        margin-top: 10px;
-        margin-bottom: calc(8px + var(--mobile-bottom-guard));
+        margin: 0;
+        bottom: calc(10px + var(--mobile-bottom-guard));
+        z-index: 95;
         border: 1px solid rgba(245, 158, 11, 0.34);
         border-radius: 12px;
         background: linear-gradient(150deg, rgba(25, 18, 10, 0.9), rgba(14, 10, 6, 0.82));
@@ -2334,6 +2339,10 @@
         letter-spacing: 0.01em;
         cursor: pointer;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .panel-body.is-mobile-library-open .mobile-library-toggle {
+        opacity: 0;
+        pointer-events: none;
       }
       .mobile-library-toggle.is-open {
         border-color: rgba(252, 211, 77, 0.58);
@@ -2955,7 +2964,7 @@
 
     @media (max-width: 680px) {
       .page {
-        padding: 12px 8px calc(88px + var(--mobile-bottom-guard));
+        padding: 12px 8px calc(132px + var(--mobile-bottom-guard));
         min-height: 100svh;
         min-height: 100dvh;
       }
@@ -10802,7 +10811,7 @@
           touchSeekState.rafId = requestAnimationFrame((timestamp) => {
             touchSeekState.rafId = 0;
             const width = Number(touchSeekState.barWidth) || 0;
-            const duration = Number(touchSeekState.duration) || Number(els.audio.duration) || 0;
+            const duration = getKnownTrackDurationSec() || Number(touchSeekState.duration) || 0;
             if (width <= 0 || !Number.isFinite(duration) || duration <= 0) return;
             const ratio = Math.max(0, Math.min(1, (touchSeekState.pendingClientX - touchSeekState.barLeft) / width));
             const targetTime = duration * ratio;
@@ -10827,7 +10836,7 @@
           touchSeekState.startY = touch.clientY;
           touchSeekState.barLeft = rect.left || 0;
           touchSeekState.barWidth = rect.width || 0;
-          touchSeekState.duration = Number(els.audio.duration) || 0;
+          touchSeekState.duration = getKnownTrackDurationSec() || 0;
           touchSeekState.pendingClientX = touch.clientX;
           touchSeekState.lastLabelUpdateAt = 0;
           cancelTouchSeekRaf();
@@ -11119,7 +11128,7 @@
           }
           if (command === "seek-to") {
             const ratio = Number(data.ratio);
-            const duration = Number(els.audio.duration);
+            const duration = getKnownTrackDurationSec();
             if (!Number.isFinite(ratio) || !Number.isFinite(duration) || duration <= 0) return;
             await seekToTime(Math.max(0, Math.min(duration, duration * ratio)), {
               resume: !els.audio.paused
