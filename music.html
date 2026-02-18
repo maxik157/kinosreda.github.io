@@ -693,6 +693,12 @@
       min-width: 0;
     }
 
+    .mobile-library-toggle,
+    .mobile-library-head,
+    .mobile-library-backdrop {
+      display: none;
+    }
+
     .desktop-layout-toggle {
       --toggle-thumb-size: 28px;
       --toggle-thumb-offset: 3px;
@@ -852,6 +858,7 @@
       column-gap: 8px;
       cursor: pointer;
       transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+      touch-action: manipulation;
     }
 
     .playlist-selector-btn:hover {
@@ -908,6 +915,7 @@
       width: 100%;
       max-height: min(55vh, 380px);
       overflow-y: auto;
+      overflow-x: hidden;
       border: 1px solid rgba(245, 158, 11, 0.42);
       border-radius: 12px;
       background: rgba(12, 9, 6, 0.98);
@@ -941,6 +949,7 @@
       cursor: pointer;
       margin-bottom: 8px;
       transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+      touch-action: manipulation;
     }
 
     .playlist-menu-create:hover {
@@ -990,6 +999,7 @@
       gap: 4px;
       font-family: "Comfortaa", cursive;
       transition: border-color 0.16s ease, background 0.16s ease;
+      touch-action: manipulation;
     }
 
     .playlist-option-row {
@@ -1016,6 +1026,7 @@
       transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
       padding: 0;
       min-height: 100%;
+      touch-action: manipulation;
     }
 
     .playlist-option-edit:hover {
@@ -1491,6 +1502,43 @@
       box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.24);
     }
 
+    .ym-search-criteria {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 0 0 8px;
+      padding: 0;
+    }
+
+    .ym-search-criteria.is-visible {
+      display: flex;
+    }
+
+    .ym-search-criteria-btn {
+      border: 1px solid rgba(245, 158, 11, 0.26);
+      background: rgba(18, 13, 8, 0.72);
+      color: var(--text-dim);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font: 600 11px/1 "Comfortaa", cursive;
+      cursor: pointer;
+      transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .ym-search-criteria-btn:hover {
+      border-color: rgba(252, 211, 77, 0.52);
+      color: #f8e5bf;
+      transform: translateY(-1px);
+    }
+
+    .ym-search-criteria-btn.is-active {
+      color: var(--text-main);
+      border-color: rgba(252, 211, 77, 0.52);
+      background: linear-gradient(150deg, rgba(252, 211, 77, 0.2), rgba(245, 158, 11, 0.14));
+    }
+
     .ym-input-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -1501,17 +1549,41 @@
     .ym-search-prompt {
       margin: 10px auto 8px;
       max-width: min(640px, 100%);
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(252, 211, 77, 0.22);
-      background:
-        radial-gradient(140% 140% at 0% 0%, rgba(252, 211, 77, 0.14), rgba(252, 211, 77, 0)),
-        rgba(13, 10, 6, 0.72);
+      padding: 2px 2px 0;
+      border: none;
+      background: transparent;
       font-size: 12px;
       color: #f3d7a4;
       text-align: center;
       letter-spacing: 0.01em;
       line-height: 1.45;
+    }
+
+    .ym-search-loading {
+      margin: 0 auto 8px;
+      max-width: min(640px, 100%);
+      padding: 0 4px;
+      font-size: 12px;
+      color: #f8e5bf;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .ym-search-loading::after,
+    .ym-search-notice--loading::after {
+      content: "...";
+      display: inline-block;
+      width: 0;
+      overflow: hidden;
+      vertical-align: bottom;
+      animation: ym-loading-dots 1.2s steps(4, end) infinite;
+    }
+
+    @keyframes ym-loading-dots {
+      0% { width: 0; }
+      25% { width: 1ch; }
+      50% { width: 2ch; }
+      75%, 100% { width: 3ch; }
     }
 
     .ym-search-list {
@@ -1525,6 +1597,162 @@
       align-content: flex-start;
       align-items: stretch;
       margin-top: 0;
+    }
+
+    .ytm-collection-item {
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 14px;
+      background: rgba(13, 10, 6, 0.78);
+      padding: 10px;
+    }
+
+    .ytm-collection-head {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ytm-collection-cover {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid rgba(245, 158, 11, 0.24);
+      display: block;
+      background: rgba(18, 13, 8, 0.75);
+    }
+
+    .ytm-collection-title {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.25;
+      color: #f8e8cb;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ytm-collection-meta {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: #cba777;
+      line-height: 1.25;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ytm-collection-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ytm-collection-toggle {
+      border: 1px solid rgba(245, 158, 11, 0.38);
+      background: rgba(20, 14, 8, 0.82);
+      color: #f4e2bf;
+      border-radius: 10px;
+      font: 700 11px/1 "Comfortaa", cursive;
+      height: 30px;
+      padding: 0 10px;
+      cursor: pointer;
+      transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+      white-space: nowrap;
+    }
+
+    .ytm-collection-toggle:hover {
+      border-color: rgba(252, 211, 77, 0.58);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(84, 54, 13, 0.24);
+    }
+
+    .ytm-collection-toggle:active {
+      transform: scale(0.98);
+    }
+
+    .ytm-collection-body {
+      margin-top: 8px;
+      border-top: 1px solid rgba(245, 158, 11, 0.14);
+      padding-top: 8px;
+    }
+
+    .ytm-collection-tracks {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .ytm-collection-tracks-scroll {
+      max-height: min(54dvh, 420px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-right: 2px;
+    }
+
+    .ytm-collection-tracks-scroll::-webkit-scrollbar {
+      width: 7px;
+    }
+
+    .ytm-collection-tracks-scroll::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.32);
+      border-radius: 999px;
+    }
+
+    .ytm-collection-more {
+      margin-top: 8px;
+      border: 1px dashed rgba(245, 158, 11, 0.28);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 11px;
+      color: #caa876;
+      text-align: center;
+      background: rgba(16, 12, 7, 0.66);
+    }
+
+    .ytm-artist-item {
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      border-radius: 14px;
+      background: rgba(13, 10, 6, 0.76);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .ytm-artist-cover {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 1px solid rgba(245, 158, 11, 0.24);
+      background: rgba(18, 13, 8, 0.75);
+      display: block;
+    }
+
+    .ytm-artist-title {
+      margin: 0;
+      font-size: 13px;
+      color: #f8e8cb;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ytm-artist-meta {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: #cba777;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .panel-body.is-add-mode #sharedList {
@@ -1737,6 +1965,10 @@
       font-size: 11px;
     }
 
+    .track-corner-actions {
+      display: none;
+    }
+
     .track-actions {
       display: inline-flex;
       gap: 6px;
@@ -1868,6 +2100,28 @@
       color: #f7d6a0;
     }
 
+    .ym-search-notice--loading {
+      border-color: rgba(252, 211, 77, 0.34);
+      background:
+        radial-gradient(120% 120% at 0% 0%, rgba(252, 211, 77, 0.14), rgba(252, 211, 77, 0)),
+        rgba(13, 10, 6, 0.68);
+      color: #f2d7a5;
+    }
+
+    .ym-search-notice--plain {
+      border: none;
+      background: transparent;
+      padding: 2px 2px 0;
+      color: #f3d7a4;
+      box-shadow: none;
+      gap: 0;
+    }
+
+    .ym-search-notice--plain::before,
+    .ym-search-notice--loading::before {
+      content: none;
+    }
+
     .tagline {
       margin: 0;
       color: var(--text-dim);
@@ -1936,6 +2190,15 @@
       box-shadow: 0 26px 50px rgba(0, 0, 0, 0.5);
       padding: 16px;
       animation: playlist-modal-in 0.2s ease;
+    }
+
+    .track-delete-modal .playlist-modal-title {
+      font-size: 16px;
+    }
+
+    .track-delete-modal .playlist-modal-subtitle {
+      margin-top: 6px;
+      word-break: break-word;
     }
 
     @keyframes playlist-modal-in {
@@ -2028,6 +2291,17 @@
     }
 
     @media (max-width: 819px) {
+      body.mobile-library-open {
+        overflow: hidden;
+      }
+      body.mobile-library-open .panel,
+      body.mobile-library-open .panel-body {
+        overflow: visible;
+      }
+      body.mobile-library-open .panel {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
       .page {
         min-height: 100svh;
         min-height: 100dvh;
@@ -2038,6 +2312,270 @@
       }
       .panel-body {
         padding: 12px 8px calc(14px + var(--mobile-safe-bottom));
+      }
+      .panel-body.is-mobile-library-open {
+        padding: 0;
+      }
+      .mobile-library-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 42px;
+        margin-top: 10px;
+        border: 1px solid rgba(245, 158, 11, 0.34);
+        border-radius: 12px;
+        background: linear-gradient(150deg, rgba(25, 18, 10, 0.9), rgba(14, 10, 6, 0.82));
+        color: #f8e8cb;
+        font: 700 12px/1 "Comfortaa", cursive;
+        letter-spacing: 0.01em;
+        cursor: pointer;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .mobile-library-toggle.is-open {
+        border-color: rgba(252, 211, 77, 0.58);
+        box-shadow: 0 12px 24px rgba(84, 54, 13, 0.26);
+      }
+      .mobile-library-backdrop {
+        display: none !important;
+      }
+      .mobile-library-backdrop.is-open {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .desktop-library-column {
+        position: fixed;
+        inset: 0;
+        left: 0;
+        right: 0;
+        width: 100vw;
+        min-width: 100vw;
+        max-width: 100vw;
+        z-index: 120;
+        display: flex;
+        flex-direction: column;
+        max-height: 100dvh;
+        min-height: 100dvh;
+        border: none;
+        border-radius: 0;
+        background:
+          radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.12), rgba(252, 211, 77, 0)),
+          linear-gradient(180deg, rgba(20, 14, 8, 0.995), rgba(12, 9, 6, 0.995));
+        box-shadow: none;
+        padding: env(safe-area-inset-top, 0px) 0 0;
+        overflow: hidden;
+        transform: translate3d(0, 100%, 0);
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 0s linear 0.44s;
+        will-change: transform;
+      }
+      .panel-body.is-mobile-library-open .desktop-library-column {
+        transform: translate3d(0, 0, 0);
+        visibility: visible;
+        pointer-events: auto;
+        transition:
+          transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+          visibility 0s linear 0s;
+      }
+      .desktop-library-column.is-dragging {
+        transition: none !important;
+      }
+      .mobile-library-head {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+        min-height: 36px;
+        height: 36px;
+        padding: 5px 0 7px;
+        border-bottom: none;
+        margin-bottom: 6px;
+        touch-action: none;
+      }
+      .mobile-library-grabber {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: none;
+        width: 100px;
+        height: 9px;
+        border-radius: 999px;
+        background: rgba(252, 211, 77, 0.52);
+        touch-action: none;
+        pointer-events: none;
+      }
+      .desktop-library-column .list-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        margin-top: 0;
+        display: flex;
+        align-items: stretch;
+        flex-wrap: nowrap;
+        gap: 8px;
+        width: 100%;
+        margin-inline: 0;
+        padding: 14px 10px 8px;
+        background: transparent;
+        border-radius: 0;
+      }
+      .desktop-library-column .list-toolbar-left {
+        min-width: 0;
+        width: auto;
+        flex: 1 1 0;
+      }
+      .desktop-library-column .playlist-selector {
+        max-width: none;
+        width: auto;
+        flex: 1 1 0;
+      }
+      .desktop-library-column .list-toolbar-actions {
+        width: auto;
+        justify-content: flex-end;
+        flex-wrap: nowrap;
+        gap: 6px;
+        background: transparent;
+        align-items: stretch;
+        flex: 0 0 auto;
+      }
+      .desktop-library-column .playlist-selector-btn {
+        min-height: 44px;
+      }
+      .desktop-library-column .list-toolbar-actions .tool-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+      }
+      .desktop-library-column .added-by-filter {
+        display: none !important;
+      }
+      .desktop-library-column .playlist-selector-btn,
+      .desktop-library-column .added-by-filter-btn,
+      .desktop-library-column .tool-btn,
+      .desktop-library-column .btn {
+        background:
+          radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.2), rgba(252, 211, 77, 0)),
+          rgba(44, 30, 15, 0.94);
+        border-color: rgba(245, 158, 11, 0.46);
+      }
+      .desktop-library-column .tool-btn--hint {
+        display: none;
+      }
+      .desktop-library-column .playlist-selector-menu,
+      .desktop-library-column .added-by-filter-menu,
+      .desktop-library-column .add-help-popover {
+        background: rgba(20, 14, 8, 0.995);
+        border-color: rgba(245, 158, 11, 0.5);
+      }
+      .desktop-library-column .tool-panels {
+        width: 100%;
+        padding: 0 10px;
+        margin-top: 0;
+      }
+      .desktop-library-column .ym-source-switch {
+        width: 100%;
+        max-width: none;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .desktop-library-column .ym-source-btn {
+        width: 100%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .panel-body.is-add-mode .tool-panels {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .panel-body.is-add-mode #addPanel.tool-panel.is-open {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+      }
+      .panel-body.is-add-mode .ym-search-block {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .panel-body.is-add-mode .ym-search-list {
+        flex: 1 1 auto;
+        height: auto;
+        max-height: none;
+        min-height: 0;
+        padding-bottom: calc(12px + var(--mobile-safe-bottom));
+        scroll-padding-bottom: calc(12px + var(--mobile-safe-bottom));
+      }
+      .desktop-library-column .oauth-row {
+        display: none;
+      }
+      .desktop-library-column #sharedList {
+        width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      .desktop-library-column .list {
+        padding-top: 0;
+        padding-bottom: calc(28px + var(--mobile-safe-bottom));
+        gap: 10px;
+        max-height: none;
+        min-height: 0;
+        scroll-padding-bottom: calc(28px + var(--mobile-safe-bottom));
+        padding-inline: 0;
+        border-radius: 0;
+        margin: 0;
+      }
+      .desktop-library-column .track-item {
+        position: relative;
+        grid-template-columns: 46px minmax(0, 1fr);
+        align-items: start;
+        border-radius: 14px;
+        border-left: 1px solid rgba(245, 158, 11, 0.16);
+        border-right: 1px solid rgba(245, 158, 11, 0.16);
+      }
+      .desktop-library-column .track-cover-wrap {
+        width: 46px;
+        height: 46px;
+      }
+      .desktop-library-column .track-item[data-context="shared"] .track-info {
+        padding-right: 88px;
+      }
+      .desktop-library-column .track-corner-actions {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .desktop-library-column .track-item[data-context="shared"] .track-actions {
+        display: none;
+      }
+      .desktop-library-column .track-item .track-actions [data-action="download"],
+      .desktop-library-column .track-item .track-actions a.icon-btn,
+      .desktop-library-column .track-item .track-actions [data-action="like"],
+      .desktop-library-column .track-item .track-actions [data-action="remove"] {
+        display: none !important;
+      }
+      .desktop-library-column .list.is-sparse,
+      .desktop-library-column .list.is-empty {
+        min-height: 0;
+        overflow: auto;
+      }
+      .desktop-library-column .list.is-empty .empty {
+        min-height: clamp(220px, 34dvh, 320px);
       }
       .list {
         max-height: min(68dvh, 620px);
@@ -2109,8 +2647,7 @@
         border-radius: 14px;
       }
       .panel,
-      .panel-body,
-      .desktop-library-column {
+      .panel-body {
         overflow: visible;
       }
       .playlist-type-switch {
@@ -2453,6 +2990,48 @@
       .track-actions {
         grid-column: 1 / -1;
         justify-content: flex-start;
+      }
+      .ytm-collection-head {
+        grid-template-columns: 46px minmax(0, 1fr);
+        gap: 8px;
+      }
+      .ytm-collection-cover {
+        width: 46px;
+        height: 46px;
+      }
+      .ytm-collection-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+        margin-top: 6px;
+      }
+      .ytm-collection-meta {
+        white-space: normal;
+      }
+      .ym-search-criteria {
+        gap: 5px;
+      }
+      .ym-search-criteria-btn {
+        padding: 6px 9px;
+        font-size: 10px;
+      }
+      .ytm-artist-item {
+        grid-template-columns: 46px minmax(0, 1fr);
+        gap: 8px;
+      }
+      .ytm-artist-cover {
+        width: 46px;
+        height: 46px;
+      }
+      .ytm-artist-item .icon-btn {
+        grid-column: 1 / -1;
+        justify-self: start;
+        margin-top: 2px;
+      }
+      .ytm-artist-meta {
+        white-space: normal;
+      }
+      .ytm-collection-tracks-scroll {
+        max-height: min(46dvh, 340px);
       }
       .add-help-popover {
         right: -2px;
@@ -2856,9 +3435,19 @@
               </div>
               <div class="controls-spacer" aria-hidden="true"></div>
             </div>
+            <button
+              id="mobileLibraryToggleBtn"
+              class="mobile-library-toggle"
+              type="button"
+              aria-controls="mobileLibrarySheet"
+              aria-expanded="false"
+            >Показать список треков</button>
           </div>
 
-          <div class="desktop-library-column">
+          <div id="mobileLibrarySheet" class="desktop-library-column">
+            <div class="mobile-library-head">
+              <span id="mobileLibraryGrabber" class="mobile-library-grabber" aria-hidden="true"></span>
+            </div>
             <div class="list-toolbar">
               <div class="list-toolbar-left">
                 <div id="playlistSelector" class="playlist-selector">
@@ -2933,11 +3522,18 @@
                       <button id="ymSourceYandexBtn" class="ym-source-btn is-active" type="button" data-source="yandex" aria-pressed="true">Яндекс Музыка</button>
                       <button id="ymSourceYoutubeBtn" class="ym-source-btn" type="button" data-source="youtube" aria-pressed="false">YouTube Music</button>
                     </div>
+                    <div id="ymSearchCriteria" class="ym-search-criteria" role="tablist" aria-label="Критерий поиска YouTube Music">
+                      <button id="ymCriteriaAllBtn" class="ym-search-criteria-btn is-active" type="button" data-criterion="all" aria-pressed="true">Все</button>
+                      <button id="ymCriteriaTracksBtn" class="ym-search-criteria-btn" type="button" data-criterion="tracks" aria-pressed="false">Треки</button>
+                      <button id="ymCriteriaAlbumsBtn" class="ym-search-criteria-btn" type="button" data-criterion="albums" aria-pressed="false">Альбом</button>
+                      <button id="ymCriteriaPlaylistsBtn" class="ym-search-criteria-btn" type="button" data-criterion="playlists" aria-pressed="false">Плейлист</button>
+                    </div>
                     <div class="ym-input-row">
                       <input id="trackUrlInput" class="field" type="text" placeholder="Вставьте ссылку на трек или введите запрос">
                       <button id="addByUrlBtn" class="btn btn--accent" type="button">Добавить</button>
                     </div>
                     <p id="ymSearchPrompt" class="hint ym-search-prompt">Начните вводить название трека, исполнителя или вставьте ссылку из Яндекс Музыки.</p>
+                    <p id="ymSearchLoading" class="hint ym-search-loading" hidden>Загружаю треки</p>
                   </div>
                   <ul id="ymSearchList" class="list ym-search-list"></ul>
                 </div>
@@ -2954,6 +3550,7 @@
       </section>
     </main>
   </div>
+  <div id="mobileLibraryBackdrop" class="mobile-library-backdrop" hidden></div>
 
   <div id="fullscreenPlayer" class="fullscreen-player" aria-hidden="true">
     <div class="fullscreen-shell">
@@ -3055,6 +3652,19 @@
     </div>
   </div>
 
+  <div id="trackDeleteModalBackdrop" class="playlist-modal-backdrop" hidden>
+    <div id="trackDeleteModal" class="playlist-modal track-delete-modal" role="dialog" aria-modal="true" aria-labelledby="trackDeleteModalTitle">
+      <div class="playlist-modal-head">
+        <h3 id="trackDeleteModalTitle" class="playlist-modal-title">Удалить трек?</h3>
+        <p id="trackDeleteModalSubtitle" class="playlist-modal-subtitle">Трек будет удалён из текущего плейлиста.</p>
+      </div>
+      <div class="playlist-modal-actions">
+        <button id="trackDeleteCancelBtn" class="btn btn--ghost" type="button">Отмена</button>
+        <button id="trackDeleteConfirmBtn" class="btn btn--danger" type="button">Удалить</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toasts" class="toasts"></div>
   <audio id="audio" preload="metadata" playsinline crossorigin="anonymous"></audio>
 
@@ -3103,6 +3713,8 @@
         activePlaylistId: DEFAULT_SHARED_PLAYLIST_ID,
         playlistCreateScope: "shared",
         playlistCreateModalOpen: false,
+        trackDeleteModalOpen: false,
+        trackDeleteTarget: null,
         playlistModalMode: "create",
         playlistModalPlaylistId: "",
         playlistDeleteConfirmPending: false,
@@ -3142,9 +3754,19 @@
         ymSearchDebounceTimer: null,
         ymSearchRankMode: "auto",
         ymSearchSource: "yandex",
+        ymSearchCriterion: "all",
+        ymSearchArtists: [],
+        ymSearchCollections: [],
+        ymCollectionStates: {},
+        ymCollectionOpenKey: "",
+        searchPlaybackScope: {
+          mode: "results",
+          collectionKey: ""
+        },
         desktopSplitPreferred: false,
         desktopLayoutAppliedSplit: false,
         activeToolPanel: "",
+        mobileLibraryOpen: false,
         addHelpOpen: false,
         filter: "all",
         addedByFilter: "all",
@@ -3242,8 +3864,17 @@
         playlistModalDeleteBtn: document.getElementById("playlistModalDeleteBtn"),
         playlistModalCancelBtn: document.getElementById("playlistModalCancelBtn"),
         playlistModalCreateBtn: document.getElementById("playlistModalCreateBtn"),
+        trackDeleteModalBackdrop: document.getElementById("trackDeleteModalBackdrop"),
+        trackDeleteModal: document.getElementById("trackDeleteModal"),
+        trackDeleteModalSubtitle: document.getElementById("trackDeleteModalSubtitle"),
+        trackDeleteCancelBtn: document.getElementById("trackDeleteCancelBtn"),
+        trackDeleteConfirmBtn: document.getElementById("trackDeleteConfirmBtn"),
         toggleSearchPanelBtn: document.getElementById("toggleSearchPanelBtn"),
         toggleAddPanelBtn: document.getElementById("toggleAddPanelBtn"),
+        mobileLibraryToggleBtn: document.getElementById("mobileLibraryToggleBtn"),
+        mobileLibrarySheet: document.getElementById("mobileLibrarySheet"),
+        mobileLibraryGrabber: document.getElementById("mobileLibraryGrabber"),
+        mobileLibraryBackdrop: document.getElementById("mobileLibraryBackdrop"),
         toggleAddHelpBtn: document.getElementById("toggleAddHelpBtn"),
         addHelpPopover: document.getElementById("addHelpPopover"),
         searchPanel: document.getElementById("searchPanel"),
@@ -3255,6 +3886,12 @@
         ymSearchList: document.getElementById("ymSearchList"),
         ymSourceYandexBtn: document.getElementById("ymSourceYandexBtn"),
         ymSourceYoutubeBtn: document.getElementById("ymSourceYoutubeBtn"),
+        ymSearchCriteria: document.getElementById("ymSearchCriteria"),
+        ymCriteriaAllBtn: document.getElementById("ymCriteriaAllBtn"),
+        ymCriteriaTracksBtn: document.getElementById("ymCriteriaTracksBtn"),
+        ymCriteriaAlbumsBtn: document.getElementById("ymCriteriaAlbumsBtn"),
+        ymCriteriaPlaylistsBtn: document.getElementById("ymCriteriaPlaylistsBtn"),
+        ymSearchLoading: document.getElementById("ymSearchLoading"),
         panelRoot: document.querySelector(".panel"),
         panelBody: document.querySelector(".panel-body"),
         oauthLoginBtn: document.getElementById("oauthLoginBtn"),
@@ -3276,6 +3913,11 @@
       let lastPersistedTrackKey = "";
       let lastPersistedPaused = true;
       let lastMediaSessionKey = "";
+      const mobileSheetDragState = {
+        active: false,
+        startY: 0,
+        offsetY: 0
+      };
 
       function toast() {}
 
@@ -3460,6 +4102,9 @@
               els.trackUrlInput.focus();
             }
           });
+        }
+        if (isMobileViewport() && (panel === "search" || panel === "add")) {
+          setMobileLibraryOpen(true);
         }
       }
 
@@ -4038,6 +4683,106 @@
         return wideEnough && finePointer;
       }
 
+      function isMobileViewport() {
+        return window.matchMedia("(max-width: 819px)").matches;
+      }
+
+      function resetMobileSheetDragState() {
+        mobileSheetDragState.active = false;
+        mobileSheetDragState.startY = 0;
+        mobileSheetDragState.offsetY = 0;
+        if (els.mobileLibrarySheet) {
+          els.mobileLibrarySheet.classList.remove("is-dragging");
+          els.mobileLibrarySheet.style.removeProperty("transform");
+        }
+      }
+
+      function extractClientY(event) {
+        if (event && event.touches && event.touches.length) {
+          return Number(event.touches[0].clientY || 0);
+        }
+        if (event && event.changedTouches && event.changedTouches.length) {
+          return Number(event.changedTouches[0].clientY || 0);
+        }
+        return Number(event && event.clientY || 0);
+      }
+
+      function beginMobileSheetDrag(event) {
+        if (!state.mobileLibraryOpen || !isMobileViewport() || !els.mobileLibrarySheet) return;
+        const startY = extractClientY(event);
+        if (!Number.isFinite(startY)) return;
+        mobileSheetDragState.active = true;
+        mobileSheetDragState.startY = startY;
+        mobileSheetDragState.offsetY = 0;
+        els.mobileLibrarySheet.classList.add("is-dragging");
+      }
+
+      function moveMobileSheetDrag(event) {
+        if (!mobileSheetDragState.active || !els.mobileLibrarySheet) return;
+        const currentY = extractClientY(event);
+        if (!Number.isFinite(currentY)) return;
+        const offset = Math.max(0, currentY - mobileSheetDragState.startY);
+        mobileSheetDragState.offsetY = offset;
+        els.mobileLibrarySheet.style.transform = `translate3d(0, ${offset}px, 0)`;
+        if (event && typeof event.preventDefault === "function") {
+          event.preventDefault();
+        }
+      }
+
+      function endMobileSheetDrag() {
+        if (!mobileSheetDragState.active) return;
+        const offset = Number(mobileSheetDragState.offsetY || 0);
+        const shouldClose = offset > 86;
+        resetMobileSheetDragState();
+        if (shouldClose) {
+          closeMobileLibrarySheet();
+        }
+      }
+
+      function syncMobileLibraryUi() {
+        const mobile = isMobileViewport();
+        if (!mobile && state.mobileLibraryOpen) {
+          state.mobileLibraryOpen = false;
+        }
+        const open = mobile && Boolean(state.mobileLibraryOpen);
+
+        if (els.panelBody) {
+          els.panelBody.classList.toggle("is-mobile-library-open", open);
+        }
+        if (els.mobileLibraryToggleBtn) {
+          els.mobileLibraryToggleBtn.classList.toggle("is-open", open);
+          els.mobileLibraryToggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+          els.mobileLibraryToggleBtn.textContent = open ? "Скрыть список треков" : "Показать список треков";
+        }
+        if (els.mobileLibraryBackdrop) {
+          els.mobileLibraryBackdrop.hidden = true;
+          els.mobileLibraryBackdrop.classList.remove("is-open");
+        }
+        if (!open) {
+          resetMobileSheetDragState();
+        }
+        if (document.body) {
+          document.body.classList.toggle("mobile-library-open", open);
+        }
+      }
+
+      function setMobileLibraryOpen(nextOpen) {
+        if (!isMobileViewport()) {
+          state.mobileLibraryOpen = false;
+          syncMobileLibraryUi();
+          return;
+        }
+        state.mobileLibraryOpen = Boolean(nextOpen);
+        syncMobileLibraryUi();
+      }
+
+      function closeMobileLibrarySheet() {
+        setPlaylistMenuOpen(false);
+        setAddedByFilterMenuOpen(false);
+        setAddHelpOpen(false);
+        setMobileLibraryOpen(false);
+      }
+
       function clearDesktopLayoutAnimation() {
         if (desktopLayoutAnimTimeout) {
           clearTimeout(desktopLayoutAnimTimeout);
@@ -4398,23 +5143,61 @@
         return list.findIndex((item) => String(item && item.trackId || "") === currentTrackId);
       }
 
-      function getActivePlaybackList() {
-        if (Array.isArray(state.renderedTracks) && state.renderedTracks.length) {
-          return state.renderedTracks;
+      function normalizeSearchPlaybackScopeMode(value) {
+        return String(value || "").trim().toLowerCase() === "collection" ? "collection" : "results";
+      }
+
+      function resetSearchPlaybackScope() {
+        state.searchPlaybackScope = {
+          mode: "results",
+          collectionKey: ""
+        };
+      }
+
+      function setSearchPlaybackScopeCollection(collectionKey = "") {
+        const key = String(collectionKey || "").trim();
+        if (!key) {
+          resetSearchPlaybackScope();
+          return;
         }
-        if (Array.isArray(state.sharedTracks) && state.sharedTracks.length) {
-          return state.sharedTracks;
+        state.searchPlaybackScope = {
+          mode: "collection",
+          collectionKey: key
+        };
+      }
+
+      function getSearchScopedPlaybackList() {
+        const scope = state.searchPlaybackScope && typeof state.searchPlaybackScope === "object"
+          ? state.searchPlaybackScope
+          : null;
+        const mode = normalizeSearchPlaybackScopeMode(scope && scope.mode);
+        const scopedKey = String(
+          (scope && scope.collectionKey)
+          || (state.currentTrack && state.currentTrack._searchCollectionKey)
+          || ""
+        ).trim();
+
+        if (mode === "collection" && scopedKey && state.ymCollectionStates && typeof state.ymCollectionStates === "object") {
+          const entry = state.ymCollectionStates[scopedKey];
+          if (entry && Array.isArray(entry.tracks) && entry.tracks.length) {
+            return entry.tracks;
+          }
+        }
+
+        if (Array.isArray(state.ymSearchResults) && state.ymSearchResults.length) {
+          return state.ymSearchResults;
         }
         return [];
+      }
+
+      function getActivePlaybackList() {
+        return getPlaybackListBySource(state.activeSource);
       }
 
       function getPlaybackListBySource(source = state.activeSource) {
         const normalized = source === "search" ? "search" : "shared";
         if (normalized === "search") {
-          if (Array.isArray(state.ymSearchResults) && state.ymSearchResults.length) {
-            return state.ymSearchResults;
-          }
-          return [];
+          return getSearchScopedPlaybackList();
         }
         if (Array.isArray(state.renderedTracks) && state.renderedTracks.length) {
           return state.renderedTracks;
@@ -5116,6 +5899,13 @@
         els.playlistSelectorRoot.classList.toggle("is-open", isOpen);
         els.playlistSelectorBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
         els.playlistSelectorMenu.hidden = !isOpen;
+        if (isMobileViewport()) {
+          requestAnimationFrame(() => {
+            if (document.activeElement === els.playlistSelectorBtn) {
+              els.playlistSelectorBtn.blur();
+            }
+          });
+        }
         if (isOpen) {
           requestAnimationFrame(() => {
             updatePlaylistMenuPosition();
@@ -5422,6 +6212,60 @@
         requestAnimationFrame(() => {
           if (els.playlistNameInput) els.playlistNameInput.focus();
         });
+      }
+
+      function syncTrackDeleteModalUi() {
+        if (!els.trackDeleteModalSubtitle) return;
+        const target = state.trackDeleteTarget && typeof state.trackDeleteTarget === "object"
+          ? state.trackDeleteTarget
+          : null;
+        const title = String(target && target.title || "").trim();
+        els.trackDeleteModalSubtitle.textContent = title
+          ? `Удалить «${title}» из текущего плейлиста?`
+          : "Трек будет удалён из текущего плейлиста.";
+      }
+
+      function setTrackDeleteModalOpen(open) {
+        const normalized = !!open;
+        state.trackDeleteModalOpen = normalized;
+        if (els.trackDeleteModalBackdrop) {
+          els.trackDeleteModalBackdrop.classList.toggle("is-open", normalized);
+          els.trackDeleteModalBackdrop.hidden = !normalized;
+        }
+        if (!normalized) {
+          state.trackDeleteTarget = null;
+          syncTrackDeleteModalUi();
+          return;
+        }
+        syncTrackDeleteModalUi();
+        requestAnimationFrame(() => {
+          if (els.trackDeleteConfirmBtn) els.trackDeleteConfirmBtn.focus();
+        });
+      }
+
+      function openTrackDeleteModal(track) {
+        if (!track || !track.key) return;
+        state.trackDeleteTarget = {
+          key: String(track.key || ""),
+          trackId: String(track.trackId || ""),
+          title: String(track.title || "")
+        };
+        setTrackDeleteModalOpen(true);
+      }
+
+      async function confirmTrackDeleteFromModal() {
+        const target = state.trackDeleteTarget && typeof state.trackDeleteTarget === "object"
+          ? state.trackDeleteTarget
+          : null;
+        if (!target || !target.key) {
+          setTrackDeleteModalOpen(false);
+          return;
+        }
+        const sourceTrack = (Array.isArray(state.sharedTracks) ? state.sharedTracks : [])
+          .find((item) => String(item && item.key || "") === String(target.key || ""));
+        const track = sourceTrack || target;
+        await removeTrack(track);
+        setTrackDeleteModalOpen(false);
       }
 
       function getPlaylistModalPayload() {
@@ -6134,7 +6978,7 @@
         return payload;
       }
 
-      function createTrackItem(track, context) {
+      function createTrackItem(track, context, options = {}) {
         const activePlaylist = getActivePlaylistMeta();
         const me = firebaseSafeKey(state.currentUser && state.currentUser.username);
         const playlistOwner = firebaseSafeKey(activePlaylist && activePlaylist.ownerUsername);
@@ -6143,6 +6987,9 @@
           && (playlistOwner === me || me === "max");
         const isCurrent = state.currentTrack && state.currentTrack.trackId === track.trackId && state.activeSource === context;
         const isPlaying = Boolean(isCurrent && !els.audio.paused);
+        const searchCollectionKey = context === "search"
+          ? String(options.searchCollectionKey || track._searchCollectionKey || "").trim()
+          : "";
         const canDelete = state.currentUser && (
           firebaseSafeKey(track.addedByUsername) === firebaseSafeKey(state.currentUser.username)
           || firebaseSafeKey(state.currentUser.username) === "max"
@@ -6151,8 +6998,13 @@
 
         const li = document.createElement("li");
         li.className = `track-item ${isCurrent ? "playing" : ""}`;
+        li.dataset.context = context === "shared" ? "shared" : "search";
         li.dataset.trackKey = track.key || "";
         li.dataset.trackId = track.trackId || "";
+        if (searchCollectionKey) {
+          li.dataset.searchCollectionKey = searchCollectionKey;
+          track._searchCollectionKey = searchCollectionKey;
+        }
 
         const likeCount = getLikeCount(track);
         const likedByMe = isLikedByMe(track);
@@ -6179,6 +7031,18 @@
                 : `${formatTime((track.durationMs || 0) / 1000)} • ${escapeHtml(providerLabel)}`}
             </div>
           </div>
+          ${context === "shared" ? `
+            <div class="track-corner-actions">
+              <button class="icon-btn ${likedByMe ? "active" : ""}" data-action="like" title="Лайк">
+                <svg viewBox="0 0 24 24"><path d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.88 2 6.03 4.24 4 7.05 4c1.63 0 3.19.79 4.15 2.01C12.16 4.79 13.72 4 15.35 4 18.16 4 20.4 6.03 20.4 8.88c0 3.51-3.14 6.36-8.99 11.46z"></path></svg>
+              </button>
+              ${canDelete ? `
+                <button class="icon-btn icon-btn--danger" data-action="remove" title="Удалить">
+                  <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"></path></svg>
+                </button>
+              ` : ""}
+            </div>
+          ` : ""}
           <div class="track-actions">
             ${context === "shared" ? `
               <button class="icon-btn ${likedByMe ? "active" : ""}" data-action="like" title="Лайк">
@@ -6236,7 +7100,11 @@
               } catch (_) {}
               return;
             }
-            await playTrack(track, source, { userGesture: true });
+            const playOptions = { userGesture: true };
+            if (source === "search" && searchCollectionKey) {
+              playOptions.searchCollectionKey = searchCollectionKey;
+            }
+            await playTrack(track, source, playOptions);
             return;
           }
           if (action === "add") {
@@ -6252,7 +7120,8 @@
             return;
           }
           if (action === "remove") {
-            await removeTrack(track);
+            openTrackDeleteModal(track);
+            return;
           }
         });
 
@@ -6285,6 +7154,11 @@
         state.ymSearchLoading = false;
         state.ymSearchLoadingMore = false;
         state.ymSearchRankMode = "auto";
+        state.ymSearchArtists = [];
+        state.ymSearchCollections = [];
+        state.ymCollectionStates = {};
+        state.ymCollectionOpenKey = "";
+        resetSearchPlaybackScope();
       }
 
       function normalizeYmSearchText(value) {
@@ -6506,10 +7380,16 @@
         const query = String(state.ymSearchQuery || "").trim();
         const parsedTrackLink = parseTrackUrl(query);
         const sourceMeta = getYmSearchSourceMeta(state.ymSearchSource);
+        const isYoutubeSearchSource = normalizeYmSearchSource(state.ymSearchSource) === "youtube";
+        const youtubeCriterion = normalizeYmSearchCriterion(state.ymSearchCriterion);
         const results = Array.isArray(state.ymSearchResults) ? state.ymSearchResults : [];
+        const collections = isYoutubeSearchSource && Array.isArray(state.ymSearchCollections)
+          ? state.ymSearchCollections
+          : [];
         const loading = Boolean(state.ymSearchLoading);
         const loadingMore = Boolean(state.ymSearchLoadingMore);
         const isDesktop = window.matchMedia("(min-width: 820px)").matches;
+        updateYmSearchLoadingUi();
         const togglePrompt = (visible) => {
           if (!els.ymSearchPrompt) return;
           els.ymSearchPrompt.hidden = !visible;
@@ -6522,10 +7402,11 @@
         };
         const setSearchNotice = (text, mode = "info") => {
           const safeText = escapeHtml(String(text || "").trim());
-          const normalizedMode = mode === "warn" ? "warn" : "info";
-          const icon = normalizedMode === "warn" ? "⚠" : "⌕";
+          const normalizedMode = mode === "warn" ? "warn" : (mode === "plain" ? "plain" : "info");
+          const icon = normalizedMode === "warn" ? "⚠" : (normalizedMode === "info" ? "⌕" : "");
+          const iconAttr = icon ? ` data-icon="${icon}"` : "";
           els.ymSearchList.innerHTML = `
-            <li class="empty ym-search-notice ym-search-notice--${normalizedMode}" data-icon="${icon}">
+            <li class="empty ym-search-notice ym-search-notice--${normalizedMode}"${iconAttr}>
               ${safeText}
             </li>
           `;
@@ -6535,7 +7416,7 @@
           resetSearchDom();
           togglePrompt(isDesktop);
           if (!isDesktop) {
-            setSearchNotice(sourceMeta.promptTextMobile || sourceMeta.promptText, "info");
+            setSearchNotice(sourceMeta.promptTextMobile || sourceMeta.promptText, "plain");
           }
           updateSharedListPlaybackUI();
           updateMediaSessionTrackActions();
@@ -6547,12 +7428,56 @@
           updateMediaSessionTrackActions();
           return;
         }
-        if (parsedTrackLink && parsedTrackLink.trackId && !results.length) {
+        if (isYoutubeSearchSource) {
+          const visibleTracks = youtubeCriterion === "all" || youtubeCriterion === "tracks"
+            ? results
+            : [];
+          let visibleCollections = [];
+          if (youtubeCriterion === "all") {
+            visibleCollections = collections;
+          } else if (youtubeCriterion === "albums") {
+            visibleCollections = collections.filter((item) => normalizeYtmCollectionKind(item && item.kind) === "album");
+          } else if (youtubeCriterion === "playlists") {
+            visibleCollections = collections.filter((item) => normalizeYtmCollectionKind(item && item.kind) === "playlist");
+          }
+
+          const hasAnyVisible = Boolean(
+            (visibleTracks && visibleTracks.length)
+            || (visibleCollections && visibleCollections.length)
+          );
+          if (parsedTrackLink && parsedTrackLink.trackId && !hasAnyVisible) {
+            resetSearchDom();
+            updateMediaSessionTrackActions();
+            return;
+          }
+          if (!hasAnyVisible) {
+            resetSearchDom();
+            setSearchNotice("Ничего не найдено для выбранного критерия.", "warn");
+            updateMediaSessionTrackActions();
+            return;
+          }
+
+          resetSearchDom();
+          visibleCollections.forEach((collection) => {
+            els.ymSearchList.appendChild(createYtmCollectionItem(collection));
+          });
+          visibleTracks.forEach((track) => {
+            if (!track) return;
+            els.ymSearchList.appendChild(createTrackItem(track, "search"));
+          });
+          state.ymSearchRenderCount = visibleTracks.length;
+          state.ymSearchRenderedDomCount = visibleTracks.length;
+          updateSharedListPlaybackUI();
+          updateMediaSessionTrackActions();
+          return;
+        }
+
+        if (parsedTrackLink && parsedTrackLink.trackId && !results.length && !collections.length) {
           resetSearchDom();
           updateMediaSessionTrackActions();
           return;
         }
-        if (!results.length) {
+        if (!results.length && !collections.length) {
           resetSearchDom();
           setSearchNotice("Ничего не найдено. Уточните название трека или исполнителя.", "warn");
           updateMediaSessionTrackActions();
@@ -6581,9 +7506,8 @@
 
         if (loadingMore) {
           const loader = document.createElement("li");
-          loader.className = "empty ym-loading-more ym-search-notice ym-search-notice--info";
-          loader.setAttribute("data-icon", "…");
-          loader.textContent = "Загружаем ещё результаты…";
+          loader.className = "empty ym-loading-more ym-search-notice ym-search-notice--loading";
+          loader.textContent = "Загружаем ещё результаты";
           els.ymSearchList.appendChild(loader);
         }
 
@@ -6716,6 +7640,369 @@
         return Array.isArray(root.tracks) ? root.tracks : [];
       }
 
+      function normalizeYmSearchCriterion(value) {
+        const normalized = String(value || "").trim().toLowerCase();
+        if (normalized === "tracks") return "tracks";
+        if (normalized === "albums") return "albums";
+        if (normalized === "playlists") return "playlists";
+        return "all";
+      }
+
+      function getYtmSearchArtists(payload) {
+        const root = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+        const artists = Array.isArray(root.artists) ? root.artists : [];
+        const out = [];
+        const seen = new Set();
+        artists.forEach((item) => {
+          const id = String(item && item.id || "").trim();
+          const title = String(item && item.title || "").trim() || "Исполнитель";
+          if (!id) return;
+          const key = id.toLowerCase();
+          if (seen.has(key)) return;
+          seen.add(key);
+          out.push({
+            kind: "artist",
+            id,
+            title,
+            coverUrl: String(item && item.coverUrl || "").trim(),
+            subscribers: String(item && item.subscribers || "").trim(),
+            sourceUrl: String(item && item.sourceUrl || `https://music.youtube.com/browse/${id}`).trim()
+          });
+        });
+        if (!out.length) {
+          const tracks = Array.isArray(root.tracks) ? root.tracks : [];
+          tracks.forEach((track) => {
+            const rows = Array.isArray(track && track.artists) ? track.artists : [];
+            rows.forEach((artist) => {
+              const id = typeof artist === "object"
+                ? String(artist && (artist.id || artist.browseId || artist.channelId) || "").trim()
+                : "";
+              const title = String(
+                typeof artist === "string"
+                  ? artist
+                  : (artist && (artist.name || artist.title || artist.artist) || "")
+              ).trim();
+              if (!title) return;
+              const key = (id || title).toLowerCase();
+              if (seen.has(key)) return;
+              seen.add(key);
+              out.push({
+                kind: "artist",
+                id,
+                title,
+                coverUrl: "",
+                subscribers: "",
+                sourceUrl: id ? `https://music.youtube.com/browse/${id}` : ""
+              });
+            });
+          });
+        }
+        return out;
+      }
+
+      function normalizeYtmCollectionKind(value) {
+        return String(value || "").trim().toLowerCase() === "album" ? "album" : "playlist";
+      }
+
+      function getYtmCollectionKey(kind, id) {
+        const normalizedKind = normalizeYtmCollectionKind(kind);
+        const normalizedId = String(id || "").trim();
+        if (!normalizedId) return "";
+        return `${normalizedKind}:${normalizedId}`;
+      }
+
+      function getYtmSearchCollections(payload) {
+        const root = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+        const albums = Array.isArray(root.albums) ? root.albums : [];
+        const playlists = Array.isArray(root.playlists) ? root.playlists : [];
+        const normalizeRow = (raw, defaultKind) => {
+          const kind = normalizeYtmCollectionKind(raw && raw.kind || defaultKind);
+          const id = String(raw && raw.id || "").trim();
+          if (!id) return null;
+          const title = String(raw && raw.title || "").trim() || (kind === "album" ? "Альбом" : "Плейлист");
+          const sourceUrl = String(raw && raw.sourceUrl || "").trim()
+            || (kind === "album" ? `https://music.youtube.com/browse/${id}` : `https://music.youtube.com/playlist?list=${id}`);
+          return {
+            kind,
+            id,
+            title,
+            coverUrl: String(raw && raw.coverUrl || "").trim(),
+            artists: Array.isArray(raw && raw.artists) ? raw.artists : [],
+            owner: String(raw && raw.owner || "").trim(),
+            year: Number(raw && raw.year || 0),
+            trackCount: Math.max(0, Number(raw && raw.trackCount || 0)),
+            sourceUrl
+          };
+        };
+
+        const seen = new Set();
+        const out = [];
+        albums.forEach((item) => {
+          const row = normalizeRow(item, "album");
+          if (!row) return;
+          const key = getYtmCollectionKey(row.kind, row.id);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          out.push(row);
+        });
+        playlists.forEach((item) => {
+          const row = normalizeRow(item, "playlist");
+          if (!row) return;
+          const key = getYtmCollectionKey(row.kind, row.id);
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          out.push(row);
+        });
+        return out;
+      }
+
+      function getYtmCollectionMetaText(item) {
+        const parts = [];
+        const kindLabel = normalizeYtmCollectionKind(item && item.kind) === "album" ? "Альбом" : "Плейлист";
+        parts.push(kindLabel);
+        const count = Math.max(
+          0,
+          Number(item && item.trackCount || 0),
+          Number(item && item.loadedTrackCount || 0)
+        );
+        if (count > 0) parts.push(`${count} треков`);
+        const year = Number(item && item.year || 0);
+        if (year > 0) parts.push(String(year));
+        const owner = String(item && item.owner || "").trim();
+        const artists = Array.isArray(item && item.artists) ? item.artists.filter(Boolean) : [];
+        const byline = owner || (artists.length ? artists.join(", ") : "");
+        if (byline) parts.push(byline);
+        return parts.join(" • ");
+      }
+
+      function getYtmCollectionStateEntry(collection, { create = false } = {}) {
+        const key = getYtmCollectionKey(collection && collection.kind, collection && collection.id);
+        if (!key) return { key: "", entry: null };
+        if (!state.ymCollectionStates || typeof state.ymCollectionStates !== "object") {
+          state.ymCollectionStates = {};
+        }
+        let entry = state.ymCollectionStates[key];
+        if (!entry && create) {
+          entry = {
+            loading: false,
+            loaded: false,
+            error: "",
+            tracks: []
+          };
+          state.ymCollectionStates[key] = entry;
+        }
+        return { key, entry: entry || null };
+      }
+
+      function mapYtmCollectionTracks(rawTracks = []) {
+        const list = Array.isArray(rawTracks) ? rawTracks : [];
+        const out = [];
+        const seen = new Set();
+        list.forEach((raw) => {
+          const mapped = toTrackModel({ ...raw, provider: "youtube" }, "search");
+          const key = `${normalizeTrackProvider(mapped.provider)}:${String(mapped.trackId || "")}`;
+          if (!mapped.trackId || seen.has(key)) return;
+          seen.add(key);
+          out.push(mapped);
+        });
+        return out;
+      }
+
+      async function toggleYtmCollection(kind, id) {
+        const collectionKey = getYtmCollectionKey(kind, id);
+        if (!collectionKey) return;
+        const nextOpen = state.ymCollectionOpenKey !== collectionKey;
+        state.ymCollectionOpenKey = nextOpen ? collectionKey : "";
+        if (!nextOpen) {
+          renderSearchList();
+          return;
+        }
+
+        const collection = (Array.isArray(state.ymSearchCollections) ? state.ymSearchCollections : [])
+          .find((item) => getYtmCollectionKey(item && item.kind, item && item.id) === collectionKey);
+        if (!collection) {
+          renderSearchList();
+          return;
+        }
+        const { entry } = getYtmCollectionStateEntry(collection, { create: true });
+        if (!entry || entry.loading || entry.loaded) {
+          renderSearchList();
+          return;
+        }
+
+        entry.loading = true;
+        entry.error = "";
+        const requestVersion = state.ymSearchDataVersion;
+        renderSearchList();
+        try {
+          const payload = await ytmRequest("/collection", {
+            kind: normalizeYtmCollectionKind(collection.kind),
+            id: collection.id,
+            limit: 300
+          });
+          if (requestVersion !== state.ymSearchDataVersion) return;
+          const root = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+          entry.tracks = mapYtmCollectionTracks(root.tracks);
+          entry.tracks.forEach((track) => {
+            if (!track || typeof track !== "object") return;
+            track._searchCollectionKey = collectionKey;
+          });
+          const loadedCount = Math.max(0, Number(root.total || entry.tracks.length || 0));
+          collection.loadedTrackCount = loadedCount;
+          collection.trackCount = Math.max(Number(collection.trackCount || 0), loadedCount);
+          entry.renderedCount = Math.min(
+            entry.tracks.length,
+            Math.max(10, Number(entry.renderedCount || 0))
+          );
+          entry.loading = false;
+          entry.loaded = true;
+          entry.error = "";
+        } catch (error) {
+          if (requestVersion !== state.ymSearchDataVersion) return;
+          entry.loading = false;
+          entry.loaded = true;
+          entry.error = String((error && error.message) || error || "Не удалось загрузить треки");
+          entry.tracks = [];
+        }
+        renderSearchList();
+      }
+
+      function createYtmCollectionItem(collection) {
+        const { key, entry } = getYtmCollectionStateEntry(collection, { create: true });
+        const isOpen = Boolean(key && state.ymCollectionOpenKey === key);
+        const li = document.createElement("li");
+        li.className = "ytm-collection-item";
+        li.dataset.collectionKey = key;
+
+        const coverUrl = pickBestCoverUrl(collection && collection.coverUrl || FALLBACK_COVER);
+        const sourceUrl = String(collection && collection.sourceUrl || "").trim();
+        const title = escapeHtml(String(collection && collection.title || "Подборка"));
+        const meta = escapeHtml(getYtmCollectionMetaText(collection));
+        const toggleLabel = isOpen ? "Скрыть" : "Треки";
+        li.innerHTML = `
+          <div class="ytm-collection-head">
+            <img class="ytm-collection-cover" src="${coverUrl}" alt="collection cover" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <div class="ytm-collection-info">
+              <h4 class="ytm-collection-title">${title}</h4>
+              <p class="ytm-collection-meta">${meta}</p>
+            </div>
+            <div class="ytm-collection-actions">
+              <button
+                class="ytm-collection-toggle"
+                type="button"
+                data-action="toggle-ytm-collection"
+                data-kind="${escapeHtml(collection && collection.kind || "playlist")}"
+                data-id="${escapeHtml(collection && collection.id || "")}"
+              >${toggleLabel}</button>
+              ${sourceUrl ? `
+                <a class="icon-btn" href="${sourceUrl}" target="_blank" rel="noopener" title="Открыть в YouTube Music">
+                  <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"></path></svg>
+                </a>
+              ` : ""}
+            </div>
+          </div>
+        `;
+
+        const coverImage = li.querySelector(".ytm-collection-cover");
+        if (coverImage) bindImageFallback(coverImage);
+
+        if (!isOpen || !entry) return li;
+        const body = document.createElement("div");
+        body.className = "ytm-collection-body";
+        if (entry.loading) {
+          body.innerHTML = '<div class="empty ym-search-notice ym-search-notice--loading">Загружаю треки</div>';
+          li.appendChild(body);
+          return li;
+        }
+        if (entry.error) {
+          body.innerHTML = `<div class="empty ym-search-notice ym-search-notice--warn" data-icon="⚠">${escapeHtml(entry.error)}</div>`;
+          li.appendChild(body);
+          return li;
+        }
+        if (!Array.isArray(entry.tracks) || !entry.tracks.length) {
+          body.innerHTML = '<div class="empty ym-search-notice ym-search-notice--warn" data-icon="⚠">В этой подборке нет доступных треков.</div>';
+          li.appendChild(body);
+          return li;
+        }
+        const chunkSize = 10;
+        if (!Number.isFinite(Number(entry.renderedCount)) || Number(entry.renderedCount) <= 0) {
+          entry.renderedCount = Math.min(entry.tracks.length, chunkSize);
+        } else {
+          entry.renderedCount = Math.max(0, Math.min(entry.tracks.length, Number(entry.renderedCount)));
+        }
+        const scrollWrap = document.createElement("div");
+        scrollWrap.className = "ytm-collection-tracks-scroll";
+        const tracksWrap = document.createElement("ul");
+        tracksWrap.className = "ytm-collection-tracks";
+        const appendTracksChunk = (fromIndex, toIndex) => {
+          for (let i = fromIndex; i < toIndex; i += 1) {
+            const track = entry.tracks[i];
+            if (!track) continue;
+            tracksWrap.appendChild(createTrackItem(track, "search", { searchCollectionKey: key }));
+          }
+        };
+        appendTracksChunk(0, entry.renderedCount);
+        scrollWrap.appendChild(tracksWrap);
+        const updateMoreHint = () => {
+          const existing = scrollWrap.querySelector(".ytm-collection-more");
+          if (entry.renderedCount >= entry.tracks.length) {
+            if (existing) existing.remove();
+            return;
+          }
+          if (existing) return;
+          const hint = document.createElement("div");
+          hint.className = "ytm-collection-more";
+          hint.textContent = "Прокрутите ниже, чтобы загрузить еще треки";
+          scrollWrap.appendChild(hint);
+        };
+        updateMoreHint();
+        let loadingChunk = false;
+        scrollWrap.addEventListener("scroll", () => {
+          if (loadingChunk) return;
+          if (entry.renderedCount >= entry.tracks.length) return;
+          const bottomGap = scrollWrap.scrollHeight - (scrollWrap.scrollTop + scrollWrap.clientHeight);
+          if (bottomGap > 90) return;
+          loadingChunk = true;
+          requestAnimationFrame(() => {
+            const prev = entry.renderedCount;
+            entry.renderedCount = Math.min(entry.tracks.length, prev + chunkSize);
+            appendTracksChunk(prev, entry.renderedCount);
+            updateMoreHint();
+            loadingChunk = false;
+          });
+        }, { passive: true });
+        body.appendChild(scrollWrap);
+        li.appendChild(body);
+        return li;
+      }
+
+      function createYtmArtistItem(artist) {
+        const li = document.createElement("li");
+        li.className = "ytm-artist-item";
+        const title = escapeHtml(String(artist && artist.title || "Исполнитель"));
+        const subscribers = String(artist && artist.subscribers || "").trim();
+        const meta = subscribers ? `Исполнитель • ${escapeHtml(subscribers)}` : "Исполнитель";
+        const sourceUrl = String(artist && artist.sourceUrl || "").trim();
+        const coverUrl = pickBestCoverUrl(artist && artist.coverUrl || FALLBACK_COVER);
+
+        li.innerHTML = `
+          <img class="ytm-artist-cover" src="${coverUrl}" alt="artist cover" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+          <div>
+            <h4 class="ytm-artist-title">${title}</h4>
+            <p class="ytm-artist-meta">${meta}</p>
+          </div>
+          ${sourceUrl ? `
+            <a class="icon-btn" href="${sourceUrl}" target="_blank" rel="noopener" title="Открыть исполнителя в YouTube Music">
+              <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"></path></svg>
+            </a>
+          ` : '<span></span>'}
+        `;
+
+        const coverImage = li.querySelector(".ytm-artist-cover");
+        if (coverImage) bindImageFallback(coverImage);
+        return li;
+      }
+
       function normalizeYmSearchSource(value) {
         return String(value || "").trim().toLowerCase() === "youtube" ? "youtube" : "yandex";
       }
@@ -6738,6 +8025,32 @@
         };
       }
 
+      function updateYmSearchCriterionUi() {
+        const criterion = normalizeYmSearchCriterion(state.ymSearchCriterion);
+        const isYoutube = normalizeYmSearchSource(state.ymSearchSource) === "youtube";
+        if (els.ymSearchCriteria) {
+          els.ymSearchCriteria.classList.toggle("is-visible", isYoutube);
+        }
+        const map = [
+          [els.ymCriteriaAllBtn, "all"],
+          [els.ymCriteriaTracksBtn, "tracks"],
+          [els.ymCriteriaAlbumsBtn, "albums"],
+          [els.ymCriteriaPlaylistsBtn, "playlists"]
+        ];
+        map.forEach(([button, value]) => {
+          if (!button) return;
+          const active = value === criterion;
+          button.classList.toggle("is-active", active);
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+
+      function updateYmSearchLoadingUi() {
+        if (!els.ymSearchLoading) return;
+        const query = String(state.ymSearchQuery || "").trim();
+        els.ymSearchLoading.hidden = !(state.ymSearchLoading && query);
+      }
+
       function updateYmSearchSourceUi() {
         const source = normalizeYmSearchSource(state.ymSearchSource);
         const yandexActive = source === "yandex";
@@ -6752,6 +8065,41 @@
         if (els.ymSearchPrompt) {
           els.ymSearchPrompt.textContent = getYmSearchSourceMeta(source).promptText;
         }
+        updateYmSearchLoadingUi();
+        updateYmSearchCriterionUi();
+      }
+
+      function setYmSearchCriterion(criterion, { refresh = true } = {}) {
+        const normalized = normalizeYmSearchCriterion(criterion);
+        if (state.ymSearchCriterion === normalized) {
+          updateYmSearchCriterionUi();
+          return;
+        }
+        state.ymSearchCriterion = normalized;
+        if (normalized !== "all" && normalized !== "albums" && normalized !== "playlists") {
+          state.ymCollectionOpenKey = "";
+        }
+        updateYmSearchCriterionUi();
+        if (!refresh) {
+          renderSearchList();
+          return;
+        }
+        if (normalizeYmSearchSource(state.ymSearchSource) !== "youtube") {
+          renderSearchList();
+          return;
+        }
+        if (state.ymSearchDebounceTimer) {
+          clearTimeout(state.ymSearchDebounceTimer);
+          state.ymSearchDebounceTimer = null;
+        }
+        const query = String((els.ymSearchInput && els.ymSearchInput.value) || "").trim();
+        state.ymSearchQuery = query;
+        const parsed = parseTrackUrl(query);
+        if (!query || (parsed && parsed.trackId)) {
+          renderSearchList();
+          return;
+        }
+        executeYmTrackSearch(query);
       }
 
       function setYmSearchSource(source, { refresh = true } = {}) {
@@ -6828,11 +8176,15 @@
         try {
           let tracks = [];
           let yandexPayload = null;
+          let ytmPayload = null;
           if (source === "youtube") {
-            const ytmPayload = await ytmRequest("/search", {
+            const criterion = normalizeYmSearchCriterion(state.ymSearchCriterion);
+            ytmPayload = await ytmRequest("/search", {
               q: normalized,
               page: 0,
-              limit: 40
+              limit: 40,
+              include_collections: 1,
+              mode: criterion
             });
             tracks = mapYtmSearchTracks(getYtmSearchResults(ytmPayload));
           } else {
@@ -6850,6 +8202,8 @@
           state.ymSearchResults = ranked.tracks;
           state.ymSearchRankMode = ranked.mode;
           if (source === "yandex") {
+            state.ymSearchArtists = [];
+            state.ymSearchCollections = [];
             const totalRaw = Number(((((yandexPayload || {}).result || {}).tracks || {}).total) || 0);
             state.ymSearchTotal = Number.isFinite(totalRaw) && totalRaw > 0
               ? totalRaw
@@ -6857,7 +8211,18 @@
             state.ymSearchPage = 0;
             state.ymSearchHasMore = state.ymSearchTotal > ranked.tracks.length && ranked.tracks.length > 0;
           } else {
-            state.ymSearchTotal = ranked.tracks.length;
+            const criterion = normalizeYmSearchCriterion(state.ymSearchCriterion);
+            state.ymSearchCollections = getYtmSearchCollections(ytmPayload);
+            state.ymSearchArtists = [];
+            if (criterion === "albums") {
+              state.ymSearchTotal = state.ymSearchCollections.filter((item) => normalizeYtmCollectionKind(item && item.kind) === "album").length;
+            } else if (criterion === "playlists") {
+              state.ymSearchTotal = state.ymSearchCollections.filter((item) => normalizeYtmCollectionKind(item && item.kind) === "playlist").length;
+            } else if (criterion === "all") {
+              state.ymSearchTotal = ranked.tracks.length + state.ymSearchCollections.length;
+            } else {
+              state.ymSearchTotal = ranked.tracks.length;
+            }
             state.ymSearchPage = 0;
             state.ymSearchHasMore = false;
           }
@@ -7788,6 +9153,26 @@
         renderSeekPreview(0, 0, { updateLabels: true });
         state.activeSource = source;
         state.currentTrack = track;
+        if (source === "search") {
+          const requestedCollectionKey = String(
+            (options && options.searchCollectionKey)
+            || (track && track._searchCollectionKey)
+            || ""
+          ).trim();
+          const hasScopedList = requestedCollectionKey
+            && state.ymCollectionStates
+            && typeof state.ymCollectionStates === "object"
+            && state.ymCollectionStates[requestedCollectionKey]
+            && Array.isArray(state.ymCollectionStates[requestedCollectionKey].tracks)
+            && state.ymCollectionStates[requestedCollectionKey].tracks.length;
+          if (hasScopedList) {
+            setSearchPlaybackScopeCollection(requestedCollectionKey);
+          } else {
+            resetSearchPlaybackScope();
+          }
+        } else {
+          resetSearchPlaybackScope();
+        }
         state.repeatOnceConsumed = false;
         state.currentStreamMeta = null;
         updateCurrentTrackUI(track);
@@ -8484,6 +9869,12 @@
           if (event.key === "Escape" && state.fullscreenOpen) {
             setFullscreenOpen(false);
           }
+          if (event.key === "Escape" && state.trackDeleteModalOpen) {
+            setTrackDeleteModalOpen(false);
+          }
+          if (event.key === "Escape" && state.mobileLibraryOpen) {
+            closeMobileLibrarySheet();
+          }
           if (event.key === "Escape" && state.addHelpOpen) {
             setAddHelpOpen(false);
           }
@@ -8501,6 +9892,7 @@
           }
           updateFullscreenEntryAvailability();
           applyDesktopLayoutMode({ animate: false });
+          syncMobileLibraryUi();
           updateCoverPeekUI();
           if (els.playlistSelectorRoot && els.playlistSelectorRoot.classList.contains("is-open")) {
             updatePlaylistMenuPosition();
@@ -8515,6 +9907,47 @@
           els.desktopLayoutToggleBtn.addEventListener("click", () => {
             if (!isDesktopViewport()) return;
             setDesktopSplitPreferred(!state.desktopSplitPreferred, { animate: true, persist: true });
+          });
+        }
+        if (els.mobileLibraryToggleBtn) {
+          els.mobileLibraryToggleBtn.addEventListener("click", () => {
+            if (state.mobileLibraryOpen) {
+              closeMobileLibrarySheet();
+            } else {
+              setMobileLibraryOpen(true);
+            }
+          });
+        }
+        const mobileSheetDragHandle = els.mobileLibrarySheet
+          ? (els.mobileLibrarySheet.querySelector(".mobile-library-head") || els.mobileLibraryGrabber)
+          : els.mobileLibraryGrabber;
+        if (mobileSheetDragHandle) {
+          mobileSheetDragHandle.addEventListener("touchstart", (event) => {
+            beginMobileSheetDrag(event);
+          }, { passive: true });
+          mobileSheetDragHandle.addEventListener("mousedown", (event) => {
+            beginMobileSheetDrag(event);
+          });
+
+          window.addEventListener("touchmove", (event) => {
+            moveMobileSheetDrag(event);
+          }, { passive: false });
+          window.addEventListener("touchend", () => {
+            endMobileSheetDrag();
+          });
+          window.addEventListener("touchcancel", () => {
+            endMobileSheetDrag();
+          });
+          window.addEventListener("mousemove", (event) => {
+            moveMobileSheetDrag(event);
+          });
+          window.addEventListener("mouseup", () => {
+            endMobileSheetDrag();
+          });
+        }
+        if (els.mobileLibraryBackdrop) {
+          els.mobileLibraryBackdrop.addEventListener("click", () => {
+            closeMobileLibrarySheet();
           });
         }
         if (els.playlistSelectorBtn) {
@@ -8589,6 +10022,24 @@
             setPlaylistCreateModalOpen(false);
           });
         }
+        if (els.trackDeleteCancelBtn) {
+          els.trackDeleteCancelBtn.addEventListener("click", () => {
+            setTrackDeleteModalOpen(false);
+          });
+        }
+        if (els.trackDeleteConfirmBtn) {
+          els.trackDeleteConfirmBtn.addEventListener("click", () => {
+            confirmTrackDeleteFromModal().catch((error) => {
+              toast(`Не удалось удалить трек: ${error.message || error}`, "err");
+            });
+          });
+        }
+        if (els.trackDeleteModalBackdrop) {
+          els.trackDeleteModalBackdrop.addEventListener("click", (event) => {
+            if (event.target !== els.trackDeleteModalBackdrop) return;
+            setTrackDeleteModalOpen(false);
+          });
+        }
         if (els.playlistNameInput) {
           els.playlistNameInput.addEventListener("input", () => {
             if (!state.playlistDeleteConfirmPending) return;
@@ -8660,6 +10111,17 @@
           }, { passive: true });
         }
         if (els.ymSearchList) {
+          els.ymSearchList.addEventListener("click", (event) => {
+            const toggleBtn = event.target && event.target.closest
+              ? event.target.closest("[data-action='toggle-ytm-collection']")
+              : null;
+            if (!toggleBtn) return;
+            event.preventDefault();
+            const kind = String(toggleBtn.dataset.kind || "").trim();
+            const id = String(toggleBtn.dataset.id || "").trim();
+            if (!id) return;
+            toggleYtmCollection(kind, id).catch(() => {});
+          });
           let ymLazyScrollTicking = false;
           els.ymSearchList.addEventListener("scroll", () => {
             if (ymLazyScrollTicking) return;
@@ -8683,6 +10145,17 @@
         if (els.ymSourceYoutubeBtn) {
           els.ymSourceYoutubeBtn.addEventListener("click", () => {
             setYmSearchSource("youtube");
+          });
+        }
+        if (els.ymSearchCriteria) {
+          els.ymSearchCriteria.addEventListener("click", (event) => {
+            const button = event.target && event.target.closest
+              ? event.target.closest("[data-criterion]")
+              : null;
+            if (!button) return;
+            const criterion = String(button.dataset.criterion || "").trim();
+            if (!criterion) return;
+            setYmSearchCriterion(criterion);
           });
         }
         if (els.ymSearchInput) {
@@ -9486,6 +10959,7 @@
         updatePlaylistSelectorUi();
         renderPlaylistSelectorMenu();
         setPlaylistCreateModalOpen(false);
+        setTrackDeleteModalOpen(false);
         applyDesktopLayoutMode({ animate: false });
         setVolume(els.audio.volume, { persist: false, fromAudioEvent: true });
 
@@ -9498,6 +10972,7 @@
         setFullscreenOpen(false);
         setAddHelpOpen(false);
         setActiveToolPanel("");
+        syncMobileLibraryUi();
         updateYmSearchSourceUi();
         renderSharedList();
         renderSearchList();
