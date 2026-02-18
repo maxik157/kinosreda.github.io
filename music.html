@@ -4969,17 +4969,14 @@
           } catch (_) {}
         };
 
-        let queue = state.activeSource === "search"
-          ? (Array.isArray(state.ymSearchResults) ? state.ymSearchResults : [])
-          : (Array.isArray(state.sharedTracks) ? state.sharedTracks : []);
-        if (!queue.length) {
-          queue = getPlaybackListBySource(state.activeSource);
-        }
         const hasTrack = Boolean(state.currentTrack && state.currentTrack.trackId);
-        const hasQueueControls = queue.length > 1;
 
-        safeSet("previoustrack", (hasTrack && hasQueueControls) ? () => { playPrev(); } : null);
-        safeSet("nexttrack", (hasTrack && hasQueueControls) ? () => { playNext(); } : null);
+        safeSet("previoustrack", hasTrack ? () => {
+          playPrev({ userGesture: true }).catch(() => {});
+        } : null);
+        safeSet("nexttrack", hasTrack ? () => {
+          playNext({ userGesture: true }).catch(() => {});
+        } : null);
       }
 
       function getVisibleTracks() {
