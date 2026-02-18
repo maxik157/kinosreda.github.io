@@ -50,6 +50,8 @@
       --ok: #8df8af;
       --shadow: 0 24px 54px rgba(0, 0, 0, 0.45);
       --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
+      --mobile-viewport-offset: 0px;
+      --mobile-bottom-guard: calc(var(--mobile-safe-bottom) + var(--mobile-viewport-offset));
     }
 
     * {
@@ -2305,13 +2307,13 @@
       .page {
         min-height: 100svh;
         min-height: 100dvh;
-        padding-bottom: calc(22px + var(--mobile-safe-bottom));
+        padding-bottom: calc(88px + var(--mobile-bottom-guard));
       }
       .layout {
         grid-template-columns: 1fr;
       }
       .panel-body {
-        padding: 12px 8px calc(14px + var(--mobile-safe-bottom));
+        padding: 12px 8px calc(24px + var(--mobile-bottom-guard));
       }
       .panel-body.is-mobile-library-open {
         padding: 0;
@@ -2323,6 +2325,7 @@
         width: 100%;
         height: 42px;
         margin-top: 10px;
+        margin-bottom: calc(8px + var(--mobile-bottom-guard));
         border: 1px solid rgba(245, 158, 11, 0.34);
         border-radius: 12px;
         background: linear-gradient(150deg, rgba(25, 18, 10, 0.9), rgba(14, 10, 6, 0.82));
@@ -2952,7 +2955,7 @@
 
     @media (max-width: 680px) {
       .page {
-        padding: 12px 8px calc(16px + var(--mobile-safe-bottom));
+        padding: 12px 8px calc(88px + var(--mobile-bottom-guard));
         min-height: 100svh;
         min-height: 100dvh;
       }
@@ -3681,7 +3684,113 @@
         measurementId: "G-MGW6GF67H3"
       };
 
-      const REALTIME_HTTP_BASE = "https://realtime.xn--80ahcljthqi.xn--p1ai";
+      const REALTIME_HTTP_BASE_FALLBACK = "https://realtime.xn--80ahcljthqi.xn--p1ai";
+      const REALTIME_HTTP_BASE_UNICODE_FALLBACK = "https://realtime.киносреда.рф";
+      const REALTIME_HTTP_BASE_STORAGE_KEY = "KINOSREDA_REALTIME_BASE";
+
+      function isLoopbackOrPrivateHost(hostname) {
+        const host = String(hostname || "").trim().toLowerCase();
+        if (!host) return true;
+        if (host === "localhost" || host === "::1" || host === "[::1]") return true;
+        if (/^127(?:\.\d{1,3}){3}$/.test(host)) return true;
+        if (/^0(?:\.\d{1,3}){3}$/.test(host)) return true;
+        if (/^10(?:\.\d{1,3}){3}$/.test(host)) return true;
+        if (/^192\.168(?:\.\d{1,3}){2}$/.test(host)) return true;
+        if (/^169\.254(?:\.\d{1,3}){2}$/.test(host)) return true;
+        const m = host.match(/^172\.(\d{1,3})(?:\.\d{1,3}){2}$/);
+        if (m) {
+          const second = Number(m[1]);
+          if (Number.isFinite(second) && second >= 16 && second <= 31) return true;
+        }
+        return false;
+      }
+
+      function normalizeRealtimeBase(rawValue, options = {}) {
+        const allowLocal = Boolean(options && options.allowLocal);
+        const value = String(rawValue || "").trim();
+        if (!value) return "";
+        try {
+          const parsed = new URL(value);
+          if (!/^https?:$/i.test(parsed.protocol)) return "";
+          if (!allowLocal && isLoopbackOrPrivateHost(parsed.hostname)) return "";
+          parsed.hash = "";
+          parsed.search = "";
+          parsed.pathname = "";
+          return parsed.toString().replace(/\/+$/, "");
+        } catch (_) {
+          return "";
+        }
+      }
+
+      function resolveRealtimeHttpBase() {
+        try {
+          const fromQuery = normalizeRealtimeBase(
+            new URLSearchParams(window.location.search).get("realtime_base"),
+            { allowLocal: true }
+          );
+          if (fromQuery) return fromQuery;
+        } catch (_) {}
+
+        try {
+          const rawFromStorage = localStorage.getItem(REALTIME_HTTP_BASE_STORAGE_KEY);
+          const fromStorage = normalizeRealtimeBase(rawFromStorage);
+          if (fromStorage) return fromStorage;
+          if (rawFromStorage) {
+            localStorage.removeItem(REALTIME_HTTP_BASE_STORAGE_KEY);
+          }
+        } catch (_) {}
+
+        try {
+          const host = String(window.location.hostname || "").toLowerCase();
+          if (host.startsWith("realtime.")) {
+            const fromOrigin = normalizeRealtimeBase(window.location.origin);
+            if (fromOrigin) return fromOrigin;
+          }
+        } catch (_) {}
+
+        return REALTIME_HTTP_BASE_FALLBACK;
+      }
+
+      function resolveRealtimeHttpBaseCandidates(primaryBase = "") {
+        const out = [];
+        const seen = new Set();
+        const add = (value, options = {}) => {
+          const normalized = normalizeRealtimeBase(value, options);
+          if (!normalized || seen.has(normalized)) return;
+          seen.add(normalized);
+          out.push(normalized);
+        };
+
+        add(primaryBase);
+
+        try {
+          add(new URLSearchParams(window.location.search).get("realtime_base"), { allowLocal: true });
+        } catch (_) {}
+
+        try {
+          add(localStorage.getItem(REALTIME_HTTP_BASE_STORAGE_KEY));
+        } catch (_) {}
+
+        try {
+          const host = String(window.location.hostname || "").toLowerCase();
+          if (host.startsWith("realtime.")) {
+            add(window.location.origin);
+          } else if (host && host !== "localhost" && !/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) {
+            add(`https://realtime.${host}`);
+            if (host.startsWith("www.")) add(`https://realtime.${host.slice(4)}`);
+          }
+        } catch (_) {}
+
+        add(REALTIME_HTTP_BASE_UNICODE_FALLBACK);
+        add(REALTIME_HTTP_BASE_FALLBACK);
+
+        if (!out.length) add(REALTIME_HTTP_BASE_FALLBACK);
+        return out;
+      }
+
+      const REALTIME_HTTP_BASE = resolveRealtimeHttpBase();
+      const REALTIME_HTTP_BASE_CANDIDATES = resolveRealtimeHttpBaseCandidates(REALTIME_HTTP_BASE);
+      let realtimeHttpBaseActive = REALTIME_HTTP_BASE_CANDIDATES[0] || REALTIME_HTTP_BASE;
       const YANDEX_PROXY_BASE = `${REALTIME_HTTP_BASE}/yandex-music`;
       const YANDEX_RESOLVE_ENDPOINT = `${REALTIME_HTTP_BASE}/ym-resolve-download`;
       const YANDEX_TRACK_LINK_ENDPOINT = `${REALTIME_HTTP_BASE}/ym-track-link`;
@@ -4163,8 +4272,10 @@
 
       async function loadOAuthConfig() {
         try {
-          const response = await fetch(YANDEX_OAUTH_CONFIG_ENDPOINT, { headers: { Accept: "application/json" } });
-          const payload = await parseYandexPayload(response);
+          const payload = await fetchRealtimeApiPayload("", "/yandex-oauth/config", {}, {
+            headers: { Accept: "application/json" },
+            timeoutMs: 12000
+          });
           const config = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
           state.oauthClientId = String(config.clientId || "").trim() || YANDEX_OAUTH_CLIENT_ID_FALLBACK;
           state.oauthAuthorizeUrl = String(config.authorizeUrl || "").trim() || YANDEX_OAUTH_AUTHORIZE_URL_FALLBACK;
@@ -4685,6 +4796,27 @@
 
       function isMobileViewport() {
         return window.matchMedia("(max-width: 819px)").matches;
+      }
+
+      function updateMobileViewportBottomInset() {
+        let offset = 0;
+        try {
+          if (window.visualViewport) {
+            const layoutHeight = Math.max(0, Number(window.innerHeight) || 0);
+            const viewportHeight = Math.max(0, Number(window.visualViewport.height) || 0);
+            const viewportTop = Math.max(0, Number(window.visualViewport.offsetTop) || 0);
+            if (layoutHeight > 0 && viewportHeight > 0) {
+              const keyboardLikelyOpen = viewportHeight < layoutHeight * 0.72;
+              if (!keyboardLikelyOpen) {
+                const delta = layoutHeight - (viewportHeight + viewportTop);
+                if (Number.isFinite(delta) && delta > 0) {
+                  offset = Math.min(120, Math.round(delta));
+                }
+              }
+            }
+          }
+        } catch (_) {}
+        document.documentElement.style.setProperty("--mobile-viewport-offset", `${offset}px`);
       }
 
       function resetMobileSheetDragState() {
@@ -7558,20 +7690,119 @@
         updateListPlaybackUI(els.ymSearchList, "search");
       }
 
+      const REALTIME_RETRYABLE_HTTP_STATUSES = new Set([404, 408, 425, 429, 500, 502, 503, 504, 521, 522, 523, 524]);
+
+      function getOrderedRealtimeBaseCandidates() {
+        const out = [];
+        const seen = new Set();
+        const add = (value) => {
+          const normalized = normalizeRealtimeBase(value);
+          if (!normalized || seen.has(normalized)) return;
+          seen.add(normalized);
+          out.push(normalized);
+        };
+        add(realtimeHttpBaseActive);
+        REALTIME_HTTP_BASE_CANDIDATES.forEach(add);
+        add(REALTIME_HTTP_BASE_FALLBACK);
+        return out;
+      }
+
+      function rememberWorkingRealtimeBase(base) {
+        const normalized = normalizeRealtimeBase(base);
+        if (!normalized) return;
+        realtimeHttpBaseActive = normalized;
+        if (!REALTIME_HTTP_BASE_CANDIDATES.includes(normalized)) {
+          REALTIME_HTTP_BASE_CANDIDATES.unshift(normalized);
+        }
+        try {
+          localStorage.setItem(REALTIME_HTTP_BASE_STORAGE_KEY, normalized);
+        } catch (_) {}
+      }
+
+      function isTransientFetchError(error) {
+        const name = String(error && error.name || "").toLowerCase();
+        const message = String(error && error.message || error || "").toLowerCase();
+        if (name === "aborterror") return true;
+        return message.includes("failed to fetch")
+          || message.includes("networkerror")
+          || message.includes("network request failed")
+          || message.includes("load failed")
+          || message.includes("timeout")
+          || message.includes("timed out")
+          || message.includes("ssl")
+          || message.includes("cert")
+          || message.includes("econnrefused")
+          || message.includes("econnreset")
+          || message.includes("enotfound");
+      }
+
+      async function fetchRealtimeApiPayload(apiPrefix, path, params = {}, options = {}) {
+        const headers = options && options.headers && typeof options.headers === "object"
+          ? options.headers
+          : { Accept: "application/json" };
+        const timeoutMs = Math.max(4000, Number(options && options.timeoutMs || 0) || 18000);
+        const candidates = getOrderedRealtimeBaseCandidates();
+        let lastError = null;
+
+        for (let i = 0; i < candidates.length; i += 1) {
+          const base = candidates[i];
+          const url = buildApiUrl(`${base}${apiPrefix}`, path, params);
+          let timerId = 0;
+          let controller = null;
+          try {
+            const fetchOptions = { headers };
+            if (typeof AbortController !== "undefined") {
+              controller = new AbortController();
+              timerId = window.setTimeout(() => {
+                try { controller.abort(); } catch (_) {}
+              }, timeoutMs);
+              fetchOptions.signal = controller.signal;
+            }
+
+            const response = await fetch(url.toString(), fetchOptions);
+            if (timerId) {
+              clearTimeout(timerId);
+              timerId = 0;
+            }
+
+            if (REALTIME_RETRYABLE_HTTP_STATUSES.has(Number(response.status || 0)) && i < candidates.length - 1) {
+              lastError = new Error(`HTTP ${response.status}`);
+              try {
+                if (response.body && typeof response.body.cancel === "function") {
+                  response.body.cancel();
+                }
+              } catch (_) {}
+              continue;
+            }
+
+            const payload = await parseYandexPayload(response);
+            rememberWorkingRealtimeBase(base);
+            return payload;
+          } catch (error) {
+            if (timerId) clearTimeout(timerId);
+            lastError = error instanceof Error ? error : new Error(String(error || "fetch_failed"));
+            if (i < candidates.length - 1 && isTransientFetchError(lastError)) continue;
+            throw lastError;
+          }
+        }
+
+        throw lastError || new Error("realtime_unreachable");
+      }
+
       async function yandexRequest(path, params = {}) {
-        const url = buildApiUrl(YANDEX_PROXY_BASE, path, params);
         const headers = { Accept: "application/json" };
         if (state.token) headers.Authorization = `OAuth ${state.token}`;
-        const response = await fetch(url.toString(), { headers });
-        return await parseYandexPayload(response);
+        return await fetchRealtimeApiPayload("/yandex-music", path, params, {
+          headers,
+          timeoutMs: 18000
+        });
       }
 
       async function ytmRequest(path, params = {}) {
-        const url = buildApiUrl(YTM_PROXY_BASE, path, params);
-        const response = await fetch(url.toString(), {
-          headers: { Accept: "application/json" }
+        return await fetchRealtimeApiPayload("/ytm", path, params, {
+          headers: { Accept: "application/json" },
+          timeoutMs: 24000
         });
-        return await parseYandexPayload(response);
       }
 
       async function resolveDownloadInfoUrl(downloadInfoUrl) {
@@ -7579,23 +7810,22 @@
         if (!raw) {
           return { ok: false, result: { directLink: "" } };
         }
-        const url = new URL(YANDEX_RESOLVE_ENDPOINT);
-        url.searchParams.set("url", raw);
-        const response = await fetch(url.toString(), {
-          headers: { Accept: "application/json" }
+        return await fetchRealtimeApiPayload("", "/ym-resolve-download", { url: raw }, {
+          headers: { Accept: "application/json" },
+          timeoutMs: 20000
         });
-        return await parseYandexPayload(response);
       }
 
       async function resolveTrackLinkViaServer(track) {
         if (!track || !track.trackId) return { candidates: [], bitrate: "" };
-        const url = new URL(YANDEX_TRACK_LINK_ENDPOINT);
-        url.searchParams.set("track_id", String(track.trackId));
-        if (track.albumId) url.searchParams.set("album_id", String(track.albumId));
+        const params = { track_id: String(track.trackId) };
+        if (track.albumId) params.album_id = String(track.albumId);
         const headers = { Accept: "application/json" };
         if (state.token) headers.Authorization = `OAuth ${state.token}`;
-        const response = await fetch(url.toString(), { headers });
-        const payload = await parseYandexPayload(response);
+        const payload = await fetchRealtimeApiPayload("", "/ym-track-link", params, {
+          headers,
+          timeoutMs: 20000
+        });
 
         const direct = String((payload && payload.result && payload.result.directLink) || "").trim();
         const resolvedRaw = String((payload && payload.result && payload.result.resolvedRawDirectLink) || "").trim();
@@ -8231,9 +8461,11 @@
           state.ymSearchResults.slice(0, 6).forEach((track) => {
             preloadCoverImage(track.coverUrl || "");
           });
-        } catch (_) {
+        } catch (error) {
           if (requestSeq !== state.ymSearchRequestSeq) return;
           resetYmSearchLazyState();
+          const message = String(error && error.message || "").trim();
+          setSearchNotice(message ? `Ошибка запроса: ${message}` : "Не удалось получить результаты. Проверьте соединение с realtime-сервером.", "err");
         } finally {
           if (requestSeq !== state.ymSearchRequestSeq) return;
           state.ymSearchLoading = false;
@@ -8307,12 +8539,9 @@
         try {
           const provider = normalizeTrackProvider(parsed.provider);
           if (provider === "youtube") {
-            const url = new URL(YTM_TRACK_ENDPOINT);
-            url.searchParams.set("video_id", String(parsed.trackId || ""));
-            const response = await fetch(url.toString(), {
-              headers: { Accept: "application/json" }
+            const payload = await ytmRequest("/track", {
+              video_id: String(parsed.trackId || "")
             });
-            const payload = await parseYandexPayload(response);
             const row = payload && payload.result && payload.result.track
               ? payload.result.track
               : payload && payload.result
@@ -8409,12 +8638,7 @@
           return;
         }
         track._durationRefreshPromise = (async () => {
-          const url = new URL(YTM_TRACK_ENDPOINT);
-          url.searchParams.set("video_id", videoId);
-          const response = await fetch(url.toString(), {
-            headers: { Accept: "application/json" }
-          });
-          const payload = await parseYandexPayload(response);
+          const payload = await ytmRequest("/track", { video_id: videoId });
           const row = payload && payload.result && payload.result.track
             ? payload.result.track
             : payload && payload.result
@@ -8539,12 +8763,9 @@
         }
 
         track._streamResolvePromise = (async () => {
-          const url = new URL(YTM_STREAM_ENDPOINT);
-          url.searchParams.set("video_id", String(track.trackId || ""));
-          const response = await fetch(url.toString(), {
-            headers: { Accept: "application/json" }
+          const payload = await ytmRequest("/stream", {
+            video_id: String(track.trackId || "")
           });
-          const payload = await parseYandexPayload(response);
           const result = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
           const resolvedDurationSec = Number(result.durationSec || 0);
           if (Number.isFinite(resolvedDurationSec) && resolvedDurationSec > 0) {
@@ -9886,6 +10107,7 @@
           }
         });
         window.addEventListener("resize", () => {
+          updateMobileViewportBottomInset();
           markFullscreenResizing();
           if (!isDesktopViewport() && state.fullscreenOpen) {
             setFullscreenOpen(false);
@@ -9898,6 +10120,19 @@
             updatePlaylistMenuPosition();
           }
         });
+        window.addEventListener("orientationchange", () => {
+          setTimeout(() => {
+            updateMobileViewportBottomInset();
+            syncMobileLibraryUi();
+          }, 80);
+        });
+        if (window.visualViewport) {
+          const handleViewportInsetChange = () => {
+            updateMobileViewportBottomInset();
+          };
+          window.visualViewport.addEventListener("resize", handleViewportInsetChange);
+          window.visualViewport.addEventListener("scroll", handleViewportInsetChange);
+        }
         window.addEventListener("scroll", () => {
           if (!els.playlistSelectorRoot || !els.playlistSelectorRoot.classList.contains("is-open")) return;
           updatePlaylistMenuPosition();
@@ -10972,6 +11207,7 @@
         setFullscreenOpen(false);
         setAddHelpOpen(false);
         setActiveToolPanel("");
+        updateMobileViewportBottomInset();
         syncMobileLibraryUi();
         updateYmSearchSourceUi();
         renderSharedList();
