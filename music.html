@@ -5635,12 +5635,16 @@
       }
 
       function getYoutubeOptimisticStartupTimeoutMs(userGesture) {
-        if (!userGesture) return 7000;
-        return isDesktopViewport() ? 9000 : 12000;
+        if (!userGesture) return isDesktopViewport() ? 9000 : 13000;
+        return isDesktopViewport() ? 12000 : 17000;
       }
 
       function getYoutubeResolvedStartupTimeoutMs() {
-        return isDesktopViewport() ? 9000 : 14000;
+        return isDesktopViewport() ? 13000 : 19000;
+      }
+
+      function getYoutubeEagerResolveWarmupWaitMs() {
+        return isDesktopViewport() ? 2600 : 4200;
       }
 
       function armPlayIntent(trackId, timeoutMs = 15000, minBufferedRatio = 0.02) {
@@ -6928,6 +6932,12 @@
         try {
           const parsed = new URL(normalized);
           if (parsed.pathname === "/ytm-audio-stream") {
+            const sid = String(parsed.searchParams.get("sid") || "").trim();
+            if (sid) {
+              // For sid-based URLs trust server-side token mode; forced mode often causes stale mismatch.
+              parsed.searchParams.delete("mode");
+              return parsed.toString();
+            }
             if (!parsed.searchParams.get("mode")) {
               parsed.searchParams.set("mode", String(mode || "proxy").toLowerCase() === "direct" ? "direct" : "proxy");
             }
@@ -7813,10 +7823,10 @@
         });
       }
 
-      async function ytmRequest(path, params = {}) {
+      async function ytmRequest(path, params = {}, options = {}) {
         return await fetchRealtimeApiPayload("/ytm", path, params, {
           headers: { Accept: "application/json" },
-          timeoutMs: 24000
+          timeoutMs: Math.max(4000, Number(options && options.timeoutMs || 0) || 24000)
         });
       }
 
@@ -8681,6 +8691,11 @@
       async function resolveYoutubeStream(track, options = {}) {
         const allowStaleFallback = options && options.allowStaleFallback !== false;
         const forceRefresh = Boolean(options && options.forceRefresh);
+        const preferEagerResolve = Boolean(options && options.preferEagerResolve);
+        const requestTimeoutMs = Math.max(
+          5000,
+          Number(options && options.requestTimeoutMs || 0) || (preferEagerResolve ? 15000 : 24000)
+        );
         if (!track || !track.trackId) return { url: "", bitrate: "" };
         const trackIdKey = String(track.trackId || "");
         if (!trackIdKey) return { url: "", bitrate: "" };
@@ -8771,15 +8786,28 @@
         }
         const sharedResolvePromise = youtubeStreamResolvePromises.get(trackIdKey);
         if (sharedResolvePromise) {
-          return await sharedResolvePromise;
+          const hasEagerSharedPromise = Boolean(track && track._streamResolveIsEager);
+          if (!preferEagerResolve || hasEagerSharedPromise) {
+            return await sharedResolvePromise;
+          }
         }
         if (track._streamResolvePromise) {
-          return await track._streamResolvePromise;
+          const hasEagerOwnPromise = Boolean(track && track._streamResolveIsEager);
+          if (!preferEagerResolve || hasEagerOwnPromise) {
+            return await track._streamResolvePromise;
+          }
         }
 
+        track._streamResolveIsEager = preferEagerResolve;
         track._streamResolvePromise = (async () => {
-          const payload = await ytmRequest("/stream", {
+          const streamParams = {
             video_id: String(track.trackId || "")
+          };
+          if (preferEagerResolve) {
+            streamParams.resolve = "1";
+          }
+          const payload = await ytmRequest("/stream", streamParams, {
+            timeoutMs: requestTimeoutMs
           });
           const result = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
           const resolvedDurationSec = Number(result.durationSec || 0);
@@ -8806,6 +8834,12 @@
               bitrateInKbps: Number.isFinite(bitrateKbps) && bitrateKbps > 0 ? bitrateKbps : 0
             });
           };
+
+          // Canonical by-video_id URL is stable across sid expiration and lets backend choose fastest valid token.
+          pushCandidate(buildRealtimeYtmStreamByVideoId(track.trackId, resolvedViaMode), {
+            bitrateInKbps: result.bitrateInKbps,
+            ext: result.ext
+          });
 
           if (Array.isArray(result.streamCandidates)) {
             result.streamCandidates.forEach((item) => {
@@ -8867,6 +8901,7 @@
         try {
           return await track._streamResolvePromise;
         } finally {
+          track._streamResolveIsEager = false;
           track._streamResolvePromise = null;
           youtubeStreamResolvePromises.delete(trackIdKey);
         }
@@ -9441,12 +9476,39 @@
           let lastCandidateHost = "";
           const attemptedCandidateKeys = new Set();
           const provider = requestedProvider;
+          let eagerResolvedStreamPromise = null;
+          const awaitWithTimeout = async (promise, timeoutMs = 1200) => {
+            if (!promise || typeof promise.then !== "function") return null;
+            return await Promise.race([
+              Promise.resolve(promise).catch(() => null),
+              new Promise((resolve) => {
+                setTimeout(() => resolve(null), Math.max(200, Number(timeoutMs) || 1200));
+              })
+            ]);
+          };
+          const isYtmVideoBootstrapUrl = (urlValue) => {
+            const normalized = normalizePlayableUrl(urlValue);
+            if (!normalized) return false;
+            try {
+              const parsed = new URL(normalized);
+              if (parsed.pathname !== "/ytm-audio-stream") return false;
+              const hasVideoId = Boolean(String(parsed.searchParams.get("video_id") || "").trim());
+              const hasSid = Boolean(String(parsed.searchParams.get("sid") || "").trim());
+              return hasVideoId && !hasSid;
+            } catch (_) {
+              return false;
+            }
+          };
           const buildCandidateAttemptKey = (urlValue) => {
             const normalized = normalizePlayableUrl(urlValue);
             if (!normalized) return "";
             try {
               const parsed = new URL(normalized);
               if (parsed.pathname === "/ytm-audio-stream") {
+                const sid = String(parsed.searchParams.get("sid") || "").trim();
+                if (sid) {
+                  return `${parsed.origin}${parsed.pathname}|sid=${sid}`;
+                }
                 const videoId = String(parsed.searchParams.get("video_id") || "").trim();
                 const mode = String(parsed.searchParams.get("mode") || "").trim().toLowerCase();
                 if (videoId) {
@@ -9455,6 +9517,33 @@
               }
             } catch (_) {}
             return normalized;
+          };
+          const getYoutubeStartupTimeoutForCandidate = (candidate, options = {}) => {
+            const userGesturePhase = Boolean(options && options.userGesturePhase);
+            const fallbackMs = userGesturePhase
+              ? getYoutubeOptimisticStartupTimeoutMs(userGesture)
+              : getYoutubeResolvedStartupTimeoutMs();
+            const normalized = normalizePlayableUrl(
+              typeof candidate === "string"
+                ? candidate
+                : String(candidate && candidate.url || "")
+            );
+            if (!normalized) return fallbackMs;
+            try {
+              const parsed = new URL(normalized);
+              if (parsed.pathname !== "/ytm-audio-stream") return fallbackMs;
+              const hasVideoId = Boolean(String(parsed.searchParams.get("video_id") || "").trim());
+              const hasSid = Boolean(String(parsed.searchParams.get("sid") || "").trim());
+              if (hasVideoId && !hasSid) {
+                return isDesktopViewport() ? 19000 : 26000;
+              }
+              if (hasSid) {
+                return isDesktopViewport() ? 15000 : 22000;
+              }
+              return fallbackMs;
+            } catch (_) {
+              return fallbackMs;
+            }
           };
 
           const tryStartCandidate = async (candidate, { startupTimeoutMs = 5200 } = {}) => {
@@ -9613,23 +9702,12 @@
 
           if (provider === "youtube") {
             if (userGesture) {
-              try {
-                const bootstrapUrl = normalizePlayableUrl(buildRealtimeYtmStreamByVideoId(track.trackId, "proxy"));
-                if (bootstrapUrl) {
-                  const currentSource = String(els.audio.currentSrc || els.audio.src || "").trim();
-                  if (currentSource !== bootstrapUrl) {
-                    try { els.audio.pause(); } catch (_) {}
-                    els.audio.src = bootstrapUrl;
-                    els.audio.preload = "auto";
-                  }
-                  await Promise.resolve(els.audio.play());
-                  track.streamUrl = bootstrapUrl;
-                  track.bitrate = track.bitrate || "ytm";
-                  state.currentStreamMeta = { url: bootstrapUrl, bitrate: track.bitrate || "ytm" };
-                  started = true;
-                  bootstrapStarted = true;
-                }
-              } catch (_) {}
+              eagerResolvedStreamPromise = resolveYoutubeStream(track, {
+                allowStaleFallback: false,
+                forceRefresh: forceResolveRefresh,
+                preferEagerResolve: true,
+                requestTimeoutMs: 15000
+              }).catch(() => null);
             }
 
             const optimisticCandidates = [];
@@ -9658,22 +9736,53 @@
             if (!skipOptimisticForSafari) {
               const optimisticTryList = optimisticCandidates.slice(0, 1);
               for (const candidate of optimisticTryList) {
-                const startupTimeoutMs = getYoutubeOptimisticStartupTimeoutMs(userGesture);
+                const startupTimeoutMs = getYoutubeStartupTimeoutForCandidate(candidate, { userGesturePhase: true });
                 if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
                   started = true;
                   break;
                 }
               }
             }
+
+            if (!started && userGesture && eagerResolvedStreamPromise) {
+              const eagerStream = await awaitWithTimeout(
+                eagerResolvedStreamPromise,
+                getYoutubeEagerResolveWarmupWaitMs()
+              );
+              if (!isObsoleteRequest() && eagerStream && (eagerStream.url || (Array.isArray(track._streamCandidates) && track._streamCandidates.length))) {
+                const eagerCandidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
+                  ? track._streamCandidates
+                  : (eagerStream.url ? [eagerStream] : []);
+                const eagerTryList = eagerCandidates.slice(0, isLikelySafariBrowser() ? 1 : 2);
+                for (const candidate of eagerTryList) {
+                  if (await tryStartCandidate(candidate, {
+                    startupTimeoutMs: getYoutubeStartupTimeoutForCandidate(candidate)
+                  })) {
+                    started = true;
+                    break;
+                  }
+                }
+              }
+            }
           }
 
           if (!started) {
-            const stream = provider === "youtube"
-              ? await resolveYoutubeStream(track, {
-                allowStaleFallback: false,
-                forceRefresh: forceResolveRefresh
-              })
-              : await resolveStream(track);
+            let stream;
+            if (provider === "youtube") {
+              stream = eagerResolvedStreamPromise
+                ? (await eagerResolvedStreamPromise)
+                : null;
+              if (!stream || !stream.url) {
+                stream = await resolveYoutubeStream(track, {
+                  allowStaleFallback: false,
+                  forceRefresh: forceResolveRefresh,
+                  preferEagerResolve: true,
+                  requestTimeoutMs: 15000
+                });
+              }
+            } else {
+              stream = await resolveStream(track);
+            }
             if (isObsoleteRequest()) return;
             const candidates = Array.isArray(track._streamCandidates) && track._streamCandidates.length
               ? track._streamCandidates
@@ -9683,7 +9792,9 @@
             const youtubeAttempts = isLikelySafariBrowser() ? 1 : (isDesktopViewport() ? 1 : 2);
             const resolvedTryList = candidates.slice(0, provider === "youtube" ? youtubeAttempts : MAX_PLAYBACK_CANDIDATE_ATTEMPTS);
             for (const candidate of resolvedTryList) {
-              const startupTimeoutMs = provider === "youtube" ? getYoutubeResolvedStartupTimeoutMs() : 5200;
+              const startupTimeoutMs = provider === "youtube"
+                ? getYoutubeStartupTimeoutForCandidate(candidate)
+                : 5200;
               if (await tryStartCandidate(candidate, { startupTimeoutMs })) {
                 started = true;
                 break;
@@ -9691,11 +9802,48 @@
             }
           }
 
+          if (!started && provider === "youtube" && userGesture) {
+            try {
+              const bootstrapUrl = normalizePlayableUrl(buildRealtimeYtmStreamByVideoId(track.trackId, "proxy"));
+              if (bootstrapUrl) {
+                const bootstrapCandidate = {
+                  url: bootstrapUrl,
+                  bitrate: track.bitrate || "ytm"
+                };
+                const startupTimeoutMs = getYoutubeStartupTimeoutForCandidate(bootstrapCandidate);
+                if (await tryStartCandidate(bootstrapCandidate, { startupTimeoutMs })) {
+                  track.streamUrl = bootstrapUrl;
+                  track.bitrate = track.bitrate || "ytm";
+                  state.currentStreamMeta = { url: bootstrapUrl, bitrate: track.bitrate || "ytm" };
+                  started = true;
+                  bootstrapStarted = true;
+                }
+              }
+            } catch (_) {}
+          }
+
           if (provider === "youtube" && bootstrapStarted) {
-            resolveYoutubeStream(track, { allowStaleFallback: false })
-              .then(() => {
+            const warmResolvePromise = eagerResolvedStreamPromise
+              || resolveYoutubeStream(track, {
+                allowStaleFallback: false,
+                preferEagerResolve: true,
+                requestTimeoutMs: 15000
+              }).catch(() => null);
+            warmResolvePromise
+              .then(async () => {
                 if (!state.currentTrack) return;
                 if (String(state.currentTrack.trackId || "") !== String(track.trackId || "")) return;
+                const currentSource = String(els.audio.currentSrc || els.audio.src || "").trim();
+                if (currentSource && isYtmVideoBootstrapUrl(currentSource)) {
+                  const promotedCandidate = Array.isArray(track._streamCandidates) && track._streamCandidates.length
+                    ? track._streamCandidates[0]
+                    : null;
+                  if (promotedCandidate && promotedCandidate.url) {
+                    await tryStartCandidate(promotedCandidate, {
+                      startupTimeoutMs: getYoutubeStartupTimeoutForCandidate(promotedCandidate)
+                    });
+                  }
+                }
                 updateCurrentTrackUI(state.currentTrack);
               })
               .catch(() => {});
