@@ -134,8 +134,15 @@
         html {
             scrollbar-gutter: stable;
         }
-        body { 
+        body,
+        button,
+        input,
+        select,
+        textarea,
+        option {
             font-family: 'Comfortaa', cursive; 
+        }
+        body {
             background: #000000;
             overflow-x: hidden;
             /* Always reserve vertical scrollbar space on desktop to avoid width jumps */
@@ -417,6 +424,19 @@
         .wednesday:hover { 
             transform: scale(1.1);
             z-index: 10;
+        }
+        .calendar-day-stats {
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            font-size: 8px;
+            line-height: 1;
+            font-weight: 600;
+            text-align: center;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+            pointer-events: none;
         }
         
         .modal { backdrop-filter: blur(10px); }
@@ -920,27 +940,22 @@
             scroll-margin-top: max(8rem, calc(var(--header-offset, 0px) + 1.5rem));
         }
         #beerSticky {
-            position: sticky;
-            top: var(--header-offset, 0px);
-            z-index: 120;
+            position: static;
+            top: auto;
+            z-index: 60;
             display: flow-root;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--accent-border-20);
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
-            border-radius: 0.75rem;
-            transition: box-shadow 0.25s ease, background-color 0.25s ease;
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-bottom: 1px solid var(--accent-border-10);
+            box-shadow: none;
+            border-radius: 0;
+            margin-bottom: 0.55rem;
+            padding-bottom: 0.35rem;
+            transition: border-color 0.2s ease;
         }
         #beerSticky::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: -10px;
-            height: 10px;
-            background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
-            pointer-events: none;
+            display: none;
         }
         .star-btn {
             transition: all 0.2s;
@@ -2235,13 +2250,13 @@
                 padding: 0;
             }
             .beer-table-head {
-                position: sticky;
-                top: var(--header-offset, 0px);
-                z-index: 110;
-                background: rgba(8, 10, 14, 0.96);
+                position: relative;
+                top: auto;
+                z-index: 90;
+                background: rgba(8, 10, 14, 0.75);
                 border: 1px solid var(--accent-border-10);
                 border-radius: 10px;
-                box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+                box-shadow: none;
             }
             .beer-table th,
             .beer-table td {
@@ -2788,7 +2803,7 @@
         }
         .condemn-overlay.is-active { display: flex; }
         .condemn-text {
-            font-family: 'Egyptian Bold Extended', 'Comfortaa', cursive;
+            font-family: 'Comfortaa', cursive;
             font-weight: 700;
             font-size: clamp(48px, 12vw, 180px);
             letter-spacing: 0.12em;
@@ -2803,6 +2818,129 @@
             0% { transform: translateY(-120%); opacity: 0; }
             12% { opacity: 1; }
             100% { transform: translateY(120vh); opacity: 1; }
+        }
+
+        .global-video-float {
+            position: fixed;
+            left: 50%;
+            top: 52%;
+            width: min(74vw, 980px);
+            height: min(58vh, 560px);
+            min-width: 96px;
+            min-height: 54px;
+            transform: translate(-50%, -50%) scale(0.96);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 12000;
+            border-radius: 16px;
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            background: rgba(8, 10, 14, 0.96);
+            box-shadow: 0 28px 56px rgba(0,0,0,0.62);
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+            resize: none;
+            will-change: left, top, width, height;
+            transition: opacity 0.22s ease, transform 0.22s ease;
+        }
+        .global-video-float.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .global-video-float.dragging {
+            transition: none;
+            user-select: none;
+            cursor: grabbing;
+        }
+        .global-video-float.resizing,
+        .global-video-float.dragging {
+            backdrop-filter: none;
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5);
+        }
+        .global-video-float.resizing iframe {
+            pointer-events: none;
+        }
+        .global-video-float-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.28);
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.06));
+            cursor: grab;
+            touch-action: none;
+        }
+        .global-video-float-title {
+            color: #ffe9b4;
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .global-video-float-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .global-video-float-btn {
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+            color: #f8fafc;
+            border-radius: 8px;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            font-size: 1rem;
+            line-height: 1;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .global-video-float-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245, 158, 11, 0.58);
+            background: rgba(245, 158, 11, 0.16);
+        }
+        .global-video-float-body {
+            position: relative;
+            min-height: 0;
+            background: #070b0a;
+            overflow: hidden;
+        }
+        .global-video-float-body iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+        }
+        .global-video-float-resize {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 16px;
+            height: 16px;
+            cursor: nwse-resize;
+            z-index: 5;
+            background: linear-gradient(135deg, transparent 0 50%, rgba(245, 158, 11, 0.58) 50% 100%);
+            border-top-left-radius: 6px;
+            touch-action: none;
+        }
+        @media (max-width: 780px) {
+            .global-video-float {
+                width: min(94vw, 760px);
+                height: min(46vh, 420px);
+                min-width: 96px;
+                min-height: 54px;
+            }
         }
     </style>
 </head>
@@ -3613,6 +3751,11 @@
                 <iframe title="Галерея" data-src="gallery.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
             </div>
         </div>
+        <div id="svc_video" data-page="svc_video" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Кино" data-src="video.html" loading="lazy" scrolling="yes" allow="autoplay; encrypted-media; picture-in-picture; fullscreen"></iframe>
+            </div>
+        </div>
         <div id="svc_music" data-page="svc_music" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
                 <iframe title="Музыка" data-src="music.html" loading="lazy" scrolling="yes" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
@@ -3629,6 +3772,17 @@
             </div>
         </div>
         </main>
+    </div>
+
+    <div id="globalVideoFloat" class="global-video-float" aria-hidden="true">
+        <div id="globalVideoFloatHead" class="global-video-float-head">
+            <div id="globalVideoFloatTitle" class="global-video-float-title">Киносреда • Плавающий плеер</div>
+            <div class="global-video-float-actions">
+                <button id="globalVideoFloatDockBtn" type="button" class="global-video-float-btn" aria-label="Вернуть в блок" title="Вернуть в блок">✕</button>
+            </div>
+        </div>
+        <div id="globalVideoFloatBody" class="global-video-float-body"></div>
+        <div id="globalVideoFloatResize" class="global-video-float-resize" aria-hidden="true"></div>
     </div>
 
     <!-- Modals -->
@@ -4501,6 +4655,7 @@
             svc_planning: 'svc_planning',
             svc_board: 'svc_board',
             svc_gallery: 'svc_gallery',
+            svc_video: 'svc_video',
             svc_music: 'svc_music',
             svc_snacks: 'svc_snacks',
             svc_water: 'svc_water'
@@ -4512,6 +4667,15 @@
         let activeLayoutPage = 'calendar';
         let beerRenderPending = false;
         let sidebarMusicState = null;
+        let globalVideoFloatState = {
+            visible: false,
+            url: '',
+            title: 'Киносреда • Плавающий плеер'
+        };
+        let globalVideoFloatDragState = null;
+        let globalVideoFloatDragRaf = null;
+        let globalVideoFloatResizeState = null;
+        let globalVideoFloatResizeRaf = null;
         const SIDEBAR_MINI_PLAYERS = {
             desktop: {
                 root: 'sidebarMusicMini',
@@ -4539,6 +4703,188 @@
             }
         };
         const SECTION_TO_PAGE = { calendarSection: 'calendar', backlogSection: 'backlog', beerSection: 'beer' };
+
+        function getVideoServiceFrame() {
+            return document.querySelector('#svc_video iframe');
+        }
+
+        function notifyVideoServiceFrame(type, payload = {}) {
+            const frame = getVideoServiceFrame();
+            if (!frame || !frame.contentWindow) return;
+            frame.contentWindow.postMessage({ type, payload }, '*');
+        }
+
+        function getGlobalVideoFloatRefs() {
+            return {
+                root: document.getElementById('globalVideoFloat'),
+                head: document.getElementById('globalVideoFloatHead'),
+                body: document.getElementById('globalVideoFloatBody'),
+                title: document.getElementById('globalVideoFloatTitle'),
+                dockBtn: document.getElementById('globalVideoFloatDockBtn'),
+                resize: document.getElementById('globalVideoFloatResize')
+            };
+        }
+
+        function setGlobalVideoFloatVisible(visible) {
+            const refs = getGlobalVideoFloatRefs();
+            if (!refs.root) return;
+            refs.root.classList.toggle('is-visible', !!visible);
+            refs.root.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            globalVideoFloatState.visible = !!visible;
+        }
+
+        function mountGlobalVideoFloatUrl(url) {
+            const refs = getGlobalVideoFloatRefs();
+            if (!refs.body) return;
+            refs.body.innerHTML = '';
+            const iframe = document.createElement('iframe');
+            iframe.src = String(url || '');
+            iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+            iframe.allowFullscreen = true;
+            refs.body.appendChild(iframe);
+        }
+
+        function pinGlobalVideoFloatToCurrentRect() {
+            const refs = getGlobalVideoFloatRefs();
+            if (!refs.root) return;
+            const rect = refs.root.getBoundingClientRect();
+            refs.root.style.left = `${rect.left}px`;
+            refs.root.style.top = `${rect.top}px`;
+            refs.root.style.transform = 'none';
+        }
+
+        function openGlobalVideoFloat(payload = {}) {
+            const nextUrl = String(payload.url || '').trim();
+            if (!nextUrl) return;
+            const refs = getGlobalVideoFloatRefs();
+            globalVideoFloatState.url = nextUrl;
+            globalVideoFloatState.title = String(payload.title || '').trim() || 'Киносреда • Плавающий плеер';
+            if (refs.title) refs.title.textContent = globalVideoFloatState.title;
+            mountGlobalVideoFloatUrl(nextUrl);
+            setGlobalVideoFloatVisible(true);
+            requestAnimationFrame(() => pinGlobalVideoFloatToCurrentRect());
+        }
+
+        function closeGlobalVideoFloat(options = {}) {
+            const refs = getGlobalVideoFloatRefs();
+            setGlobalVideoFloatVisible(false);
+            globalVideoFloatState.url = '';
+            if (refs.body) refs.body.innerHTML = '';
+            if (options.notifyVideoFrame !== false) {
+                notifyVideoServiceFrame('video:host-docked');
+            }
+        }
+
+        function initGlobalVideoFloat() {
+            const refs = getGlobalVideoFloatRefs();
+            if (!refs.root || refs.root.dataset.init === '1') return;
+            refs.root.dataset.init = '1';
+
+            refs.dockBtn?.addEventListener('click', () => {
+                closeGlobalVideoFloat({ notifyVideoFrame: true });
+            });
+
+            refs.head?.addEventListener('pointerdown', (event) => {
+                if (event.target.closest('button')) return;
+                const rect = refs.root.getBoundingClientRect();
+                refs.root.style.left = `${rect.left}px`;
+                refs.root.style.top = `${rect.top}px`;
+                refs.root.style.transform = 'none';
+                refs.root.classList.add('dragging');
+                globalVideoFloatDragState = {
+                    pointerId: event.pointerId,
+                    shiftX: event.clientX - rect.left,
+                    shiftY: event.clientY - rect.top
+                };
+                refs.head.setPointerCapture(event.pointerId);
+            });
+
+            refs.head?.addEventListener('pointermove', (event) => {
+                if (!globalVideoFloatDragState || globalVideoFloatDragState.pointerId !== event.pointerId) return;
+                globalVideoFloatDragState.nextClientX = event.clientX;
+                globalVideoFloatDragState.nextClientY = event.clientY;
+                if (globalVideoFloatDragRaf) return;
+                globalVideoFloatDragRaf = requestAnimationFrame(() => {
+                    globalVideoFloatDragRaf = null;
+                    if (!globalVideoFloatDragState || !refs.root) return;
+                    const rawLeft = (globalVideoFloatDragState.nextClientX ?? 0) - globalVideoFloatDragState.shiftX;
+                    const rawTop = (globalVideoFloatDragState.nextClientY ?? 0) - globalVideoFloatDragState.shiftY;
+                    const rect = refs.root.getBoundingClientRect();
+                    const maxLeft = Math.max(0, window.innerWidth - rect.width);
+                    const maxTop = Math.max(0, window.innerHeight - rect.height);
+                    refs.root.style.left = `${Math.max(0, Math.min(rawLeft, maxLeft))}px`;
+                    refs.root.style.top = `${Math.max(0, Math.min(rawTop, maxTop))}px`;
+                });
+            });
+
+            const endDrag = (event) => {
+                if (!globalVideoFloatDragState || globalVideoFloatDragState.pointerId !== event.pointerId) return;
+                globalVideoFloatDragState = null;
+                if (globalVideoFloatDragRaf) {
+                    cancelAnimationFrame(globalVideoFloatDragRaf);
+                    globalVideoFloatDragRaf = null;
+                }
+                refs.root.classList.remove('dragging');
+            };
+            refs.head?.addEventListener('pointerup', endDrag);
+            refs.head?.addEventListener('pointercancel', endDrag);
+
+            refs.resize?.addEventListener('pointerdown', (event) => {
+                if (!globalVideoFloatState.visible || !refs.root) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const rect = refs.root.getBoundingClientRect();
+                refs.root.style.left = `${rect.left}px`;
+                refs.root.style.top = `${rect.top}px`;
+                refs.root.style.transform = 'none';
+                refs.root.classList.add('resizing');
+                globalVideoFloatResizeState = {
+                    pointerId: event.pointerId,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    startW: rect.width,
+                    startH: rect.height,
+                    startLeft: rect.left,
+                    startTop: rect.top,
+                    nextX: event.clientX,
+                    nextY: event.clientY
+                };
+                refs.resize.setPointerCapture(event.pointerId);
+            });
+
+            refs.resize?.addEventListener('pointermove', (event) => {
+                if (!globalVideoFloatResizeState || globalVideoFloatResizeState.pointerId !== event.pointerId || !refs.root) return;
+                globalVideoFloatResizeState.nextX = event.clientX;
+                globalVideoFloatResizeState.nextY = event.clientY;
+                if (globalVideoFloatResizeRaf) return;
+                globalVideoFloatResizeRaf = requestAnimationFrame(() => {
+                    globalVideoFloatResizeRaf = null;
+                    if (!globalVideoFloatResizeState || !refs.root) return;
+                    const minW = 96;
+                    const minH = 54;
+                    const maxW = Math.max(minW, window.innerWidth - globalVideoFloatResizeState.startLeft);
+                    const maxH = Math.max(minH, window.innerHeight - globalVideoFloatResizeState.startTop);
+                    const dx = (globalVideoFloatResizeState.nextX ?? 0) - globalVideoFloatResizeState.startX;
+                    const dy = (globalVideoFloatResizeState.nextY ?? 0) - globalVideoFloatResizeState.startY;
+                    const nextW = Math.max(minW, Math.min(globalVideoFloatResizeState.startW + dx, maxW));
+                    const nextH = Math.max(minH, Math.min(globalVideoFloatResizeState.startH + dy, maxH));
+                    refs.root.style.width = `${nextW}px`;
+                    refs.root.style.height = `${nextH}px`;
+                });
+            });
+
+            const endResize = (event) => {
+                if (!globalVideoFloatResizeState || globalVideoFloatResizeState.pointerId !== event.pointerId || !refs.root) return;
+                globalVideoFloatResizeState = null;
+                if (globalVideoFloatResizeRaf) {
+                    cancelAnimationFrame(globalVideoFloatResizeRaf);
+                    globalVideoFloatResizeRaf = null;
+                }
+                refs.root.classList.remove('resizing');
+            };
+            refs.resize?.addEventListener('pointerup', endResize);
+            refs.resize?.addEventListener('pointercancel', endResize);
+        }
 
         function shouldProxySidebarCoverHost(hostname) {
             const host = String(hostname || '').trim().toLowerCase();
@@ -4578,6 +4924,9 @@
                 if (page && PAGE_IDS[page]) return page;
             } catch (_) {}
             return null;
+        }
+        function buildVideoServiceSrc() {
+            return `video.html?proxy_base=${encodeURIComponent(SIDEBAR_REALTIME_BASE)}`;
         }
         function getPlanningEventIdFromUrl() {
             try {
@@ -4731,6 +5080,16 @@
                 }
                 return;
             }
+            if (section.id === 'svc_video') {
+                const desired = buildVideoServiceSrc();
+                if (desired) {
+                    frame.setAttribute('data-src', desired);
+                    if (frame.getAttribute('src') !== desired) {
+                        frame.setAttribute('src', desired);
+                    }
+                }
+                return;
+            }
             if (frame.getAttribute('src')) return;
             const src = frame.getAttribute('data-src');
             if (src) frame.setAttribute('src', src);
@@ -4765,6 +5124,37 @@
                     progressFill: document.getElementById(cfg.progressFill)
                 };
             }).filter(Boolean);
+        }
+
+        function bindSidebarMiniCoverFallback(coverEl) {
+            if (!coverEl || coverEl.dataset.fallbackBound === '1') return;
+            coverEl.dataset.fallbackBound = '1';
+            coverEl.addEventListener('error', () => {
+                const currentSrc = String(coverEl.dataset.currentSrc || '').trim();
+                if (currentSrc && currentSrc !== SIDEBAR_MUSIC_FALLBACK_COVER) {
+                    coverEl.dataset.failedSrc = currentSrc;
+                }
+                if (currentSrc === SIDEBAR_MUSIC_FALLBACK_COVER) return;
+                coverEl.src = SIDEBAR_MUSIC_FALLBACK_COVER;
+                coverEl.dataset.currentSrc = SIDEBAR_MUSIC_FALLBACK_COVER;
+            });
+        }
+
+        function setSidebarMiniCoverSource(coverEl, nextSrc, options = {}) {
+            if (!coverEl) return;
+            bindSidebarMiniCoverFallback(coverEl);
+            const safeSrc = toSidebarCoverUrl(String(nextSrc || '').trim()) || SIDEBAR_MUSIC_FALLBACK_COVER;
+            const failedSrc = String(coverEl.dataset.failedSrc || '').trim();
+            const targetSrc = (failedSrc && safeSrc === failedSrc)
+                ? SIDEBAR_MUSIC_FALLBACK_COVER
+                : safeSrc;
+            if (safeSrc && failedSrc && safeSrc !== failedSrc) {
+                coverEl.dataset.failedSrc = '';
+            }
+            if (options.force || (coverEl.dataset.currentSrc || '') !== targetSrc) {
+                coverEl.src = targetSrc;
+                coverEl.dataset.currentSrc = targetSrc;
+            }
         }
 
         function setSidebarMiniPlayButtonState(button, isPlaying) {
@@ -4872,6 +5262,7 @@
                 const cover = player.root.querySelector('.sidebar-mini-cover');
                 const title = player.root.querySelector('.sidebar-mini-title');
                 const artist = player.root.querySelector('.sidebar-mini-artist');
+                setSidebarMiniCoverSource(cover, SIDEBAR_MUSIC_FALLBACK_COVER, { force: true });
                 bindJumpTarget(cover);
                 bindJumpTarget(title);
                 bindJumpTarget(artist);
@@ -4945,10 +5336,7 @@
                     player.titleText.textContent = 'Трек не выбран';
                     player.titleText.setAttribute('data-text', 'Трек не выбран');
                     player.artist.textContent = '';
-                    if (isVisible && (player.cover.dataset.currentSrc || '') !== SIDEBAR_MUSIC_FALLBACK_COVER) {
-                        player.cover.src = SIDEBAR_MUSIC_FALLBACK_COVER;
-                        player.cover.dataset.currentSrc = SIDEBAR_MUSIC_FALLBACK_COVER;
-                    }
+                    if (isVisible) setSidebarMiniCoverSource(player.cover, SIDEBAR_MUSIC_FALLBACK_COVER);
                     setSidebarMiniPlayButtonState(player.play, false);
                     player.progressFill.style.width = '0%';
                     return;
@@ -4964,10 +5352,7 @@
                     player.artist.textContent = artistText;
                     player.artist.dataset.currentText = artistText;
                 }
-                if (isVisible && (player.cover.dataset.currentSrc || '') !== cover) {
-                    player.cover.src = cover;
-                    player.cover.dataset.currentSrc = cover;
-                }
+                if (isVisible) setSidebarMiniCoverSource(player.cover, cover);
                 setSidebarMiniPlayButtonState(player.play, !!state.isPlaying);
                 player.progressFill.style.width = `${progress}%`;
                 if (!player.root.hidden) {
@@ -5053,7 +5438,7 @@
             const serviceActive = useSidebar && isServicePage;
             document.body.classList.toggle('page-service-active', serviceActive);
             document.documentElement.classList.toggle('page-service-active', serviceActive);
-            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music';
+            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music' || resolved === 'svc_video';
             const chatWrap = document.getElementById('chatBtnWrap');
             if (chatWrap) chatWrap.style.display = hideChatOnPage ? 'none' : '';
             if (hideChatOnPage && typeof toggleChat === 'function') {
@@ -5539,6 +5924,7 @@
             applySidebarMiniPlayerState();
             setTimeout(() => requestMusicStateSnapshot(), 0);
             initMobileMenu();
+            initGlobalVideoFloat();
 
             initBeerSticky();
 
@@ -5567,6 +5953,18 @@
                 }
                 if (data.type === 'music:state') {
                     handleSidebarMusicStateMessage(data.payload || data);
+                    return;
+                }
+                if (data.type === 'video:detach-player') {
+                    openGlobalVideoFloat(data.payload || {});
+                    return;
+                }
+                if (data.type === 'video:update-player') {
+                    openGlobalVideoFloat(data.payload || {});
+                    return;
+                }
+                if (data.type === 'video:dock-player') {
+                    closeGlobalVideoFloat({ notifyVideoFrame: false });
                     return;
                 }
                 if (data.type === 'profile:avatar-updated') {
@@ -5632,6 +6030,7 @@
                 { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
+                { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },
                 { href: 'music.html', icon: '🎧', label: 'Музыка', page: 'svc_music' },
                 { href: 'snacks.html', icon: '🥨', label: 'Перекусы', page: 'svc_snacks' },
                 { href: 'water.html', icon: '💧', label: 'Трекер воды', page: 'svc_water' }
@@ -6507,6 +6906,11 @@
         // Firebase Methods
         function initFirebase(config) {
             try {
+                try {
+                    if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceWebSockets === 'function') {
+                        firebase.database.INTERNAL.forceWebSockets();
+                    }
+                } catch (_) {}
                 if (!firebase.apps.length) {
                     firebase.initializeApp(config);
                 }
@@ -6715,9 +7119,9 @@
                 
                 container.innerHTML += `
                     <div class="${classes}" ${hasPanel ? `onclick="openPanel('${dateKey}')"` : ''}>
-                        <span class="text-sm font-bold">${day}</span>
+                        <span class="text-sm font-bold leading-none">${day}</span>
                         ${isBirthday ? `<span class="absolute top-0.5 right-0.5 text-xs" title="День рождения ${birthday.name}">🎂</span>` : ''}
-                        ${hasAttendees ? `<span class="text-[10px] leading-none font-semibold mt-0.5">👥${attendeeCount} 🍺${totalBeer}</span>` : ''}
+                        ${hasAttendees ? `<span class="calendar-day-stats">👥${attendeeCount}·🍺${totalBeer}</span>` : ''}
                     </div>
                 `;
             }

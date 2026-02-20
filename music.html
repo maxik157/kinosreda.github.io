@@ -51,7 +51,8 @@
       --shadow: 0 24px 54px rgba(0, 0, 0, 0.45);
       --mobile-safe-bottom: env(safe-area-inset-bottom, 0px);
       --mobile-viewport-offset: 0px;
-      --mobile-bottom-guard: calc(var(--mobile-safe-bottom) + var(--mobile-viewport-offset));
+      --mobile-bottom-extra: 0px;
+      --mobile-bottom-guard: calc(var(--mobile-safe-bottom) + var(--mobile-viewport-offset) + var(--mobile-bottom-extra));
     }
 
     * {
@@ -70,6 +71,7 @@
         linear-gradient(145deg, var(--bg-1) 0%, var(--bg-2) 52%, var(--bg-3) 100%);
       overflow-x: hidden;
       overflow-y: auto;
+      overscroll-behavior-y: none;
     }
 
     .noise::before {
@@ -1542,6 +1544,14 @@
       background: linear-gradient(150deg, rgba(252, 211, 77, 0.2), rgba(245, 158, 11, 0.14));
     }
 
+    .playlist-view-criteria {
+      width: 100%;
+      box-sizing: border-box;
+      margin: 10px 0 12px;
+      padding: 0 10px;
+      justify-content: flex-start;
+    }
+
     .ym-input-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
@@ -1650,6 +1660,17 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .ytm-collection-add {
+      border: 1px solid rgba(141, 248, 175, 0.38);
+      color: #d3f8de;
+      background: rgba(14, 22, 14, 0.72);
+    }
+
+    .ytm-collection-add:hover {
+      border-color: rgba(141, 248, 175, 0.66);
+      box-shadow: 0 8px 18px rgba(27, 69, 41, 0.34);
     }
 
     .ytm-collection-toggle {
@@ -1762,6 +1783,10 @@
       display: none;
     }
 
+    .panel-body.is-add-mode .playlist-view-criteria {
+      display: none;
+    }
+
     .oauth-row {
       margin-top: 8px;
       display: flex;
@@ -1859,6 +1884,7 @@
       min-height: 0;
       flex: 1 1 auto;
       overflow: auto;
+      overscroll-behavior-y: contain;
       padding-right: 2px;
     }
 
@@ -1945,12 +1971,17 @@
       fill: currentColor;
     }
 
+    .track-info {
+      min-width: 0;
+    }
+
     .track-info h3 {
       margin: 0 0 4px;
       font-size: 14px;
       line-height: 1.2;
-      max-height: 2.4em;
       overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .track-info p {
@@ -1958,14 +1989,18 @@
       font-size: 12px;
       color: var(--text-dim);
       line-height: 1.25;
-      max-height: 2.5em;
       overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     .track-meta-line {
       margin-top: 5px;
       color: #b99761;
       font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .track-corner-actions {
@@ -1992,6 +2027,17 @@
       justify-content: center;
       cursor: pointer;
       transition: transform 0.17s ease, border-color 0.17s ease, box-shadow 0.17s ease;
+    }
+
+    .icon-btn--compact {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+    }
+
+    .icon-btn--compact svg {
+      width: 15px;
+      height: 15px;
     }
 
     .icon-btn:hover {
@@ -2204,6 +2250,15 @@
       word-break: break-word;
     }
 
+    .track-edit-modal .playlist-modal-title {
+      font-size: 16px;
+    }
+
+    .track-edit-modal .playlist-modal-subtitle {
+      margin-top: 6px;
+      word-break: break-word;
+    }
+
     @keyframes playlist-modal-in {
       from { opacity: 0; transform: translateY(10px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
@@ -2294,9 +2349,17 @@
     }
 
     @media (max-width: 819px) {
-      body.mobile-library-open {
-        overflow: hidden;
+      :root {
+        --mobile-bottom-extra: 14px;
       }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
       body.mobile-library-open .panel,
       body.mobile-library-open .panel-body {
         overflow: visible;
@@ -2306,9 +2369,11 @@
         -webkit-backdrop-filter: none;
       }
       .page {
+        height: 100dvh;
         min-height: 100svh;
         min-height: 100dvh;
         padding-bottom: calc(132px + var(--mobile-bottom-guard));
+        overflow: hidden;
       }
       .layout {
         grid-template-columns: 1fr;
@@ -2325,7 +2390,8 @@
         padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
       }
       .panel-body.is-mobile-library-open {
-        padding: 0;
+        padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
+        overflow: visible;
       }
       .mobile-library-toggle {
         display: inline-flex;
@@ -2528,8 +2594,8 @@
         height: auto;
         max-height: none;
         min-height: 0;
-        padding-bottom: calc(12px + var(--mobile-safe-bottom));
-        scroll-padding-bottom: calc(12px + var(--mobile-safe-bottom));
+        padding-bottom: calc(12px + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
+        scroll-padding-bottom: calc(12px + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
       }
       .desktop-library-column .oauth-row {
         display: none;
@@ -2546,11 +2612,11 @@
       }
       .desktop-library-column .list {
         padding-top: 0;
-        padding-bottom: calc(28px + var(--mobile-safe-bottom));
+        padding-bottom: calc(28px + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
         gap: 10px;
         max-height: none;
         min-height: 0;
-        scroll-padding-bottom: calc(28px + var(--mobile-safe-bottom));
+        scroll-padding-bottom: calc(28px + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
         padding-inline: 0;
         border-radius: 0;
         margin: 0;
@@ -2568,7 +2634,7 @@
         height: 46px;
       }
       .desktop-library-column .track-item[data-context="shared"] .track-info {
-        padding-right: 88px;
+        padding-right: 124px;
       }
       .desktop-library-column .track-corner-actions {
         position: absolute;
@@ -2584,7 +2650,8 @@
       .desktop-library-column .track-item .track-actions [data-action="download"],
       .desktop-library-column .track-item .track-actions a.icon-btn,
       .desktop-library-column .track-item .track-actions [data-action="like"],
-      .desktop-library-column .track-item .track-actions [data-action="remove"] {
+      .desktop-library-column .track-item .track-actions [data-action="remove"],
+      .desktop-library-column .track-item .track-actions [data-action="edit"] {
         display: none !important;
       }
       .desktop-library-column .list.is-sparse,
@@ -2598,8 +2665,8 @@
       .list {
         max-height: min(68dvh, 620px);
         min-height: 170px;
-        padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom));
-        scroll-padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom));
+        padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
+        scroll-padding-bottom: calc(clamp(260px, 42dvh, 430px) + var(--mobile-safe-bottom) + var(--mobile-bottom-extra));
         -webkit-overflow-scrolling: touch;
       }
       .list.is-sparse {
@@ -2969,6 +3036,10 @@
     }
 
     @media (max-width: 680px) {
+      :root {
+        --mobile-bottom-extra: 24px;
+      }
+
       .page {
         padding: 12px 8px calc(132px + var(--mobile-bottom-guard));
         min-height: 100svh;
@@ -3562,6 +3633,11 @@
               <button id="oauthLogoutBtn" class="btn btn--ghost">Выйти</button>
             </div>
 
+            <div id="playlistViewCriteria" class="ym-search-criteria is-visible playlist-view-criteria" role="tablist" aria-label="Содержимое плейлиста">
+              <button id="playlistViewTracksBtn" class="ym-search-criteria-btn is-active" type="button" data-playlist-view="tracks" aria-pressed="true">Треки</button>
+              <button id="playlistViewAlbumsBtn" class="ym-search-criteria-btn" type="button" data-playlist-view="albums" aria-pressed="false">Альбомы</button>
+            </div>
+
             <ul id="sharedList" class="list"></ul>
           </div>
         </div>
@@ -3679,6 +3755,25 @@
       <div class="playlist-modal-actions">
         <button id="trackDeleteCancelBtn" class="btn btn--ghost" type="button">Отмена</button>
         <button id="trackDeleteConfirmBtn" class="btn btn--danger" type="button">Удалить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="trackEditModalBackdrop" class="playlist-modal-backdrop" hidden>
+    <div id="trackEditModal" class="playlist-modal track-edit-modal" role="dialog" aria-modal="true" aria-labelledby="trackEditModalTitle">
+      <div class="playlist-modal-head">
+        <h3 id="trackEditModalTitle" class="playlist-modal-title">Редактировать трек</h3>
+        <p id="trackEditModalSubtitle" class="playlist-modal-subtitle">Измените название и исполнителя.</p>
+      </div>
+      <div class="playlist-modal-body">
+        <label class="playlist-modal-label" for="trackEditTitleInput">Название трека</label>
+        <input id="trackEditTitleInput" class="field" type="text" maxlength="160" placeholder="Название трека">
+        <label class="playlist-modal-label" for="trackEditArtistsInput">Исполнитель(и)</label>
+        <input id="trackEditArtistsInput" class="field" type="text" maxlength="220" placeholder="Через запятую">
+      </div>
+      <div class="playlist-modal-actions">
+        <button id="trackEditCancelBtn" class="btn btn--ghost" type="button">Отмена</button>
+        <button id="trackEditSaveBtn" class="btn btn--accent" type="button">Сохранить</button>
       </div>
     </div>
   </div>
@@ -3818,6 +3913,7 @@
       const LEGACY_COMMUNITY_TRACKS_PATH = "music/communityTracks";
       const PLAYLISTS_META_PATH = "music/playlistsMeta";
       const PLAYLIST_TRACKS_ROOT_PATH = "music/playlistsTracks";
+      const PLAYLIST_ALBUMS_ROOT_PATH = "music/playlistsAlbums";
       const PLAYLISTS_MIGRATION_STATE_PATH = "music/migrations/legacyTracksToPlaylistsV1";
       const DEFAULT_SHARED_PLAYLIST_ID = "shared-default";
       const TOKEN_KEY = "ymAuthToken";
@@ -3839,16 +3935,30 @@
         playlistCreateModalOpen: false,
         trackDeleteModalOpen: false,
         trackDeleteTarget: null,
+        trackEditModalOpen: false,
+        trackEditTarget: null,
+        trackEditSaving: false,
         playlistModalMode: "create",
         playlistModalPlaylistId: "",
         playlistDeleteConfirmPending: false,
         boundTracksPath: "",
+        boundAlbumsPath: "",
         sharedTracks: [],
+        sharedAlbums: [],
+        renderedAlbums: [],
         renderedTracks: [],
         renderedTrackDomCount: 0,
+        renderedAlbumDomCount: 0,
         listChunkSize: 10,
         listRenderCount: 10,
         listFingerprint: "",
+        albumListRenderCount: 10,
+        albumListFingerprint: "",
+        albumListDataFingerprint: "",
+        renderedLibraryView: "",
+        playlistLibraryViewById: {},
+        playlistAlbumStates: {},
+        playlistAlbumOpenKey: "",
         currentTrack: null,
         currentStreamMeta: null,
         currentIndex: -1,
@@ -3993,6 +4103,13 @@
         trackDeleteModalSubtitle: document.getElementById("trackDeleteModalSubtitle"),
         trackDeleteCancelBtn: document.getElementById("trackDeleteCancelBtn"),
         trackDeleteConfirmBtn: document.getElementById("trackDeleteConfirmBtn"),
+        trackEditModalBackdrop: document.getElementById("trackEditModalBackdrop"),
+        trackEditModal: document.getElementById("trackEditModal"),
+        trackEditModalSubtitle: document.getElementById("trackEditModalSubtitle"),
+        trackEditTitleInput: document.getElementById("trackEditTitleInput"),
+        trackEditArtistsInput: document.getElementById("trackEditArtistsInput"),
+        trackEditCancelBtn: document.getElementById("trackEditCancelBtn"),
+        trackEditSaveBtn: document.getElementById("trackEditSaveBtn"),
         toggleSearchPanelBtn: document.getElementById("toggleSearchPanelBtn"),
         toggleAddPanelBtn: document.getElementById("toggleAddPanelBtn"),
         mobileLibraryToggleBtn: document.getElementById("mobileLibraryToggleBtn"),
@@ -4016,6 +4133,9 @@
         ymCriteriaAlbumsBtn: document.getElementById("ymCriteriaAlbumsBtn"),
         ymCriteriaPlaylistsBtn: document.getElementById("ymCriteriaPlaylistsBtn"),
         ymSearchLoading: document.getElementById("ymSearchLoading"),
+        playlistViewCriteria: document.getElementById("playlistViewCriteria"),
+        playlistViewTracksBtn: document.getElementById("playlistViewTracksBtn"),
+        playlistViewAlbumsBtn: document.getElementById("playlistViewAlbumsBtn"),
         panelRoot: document.querySelector(".panel"),
         panelBody: document.querySelector(".panel-body"),
         oauthLoginBtn: document.getElementById("oauthLoginBtn"),
@@ -4814,6 +4934,7 @@
       }
 
       function updateMobileViewportBottomInset() {
+        if (state.mobileLibraryOpen && isMobileViewport()) return;
         let offset = 0;
         try {
           if (window.visualViewport) {
@@ -5328,6 +5449,12 @@
           const entry = state.ymCollectionStates[scopedKey];
           if (entry && Array.isArray(entry.tracks) && entry.tracks.length) {
             return entry.tracks;
+          }
+        }
+        if (mode === "collection" && scopedKey && state.playlistAlbumStates && typeof state.playlistAlbumStates === "object") {
+          const albumEntry = state.playlistAlbumStates[scopedKey];
+          if (albumEntry && Array.isArray(albumEntry.tracks) && albumEntry.tracks.length) {
+            return albumEntry.tracks;
           }
         }
 
@@ -5954,6 +6081,99 @@
         return list;
       }
 
+      function getPlaylistAlbumUniqueId(album) {
+        const collectionId = String(album && album.collectionId || album && album.id || "").trim();
+        return collectionId;
+      }
+
+      function getPlaylistAlbumStateKey(album, playlistId = state.activePlaylistId) {
+        const id = getPlaylistAlbumUniqueId(album);
+        if (!id) return "";
+        const kind = normalizeYtmCollectionKind(album && album.kind);
+        const playlistKey = String(playlistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
+        return `playlist-album:${playlistKey}:${kind}:${id}`;
+      }
+
+      function normalizePlaylistAlbum(raw, key = "") {
+        const collectionId = String(raw && (raw.collectionId || raw.id) || "").trim();
+        if (!collectionId) return null;
+        const provider = normalizeTrackProvider(raw && raw.provider);
+        if (provider !== "youtube") return null;
+        const kind = normalizeYtmCollectionKind(raw && raw.kind);
+        const title = String(raw && raw.title || "").trim() || "Альбом";
+        const artists = Array.isArray(raw && raw.artists)
+          ? raw.artists.map((item) => String(item || "").trim()).filter(Boolean)
+          : [];
+        const owner = String(raw && raw.owner || "").trim();
+        const year = Number(raw && raw.year || 0);
+        const trackCount = Math.max(0, Number(raw && raw.trackCount || 0));
+        const sourceUrl = String(raw && raw.sourceUrl || "").trim() || `https://music.youtube.com/browse/${collectionId}`;
+        return {
+          key: String(key || "").trim(),
+          collectionId,
+          kind,
+          provider,
+          title,
+          coverUrl: pickBestCoverUrl(raw && raw.coverUrl || ""),
+          artists,
+          owner,
+          year,
+          trackCount,
+          sourceUrl,
+          addedByName: String(raw && raw.addedByName || "").trim(),
+          addedByUsername: String(raw && raw.addedByUsername || "").trim(),
+          addedAt: Number(raw && raw.addedAt || 0)
+        };
+      }
+
+      function getVisibleSharedAlbums() {
+        const query = String(state.listQuery || "").trim().toLowerCase();
+        let list = Array.isArray(state.sharedAlbums) ? [...state.sharedAlbums] : [];
+        if (query) {
+          list = list.filter((item) => {
+            const haystack = [
+              item.title,
+              Array.isArray(item.artists) ? item.artists.join(" ") : "",
+              item.owner,
+              item.addedByName,
+              item.addedByUsername
+            ].join(" ").toLowerCase();
+            return haystack.includes(query);
+          });
+        }
+        if (state.sort === "title") {
+          list.sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "ru"));
+        } else {
+          list.sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+        }
+        return list;
+      }
+
+      function getPlaylistAlbumTrackCountEstimate(album) {
+        if (!album || typeof album !== "object") return 0;
+        const baseCount = Math.max(
+          0,
+          Number(album.trackCount || 0),
+          Number(album.loadedTrackCount || 0)
+        );
+        const stateKey = getPlaylistAlbumStateKey(album);
+        const entry = stateKey && state.playlistAlbumStates && typeof state.playlistAlbumStates === "object"
+          ? state.playlistAlbumStates[stateKey]
+          : null;
+        const loadedCount = entry && Array.isArray(entry.tracks) ? entry.tracks.length : 0;
+        return Math.max(baseCount, loadedCount);
+      }
+
+      function getPlaylistAlbumsTrackTotal(albums = state.sharedAlbums) {
+        const list = Array.isArray(albums) ? albums : [];
+        return list.reduce((sum, album) => sum + getPlaylistAlbumTrackCountEstimate(album), 0);
+      }
+
+      function getPlaylistTotalTrackCountEstimate() {
+        const tracksCount = Array.isArray(state.sharedTracks) ? state.sharedTracks.length : 0;
+        return tracksCount + getPlaylistAlbumsTrackTotal(state.sharedAlbums);
+      }
+
       function getAddedByKey(track) {
         const username = firebaseSafeKey(track && track.addedByUsername);
         if (username) return `u:${username}`;
@@ -5989,6 +6209,54 @@
       function getPlaylistTracksPath(playlistId = state.activePlaylistId) {
         const normalized = String(playlistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
         return `${PLAYLIST_TRACKS_ROOT_PATH}/${normalized}`;
+      }
+
+      function getPlaylistAlbumsPath(playlistId = state.activePlaylistId) {
+        const normalized = String(playlistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
+        return `${PLAYLIST_ALBUMS_ROOT_PATH}/${normalized}`;
+      }
+
+      function normalizePlaylistLibraryView(value) {
+        return String(value || "").trim().toLowerCase() === "albums" ? "albums" : "tracks";
+      }
+
+      function getActivePlaylistLibraryView() {
+        const playlistId = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        const stored = state.playlistLibraryViewById && state.playlistLibraryViewById[playlistId];
+        return normalizePlaylistLibraryView(stored);
+      }
+
+      function syncPlaylistLibraryViewUi() {
+        const view = getActivePlaylistLibraryView();
+        const tracksActive = view === "tracks";
+        if (els.playlistViewTracksBtn) {
+          els.playlistViewTracksBtn.classList.toggle("is-active", tracksActive);
+          els.playlistViewTracksBtn.setAttribute("aria-pressed", tracksActive ? "true" : "false");
+        }
+        if (els.playlistViewAlbumsBtn) {
+          els.playlistViewAlbumsBtn.classList.toggle("is-active", !tracksActive);
+          els.playlistViewAlbumsBtn.setAttribute("aria-pressed", tracksActive ? "false" : "true");
+        }
+        if (els.searchInput) {
+          els.searchInput.placeholder = tracksActive
+            ? "Поиск по списку треков"
+            : "Поиск по списку альбомов";
+        }
+      }
+
+      function setPlaylistLibraryView(view, { persist = true, rerender = true } = {}) {
+        const normalized = normalizePlaylistLibraryView(view);
+        const playlistId = String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
+        if (!state.playlistLibraryViewById || typeof state.playlistLibraryViewById !== "object") {
+          state.playlistLibraryViewById = {};
+        }
+        state.playlistLibraryViewById[playlistId] = normalized;
+        if (normalized !== "albums") {
+          state.playlistAlbumOpenKey = "";
+        }
+        syncPlaylistLibraryViewUi();
+        if (rerender) renderSharedList();
+        if (persist) persistPlayerSettings();
       }
 
       function getActivePlaylistMeta() {
@@ -6404,6 +6672,211 @@
         setTrackDeleteModalOpen(true);
       }
 
+      function syncTrackEditModalUi() {
+        if (!els.trackEditModalSubtitle) return;
+        const target = state.trackEditTarget && typeof state.trackEditTarget === "object"
+          ? state.trackEditTarget
+          : null;
+        const title = String(target && target.title || "").trim();
+        els.trackEditModalSubtitle.textContent = title
+          ? `Измените название и исполнителя для «${title}».`
+          : "Измените название и исполнителя.";
+        if (els.trackEditSaveBtn) {
+          const saving = Boolean(state.trackEditSaving);
+          els.trackEditSaveBtn.disabled = saving;
+          els.trackEditSaveBtn.textContent = saving ? "Сохранение..." : "Сохранить";
+        }
+      }
+
+      function setTrackEditModalOpen(open) {
+        const normalized = !!open;
+        state.trackEditModalOpen = normalized;
+        if (els.trackEditModalBackdrop) {
+          els.trackEditModalBackdrop.classList.toggle("is-open", normalized);
+          els.trackEditModalBackdrop.hidden = !normalized;
+        }
+        if (!normalized) {
+          state.trackEditTarget = null;
+          state.trackEditSaving = false;
+          if (els.trackEditTitleInput) els.trackEditTitleInput.value = "";
+          if (els.trackEditArtistsInput) els.trackEditArtistsInput.value = "";
+          syncTrackEditModalUi();
+          return;
+        }
+        state.trackEditSaving = false;
+        syncTrackEditModalUi();
+        requestAnimationFrame(() => {
+          if (!els.trackEditTitleInput) return;
+          els.trackEditTitleInput.focus();
+          els.trackEditTitleInput.select();
+        });
+      }
+
+      function openTrackEditModal(track) {
+        if (!track || !track.key) return;
+        if (!canCurrentUserManageTrack(track)) {
+          toast("Редактировать может только автор трека или admin", "err");
+          return;
+        }
+        const currentTitle = sanitizeEditableTrackTitle(track.title, "Без названия");
+        const currentArtists = Array.isArray(track.artists)
+          ? track.artists.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8)
+          : [];
+        state.trackEditTarget = {
+          key: String(track.key || ""),
+          trackId: String(track.trackId || ""),
+          title: currentTitle,
+          artists: [...currentArtists]
+        };
+        if (els.trackEditTitleInput) {
+          els.trackEditTitleInput.value = currentTitle;
+        }
+        if (els.trackEditArtistsInput) {
+          els.trackEditArtistsInput.value = currentArtists.join(", ");
+        }
+        setTrackEditModalOpen(true);
+      }
+
+      function canCurrentUserManageTrack(track) {
+        if (!track || !state.currentUser) return false;
+        const activePlaylist = getActivePlaylistMeta();
+        const me = firebaseSafeKey(state.currentUser && state.currentUser.username);
+        const playlistOwner = firebaseSafeKey(activePlaylist && activePlaylist.ownerUsername);
+        const canManagePlaylist = normalizePlaylistScope(activePlaylist && activePlaylist.scope) === "private"
+          && me
+          && (playlistOwner === me || me === "max");
+        return (
+          firebaseSafeKey(track.addedByUsername) === firebaseSafeKey(state.currentUser.username)
+          || firebaseSafeKey(state.currentUser.username) === "max"
+          || canManagePlaylist
+        );
+      }
+
+      function sanitizeEditableTrackTitle(rawValue, fallback = "") {
+        const normalized = String(rawValue || "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (normalized) return normalized.slice(0, 160);
+        return String(fallback || "Без названия").trim() || "Без названия";
+      }
+
+      function normalizeEditableTrackArtists(rawValue, fallbackArtists = []) {
+        const source = String(rawValue || "").trim();
+        const parts = source
+          ? source.split(/[,\n;/]+/g).map((item) => String(item || "").trim()).filter(Boolean)
+          : [];
+        const unique = [];
+        const seen = new Set();
+        parts.forEach((value) => {
+          const key = value.toLowerCase();
+          if (!key || seen.has(key)) return;
+          seen.add(key);
+          unique.push(value.slice(0, 80));
+        });
+        if (unique.length) return unique.slice(0, 8);
+        if (!Array.isArray(fallbackArtists)) return [];
+        return fallbackArtists.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8);
+      }
+
+      function applyTrackMetadataLocal(track, title, artists = []) {
+        if (!track) return;
+        const trackKey = String(track.key || "").trim();
+        const trackId = String(track.trackId || "").trim();
+        const applyTo = (list) => {
+          if (!Array.isArray(list)) return;
+          list.forEach((item) => {
+            if (!item) return;
+            const sameKey = trackKey && String(item.key || "").trim() === trackKey;
+            const sameTrackId = !trackKey && trackId && String(item.trackId || "").trim() === trackId;
+            if (!sameKey && !sameTrackId) return;
+            item.title = title;
+            item.artists = Array.isArray(artists) ? [...artists] : [];
+          });
+        };
+        applyTo(state.sharedTracks);
+        applyTo(state.renderedTracks);
+        if (state.currentTrack) {
+          const currentKey = String(state.currentTrack.key || "").trim();
+          const currentTrackId = String(state.currentTrack.trackId || "").trim();
+          const sameCurrent = (trackKey && currentKey === trackKey) || (!trackKey && trackId && currentTrackId === trackId);
+          if (sameCurrent) {
+            state.currentTrack.title = title;
+            state.currentTrack.artists = Array.isArray(artists) ? [...artists] : [];
+            updateCurrentTrackUI(state.currentTrack);
+            persistPlaybackSnapshot(true);
+          }
+        }
+        if (state.trackDeleteModalOpen) {
+          syncTrackDeleteModalUi();
+        }
+        renderSharedList();
+      }
+
+      async function editTrackMetadata(track) {
+        openTrackEditModal(track);
+      }
+
+      async function submitTrackEditFromModal() {
+        if (!state.db) {
+          toast("Firebase недоступен, редактирование отключено", "err");
+          return;
+        }
+        const target = state.trackEditTarget && typeof state.trackEditTarget === "object"
+          ? state.trackEditTarget
+          : null;
+        if (!target || !target.key) {
+          setTrackEditModalOpen(false);
+          return;
+        }
+        if (state.trackEditSaving) return;
+
+        const sourceTrack = (Array.isArray(state.sharedTracks) ? state.sharedTracks : [])
+          .find((item) => String(item && item.key || "") === String(target.key || ""));
+        const track = sourceTrack || target;
+        if (!canCurrentUserManageTrack(track)) {
+          toast("Редактировать может только автор трека или admin", "err");
+          return;
+        }
+
+        const currentTitle = sanitizeEditableTrackTitle(track.title, target.title || "Без названия");
+        const currentArtists = Array.isArray(track.artists)
+          ? track.artists.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8)
+          : Array.isArray(target.artists) ? [...target.artists] : [];
+        const nextTitle = sanitizeEditableTrackTitle(
+          els.trackEditTitleInput ? els.trackEditTitleInput.value : "",
+          currentTitle
+        );
+        const nextArtists = normalizeEditableTrackArtists(
+          els.trackEditArtistsInput ? els.trackEditArtistsInput.value : "",
+          currentArtists
+        );
+        const unchanged = nextTitle === currentTitle
+          && nextArtists.length === currentArtists.length
+          && nextArtists.every((item, index) => item === currentArtists[index]);
+        if (unchanged) {
+          setTrackEditModalOpen(false);
+          return;
+        }
+
+        state.trackEditSaving = true;
+        syncTrackEditModalUi();
+        applyTrackMetadataLocal(track, nextTitle, nextArtists);
+        try {
+          await state.db.ref(`${getPlaylistTracksPath()}/${target.key}`).update({
+            title: nextTitle,
+            artists: nextArtists,
+            metaEditedAt: firebase.database.ServerValue.TIMESTAMP
+          });
+          toast("Название и исполнитель обновлены");
+          setTrackEditModalOpen(false);
+        } catch (error) {
+          applyTrackMetadataLocal(track, currentTitle, currentArtists);
+          state.trackEditSaving = false;
+          syncTrackEditModalUi();
+          toast("Не удалось сохранить изменения", "err");
+        }
+      }
+
       async function confirmTrackDeleteFromModal() {
         const target = state.trackDeleteTarget && typeof state.trackDeleteTarget === "object"
           ? state.trackDeleteTarget
@@ -6440,8 +6913,16 @@
         const normalized = String(nextId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
         if (state.activePlaylistId === normalized && !rebindTracks) return;
         state.activePlaylistId = normalized;
+        if (!state.playlistLibraryViewById || typeof state.playlistLibraryViewById !== "object") {
+          state.playlistLibraryViewById = {};
+        }
+        if (!state.playlistLibraryViewById[normalized]) {
+          state.playlistLibraryViewById[normalized] = "tracks";
+        }
+        state.playlistAlbumOpenKey = "";
         updatePlaylistSelectorUi();
         renderPlaylistSelectorMenu();
+        syncPlaylistLibraryViewUi();
         if (persist) persistPlayerSettings();
         if (rebindTracks) {
           state.listQuery = "";
@@ -6585,6 +7066,20 @@
           items.push(getDefaultSharedPlaylistMeta());
         }
         state.playlists = sortPlaylists(items);
+        const availablePlaylistIds = new Set(state.playlists.map((item) => String(item && item.id || "")));
+        if (!state.playlistLibraryViewById || typeof state.playlistLibraryViewById !== "object") {
+          state.playlistLibraryViewById = {};
+        }
+        Object.keys(state.playlistLibraryViewById).forEach((playlistId) => {
+          if (availablePlaylistIds.has(playlistId)) return;
+          delete state.playlistLibraryViewById[playlistId];
+        });
+        availablePlaylistIds.forEach((playlistId) => {
+          if (!playlistId) return;
+          if (!state.playlistLibraryViewById[playlistId]) {
+            state.playlistLibraryViewById[playlistId] = "tracks";
+          }
+        });
 
         const hasActive = state.playlists.some((item) => String(item.id || "") === String(state.activePlaylistId || ""));
         if (!hasActive) {
@@ -6592,6 +7087,7 @@
         }
         updatePlaylistSelectorUi();
         renderPlaylistSelectorMenu();
+        syncPlaylistLibraryViewUi();
         const changedPlaylist = previousPlaylistId !== String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID);
         if (changedPlaylist || !state.boundTracksPath) {
           bindSharedTracks();
@@ -6648,6 +7144,7 @@
           state.playlistTrackCounts = { [DEFAULT_SHARED_PLAYLIST_ID]: Array.isArray(state.sharedTracks) ? state.sharedTracks.length : 0 };
           state.activePlaylistId = state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID;
           updatePlaylistSelectorUi();
+          syncPlaylistLibraryViewUi();
           renderPlaylistSelectorMenu();
           return;
         }
@@ -6657,18 +7154,20 @@
           state.playlistTrackCounts = { [DEFAULT_SHARED_PLAYLIST_ID]: 0 };
           state.activePlaylistId = DEFAULT_SHARED_PLAYLIST_ID;
           updatePlaylistSelectorUi();
+          syncPlaylistLibraryViewUi();
           renderPlaylistSelectorMenu();
           bindSharedTracks();
           toast("Ошибка загрузки плейлистов", "err");
         });
       }
 
-      function updateTrackCountBadge(visibleCount = 0, totalCount = 0) {
+      function updateTrackCountBadge(visibleCount = 0, totalCount = 0, options = {}) {
         if (!els.trackCountBadge) return;
         const total = Math.max(0, Number(totalCount || 0));
         const visible = Math.max(0, Number(visibleCount || 0));
         const hasQuery = Boolean(String(state.listQuery || "").trim());
-        const hasFilter = state.addedByFilter !== "all" || state.filter !== "all";
+        const useFilters = options && options.useFilters !== undefined ? Boolean(options.useFilters) : true;
+        const hasFilter = useFilters && (state.addedByFilter !== "all" || state.filter !== "all");
         els.trackCountBadge.textContent = (hasQuery || hasFilter || visible !== total)
           ? `${visible}/${total}`
           : String(total);
@@ -7152,6 +7651,7 @@
           || firebaseSafeKey(state.currentUser.username) === "max"
           || canManagePlaylist
         );
+        const canEdit = context === "shared" && canDelete;
 
         const li = document.createElement("li");
         li.className = `track-item ${isCurrent ? "playing" : ""}`;
@@ -7190,6 +7690,11 @@
           </div>
           ${context === "shared" ? `
             <div class="track-corner-actions">
+              ${canEdit ? `
+                <button class="icon-btn icon-btn--compact" data-action="edit" title="Редактировать">
+                  <svg viewBox="0 0 24 24"><path d="M4 17.25V20h2.75L17.8 8.94l-2.75-2.75L4 17.25zm15.71-9.04a1 1 0 0 0 0-1.41l-2.5-2.5a1 1 0 0 0-1.41 0l-1.34 1.34 3.91 3.91 1.34-1.34z"></path></svg>
+                </button>
+              ` : ""}
               <button class="icon-btn ${likedByMe ? "active" : ""}" data-action="like" title="Лайк">
                 <svg viewBox="0 0 24 24"><path d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.88 2 6.03 4.24 4 7.05 4c1.63 0 3.19.79 4.15 2.01C12.16 4.79 13.72 4 15.35 4 18.16 4 20.4 6.03 20.4 8.88c0 3.51-3.14 6.36-8.99 11.46z"></path></svg>
               </button>
@@ -7202,6 +7707,11 @@
           ` : ""}
           <div class="track-actions">
             ${context === "shared" ? `
+              ${canEdit ? `
+                <button class="icon-btn icon-btn--compact" data-action="edit" title="Редактировать">
+                  <svg viewBox="0 0 24 24"><path d="M4 17.25V20h2.75L17.8 8.94l-2.75-2.75L4 17.25zm15.71-9.04a1 1 0 0 0 0-1.41l-2.5-2.5a1 1 0 0 0-1.41 0l-1.34 1.34 3.91 3.91 1.34-1.34z"></path></svg>
+                </button>
+              ` : ""}
               <button class="icon-btn ${likedByMe ? "active" : ""}" data-action="like" title="Лайк">
                 <svg viewBox="0 0 24 24"><path d="M12.1 21.35l-1.1-1.02C5.14 15.24 2 12.39 2 8.88 2 6.03 4.24 4 7.05 4c1.63 0 3.19.79 4.15 2.01C12.16 4.79 13.72 4 15.35 4 18.16 4 20.4 6.03 20.4 8.88c0 3.51-3.14 6.36-8.99 11.46z"></path></svg>
               </button>
@@ -7280,6 +7790,10 @@
             openTrackDeleteModal(track);
             return;
           }
+          if (action === "edit") {
+            await editTrackMetadata(track);
+            return;
+          }
         });
 
         return li;
@@ -7291,13 +7805,33 @@
         return `${state.filter}|${state.addedByFilter}|${state.sort}|${state.listQuery}|${list.length}|${ids}`;
       }
 
+      function getRenderedAlbumIdsFingerprint(list) {
+        if (!Array.isArray(list) || !list.length) return `${state.sort}|${state.listQuery}|0`;
+        const ids = list.map((item) => String(item && (item.key || item.collectionId || item.id) || "")).join("|");
+        return `${state.sort}|${state.listQuery}|${list.length}|${ids}`;
+      }
+
       function maybeLoadMoreSharedTracks() {
         if (!els.sharedList) return;
+        if (getActivePlaylistLibraryView() === "albums") {
+          maybeLoadMoreSharedAlbums();
+          return;
+        }
         const totalCount = Array.isArray(state.renderedTracks) ? state.renderedTracks.length : 0;
         if (!totalCount || state.renderedTrackDomCount >= totalCount) return;
         const bottomGap = els.sharedList.scrollHeight - (els.sharedList.scrollTop + els.sharedList.clientHeight);
         if (bottomGap > 160) return;
         state.listRenderCount = Math.min(totalCount, state.listRenderCount + state.listChunkSize);
+        renderSharedList();
+      }
+
+      function maybeLoadMoreSharedAlbums() {
+        if (!els.sharedList) return;
+        const totalCount = Array.isArray(state.renderedAlbums) ? state.renderedAlbums.length : 0;
+        if (!totalCount || state.renderedAlbumDomCount >= totalCount) return;
+        const bottomGap = els.sharedList.scrollHeight - (els.sharedList.scrollTop + els.sharedList.clientHeight);
+        if (bottomGap > 160) return;
+        state.albumListRenderCount = Math.min(totalCount, state.albumListRenderCount + state.listChunkSize);
         renderSharedList();
       }
 
@@ -7483,18 +8017,26 @@
         }
       }
 
-      function renderSharedList() {
+      function renderSharedTracksList() {
         const list = getVisibleTracks();
         state.renderedTracks = list;
-        updateTrackCountBadge(list.length, state.sharedTracks.length);
+        const overallTotal = getPlaylistTotalTrackCountEstimate();
+        const hasQuery = Boolean(String(state.listQuery || "").trim());
+        const hasTrackFilters = state.addedByFilter !== "all" || state.filter !== "all";
+        const visibleForBadge = (!hasQuery && !hasTrackFilters)
+          ? overallTotal
+          : (list.length + getPlaylistAlbumsTrackTotal(state.sharedAlbums));
+        updateTrackCountBadge(visibleForBadge, overallTotal, { useFilters: true });
         if (!els.sharedList) {
           updateStats();
           updateMediaSessionTrackActions();
           return;
         }
         const nextFingerprint = getRenderedTrackIdsFingerprint(list);
-        const shouldResetWindow = state.listFingerprint !== nextFingerprint;
+        const switchedView = state.renderedLibraryView !== "tracks";
+        const shouldResetWindow = switchedView || state.listFingerprint !== nextFingerprint;
         if (shouldResetWindow) {
+          state.renderedLibraryView = "tracks";
           state.listFingerprint = nextFingerprint;
           state.listRenderCount = Math.min(state.listChunkSize, list.length);
           state.renderedTrackDomCount = 0;
@@ -7530,6 +8072,97 @@
         updateStats();
         updateCoverPeekUI();
         updateMediaSessionTrackActions();
+      }
+
+      function renderSharedAlbumsList() {
+        const list = getVisibleSharedAlbums();
+        state.renderedAlbums = list;
+        const overallTotal = getPlaylistTotalTrackCountEstimate();
+        const hasQuery = Boolean(String(state.listQuery || "").trim());
+        const visibleForBadge = hasQuery
+          ? (Array.isArray(state.sharedTracks) ? state.sharedTracks.length : 0) + getPlaylistAlbumsTrackTotal(list)
+          : overallTotal;
+        updateTrackCountBadge(visibleForBadge, overallTotal, { useFilters: false });
+        if (!els.sharedList) {
+          updateStats();
+          updateMediaSessionTrackActions();
+          return;
+        }
+        const openEntry = state.playlistAlbumOpenKey
+          && state.playlistAlbumStates
+          && typeof state.playlistAlbumStates === "object"
+          ? state.playlistAlbumStates[state.playlistAlbumOpenKey]
+          : null;
+        const dataFingerprint = getRenderedAlbumIdsFingerprint(list);
+        const openStateToken = openEntry
+          ? [
+            openEntry.loading ? "loading" : "idle",
+            String(openEntry.error || ""),
+            String(Array.isArray(openEntry.tracks) ? openEntry.tracks.length : 0),
+            String(Number(openEntry.renderedCount || 0))
+          ].join(":")
+          : "closed";
+        const nextFingerprint = `${dataFingerprint}|open:${String(state.playlistAlbumOpenKey || "")}|${openStateToken}`;
+        const dataChanged = state.albumListDataFingerprint !== dataFingerprint;
+        const viewChanged = state.albumListFingerprint !== nextFingerprint;
+        const switchedView = state.renderedLibraryView !== "albums";
+        let restoreScrollTop = -1;
+        if (dataChanged || viewChanged || switchedView) {
+          const preserveScroll = !dataChanged && !switchedView;
+          restoreScrollTop = preserveScroll ? Number(els.sharedList.scrollTop || 0) : -1;
+          state.renderedLibraryView = "albums";
+          if (dataChanged) {
+            state.albumListDataFingerprint = dataFingerprint;
+            state.albumListRenderCount = Math.min(state.listChunkSize, list.length);
+          }
+          state.albumListFingerprint = nextFingerprint;
+          state.renderedAlbumDomCount = 0;
+          els.sharedList.innerHTML = "";
+          if (!preserveScroll) {
+            els.sharedList.scrollTop = 0;
+          }
+        }
+        const isSparseList = list.length > 0 && list.length <= 3;
+        els.sharedList.classList.toggle("is-empty", !list.length);
+        els.sharedList.classList.toggle("is-sparse", isSparseList);
+        if (!list.length) {
+          const hasQuery = Boolean(String(state.listQuery || "").trim());
+          els.sharedList.innerHTML = hasQuery
+            ? '<li class="empty">По вашему поиску среди альбомов ничего не найдено.</li>'
+            : '<li class="empty">Альбомы пока не добавлены.</li>';
+          state.renderedAlbumDomCount = 0;
+          updateStats();
+          updateCoverPeekUI();
+          updateMediaSessionTrackActions();
+          return;
+        }
+
+        const targetCount = Math.min(state.albumListRenderCount, list.length);
+        if (state.renderedAlbumDomCount > targetCount) {
+          state.renderedAlbumDomCount = 0;
+          els.sharedList.innerHTML = "";
+        }
+        for (let i = state.renderedAlbumDomCount; i < targetCount; i += 1) {
+          const album = list[i];
+          els.sharedList.appendChild(createPlaylistAlbumItem(album));
+        }
+        state.renderedAlbumDomCount = targetCount;
+        if (restoreScrollTop >= 0) {
+          els.sharedList.scrollTop = restoreScrollTop;
+        }
+        updateSharedListPlaybackUI();
+        updateStats();
+        updateCoverPeekUI();
+        updateMediaSessionTrackActions();
+      }
+
+      function renderSharedList() {
+        const view = getActivePlaylistLibraryView();
+        if (view === "albums") {
+          renderSharedAlbumsList();
+          return;
+        }
+        renderSharedTracksList();
       }
 
       function renderSearchList() {
@@ -7689,6 +8322,9 @@
 
         const items = container.querySelectorAll(".track-item");
         items.forEach((item) => {
+          const itemContext = String(item.dataset.context || "").trim().toLowerCase();
+          const expectedContext = sourceNormalized === "search" ? "search" : "shared";
+          if (itemContext && itemContext !== expectedContext) return;
           const itemKey = String(item.dataset.trackKey || "");
           const itemTrackId = String(item.dataset.trackId || "");
           const isCurrent = Boolean(
@@ -7712,6 +8348,7 @@
 
       function updateSharedListPlaybackUI() {
         updateListPlaybackUI(els.sharedList, "shared");
+        updateListPlaybackUI(els.sharedList, "search");
         updateListPlaybackUI(els.ymSearchList, "search");
       }
 
@@ -8063,6 +8700,230 @@
         return out;
       }
 
+      function getPlaylistAlbumStateEntry(album, { create = false } = {}) {
+        const key = getPlaylistAlbumStateKey(album);
+        if (!key) return { key: "", entry: null };
+        if (!state.playlistAlbumStates || typeof state.playlistAlbumStates !== "object") {
+          state.playlistAlbumStates = {};
+        }
+        let entry = state.playlistAlbumStates[key];
+        if (!entry && create) {
+          entry = {
+            loading: false,
+            loaded: false,
+            error: "",
+            tracks: [],
+            renderedCount: 0
+          };
+          state.playlistAlbumStates[key] = entry;
+        }
+        return { key, entry: entry || null };
+      }
+
+      async function togglePlaylistAlbum(kind, id) {
+        const collectionId = String(id || "").trim();
+        if (!collectionId) return;
+        const album = (Array.isArray(state.sharedAlbums) ? state.sharedAlbums : [])
+          .find((item) => normalizeYtmCollectionKind(item && item.kind) === normalizeYtmCollectionKind(kind)
+            && String(item && item.collectionId || "") === collectionId);
+        if (!album) {
+          renderSharedList();
+          return;
+        }
+        const { key, entry } = getPlaylistAlbumStateEntry(album, { create: true });
+        if (!key || !entry) return;
+        const nextOpen = state.playlistAlbumOpenKey !== key;
+        state.playlistAlbumOpenKey = nextOpen ? key : "";
+        if (!nextOpen) {
+          renderSharedList();
+          return;
+        }
+        if (entry.loading || entry.loaded) {
+          renderSharedList();
+          return;
+        }
+
+        entry.loading = true;
+        entry.error = "";
+        renderSharedList();
+        try {
+          const payload = await ytmRequest("/collection", {
+            kind: normalizeYtmCollectionKind(album.kind),
+            id: album.collectionId,
+            limit: 300
+          });
+          const root = payload && payload.result && typeof payload.result === "object" ? payload.result : {};
+          entry.tracks = mapYtmCollectionTracks(root.tracks);
+          entry.tracks.forEach((track) => {
+            if (!track || typeof track !== "object") return;
+            track._searchCollectionKey = key;
+          });
+          const loadedCount = Math.max(0, Number(root.total || entry.tracks.length || 0));
+          album.trackCount = Math.max(Number(album.trackCount || 0), loadedCount);
+          entry.renderedCount = Math.min(
+            entry.tracks.length,
+            Math.max(10, Number(entry.renderedCount || 0))
+          );
+          entry.loading = false;
+          entry.loaded = true;
+          entry.error = "";
+        } catch (error) {
+          entry.loading = false;
+          entry.loaded = true;
+          entry.error = String((error && error.message) || error || "Не удалось загрузить треки альбома");
+          entry.tracks = [];
+        }
+        renderSharedList();
+      }
+
+      async function removePlaylistAlbum(album) {
+        if (!state.db || !album || !album.key) return;
+        if (!canCurrentUserManageTrack(album)) {
+          toast("Удалять может только автор альбома или admin", "err");
+          return;
+        }
+        const albumStateKey = getPlaylistAlbumStateKey(album);
+        if (albumStateKey && state.playlistAlbumOpenKey === albumStateKey) {
+          state.playlistAlbumOpenKey = "";
+        }
+        if (albumStateKey && state.playlistAlbumStates && state.playlistAlbumStates[albumStateKey]) {
+          delete state.playlistAlbumStates[albumStateKey];
+        }
+        await state.db.ref(`${getPlaylistAlbumsPath()}/${album.key}`).remove();
+        toast("Альбом удалён");
+      }
+
+      function createPlaylistAlbumItem(album) {
+        const { key, entry } = getPlaylistAlbumStateEntry(album, { create: true });
+        const isOpen = Boolean(key && state.playlistAlbumOpenKey === key);
+        const canDelete = canCurrentUserManageTrack(album);
+        const li = document.createElement("li");
+        li.className = "ytm-collection-item";
+        li.dataset.collectionKey = key;
+        const coverUrl = pickBestCoverUrl(album && album.coverUrl || FALLBACK_COVER);
+        const sourceUrl = String(album && album.sourceUrl || "").trim();
+        const title = escapeHtml(String(album && album.title || "Альбом"));
+        const meta = escapeHtml(getYtmCollectionMetaText(album));
+        const toggleLabel = isOpen ? "Скрыть" : "Треки";
+
+        li.innerHTML = `
+          <div class="ytm-collection-head">
+            <img class="ytm-collection-cover" src="${coverUrl}" alt="collection cover" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+            <div class="ytm-collection-info">
+              <h4 class="ytm-collection-title">${title}</h4>
+              <p class="ytm-collection-meta">${meta}</p>
+            </div>
+            <div class="ytm-collection-actions">
+              <button
+                class="ytm-collection-toggle"
+                type="button"
+                data-action="toggle-playlist-album"
+                data-kind="${escapeHtml(album && album.kind || "album")}"
+                data-id="${escapeHtml(album && album.collectionId || "")}"
+              >${toggleLabel}</button>
+              ${sourceUrl ? `
+                <a class="icon-btn" href="${sourceUrl}" target="_blank" rel="noopener" title="Открыть в YouTube Music">
+                  <svg viewBox="0 0 24 24"><path d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H7v10h10v-4h2v6H5V5z"></path></svg>
+                </a>
+              ` : ""}
+              ${canDelete ? `
+                <button class="icon-btn icon-btn--danger icon-btn--compact" type="button" data-action="remove-playlist-album" title="Удалить альбом">
+                  <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"></path></svg>
+                </button>
+              ` : ""}
+            </div>
+          </div>
+        `;
+        const coverImage = li.querySelector(".ytm-collection-cover");
+        if (coverImage) bindImageFallback(coverImage);
+
+        li.addEventListener("click", (event) => {
+          const actionEl = event.target.closest("[data-action]");
+          if (!actionEl) return;
+          const action = String(actionEl.getAttribute("data-action") || "").trim();
+          if (action === "toggle-playlist-album") {
+            event.preventDefault();
+            togglePlaylistAlbum(album.kind, album.collectionId).catch(() => {});
+            return;
+          }
+          if (action === "remove-playlist-album") {
+            event.preventDefault();
+            removePlaylistAlbum(album).catch((error) => {
+              toast(`Не удалось удалить альбом: ${error.message || error}`, "err");
+            });
+          }
+        });
+
+        if (!isOpen || !entry) return li;
+        const body = document.createElement("div");
+        body.className = "ytm-collection-body";
+        if (entry.loading) {
+          body.innerHTML = '<div class="empty ym-search-notice ym-search-notice--loading">Загружаю треки</div>';
+          li.appendChild(body);
+          return li;
+        }
+        if (entry.error) {
+          body.innerHTML = `<div class="empty ym-search-notice ym-search-notice--warn" data-icon="⚠">${escapeHtml(entry.error)}</div>`;
+          li.appendChild(body);
+          return li;
+        }
+        if (!Array.isArray(entry.tracks) || !entry.tracks.length) {
+          body.innerHTML = '<div class="empty ym-search-notice ym-search-notice--warn" data-icon="⚠">В этом альбоме нет доступных треков.</div>';
+          li.appendChild(body);
+          return li;
+        }
+        const chunkSize = 10;
+        if (!Number.isFinite(Number(entry.renderedCount)) || Number(entry.renderedCount) <= 0) {
+          entry.renderedCount = Math.min(entry.tracks.length, chunkSize);
+        } else {
+          entry.renderedCount = Math.max(0, Math.min(entry.tracks.length, Number(entry.renderedCount)));
+        }
+        const scrollWrap = document.createElement("div");
+        scrollWrap.className = "ytm-collection-tracks-scroll";
+        const tracksWrap = document.createElement("ul");
+        tracksWrap.className = "ytm-collection-tracks";
+        const appendTracksChunk = (fromIndex, toIndex) => {
+          for (let i = fromIndex; i < toIndex; i += 1) {
+            const track = entry.tracks[i];
+            if (!track) continue;
+            tracksWrap.appendChild(createTrackItem(track, "search", { searchCollectionKey: key }));
+          }
+        };
+        appendTracksChunk(0, entry.renderedCount);
+        scrollWrap.appendChild(tracksWrap);
+        const updateMoreHint = () => {
+          const existing = scrollWrap.querySelector(".ytm-collection-more");
+          if (entry.renderedCount >= entry.tracks.length) {
+            if (existing) existing.remove();
+            return;
+          }
+          if (existing) return;
+          const hint = document.createElement("div");
+          hint.className = "ytm-collection-more";
+          hint.textContent = "Прокрутите ниже, чтобы загрузить еще треки";
+          scrollWrap.appendChild(hint);
+        };
+        updateMoreHint();
+        let loadingChunk = false;
+        scrollWrap.addEventListener("scroll", () => {
+          if (loadingChunk) return;
+          if (entry.renderedCount >= entry.tracks.length) return;
+          const bottomGap = scrollWrap.scrollHeight - (scrollWrap.scrollTop + scrollWrap.clientHeight);
+          if (bottomGap > 90) return;
+          loadingChunk = true;
+          requestAnimationFrame(() => {
+            const prev = entry.renderedCount;
+            entry.renderedCount = Math.min(entry.tracks.length, prev + chunkSize);
+            appendTracksChunk(prev, entry.renderedCount);
+            updateMoreHint();
+            loadingChunk = false;
+          });
+        }, { passive: true });
+        body.appendChild(scrollWrap);
+        li.appendChild(body);
+        return li;
+      }
+
       async function toggleYtmCollection(kind, id) {
         const collectionKey = getYtmCollectionKey(kind, id);
         if (!collectionKey) return;
@@ -8122,9 +8983,106 @@
         renderSearchList();
       }
 
+      function findYtmSearchCollection(kind, id) {
+        const targetKey = getYtmCollectionKey(kind, id);
+        if (!targetKey) return null;
+        return (Array.isArray(state.ymSearchCollections) ? state.ymSearchCollections : [])
+          .find((item) => getYtmCollectionKey(item && item.kind, item && item.id) === targetKey)
+          || null;
+      }
+
+      async function addYtmCollectionToShared(kind, id) {
+        if (!state.db) {
+          toast("Firebase недоступен, плейлисты отключены", "err");
+          return;
+        }
+        const collection = findYtmSearchCollection(kind, id);
+        if (!collection) {
+          toast("Альбом не найден в текущих результатах поиска", "err");
+          return;
+        }
+        if (normalizeYtmCollectionKind(collection.kind) !== "album") {
+          toast("В плейлист можно добавить только альбом", "err");
+          return;
+        }
+        const collectionId = String(collection.id || "").trim();
+        if (!collectionId) {
+          toast("Некорректный идентификатор альбома", "err");
+          return;
+        }
+
+        const albumsPath = getPlaylistAlbumsPath();
+        const activePlaylist = getActivePlaylistMeta();
+        const user = state.currentUser || { username: "guest", name: "Guest" };
+        const snapshot = await state.db
+          .ref(albumsPath)
+          .orderByChild("collectionId")
+          .equalTo(collectionId)
+          .once("value");
+
+        if (snapshot.exists()) {
+          let hasSameAlbum = false;
+          let enriched = false;
+          const updates = {};
+          snapshot.forEach((child) => {
+            const existing = child.val() || {};
+            const existingKind = normalizeYtmCollectionKind(existing.kind || "album");
+            const existingProvider = normalizeTrackProvider(existing.provider || "youtube");
+            if (existingKind !== "album" || existingProvider !== "youtube") return;
+            hasSameAlbum = true;
+            const nextTitle = String(collection.title || existing.title || "").trim() || "Альбом";
+            const nextCover = pickBestCoverUrl(collection.coverUrl || existing.coverUrl || FALLBACK_COVER);
+            const nextArtists = Array.isArray(collection.artists) && collection.artists.length
+              ? collection.artists
+              : (Array.isArray(existing.artists) ? existing.artists : []);
+            const nextTrackCount = Math.max(0, Number(collection.trackCount || existing.trackCount || 0));
+            const nextSourceUrl = String(collection.sourceUrl || existing.sourceUrl || "").trim();
+            const nextYear = Math.max(0, Number(collection.year || existing.year || 0));
+            const nextOwner = String(collection.owner || existing.owner || "").trim();
+            updates[`${child.key}/title`] = nextTitle;
+            updates[`${child.key}/coverUrl`] = nextCover;
+            updates[`${child.key}/artists`] = nextArtists;
+            updates[`${child.key}/trackCount`] = nextTrackCount;
+            updates[`${child.key}/sourceUrl`] = nextSourceUrl;
+            updates[`${child.key}/year`] = nextYear;
+            updates[`${child.key}/owner`] = nextOwner;
+            enriched = true;
+          });
+          if (hasSameAlbum && enriched) {
+            await state.db.ref(albumsPath).update(updates);
+            toast("Альбом уже есть в плейлисте: метаданные обновлены");
+            return;
+          }
+          if (hasSameAlbum) {
+            toast("Этот альбом уже есть в плейлисте");
+            return;
+          }
+        }
+
+        const payload = {
+          collectionId,
+          kind: "album",
+          provider: "youtube",
+          title: String(collection.title || "").trim() || "Альбом",
+          coverUrl: pickBestCoverUrl(collection.coverUrl || FALLBACK_COVER),
+          artists: Array.isArray(collection.artists) ? collection.artists : [],
+          owner: String(collection.owner || "").trim(),
+          year: Math.max(0, Number(collection.year || 0)),
+          trackCount: Math.max(0, Number(collection.trackCount || 0)),
+          sourceUrl: String(collection.sourceUrl || "").trim(),
+          addedByName: user.name,
+          addedByUsername: user.username,
+          addedAt: firebase.database.ServerValue.TIMESTAMP
+        };
+        await state.db.ref(albumsPath).push(payload);
+        toast(`Альбом добавлен в плейлист «${activePlaylist.title || "Плейлист"}»`);
+      }
+
       function createYtmCollectionItem(collection) {
         const { key, entry } = getYtmCollectionStateEntry(collection, { create: true });
         const isOpen = Boolean(key && state.ymCollectionOpenKey === key);
+        const collectionKind = normalizeYtmCollectionKind(collection && collection.kind);
+        const canAddAlbum = collectionKind === "album";
         const li = document.createElement("li");
         li.className = "ytm-collection-item";
         li.dataset.collectionKey = key;
@@ -8142,6 +9100,18 @@
               <p class="ytm-collection-meta">${meta}</p>
             </div>
             <div class="ytm-collection-actions">
+              ${canAddAlbum ? `
+                <button
+                  class="icon-btn icon-btn--compact ytm-collection-add"
+                  type="button"
+                  data-action="add-ytm-collection"
+                  data-kind="${escapeHtml(collection && collection.kind || "album")}"
+                  data-id="${escapeHtml(collection && collection.id || "")}"
+                  title="Добавить альбом в текущий плейлист"
+                >
+                  <svg viewBox="0 0 24 24"><path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"></path></svg>
+                </button>
+              ` : ""}
               <button
                 class="ytm-collection-toggle"
                 type="button"
@@ -9431,11 +10401,22 @@
             || ""
           ).trim();
           const hasScopedList = requestedCollectionKey
-            && state.ymCollectionStates
-            && typeof state.ymCollectionStates === "object"
-            && state.ymCollectionStates[requestedCollectionKey]
-            && Array.isArray(state.ymCollectionStates[requestedCollectionKey].tracks)
-            && state.ymCollectionStates[requestedCollectionKey].tracks.length;
+            && (
+              (
+                state.ymCollectionStates
+                && typeof state.ymCollectionStates === "object"
+                && state.ymCollectionStates[requestedCollectionKey]
+                && Array.isArray(state.ymCollectionStates[requestedCollectionKey].tracks)
+                && state.ymCollectionStates[requestedCollectionKey].tracks.length
+              )
+              || (
+                state.playlistAlbumStates
+                && typeof state.playlistAlbumStates === "object"
+                && state.playlistAlbumStates[requestedCollectionKey]
+                && Array.isArray(state.playlistAlbumStates[requestedCollectionKey].tracks)
+                && state.playlistAlbumStates[requestedCollectionKey].tracks.length
+              )
+            );
           if (hasScopedList) {
             setSearchPlaybackScopeCollection(requestedCollectionKey);
           } else {
@@ -10028,17 +11009,7 @@
 
       async function removeTrack(track) {
         if (!state.db || !track || !track.key) return;
-        const activePlaylist = getActivePlaylistMeta();
-        const me = firebaseSafeKey(state.currentUser && state.currentUser.username);
-        const playlistOwner = firebaseSafeKey(activePlaylist && activePlaylist.ownerUsername);
-        const canManagePlaylist = normalizePlaylistScope(activePlaylist && activePlaylist.scope) === "private"
-          && me
-          && (playlistOwner === me || me === "max");
-        const canDelete = state.currentUser && (
-          firebaseSafeKey(track.addedByUsername) === firebaseSafeKey(state.currentUser.username)
-          || firebaseSafeKey(state.currentUser.username) === "max"
-          || canManagePlaylist
-        );
+        const canDelete = canCurrentUserManageTrack(track);
         if (!canDelete) {
           toast("Удалять может только автор трека или admin", "err");
           return;
@@ -10076,7 +11047,12 @@
         state.sharedTracksLoaded = true;
         const nextVisible = getVisibleTracks();
         const patchOnlyLikes = canPatchRenderedList(prevRendered, nextVisible);
-        if (patchOnlyLikes && els.sharedList && els.sharedList.querySelector(".track-item")) {
+        if (
+          getActivePlaylistLibraryView() === "tracks"
+          && patchOnlyLikes
+          && els.sharedList
+          && els.sharedList.querySelector(".track-item")
+        ) {
           state.renderedTracks = nextVisible;
           updateRenderedTrackRows(nextVisible);
           updateSharedListPlaybackUI();
@@ -10088,11 +11064,61 @@
         tryRestorePlaybackSnapshot();
       }
 
+      function syncSharedAlbums(snapshot) {
+        const items = [];
+        if (snapshot && typeof snapshot.forEach === "function") {
+          snapshot.forEach((child) => {
+            const raw = child.val() || {};
+            const normalized = normalizePlaylistAlbum(raw, child.key);
+            if (!normalized) return;
+            items.push(normalized);
+          });
+        }
+        state.sharedAlbums = items;
+        renderSharedList();
+      }
+
+      function bindSharedAlbums() {
+        if (!state.db) {
+          state.sharedAlbums = [];
+          state.renderedAlbums = [];
+          state.renderedAlbumDomCount = 0;
+          state.albumListRenderCount = state.listChunkSize;
+          state.albumListFingerprint = "";
+          state.albumListDataFingerprint = "";
+          state.playlistAlbumStates = {};
+          state.playlistAlbumOpenKey = "";
+          renderSharedList();
+          return;
+        }
+        const albumsPath = getPlaylistAlbumsPath();
+        if (state.boundAlbumsPath) {
+          state.db.ref(state.boundAlbumsPath).off();
+        }
+        state.boundAlbumsPath = albumsPath;
+        state.sharedAlbums = [];
+        state.renderedAlbums = [];
+        state.renderedAlbumDomCount = 0;
+        state.albumListRenderCount = state.listChunkSize;
+        state.albumListFingerprint = "";
+        state.albumListDataFingerprint = "";
+        state.playlistAlbumStates = {};
+        state.playlistAlbumOpenKey = "";
+        renderSharedList();
+        state.db.ref(albumsPath).on("value", syncSharedAlbums, () => {
+          toast("Ошибка подписки на альбомы плейлиста", "err");
+        });
+      }
+
       function bindSharedTracks() {
         if (!state.db) {
           state.sharedTracks = [];
           state.renderedTracks = [];
+          state.sharedAlbums = [];
+          state.playlistAlbumStates = {};
+          state.playlistAlbumOpenKey = "";
           state.sharedTracksLoaded = true;
+          bindSharedAlbums();
           renderSharedList();
           return;
         }
@@ -10104,12 +11130,16 @@
         state.sharedTracksLoaded = false;
         state.sharedTracks = [];
         state.renderedTracks = [];
+        state.listFingerprint = "";
+        state.renderedTrackDomCount = 0;
+        state.listRenderCount = state.listChunkSize;
         renderSharedList();
         state.db.ref(tracksPath).on("value", syncSharedTracks, () => {
           state.sharedTracksLoaded = true;
           tryRestorePlaybackSnapshot();
           toast("Ошибка подписки на плейлист", "err");
         });
+        bindSharedAlbums();
       }
 
       function persistPlayerSettings() {
@@ -10121,7 +11151,10 @@
           sort: state.sort,
           volume: Number(els.audio && els.audio.volume != null ? els.audio.volume : 0.85),
           desktopSplitPreferred: Boolean(state.desktopSplitPreferred),
-          activePlaylistId: String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID)
+          activePlaylistId: String(state.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID),
+          playlistLibraryViewById: state.playlistLibraryViewById && typeof state.playlistLibraryViewById === "object"
+            ? { ...state.playlistLibraryViewById }
+            : {}
         };
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(payload));
       }
@@ -10163,6 +11196,15 @@
         }
         if (saved.activePlaylistId) {
           state.activePlaylistId = String(saved.activePlaylistId || DEFAULT_SHARED_PLAYLIST_ID).trim() || DEFAULT_SHARED_PLAYLIST_ID;
+        }
+        if (saved.playlistLibraryViewById && typeof saved.playlistLibraryViewById === "object") {
+          const normalized = {};
+          Object.keys(saved.playlistLibraryViewById).forEach((playlistId) => {
+            const key = String(playlistId || "").trim();
+            if (!key) return;
+            normalized[key] = normalizePlaylistLibraryView(saved.playlistLibraryViewById[playlistId]);
+          });
+          state.playlistLibraryViewById = normalized;
         }
       }
 
@@ -10252,6 +11294,9 @@
         window.addEventListener("keydown", (event) => {
           if (event.key === "Escape" && state.fullscreenOpen) {
             setFullscreenOpen(false);
+          }
+          if (event.key === "Escape" && state.trackEditModalOpen) {
+            setTrackEditModalOpen(false);
           }
           if (event.key === "Escape" && state.trackDeleteModalOpen) {
             setTrackDeleteModalOpen(false);
@@ -10438,6 +11483,42 @@
             setTrackDeleteModalOpen(false);
           });
         }
+        if (els.trackEditCancelBtn) {
+          els.trackEditCancelBtn.addEventListener("click", () => {
+            setTrackEditModalOpen(false);
+          });
+        }
+        if (els.trackEditSaveBtn) {
+          els.trackEditSaveBtn.addEventListener("click", () => {
+            submitTrackEditFromModal().catch((error) => {
+              toast(`Не удалось сохранить изменения трека: ${error.message || error}`, "err");
+            });
+          });
+        }
+        if (els.trackEditModalBackdrop) {
+          els.trackEditModalBackdrop.addEventListener("click", (event) => {
+            if (event.target !== els.trackEditModalBackdrop) return;
+            setTrackEditModalOpen(false);
+          });
+        }
+        if (els.trackEditTitleInput) {
+          els.trackEditTitleInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            submitTrackEditFromModal().catch((error) => {
+              toast(`Не удалось сохранить изменения трека: ${error.message || error}`, "err");
+            });
+          });
+        }
+        if (els.trackEditArtistsInput) {
+          els.trackEditArtistsInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            submitTrackEditFromModal().catch((error) => {
+              toast(`Не удалось сохранить изменения трека: ${error.message || error}`, "err");
+            });
+          });
+        }
         if (els.playlistNameInput) {
           els.playlistNameInput.addEventListener("input", () => {
             if (!state.playlistDeleteConfirmPending) return;
@@ -10487,6 +11568,17 @@
           if (event.target && event.target.closest && event.target.closest(".add-help-wrap")) return;
           setAddHelpOpen(false);
         });
+        if (els.playlistViewCriteria) {
+          els.playlistViewCriteria.addEventListener("click", (event) => {
+            const button = event.target && event.target.closest
+              ? event.target.closest("[data-playlist-view]")
+              : null;
+            if (!button) return;
+            const view = String(button.dataset.playlistView || "").trim();
+            if (!view) return;
+            setPlaylistLibraryView(view);
+          });
+        }
         if (els.searchInput) {
           els.searchInput.addEventListener("input", applyListSearch);
           els.searchInput.addEventListener("keydown", (e) => {
@@ -10510,6 +11602,19 @@
         }
         if (els.ymSearchList) {
           els.ymSearchList.addEventListener("click", (event) => {
+            const addCollectionBtn = event.target && event.target.closest
+              ? event.target.closest("[data-action='add-ytm-collection']")
+              : null;
+            if (addCollectionBtn) {
+              event.preventDefault();
+              const kind = String(addCollectionBtn.dataset.kind || "").trim();
+              const id = String(addCollectionBtn.dataset.id || "").trim();
+              if (!id) return;
+              addYtmCollectionToShared(kind, id).catch((error) => {
+                toast(`Не удалось добавить альбом: ${error.message || error}`, "err");
+              });
+              return;
+            }
             const toggleBtn = event.target && event.target.closest
               ? event.target.closest("[data-action='toggle-ytm-collection']")
               : null;
@@ -11355,6 +12460,7 @@
         setVolume(0.85, { persist: false });
         restoreSettings();
         updatePlaylistSelectorUi();
+        syncPlaylistLibraryViewUi();
         renderPlaylistSelectorMenu();
         setPlaylistCreateModalOpen(false);
         setTrackDeleteModalOpen(false);
