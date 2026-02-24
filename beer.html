@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Beer Space</title>
+  <script>
+    (function () {
+      try {
+        const cu = localStorage.getItem('currentUser');
+        if (!cu) {
+          location.replace('login.html');
+          return;
+        }
+        document.documentElement.classList.add('authed');
+      } catch (e) {
+        location.replace('login.html');
+      }
+    })();
+
+    (function () {
+      try {
+        document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+      } catch (_) {}
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <style>
+    :root {
+      --accent: #f59e0b;
+      --accent-soft: rgba(245, 158, 11, 0.2);
+      --panel-border: rgba(245, 158, 11, 0.26);
+      --text-main: #f8fafc;
+      --text-muted: #a3a3a3;
+    }
+
+    html[data-theme="white"] {
+      --accent: #ffffff;
+      --accent-soft: rgba(255, 255, 255, 0.18);
+      --panel-border: rgba(255, 255, 255, 0.3);
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      background: #000;
+    }
+
+    html:not(.authed) body {
+      visibility: hidden;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: 'Comfortaa', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(245, 158, 11, 0.22), transparent 38%),
+        radial-gradient(circle at 82% 78%, rgba(245, 158, 11, 0.2), transparent 42%),
+        #000;
+      color: var(--text-main);
+    }
+
+    #space {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      overflow: hidden;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    #space.is-dragging {
+      cursor: grabbing;
+    }
+
+    #space::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 22%, rgba(255, 255, 255, 0.2) 0 1.6px, transparent 1.6px),
+        radial-gradient(circle at 70% 14%, rgba(255, 255, 255, 0.16) 0 1.5px, transparent 1.5px),
+        radial-gradient(circle at 42% 84%, rgba(255, 255, 255, 0.14) 0 1.4px, transparent 1.4px);
+      background-size: 320px 320px, 260px 260px, 300px 300px;
+      opacity: 0.52;
+      animation: stars 36s linear infinite;
+    }
+
+    @keyframes stars {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-180px, -120px, 0); }
+    }
+
+    #bubbles {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    .bubble {
+      position: absolute;
+      border: 0;
+      border-radius: 0;
+      overflow: hidden;
+      background: transparent;
+      box-shadow: none;
+      display: block;
+      padding: 0;
+      margin: 0;
+      transform-origin: center;
+      isolation: isolate;
+      cursor: pointer;
+      will-change: transform;
+      backface-visibility: hidden;
+      contain: layout paint style;
+    }
+
+    .bubble:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .bubble.is-selected {
+      outline: 1px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .bubble-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.68);
+      z-index: 40;
+      transition: opacity 0.28s ease;
+    }
+
+    #loading[hidden] {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-spinner {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 3px solid rgba(245, 158, 11, 0.2);
+      border-top-color: var(--accent);
+      border-right-color: rgba(245, 158, 11, 0.45);
+      box-shadow: 0 0 22px rgba(245, 158, 11, 0.24);
+      animation: loading-spin 0.85s linear infinite;
+    }
+
+    @keyframes loading-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #detailsOverlay {
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 28;
+    }
+
+    #detailsOverlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #detailsModal {
+      position: fixed;
+      top: 50%;
+      right: 12px;
+      width: min(300px, calc(100vw - 24px));
+      height: auto;
+      max-height: calc(100vh - 24px);
+      z-index: 32;
+      transform: translate3d(110%, -50%, 0) scale(0.86) rotate(3.2deg);
+      opacity: 0;
+      transition: transform 0.58s cubic-bezier(0.18, 0.9, 0.2, 1), opacity 0.42s ease;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      background: rgba(7, 7, 7, 0.86);
+      backdrop-filter: blur(10px);
+      padding: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      overflow: hidden;
+      box-shadow: 0 26px 70px rgba(0, 0, 0, 0.58), 0 0 44px rgba(245, 158, 11, 0.18);
+      transform-origin: 100% 50%;
+      font-family: 'Comfortaa', system-ui, sans-serif;
+    }
+
+    #detailsModal,
+    #detailsModal * {
+      font-family: 'Comfortaa', system-ui, sans-serif;
+    }
+
+    #detailsModal::before {
+      content: "";
+      position: absolute;
+      inset: -18% -30%;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.22) 50%, transparent 60%);
+      opacity: 0;
+      transform: translateX(-40%) rotate(5deg);
+    }
+
+    #detailsModal.is-open {
+      opacity: 1;
+      transform: translate3d(0, -50%, 0) scale(1) rotate(0);
+      animation: modalComplexIn 0.72s cubic-bezier(0.15, 0.95, 0.25, 1);
+    }
+
+    #detailsModal.is-open::before {
+      animation: modalShine 0.9s ease-out 0.14s;
+    }
+
+    @keyframes modalComplexIn {
+      0% {
+        opacity: 0;
+        transform: translate3d(120%, -50%, 0) scale(0.78) rotate(6deg);
+        filter: blur(9px);
+      }
+      58% {
+        opacity: 1;
+        transform: translate3d(-6%, -50%, 0) scale(1.03) rotate(-0.8deg);
+        filter: blur(0);
+      }
+      76% {
+        transform: translate3d(1.7%, -50%, 0) scale(0.995) rotate(0.35deg);
+      }
+      100% {
+        opacity: 1;
+        transform: translate3d(0, -50%, 0) scale(1) rotate(0);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes modalShine {
+      0% {
+        opacity: 0;
+        transform: translateX(-34%) rotate(5deg);
+      }
+      28% {
+        opacity: 0.55;
+      }
+      100% {
+        opacity: 0;
+        transform: translateX(30%) rotate(5deg);
+      }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-title {
+      margin: 0;
+      color: var(--accent);
+      font-size: 17px;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .close-btn {
+      appearance: none;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      overflow: hidden;
+    }
+
+    .detail-row {
+      display: grid;
+      gap: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 5px 6px;
+      font-size: 10px;
+      line-height: 1.2;
+      min-height: 38px;
+    }
+
+    .detail-row span:first-child {
+      color: var(--text-muted);
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .detail-row span:last-child {
+      text-align: left;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .speed-control {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      z-index: 20;
+      width: min(250px, calc(100vw - 24px));
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      background: rgba(8, 8, 8, 0.78);
+      backdrop-filter: blur(8px);
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.45);
+      font-family: 'Comfortaa', system-ui, sans-serif;
+    }
+
+    .speed-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .speed-value {
+      color: var(--accent);
+      font-weight: 700;
+      min-width: 56px;
+      text-align: right;
+    }
+
+    #speedSlider {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+  <main id="space" aria-label="Beer space">
+    <div id="bubbles"></div>
+  </main>
+
+  <div id="detailsOverlay" aria-hidden="true"></div>
+  <aside id="detailsModal" aria-hidden="true">
+    <div class="modal-head">
+      <h2 class="modal-title" id="modalTitle">Пиво</h2>
+      <button id="closeModal" class="close-btn" type="button" aria-label="Закрыть">×</button>
+    </div>
+    <div class="details-grid" id="modalDetails"></div>
+  </aside>
+
+  <div id="loading" aria-label="Загрузка">
+    <div class="loading-spinner" aria-hidden="true"></div>
+  </div>
+
+  <div class="speed-control" id="speedControl">
+    <div class="speed-label">
+      <span>Скорость бутылок</span>
+      <span class="speed-value" id="speedValue">1.00x</span>
+    </div>
+    <input id="speedSlider" type="range" min="0.2" max="2.5" step="0.05" value="1">
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+      authDomain: "kinosreda-ce8ef.firebaseapp.com",
+      databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "kinosreda-ce8ef",
+      storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+      messagingSenderId: "889337905300",
+      appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+      measurementId: "G-MGW6GF67H3"
+    };
+
+    const els = {
+      space: document.getElementById('space'),
+      bubbles: document.getElementById('bubbles'),
+      loading: document.getElementById('loading'),
+      detailsOverlay: document.getElementById('detailsOverlay'),
+      detailsModal: document.getElementById('detailsModal'),
+      closeModal: document.getElementById('closeModal'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalDetails: document.getElementById('modalDetails'),
+      speedSlider: document.getElementById('speedSlider'),
+      speedValue: document.getElementById('speedValue')
+    };
+    const VIEW_ZOOM_MIN = 0.42;
+    const VIEW_ZOOM_MAX = 1.35;
+    const SPEED_FACTOR_MIN = 0.2;
+    const SPEED_FACTOR_MAX = 2.5;
+    const SPEED_FACTOR_LS_KEY = 'beerBottleSpeedFactor';
+
+    const state = {
+      db: null,
+      beers: [],
+      nodes: [],
+      nodeMap: new Map(),
+      selectedBeerId: null,
+      lastTime: 0,
+      running: true,
+      speedFactor: 1,
+      view: {
+        x: 0,
+        y: 0,
+        zoom: 1,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        left: 0,
+        top: 0
+      },
+      drag: {
+        active: false,
+        pointerId: null,
+        mode: null,
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        lastY: 0,
+        moved: false,
+        bubbleId: null,
+        grabOffsetX: 0,
+        grabOffsetY: 0
+      },
+      metaTs: null,
+      physicsAccumulator: 0,
+      maxRadius: 64,
+      maxBody: 120,
+      imageBoundsCache: new Map(),
+      world: {
+        minX: -1200,
+        maxX: 1200,
+        minY: -800,
+        maxY: 800
+      }
+    };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function refreshViewRect() {
+      const rect = els.space.getBoundingClientRect();
+      state.view.left = rect.left || 0;
+      state.view.top = rect.top || 0;
+      state.view.width = Math.max(1, rect.width || window.innerWidth);
+      state.view.height = Math.max(1, rect.height || window.innerHeight);
+    }
+
+    function setSpeedFactor(value, persist) {
+      const next = clamp(Number(value) || 1, SPEED_FACTOR_MIN, SPEED_FACTOR_MAX);
+      state.speedFactor = next;
+      if (els.speedSlider) {
+        els.speedSlider.value = next.toFixed(2);
+      }
+      if (els.speedValue) {
+        els.speedValue.textContent = `${next.toFixed(2)}x`;
+      }
+      if (persist) {
+        try {
+          localStorage.setItem(SPEED_FACTOR_LS_KEY, String(next));
+        } catch (_) {}
+      }
+    }
+
+    function hash01(seed) {
+      const str = String(seed || 'seed');
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i += 1) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0) / 4294967295;
+    }
+
+    function normalizeBeerList(value) {
+      if (!value) return [];
+      if (Array.isArray(value)) return value.filter(Boolean);
+      return Object.values(value).filter(Boolean);
+    }
+
+    function normalizeText(value) {
+      return String(value || '').trim().replace(/\s+/g, ' ');
+    }
+
+    function cleanCountry(country) {
+      const raw = normalizeText(country);
+      if (!raw) return '—';
+      const noFlag = raw.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '').trim();
+      return noFlag || raw;
+    }
+
+    function formatNumber(value, digits = 1) {
+      const num = Number(value);
+      if (!Number.isFinite(num) || num <= 0) return '—';
+      return num.toLocaleString('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: digits
+      });
+    }
+
+    function averageRating(beer) {
+      const list = Object.values(beer && beer.ratings && typeof beer.ratings === 'object' ? beer.ratings : {})
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
+      if (!list.length) return '—';
+      const avg = list.reduce((sum, value) => sum + value, 0) / list.length;
+      return `${avg.toFixed(1)} / 10`;
+    }
+
+    function normalizeBeer(raw, index) {
+      const id = raw && raw.id != null ? String(raw.id) : `beer-${index}`;
+      const name = normalizeText(raw && raw.name) || `Пиво ${index + 1}`;
+      const imageUrl = normalizeText(raw && (raw.imageUrl || raw.image || raw.img) || '');
+
+      return {
+        id,
+        name,
+        imageUrl,
+        style: normalizeText(raw && raw.style) || '—',
+        type: normalizeText(raw && raw.type) || '—',
+        filtered: normalizeText(raw && raw.filtered) || '—',
+        country: cleanCountry(raw && raw.country),
+        volume: Number(raw && raw.volume),
+        alcohol: Number(raw && raw.alcohol),
+        calories: Number(raw && raw.calories),
+        ratings: raw && raw.ratings && typeof raw.ratings === 'object' ? raw.ratings : {}
+      };
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function screenToWorld(clientX, clientY, zoom) {
+      const z = zoom || state.view.zoom;
+      return {
+        x: state.view.x + (clientX - state.view.left - state.view.width / 2) / z,
+        y: state.view.y + (clientY - state.view.top - state.view.height / 2) / z
+      };
+    }
+
+    function defaultImageBounds() {
+      return {
+        cx: 0.5,
+        cy: 0.54,
+        width: 0.58,
+        height: 0.88
+      };
+    }
+
+    async function getImageOpaqueBounds(url) {
+      const key = String(url || '').trim();
+      if (!key) return defaultImageBounds();
+      if (state.imageBoundsCache.has(key)) return state.imageBoundsCache.get(key);
+
+      const bounds = await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.decoding = 'async';
+        img.onload = () => {
+          const w = img.naturalWidth || img.width || 0;
+          const h = img.naturalHeight || img.height || 0;
+          if (!w || !h) {
+            resolve(defaultImageBounds());
+            return;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (!ctx) {
+            resolve(defaultImageBounds());
+            return;
+          }
+
+          try {
+            ctx.drawImage(img, 0, 0, w, h);
+            const { data } = ctx.getImageData(0, 0, w, h);
+            let minX = w;
+            let minY = h;
+            let maxX = -1;
+            let maxY = -1;
+            const alphaThreshold = 20;
+            for (let y = 0; y < h; y += 1) {
+              for (let x = 0; x < w; x += 1) {
+                const a = data[(y * w + x) * 4 + 3];
+                if (a > alphaThreshold) {
+                  if (x < minX) minX = x;
+                  if (x > maxX) maxX = x;
+                  if (y < minY) minY = y;
+                  if (y > maxY) maxY = y;
+                }
+              }
+            }
+
+            if (maxX < minX || maxY < minY) {
+              resolve(defaultImageBounds());
+              return;
+            }
+
+            const bw = (maxX - minX + 1) / w;
+            const bh = (maxY - minY + 1) / h;
+            const cx = (minX + maxX + 1) / (2 * w);
+            const cy = (minY + maxY + 1) / (2 * h);
+            resolve({
+              cx: clamp(cx, 0, 1),
+              cy: clamp(cy, 0, 1),
+              width: clamp(bw, 0.1, 1),
+              height: clamp(bh, 0.1, 1)
+            });
+          } catch (_) {
+            resolve(defaultImageBounds());
+          }
+        };
+        img.onerror = () => resolve(defaultImageBounds());
+        img.src = key;
+      });
+
+      state.imageBoundsCache.set(key, bounds);
+      return bounds;
+    }
+
+    async function applyImageBounds(beers) {
+      await Promise.all(beers.map(async (beer) => {
+        beer.imageBounds = await getImageOpaqueBounds(beer.imageUrl);
+      }));
+    }
+
+    function getBodyWorldData(node) {
+      const cos = Math.cos(node.angle);
+      const sin = Math.sin(node.angle);
+      const uxX = cos;
+      const uxY = sin;
+      const uyX = -sin;
+      const uyY = cos;
+      const cx = node.x + uxX * node.bodyOffsetX + uyX * node.bodyOffsetY;
+      const cy = node.y + uxY * node.bodyOffsetX + uyY * node.bodyOffsetY;
+      const ex = Math.abs(uxX) * node.bodyHalfW + Math.abs(uyX) * node.bodyHalfH;
+      const ey = Math.abs(uxY) * node.bodyHalfW + Math.abs(uyY) * node.bodyHalfH;
+      return {
+        cx,
+        cy,
+        uxX,
+        uxY,
+        uyX,
+        uyY,
+        ex,
+        ey,
+        hw: node.bodyHalfW,
+        hh: node.bodyHalfH
+      };
+    }
+
+    function clampNodeToWorld(node, bounce) {
+      const b = state.world;
+      const restitution = bounce != null ? bounce : 0.72;
+      const body = getBodyWorldData(node);
+      const centerX = body.cx;
+      const centerY = body.cy;
+      let corrected = false;
+
+      const left = centerX - body.ex;
+      if (left < b.minX) {
+        node.x += b.minX - left;
+        node.vx = Math.abs(node.vx) * restitution;
+        node.av += node.vy * 0.002;
+        corrected = true;
+      }
+      const right = centerX + body.ex;
+      if (right > b.maxX) {
+        node.x -= right - b.maxX;
+        node.vx = -Math.abs(node.vx) * restitution;
+        node.av -= node.vy * 0.002;
+        corrected = true;
+      }
+      const top = centerY - body.ey;
+      if (top < b.minY) {
+        node.y += b.minY - top;
+        node.vy = Math.abs(node.vy) * restitution;
+        node.av -= node.vx * 0.002;
+        corrected = true;
+      }
+      const bottom = centerY + body.ey;
+      if (bottom > b.maxY) {
+        node.y -= bottom - b.maxY;
+        node.vy = -Math.abs(node.vy) * restitution;
+        node.av += node.vx * 0.002;
+        corrected = true;
+      }
+      node.av = clamp(node.av, -8, 8);
+
+      return corrected;
+    }
+
+    function fitViewToWorld(resetPan) {
+      state.view.zoom = 1;
+      if (resetPan) {
+        state.view.x = 0;
+        state.view.y = 0;
+      }
+    }
+
+    function syncWorldToViewport() {
+      const halfW = state.view.width / Math.max(0.1, state.view.zoom) / 2;
+      const halfH = state.view.height / Math.max(0.1, state.view.zoom) / 2;
+      state.world.minX = state.view.x - halfW;
+      state.world.maxX = state.view.x + halfW;
+      state.world.minY = state.view.y - halfH;
+      state.world.maxY = state.view.y + halfH;
+    }
+
+    function clampViewToWorld() {
+      syncWorldToViewport();
+      const b = state.world;
+      const halfW = state.view.width / Math.max(0.1, state.view.zoom) / 2;
+      const halfH = state.view.height / Math.max(0.1, state.view.zoom) / 2;
+      const minX = b.minX + halfW;
+      const maxX = b.maxX - halfW;
+      const minY = b.minY + halfH;
+      const maxY = b.maxY - halfH;
+      if (minX <= maxX) {
+        state.view.x = clamp(state.view.x, minX, maxX);
+      } else {
+        state.view.x = (b.minX + b.maxX) * 0.5;
+      }
+      if (minY <= maxY) {
+        state.view.y = clamp(state.view.y, minY, maxY);
+      } else {
+        state.view.y = (b.minY + b.maxY) * 0.5;
+      }
+    }
+
+    function createBubbleNode(beer, index, baseRadius) {
+      const randA = hash01(`a:${beer.id}`);
+      const randR = hash01(`r:${beer.id}`);
+      const randS = hash01(`s:${beer.id}`);
+      const imageBounds = beer.imageBounds || defaultImageBounds();
+
+      const radius = clamp(baseRadius * (0.82 + randR * 0.42), 18, 44);
+      const bottleW = radius * 1.28;
+      const bottleH = radius * 2.8;
+      const halfWorldW = state.view.width / Math.max(0.1, state.view.zoom) / 2;
+      const halfWorldH = state.view.height / Math.max(0.1, state.view.zoom) / 2;
+      const spawnX = (randA * 2 - 1) * Math.max(30, halfWorldW - bottleW);
+      const spawnY = (hash01(`y:${beer.id}`) * 2 - 1) * Math.max(30, halfWorldH - bottleH);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'bubble';
+      btn.dataset.beerId = beer.id;
+      btn.innerHTML = `
+        <img class="bubble-img" alt="${escapeHtml(beer.name)}">
+      `;
+
+      const imgEl = btn.querySelector('.bubble-img');
+      imgEl.src = beer.imageUrl;
+
+      const node = {
+        id: beer.id,
+        beer,
+        el: btn,
+        imgEl,
+        x: spawnX,
+        y: spawnY,
+        vx: (randS - 0.5) * 86,
+        vy: (hash01(`v:${beer.id}`) - 0.5) * 86,
+        r: radius,
+        w: bottleW,
+        h: bottleH,
+        bodyOffsetX: (imageBounds.cx - 0.5) * bottleW,
+        bodyOffsetY: (imageBounds.cy - 0.5) * bottleH,
+        bodyHalfW: Math.max(4, bottleW * imageBounds.width * 0.5),
+        bodyHalfH: Math.max(8, bottleH * imageBounds.height * 0.5),
+        collisionRadius: 0,
+        mass: Math.max(1, bottleW * bottleH * imageBounds.width * imageBounds.height),
+        invMass: 0,
+        inertia: 0,
+        invInertia: 0,
+        angle: (hash01(`ang:${beer.id}`) - 0.5) * 0.18,
+        av: (hash01(`av:${beer.id}`) - 0.5) * 0.18,
+        jitterPhase: hash01(`p:${beer.id}`) * Math.PI * 2,
+        jitterSpeed: 0.75 + hash01(`ps:${beer.id}`) * 0.9,
+        jitterAmp: 5 + hash01(`pa:${beer.id}`) * 6,
+        isDragged: false,
+        selectedRendered: false
+      };
+      node.invMass = 1 / node.mass;
+      // Rectangle moment of inertia approximation around center.
+      node.inertia = node.mass * (node.bodyHalfW * node.bodyHalfW + node.bodyHalfH * node.bodyHalfH) / 3;
+      node.invInertia = node.inertia > 0 ? 1 / node.inertia : 0;
+      node.collisionRadius = Math.hypot(node.bodyHalfW, node.bodyHalfH);
+
+      btn.style.width = `${bottleW.toFixed(2)}px`;
+      btn.style.height = `${bottleH.toFixed(2)}px`;
+      btn.style.transform = `translate3d(${(node.x - bottleW / 2).toFixed(2)}px, ${(node.y - bottleH / 2).toFixed(2)}px, 0)`;
+
+      els.bubbles.appendChild(btn);
+      state.nodeMap.set(node.id, node);
+      return node;
+    }
+
+    function rebuildNodes() {
+      state.nodes = [];
+      state.nodeMap.clear();
+      els.bubbles.innerHTML = '';
+
+      const count = Math.max(1, state.beers.length);
+      const baseRadius = clamp(56 - count * 0.12, 22, 42);
+
+      state.beers.forEach((beer, index) => {
+        state.nodes.push(createBubbleNode(beer, index, baseRadius));
+      });
+
+      state.maxRadius = state.nodes.reduce((max, node) => Math.max(max, node.r), 64);
+      state.maxBody = state.nodes.reduce((max, node) => Math.max(max, node.bodyHalfW * 2, node.bodyHalfH * 2), 120);
+
+      fitViewToWorld(true);
+      syncWorldToViewport();
+      state.physicsAccumulator = 0;
+      renderViewport();
+
+      state.selectedBeerId = null;
+      closeDetails();
+    }
+
+    function resolveCollisions(dt) {
+      const nodes = state.nodes;
+      if (!nodes.length) return;
+      syncWorldToViewport();
+      const baseRestitution = 0.62;
+      const friction = 0.08;
+      const cellSize = Math.max(56, state.maxBody + 10);
+      function buildBodyMap() {
+        const bodyMap = new Map();
+        for (let i = 0; i < nodes.length; i += 1) {
+          const node = nodes[i];
+          bodyMap.set(node.id, getBodyWorldData(node));
+        }
+        return bodyMap;
+      }
+
+      function buildGrid(bodyMap) {
+        const grid = new Map();
+        for (let i = 0; i < nodes.length; i += 1) {
+          const node = nodes[i];
+          const body = bodyMap.get(node.id);
+          if (!body) continue;
+          const minCx = Math.floor((body.cx - body.ex) / cellSize);
+          const maxCx = Math.floor((body.cx + body.ex) / cellSize);
+          const minCy = Math.floor((body.cy - body.ey) / cellSize);
+          const maxCy = Math.floor((body.cy + body.ey) / cellSize);
+          for (let cx = minCx; cx <= maxCx; cx += 1) {
+            for (let cy = minCy; cy <= maxCy; cy += 1) {
+              const key = `${cx},${cy}`;
+              const bucket = grid.get(key);
+              if (bucket) {
+                bucket.push(node);
+              } else {
+                grid.set(key, [node]);
+              }
+            }
+          }
+        }
+        return grid;
+      }
+
+      function projectedHalfSize(body, ax, ay) {
+        const dotUX = body.uxX * ax + body.uxY * ay;
+        const dotUY = body.uyX * ax + body.uyY * ay;
+        return body.hw * Math.abs(dotUX) + body.hh * Math.abs(dotUY);
+      }
+
+      function solvePair(a, b, bodyMap, applyImpulse) {
+        let bodyA = bodyMap.get(a.id);
+        let bodyB = bodyMap.get(b.id);
+        if (!bodyA || !bodyB) return;
+
+        const invMassA = a.isDragged ? 0 : a.invMass;
+        const invMassB = b.isDragged ? 0 : b.invMass;
+        const massSum = invMassA + invMassB;
+        if (massSum <= 0) return;
+
+        const dX = bodyB.cx - bodyA.cx;
+        const dY = bodyB.cy - bodyA.cy;
+        const axes = [
+          [bodyA.uxX, bodyA.uxY],
+          [bodyA.uyX, bodyA.uyY],
+          [bodyB.uxX, bodyB.uxY],
+          [bodyB.uyX, bodyB.uyY]
+        ];
+
+        let minOverlap = Infinity;
+        let nx = 0;
+        let ny = 0;
+
+        for (let i = 0; i < axes.length; i += 1) {
+          let ax = axes[i][0];
+          let ay = axes[i][1];
+          const len = Math.hypot(ax, ay) || 1;
+          ax /= len;
+          ay /= len;
+
+          const dist = Math.abs(dX * ax + dY * ay);
+          const ra = projectedHalfSize(bodyA, ax, ay);
+          const rb = projectedHalfSize(bodyB, ax, ay);
+          const overlap = ra + rb - dist;
+          if (overlap <= 0) return;
+
+          if (overlap < minOverlap) {
+            minOverlap = overlap;
+            const sign = (dX * ax + dY * ay) < 0 ? -1 : 1;
+            nx = ax * sign;
+            ny = ay * sign;
+          }
+        }
+
+        // Hard separation with tiny bias to avoid residual edge overlap.
+        const correctionMag = (minOverlap + 0.02) / massSum;
+        if (!a.isDragged) {
+          a.x -= nx * correctionMag * invMassA;
+          a.y -= ny * correctionMag * invMassA;
+        }
+        if (!b.isDragged) {
+          b.x += nx * correctionMag * invMassB;
+          b.y += ny * correctionMag * invMassB;
+        }
+
+        // Update transformed bodies after position correction for downstream pairs in this pass.
+        bodyA = getBodyWorldData(a);
+        bodyB = getBodyWorldData(b);
+        bodyMap.set(a.id, bodyA);
+        bodyMap.set(b.id, bodyB);
+
+        if (!applyImpulse) return;
+
+        const supportA = projectedHalfSize(bodyA, nx, ny);
+        const supportB = projectedHalfSize(bodyB, nx, ny);
+        const contactX = ((bodyA.cx + nx * supportA) + (bodyB.cx - nx * supportB)) * 0.5;
+        const contactY = ((bodyA.cy + ny * supportA) + (bodyB.cy - ny * supportB)) * 0.5;
+
+        const raX = contactX - bodyA.cx;
+        const raY = contactY - bodyA.cy;
+        const rbX = contactX - bodyB.cx;
+        const rbY = contactY - bodyB.cy;
+
+        const vaX = a.vx - a.av * raY;
+        const vaY = a.vy + a.av * raX;
+        const vbX = b.vx - b.av * rbY;
+        const vbY = b.vy + b.av * rbX;
+        const rvx = vbX - vaX;
+        const rvy = vbY - vaY;
+        const velAlongNormal = rvx * nx + rvy * ny;
+        if (velAlongNormal >= 0) return;
+
+        const invInertiaA = a.isDragged ? 0 : a.invInertia;
+        const invInertiaB = b.isDragged ? 0 : b.invInertia;
+        const raCrossN = raX * ny - raY * nx;
+        const rbCrossN = rbX * ny - rbY * nx;
+        const denomN = massSum + (raCrossN * raCrossN) * invInertiaA + (rbCrossN * rbCrossN) * invInertiaB;
+        if (denomN <= 0) return;
+
+        const impactSpeed = -velAlongNormal;
+        const restitution = clamp(baseRestitution + impactSpeed * 0.0022, 0.5, 0.92);
+        const j = (1 + restitution) * impactSpeed / denomN;
+        const impulseX = j * nx;
+        const impulseY = j * ny;
+
+        if (!a.isDragged) {
+          a.vx -= impulseX * invMassA;
+          a.vy -= impulseY * invMassA;
+          a.av -= (raX * impulseY - raY * impulseX) * invInertiaA;
+        }
+        if (!b.isDragged) {
+          b.vx += impulseX * invMassB;
+          b.vy += impulseY * invMassB;
+          b.av += (rbX * impulseY - rbY * impulseX) * invInertiaB;
+        }
+
+        const va2X = a.vx - a.av * raY;
+        const va2Y = a.vy + a.av * raX;
+        const vb2X = b.vx - b.av * rbY;
+        const vb2Y = b.vy + b.av * rbX;
+        let tvx = vb2X - va2X;
+        let tvy = vb2Y - va2Y;
+        const dotTN = tvx * nx + tvy * ny;
+        tvx -= dotTN * nx;
+        tvy -= dotTN * ny;
+        const tMag = Math.hypot(tvx, tvy);
+        if (tMag > 1e-4) {
+          const tx = tvx / tMag;
+          const ty = tvy / tMag;
+          const raCrossT = raX * ty - raY * tx;
+          const rbCrossT = rbX * ty - rbY * tx;
+          const denomT = massSum + (raCrossT * raCrossT) * invInertiaA + (rbCrossT * rbCrossT) * invInertiaB;
+          if (denomT > 0) {
+            let jt = -(tvx * tx + tvy * ty) / denomT;
+            const jtMax = friction * j;
+            jt = clamp(jt, -jtMax, jtMax);
+            const fX = jt * tx;
+            const fY = jt * ty;
+            if (!a.isDragged) {
+              a.vx -= fX * invMassA;
+              a.vy -= fY * invMassA;
+              a.av -= (raX * fY - raY * fX) * invInertiaA;
+            }
+            if (!b.isDragged) {
+              b.vx += fX * invMassB;
+              b.vy += fY * invMassB;
+              b.av += (rbX * fY - rbY * fX) * invInertiaB;
+            }
+          }
+        }
+      }
+
+      const solverPasses = 4;
+      for (let pass = 0; pass < solverPasses; pass += 1) {
+        const bodyMap = buildBodyMap();
+        const grid = buildGrid(bodyMap);
+        const seenPairs = new Set();
+        grid.forEach((bucket) => {
+          for (let i = 0; i < bucket.length; i += 1) {
+            for (let j = i + 1; j < bucket.length; j += 1) {
+              const a = bucket[i];
+              const b = bucket[j];
+              if (a.id === b.id) continue;
+              const key = a.id < b.id ? `${a.id}|${b.id}` : `${b.id}|${a.id}`;
+              if (seenPairs.has(key)) continue;
+              seenPairs.add(key);
+              solvePair(a, b, bodyMap, pass === 0);
+            }
+          }
+        });
+      }
+
+      const motionScale = state.speedFactor;
+      const simDt = dt * motionScale;
+      const damp = Math.pow(0.998, simDt * 60);
+      const now = performance.now() * 0.001;
+
+      for (let i = 0; i < nodes.length; i += 1) {
+        const node = nodes[i];
+        if (node.isDragged) {
+          node.vx = 0;
+          node.vy = 0;
+          node.av = 0;
+          clampNodeToWorld(node, 0.4);
+          continue;
+        }
+
+        const t = now * node.jitterSpeed + node.jitterPhase;
+        node.vx += Math.cos(t) * node.jitterAmp * simDt;
+        node.vy += Math.sin(t * 1.07) * node.jitterAmp * simDt;
+
+        node.vx *= damp;
+        node.vy *= damp;
+        node.av *= Math.pow(0.9965, simDt * 60);
+
+        const speed = Math.hypot(node.vx, node.vy);
+        const maxSpeed = 190 * (0.7 + motionScale * 0.9);
+        if (speed > maxSpeed) {
+          const k = maxSpeed / speed;
+          node.vx *= k;
+          node.vy *= k;
+        } else if (speed < 0.08) {
+          node.vx = 0;
+          node.vy = 0;
+        }
+
+        node.x += node.vx * simDt;
+        node.y += node.vy * simDt;
+        node.av = clamp(node.av, -9.5, 9.5);
+        node.angle += node.av * simDt;
+        clampNodeToWorld(node, 0.96);
+      }
+    }
+
+    function renderViewport() {
+      clampViewToWorld();
+      const tx = state.view.width / 2 - state.view.x * state.view.zoom;
+      const ty = state.view.height / 2 - state.view.y * state.view.zoom;
+      els.bubbles.style.transform = `translate3d(${tx.toFixed(2)}px, ${ty.toFixed(2)}px, 0) scale(${state.view.zoom.toFixed(4)})`;
+    }
+
+    function renderNodes() {
+      for (let i = 0; i < state.nodes.length; i += 1) {
+        const node = state.nodes[i];
+        node.el.style.transform = `translate3d(${(node.x - node.w / 2).toFixed(2)}px, ${(node.y - node.h / 2).toFixed(2)}px, 0) rotate(${node.angle.toFixed(4)}rad)`;
+        const isSelected = state.selectedBeerId === node.id;
+        if (node.selectedRendered !== isSelected) {
+          node.el.classList.toggle('is-selected', isSelected);
+          node.selectedRendered = isSelected;
+        }
+      }
+    }
+
+    function tick(time) {
+      if (!state.lastTime) state.lastTime = time;
+      const dt = Math.min(0.05, (time - state.lastTime) / 1000);
+      state.lastTime = time;
+
+      const fixedDt = 1 / 120;
+      state.physicsAccumulator += dt;
+      let steps = 0;
+      while (state.physicsAccumulator >= fixedDt && steps < 10) {
+        resolveCollisions(fixedDt);
+        state.physicsAccumulator -= fixedDt;
+        steps += 1;
+      }
+      renderViewport();
+      renderNodes();
+
+      if (state.running) requestAnimationFrame(tick);
+    }
+
+    function openDetails(beerId) {
+      const node = state.nodeMap.get(String(beerId));
+      if (!node) return;
+      const beer = node.beer;
+
+      state.selectedBeerId = node.id;
+      els.modalTitle.textContent = beer.name;
+
+      const rows = [
+        ['Сорт', beer.style || '—'],
+        ['Страна', beer.country || '—'],
+        ['Вид', beer.type || '—'],
+        ['Фильтрация', beer.filtered || '—'],
+        ['Крепость', `${formatNumber(beer.alcohol, 1)}%`],
+        ['Калорийность', `${formatNumber(beer.calories, 0)} ккал`],
+        ['Объем', `${formatNumber(beer.volume, 2)} л`],
+        ['Средний рейтинг', averageRating(beer)]
+      ];
+
+      els.modalDetails.innerHTML = rows.map(([k, v]) => (
+        `<div class="detail-row"><span>${escapeHtml(k)}</span><span>${escapeHtml(v)}</span></div>`
+      )).join('');
+
+      els.detailsOverlay.classList.add('is-open');
+      els.detailsOverlay.setAttribute('aria-hidden', 'false');
+      els.detailsModal.classList.add('is-open');
+      els.detailsModal.setAttribute('aria-hidden', 'false');
+
+      renderNodes();
+    }
+
+    function closeDetails() {
+      state.selectedBeerId = null;
+      els.detailsOverlay.classList.remove('is-open');
+      els.detailsOverlay.setAttribute('aria-hidden', 'true');
+      els.detailsModal.classList.remove('is-open');
+      els.detailsModal.setAttribute('aria-hidden', 'true');
+      renderNodes();
+    }
+
+    function openDetailsModalOnly() {
+      els.detailsOverlay.classList.add('is-open');
+      els.detailsOverlay.setAttribute('aria-hidden', 'false');
+      els.detailsModal.classList.add('is-open');
+      els.detailsModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function attachEvents() {
+      if (els.speedSlider) {
+        els.speedSlider.addEventListener('input', (event) => {
+          setSpeedFactor(event.target.value, true);
+        });
+      }
+
+      els.space.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const before = screenToWorld(event.clientX, event.clientY, state.view.zoom);
+        const nextZoom = clamp(state.view.zoom * Math.exp(-event.deltaY * 0.003), VIEW_ZOOM_MIN, VIEW_ZOOM_MAX);
+        state.view.zoom = nextZoom;
+        state.view.x = before.x - (event.clientX - state.view.width / 2) / nextZoom;
+        state.view.y = before.y - (event.clientY - state.view.height / 2) / nextZoom;
+        renderViewport();
+      }, { passive: false });
+
+      els.space.addEventListener('pointerdown', (event) => {
+        const bubble = event.target.closest('.bubble[data-beer-id]');
+        state.drag.active = true;
+        state.drag.pointerId = event.pointerId;
+        state.drag.startX = event.clientX;
+        state.drag.startY = event.clientY;
+        state.drag.lastX = event.clientX;
+        state.drag.lastY = event.clientY;
+        state.drag.moved = false;
+        state.drag.bubbleId = bubble ? String(bubble.dataset.beerId) : null;
+        state.drag.mode = bubble ? 'bubbleCandidate' : 'pan';
+        state.drag.grabOffsetX = 0;
+        state.drag.grabOffsetY = 0;
+        els.space.setPointerCapture(event.pointerId);
+      });
+
+      els.space.addEventListener('pointermove', (event) => {
+        if (!state.drag.active || state.drag.pointerId !== event.pointerId) return;
+
+        const dx = event.clientX - state.drag.lastX;
+        const dy = event.clientY - state.drag.lastY;
+        const totalDx = event.clientX - state.drag.startX;
+        const totalDy = event.clientY - state.drag.startY;
+
+        if (Math.hypot(totalDx, totalDy) > 4) {
+          state.drag.moved = true;
+        }
+
+        if (state.drag.mode === 'bubbleCandidate' && state.drag.moved && state.drag.bubbleId) {
+          const node = state.nodeMap.get(state.drag.bubbleId);
+          if (node) {
+            const world = screenToWorld(event.clientX, event.clientY);
+            state.drag.mode = 'bubbleDrag';
+            state.drag.grabOffsetX = world.x - node.x;
+            state.drag.grabOffsetY = world.y - node.y;
+            node.isDragged = true;
+            node.vx = 0;
+            node.vy = 0;
+          }
+        }
+
+        if (state.drag.mode === 'bubbleDrag' && state.drag.bubbleId) {
+          const node = state.nodeMap.get(state.drag.bubbleId);
+          if (node) {
+            const world = screenToWorld(event.clientX, event.clientY);
+            const prevX = node.x;
+            const prevY = node.y;
+            node.x = world.x - state.drag.grabOffsetX;
+            node.y = world.y - state.drag.grabOffsetY;
+            const dt = 1 / 60;
+            node.vx = clamp((node.x - prevX) / dt, -420, 420);
+            node.vy = clamp((node.y - prevY) / dt, -420, 420);
+            node.av = clamp(node.av + (node.vx * node.bodyOffsetY - node.vy * node.bodyOffsetX) * 0.00015, -9.5, 9.5);
+            clampNodeToWorld(node, 0.5);
+          }
+        } else if (state.drag.mode === 'pan') {
+          state.view.x -= dx / state.view.zoom;
+          state.view.y -= dy / state.view.zoom;
+          clampViewToWorld();
+          els.space.classList.add('is-dragging');
+        }
+
+        state.drag.lastX = event.clientX;
+        state.drag.lastY = event.clientY;
+      });
+
+      const releasePointer = (event) => {
+        if (!state.drag.active || state.drag.pointerId !== event.pointerId) return;
+
+        if (state.drag.mode === 'bubbleDrag' && state.drag.bubbleId) {
+          const node = state.nodeMap.get(state.drag.bubbleId);
+          if (node) node.isDragged = false;
+        }
+
+        if (state.drag.mode === 'bubbleCandidate' && state.drag.bubbleId && !state.drag.moved) {
+          openDetails(state.drag.bubbleId);
+        }
+
+        state.drag.active = false;
+        state.drag.pointerId = null;
+        state.drag.bubbleId = null;
+        state.drag.mode = null;
+        state.drag.moved = false;
+        state.drag.grabOffsetX = 0;
+        state.drag.grabOffsetY = 0;
+        els.space.classList.remove('is-dragging');
+
+        try {
+          els.space.releasePointerCapture(event.pointerId);
+        } catch (_) {}
+      };
+
+      els.space.addEventListener('pointerup', releasePointer);
+      els.space.addEventListener('pointercancel', releasePointer);
+
+      window.addEventListener('resize', () => {
+        refreshViewRect();
+        fitViewToWorld(false);
+        renderViewport();
+      });
+
+      els.detailsOverlay.addEventListener('click', () => {
+        closeDetails();
+      });
+
+      els.closeModal.addEventListener('click', () => {
+        closeDetails();
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeDetails();
+      });
+
+      window.addEventListener('visibilitychange', () => {
+        state.running = document.visibilityState !== 'hidden';
+        if (state.running) {
+          state.lastTime = 0;
+          state.physicsAccumulator = 0;
+          requestAnimationFrame(tick);
+        }
+      });
+    }
+
+    async function loadBeerData() {
+      const snapshot = await state.db.ref('beerRating').once('value');
+      const list = normalizeBeerList(snapshot.val())
+        .map((beer, index) => normalizeBeer(beer, index))
+        .filter((beer) => !!beer.imageUrl)
+        .filter(Boolean)
+        .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+      await applyImageBounds(list);
+      state.beers = list;
+
+      rebuildNodes();
+    }
+
+    async function initFirebase() {
+      if (!window.firebase || !firebaseConfig.databaseURL) {
+        throw new Error('Firebase недоступен');
+      }
+
+      if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceWebSockets === 'function') {
+        firebase.database.INTERNAL.forceWebSockets();
+      }
+
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+
+      state.db = firebase.database();
+      await loadBeerData();
+
+      state.db.ref('beerRatingMeta/updatedAt').on('value', (snapshot) => {
+        const ts = snapshot.val();
+        if (ts && ts === state.metaTs && state.beers.length) return;
+        if (ts) state.metaTs = ts;
+        loadBeerData().catch((error) => {
+          console.error('[beer] reload failed', error);
+        });
+      });
+    }
+
+    async function boot() {
+      let initialSpeed = 1;
+      try {
+        const stored = localStorage.getItem(SPEED_FACTOR_LS_KEY);
+        if (stored != null) initialSpeed = Number(stored);
+      } catch (_) {}
+      setSpeedFactor(initialSpeed, false);
+
+      refreshViewRect();
+      attachEvents();
+      requestAnimationFrame(tick);
+
+      try {
+        await initFirebase();
+      } catch (error) {
+        console.error(error);
+        els.modalTitle.textContent = 'Ошибка загрузки';
+        els.modalDetails.innerHTML = `<div class="detail-row"><span>Причина</span><span>${escapeHtml(error && error.message ? error.message : 'unknown')}</span></div>`;
+        openDetailsModalOnly();
+      } finally {
+        els.loading.hidden = true;
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>
