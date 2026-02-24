@@ -202,6 +202,17 @@
       border-color: rgba(245, 158, 11, 0.52);
     }
 
+    .head-back-btn:focus-visible,
+    .search-input:focus-visible,
+    .btn-main:focus-visible,
+    .mode-btn:focus-visible,
+    .source-btn:focus-visible,
+    .hero-action-btn:focus-visible,
+    .floating-player-dock:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+    }
+
     .discover-head p {
       margin: 7px 0 0;
       color: var(--muted);
@@ -338,6 +349,13 @@
       box-shadow: 0 15px 36px rgba(0, 0, 0, 0.3);
     }
 
+    .movie-card:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+      border-color: rgba(252, 211, 77, 0.72);
+      box-shadow: 0 0 0 1px rgba(252, 211, 77, 0.45), 0 15px 32px rgba(0, 0, 0, 0.35);
+    }
+
     .movie-card.active {
       border-color: rgba(69, 209, 155, 0.82);
       box-shadow: 0 0 0 1px rgba(69, 209, 155, 0.55), 0 16px 32px rgba(0, 0, 0, 0.36);
@@ -419,7 +437,11 @@
 
     .player-panel {
       display: grid;
-      grid-template-rows: minmax(360px, 58%) minmax(0, 1fr);
+      grid-template-areas:
+        "hero"
+        "source"
+        "stage";
+      grid-template-rows: minmax(360px, 58%) auto minmax(0, 1fr);
       min-height: 0;
       height: 100%;
       animation: reveal 1s ease both;
@@ -447,6 +469,7 @@
     }
 
     .hero {
+      grid-area: hero;
       position: relative;
       min-height: 360px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -579,6 +602,7 @@
     }
 
     .player-stage {
+      grid-area: stage;
       position: relative;
       min-height: 0;
       background: #070b0a;
@@ -587,6 +611,63 @@
       align-items: flex-start;
       justify-content: center;
       padding: 0;
+    }
+
+    .player-source-bar {
+      grid-area: source;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(180deg, rgba(12, 12, 12, 0.98), rgba(10, 10, 10, 0.95));
+    }
+
+    .player-source-title {
+      font-size: 0.76rem;
+      color: #e6d8b5;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .source-toggle {
+      display: inline-flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .source-btn {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-family: "Comfortaa", cursive;
+      border-radius: 999px;
+      padding: 6px 11px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      line-height: 1;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+    }
+
+    .source-btn.active {
+      border-color: rgba(245, 190, 80, 0.68);
+      background: rgba(245, 190, 80, 0.16);
+      color: #ffe6a8;
+      box-shadow: 0 8px 18px rgba(245, 190, 80, 0.14);
+    }
+
+    .source-btn.dimmed {
+      opacity: 0.62;
+    }
+
+    .source-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .player-host {
@@ -612,6 +693,47 @@
     .player-stage iframe.ready,
     .player-host iframe.ready {
       opacity: 1;
+    }
+
+    .player-stage iframe:focus-visible,
+    .player-stage iframe:focus,
+    .player-host iframe:focus-visible,
+    .player-host iframe:focus {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: -2px;
+    }
+
+    .player-enter-btn {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 4;
+      border: 1px solid rgba(245, 190, 80, 0.56);
+      background: rgba(8, 8, 8, 0.84);
+      color: #fef3c7;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    }
+
+    .player-enter-btn:hover {
+      border-color: rgba(252, 211, 77, 0.78);
+      background: rgba(20, 20, 20, 0.9);
+      transform: translateY(-1px);
+    }
+
+    .player-enter-btn:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+    }
+
+    .player-enter-btn[hidden] {
+      display: none;
     }
 
     .player-placeholder {
@@ -887,7 +1009,11 @@
         inset: 0;
         width: auto;
         max-width: 100%;
-        grid-template-rows: minmax(400px, 62%) minmax(0, 1fr);
+        grid-template-areas:
+          "hero"
+          "source"
+          "stage";
+        grid-template-rows: minmax(400px, 62%) auto minmax(0, 1fr);
         min-height: 0;
         height: auto;
         padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 78px);
@@ -910,6 +1036,10 @@
         opacity: 1;
         pointer-events: auto;
         transform: translateY(0);
+      }
+
+      .hero-detach-btn {
+        display: none !important;
       }
     }
 
@@ -970,7 +1100,11 @@
 
       .player-panel {
         inset: 0;
-        grid-template-rows: minmax(360px, 60%) minmax(0, 1fr);
+        grid-template-areas:
+          "hero"
+          "source"
+          "stage";
+        grid-template-rows: minmax(360px, 60%) auto minmax(0, 1fr);
         min-height: 0;
         padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
       }
@@ -980,6 +1114,136 @@
         height: min(56vh, 440px);
         min-width: 96px;
         min-height: 54px;
+      }
+    }
+
+    html.android-tv body {
+      overflow: hidden;
+    }
+
+    html.android-tv .page {
+      height: 100dvh;
+      min-height: 100dvh;
+      padding: 8px 10px;
+    }
+
+    html.android-tv .layout,
+    html.android-tv .layout.is-details-open {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+      position: relative;
+      height: 100%;
+    }
+
+    html.android-tv .discover {
+      height: 100%;
+    }
+
+    html.android-tv .player-panel {
+      position: absolute;
+      inset: 8px;
+      width: auto;
+      max-width: calc(100% - 16px);
+      max-height: calc(100% - 16px);
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "stage"
+        "source"
+        "hero";
+      gap: 0;
+      overflow: hidden;
+      z-index: 34;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      border-radius: 20px;
+      background: rgba(8, 8, 8, 0.98);
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+      transform: translateY(12px) scale(0.99);
+      transition: transform 0.24s ease, opacity 0.2s ease, visibility 0s linear 0.24s;
+    }
+
+    html.android-tv .layout:not(.is-details-open) .player-panel {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      transform: translateY(12px) scale(0.99) !important;
+    }
+
+    html.android-tv .layout.is-details-open .player-panel {
+      opacity: 1;
+      pointer-events: auto;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      transition: transform 0.24s ease, opacity 0.2s ease, visibility 0s linear 0s;
+    }
+
+    html.android-tv .player-stage {
+      overflow: hidden;
+      align-items: stretch;
+      justify-content: stretch;
+      min-height: 0;
+      height: 100%;
+    }
+
+    html.android-tv .player-host {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      aspect-ratio: auto;
+      max-height: none;
+    }
+
+    html.android-tv .hero {
+      min-height: 0;
+      padding: 14px 16px 14px;
+      border-right: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: auto;
+      max-height: min(34dvh, 260px);
+    }
+
+    html.android-tv .hero-body {
+      gap: 8px;
+      max-width: 100%;
+      padding-right: 0;
+    }
+
+    html.android-tv .hero h3 {
+      font-size: clamp(1rem, 1.8vw, 1.45rem);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    html.android-tv .hero p {
+      max-height: none;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+    }
+
+    html.android-tv .player-source-bar {
+      border-bottom: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 0;
+      padding: 10px 14px;
+    }
+
+    html.android-tv .hero-detach-btn {
+      display: none !important;
+    }
+
+    @media (max-width: 1180px) {
+      html.android-tv .hero {
+        max-height: min(38dvh, 280px);
       }
     }
   </style>
@@ -1032,9 +1296,19 @@
           </div>
         </div>
 
+        <div class="player-source-bar">
+          <div class="player-source-title">Источник</div>
+          <div class="source-toggle" id="sourceSwitch" role="tablist" aria-label="Источник плеера">
+            <button class="source-btn active" type="button" data-provider="alloha">Alloha</button>
+            <button class="source-btn" type="button" data-provider="collaps">Collaps</button>
+            <button class="source-btn" type="button" data-provider="kinobd">KinoBD</button>
+          </div>
+        </div>
+
         <div class="player-stage" id="playerStage">
           <div class="player-host" id="playerHost"></div>
           <div class="player-placeholder" id="playerPlaceholder">Плеер откреплен</div>
+          <button class="player-enter-btn" id="playerEnterBtn" type="button" hidden>Управлять плеером</button>
           <div class="status hidden" id="statusBox"></div>
         </div>
       </section>
@@ -1045,30 +1319,104 @@
     const urlParams = new URLSearchParams(window.location.search);
     const DEFAULT_PROXY_BASE = "https://realtime.xn--80ahcljthqi.xn--p1ai";
     const queryProxyBase = String(urlParams.get("proxy_base") || "").trim().replace(/\/+$/, "");
-    const effectiveProxyBase = queryProxyBase || DEFAULT_PROXY_BASE;
+    function isLocalLikeOrigin(rawUrl) {
+      try {
+        const parsed = new URL(String(rawUrl || "").trim());
+        const host = String(parsed.hostname || "").toLowerCase();
+        return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0" || host === "[::1]";
+      } catch {
+        return false;
+      }
+    }
+    const pageIsLocal = isLocalLikeOrigin(window.location.origin);
+    const effectiveProxyBase = (
+      queryProxyBase && (!isLocalLikeOrigin(queryProxyBase) || pageIsLocal)
+        ? queryProxyBase
+        : DEFAULT_PROXY_BASE
+    );
     const KINOPOISK_API = `${effectiveProxyBase}/ytm/kinopoisk`;
+    const PROVIDERS = [
+      { id: "alloha", label: "Alloha" },
+      { id: "collaps", label: "Collaps" },
+      { id: "flixcdn", label: "FlixCDN" },
+      { id: "kinobd", label: "KinoBD" }
+    ];
+    const DIRECT_PROVIDER_CONFIG = {
+      alloha: {
+        token: "d317441359e505c343c2063edc97e7",
+        preferProxy: true,
+        disableDirect: true,
+        buildUrl(kpId) {
+          const url = new URL("https://api.alloha.tv/");
+          url.searchParams.set("token", this.token);
+          url.searchParams.set("kp", String(kpId || "").trim());
+          url.searchParams.set("_", String(Date.now()));
+          return url.toString();
+        }
+      },
+      collaps: {
+        token: "eedefb541aeba871dcfc756e6b31c02e",
+        buildUrl(kpId) {
+          const url = new URL("https://apicollaps.cc/list");
+          url.searchParams.set("token", this.token);
+          url.searchParams.set("kinopoisk_id", String(kpId || "").trim());
+          url.searchParams.set("_", String(Date.now()));
+          return url.toString();
+        }
+      },
+      flixcdn: {
+        token: "26b25a1d2723ba0ed7f33e6ffc52ae41",
+        buildUrl(kpId) {
+          const url = new URL("https://api0.flixcdn.biz/api/search");
+          url.searchParams.set("token", this.token);
+          url.searchParams.set("kinopoisk_id", String(kpId || "").trim());
+          url.searchParams.set("_", String(Date.now()));
+          return url.toString();
+        }
+      },
+      kinobd: {
+        preferProxy: true,
+        disableDirect: true,
+        buildUrl(kpId) {
+          const url = new URL("https://kinobd.net/api/player/search");
+          url.searchParams.set("q", String(kpId || "").trim());
+          url.searchParams.set("type", "kp_id");
+          url.searchParams.set("page", "1");
+          url.searchParams.set("_", String(Date.now()));
+          return url.toString();
+        }
+      }
+    };
+    const PROVIDER_PROXY_ENDPOINTS = {
+      alloha: ["ytm/alloha/players"],
+      collaps: ["ytm/collaps/players"],
+      flixcdn: ["ytm/flixcdn/players"],
+      kinobd: ["ytm/kinobd/players"]
+    };
     const BALANCER_SOURCE_CACHE_TTL_MS = 10 * 60 * 1000;
     const balancerSourcesCache = new Map();
     const posterByFilmCache = new Map();
     const posterImageWarmCache = new Set();
 
-    // Единственный используемый балансер — Collaps по kinopoisk_id
-    const BALANCERS = [
-      {
-        name: "Колапс",
-        url: (kpId) => `https://apicollaps.cc/list?token=eedefb541aeba871dcfc756e6b31c02e&kinopoisk_id=${kpId}`,
-        extract: (data) => data?.results?.[0]?.iframe_url || null
-      }
-    ];
+    function createProviderAvailabilityState() {
+      const availability = {};
+      PROVIDERS.forEach((provider) => {
+        availability[provider.id] = null;
+      });
+      return availability;
+    }
 
     const state = {
       mode: "multi",
       selectedId: null,
       selectedType: null,
+      selectedProvider: "alloha",
+      providerAvailability: createProviderAvailabilityState(),
       selectedSources: [],
       selectedSourceUrl: "",
       searchSeq: 0,
       playerDetached: false,
+      detachedMode: "",
       lastQuery: "",
       pagesLoaded: 0,
       pagesTotal: 0,
@@ -1086,12 +1434,66 @@
     const heroTextEl = document.getElementById("heroText");
     const heroBackdropEl = document.getElementById("heroBackdrop");
     const detailCloseBtnEl = document.getElementById("detailCloseBtn");
+    const sourceSwitchEl = document.getElementById("sourceSwitch");
     const playerHostEl = document.getElementById("playerHost");
     const playerPlaceholderEl = document.getElementById("playerPlaceholder");
+    const playerEnterBtnEl = document.getElementById("playerEnterBtn");
     const detachBtnEl = document.getElementById("detachBtn");
     const searchFormEl = document.getElementById("searchForm");
     const searchInputEl = document.getElementById("searchInput");
+    const searchBtnEl = document.getElementById("searchBtn");
     const modeSwitchEl = document.getElementById("modeSwitch");
+    const TV_ARROW_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+    const TV_BACK_KEYS = new Set(["Escape", "Backspace", "BrowserBack", "GoBack"]);
+    const TV_SELECT_KEYS = new Set(["Enter", "NumpadEnter", " ", "Spacebar"]);
+    const TV_KEYCODE_MAP = {
+      4: "BrowserBack",
+      19: "ArrowUp",
+      20: "ArrowDown",
+      21: "ArrowLeft",
+      22: "ArrowRight",
+      23: "Enter",
+      66: "Enter",
+      111: "Escape"
+    };
+    const forceTvLayout = (() => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const value = String(params.get("force_tv") || params.get("tv") || "").trim().toLowerCase();
+        return value === "1" || value === "true" || value === "yes";
+      } catch {
+        return false;
+      }
+    })();
+    const isAndroidTv = (() => {
+      if (forceTvLayout) return true;
+      const ua = String(navigator.userAgent || "").toLowerCase();
+      if (!ua.includes("android")) return false;
+      if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
+        return true;
+      }
+      if (ua.includes(" tv") || ua.includes("tv ")) return true;
+      try {
+        const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
+        const isFinePointer = !!(window.matchMedia && window.matchMedia("(pointer:fine)").matches);
+        const longEdge = Math.max(
+          Number((window.screen && window.screen.width) || 0),
+          Number((window.screen && window.screen.height) || 0)
+        );
+        const shortEdge = Math.min(
+          Number((window.screen && window.screen.width) || 0),
+          Number((window.screen && window.screen.height) || 0)
+        );
+        if (!isFinePointer && maxTouchPoints === 0 && longEdge >= 960 && shortEdge >= 540) {
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    })();
+    if (isAndroidTv) {
+      document.documentElement.classList.add("android-tv");
+      if (document.body) document.body.classList.add("android-tv");
+    }
     const canUseHostFloating = (() => {
       try {
         return window.parent && window.parent !== window;
@@ -1106,6 +1508,367 @@
     let floatingResizeState = null;
     let floatingResizeRaf = 0;
     let detailsCloseTimer = null;
+    let tvBackHistoryGuardReady = false;
+
+    function requestHostSidebarFocus() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: "tv:focus-sidebar" }, "*");
+          return true;
+        }
+      } catch (_) {}
+      return false;
+    }
+
+    function handleTvBackAction(event = null) {
+      let handled = false;
+      const activeEl = document.activeElement;
+
+      if (isTextEntryElement(activeEl)) {
+        if (typeof activeEl.blur === "function") {
+          activeEl.blur();
+          if (isTvManagedTextInput(activeEl)) {
+            relockTvTextInput(activeEl);
+          }
+        }
+        handled = true;
+      } else if (state.playerDetached) {
+        dockPlayer();
+        handled = true;
+      } else if (layoutRootEl.classList.contains("is-details-open")) {
+        closeDetailsPanel();
+        handled = true;
+      } else if (discoverHeadEl.classList.contains("has-back")) {
+        headBackBtnEl.click();
+        handled = true;
+      } else if (requestHostSidebarFocus()) {
+        handled = true;
+      }
+
+      if (handled && event) {
+        if (typeof event.preventDefault === "function") event.preventDefault();
+        if (typeof event.stopImmediatePropagation === "function") event.stopImmediatePropagation();
+        if (typeof event.stopPropagation === "function") event.stopPropagation();
+      }
+      return handled;
+    }
+
+    function ensureTvBackHistoryGuard() {
+      if (!isAndroidTv || tvBackHistoryGuardReady) return;
+      try {
+        const baseState = { ...(window.history.state || {}), __videoTvRoot: true };
+        window.history.replaceState(baseState, "", window.location.href);
+        window.history.pushState({ ...baseState, __videoTvGuard: Date.now() }, "", window.location.href);
+        tvBackHistoryGuardReady = true;
+      } catch (_) {}
+    }
+
+    function rearmTvBackHistoryGuard() {
+      if (!isAndroidTv || !tvBackHistoryGuardReady) return;
+      try {
+        const nextState = { ...(window.history.state || {}), __videoTvGuard: Date.now() };
+        window.history.pushState(nextState, "", window.location.href);
+      } catch (_) {}
+    }
+
+    function getTvEventKey(event) {
+      const raw = String(event && event.key ? event.key : "");
+      if (TV_ARROW_KEYS.has(raw) || TV_SELECT_KEYS.has(raw) || TV_BACK_KEYS.has(raw)) {
+        return raw;
+      }
+      const code = Number(event && (event.keyCode || event.which || 0));
+      return TV_KEYCODE_MAP[code] || raw;
+    }
+
+    function isTextEntryElement(el) {
+      if (!el) return false;
+      if (el.isContentEditable) return true;
+      const tag = String(el.tagName || "").toUpperCase();
+      if (tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (tag !== "INPUT") return false;
+      const type = String(el.type || "text").toLowerCase();
+      return !["button", "submit", "reset", "checkbox", "radio", "range", "file", "color"].includes(type);
+    }
+
+    function isTvManagedTextInput(el) {
+      if (!el || !isAndroidTv) return false;
+      if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+      return isTextEntryElement(el) && !el.disabled;
+    }
+
+    function lockTvTextInput(el) {
+      if (!isTvManagedTextInput(el)) return;
+      if (el.dataset.tvManagedInput !== "1") {
+        el.dataset.tvManagedInput = "1";
+      }
+      if (el instanceof HTMLInputElement) {
+        if (!el.dataset.tvInputType) {
+          el.dataset.tvInputType = String(el.getAttribute("type") || el.type || "text").toLowerCase();
+        }
+        if (el.dataset.tvInputType === "search") {
+          el.setAttribute("type", "text");
+        }
+      }
+      el.dataset.tvInputActivated = "0";
+      el.readOnly = true;
+      el.setAttribute("inputmode", "none");
+      el.setAttribute("virtualkeyboardpolicy", "manual");
+    }
+
+    function unlockTvTextInput(el) {
+      if (!isTvManagedTextInput(el)) return;
+      if (el.dataset.tvManagedInput !== "1") return;
+      el.dataset.tvInputActivated = "1";
+      el.readOnly = false;
+      if (el instanceof HTMLInputElement) {
+        const initialType = String(el.dataset.tvInputType || "").toLowerCase();
+        if (initialType && el.getAttribute("type") !== initialType) {
+          el.setAttribute("type", initialType);
+        }
+      }
+      if (el.getAttribute("inputmode") === "none") {
+        el.removeAttribute("inputmode");
+      }
+      if (el.getAttribute("virtualkeyboardpolicy") === "manual") {
+        el.removeAttribute("virtualkeyboardpolicy");
+      }
+    }
+
+    function relockTvTextInput(el) {
+      if (!isTvManagedTextInput(el)) return;
+      if (el.dataset.tvManagedInput !== "1") return;
+      if (el instanceof HTMLInputElement) {
+        const initialType = String(el.dataset.tvInputType || "").toLowerCase();
+        if (initialType === "search" && el.getAttribute("type") !== "text") {
+          el.setAttribute("type", "text");
+        }
+      }
+      el.dataset.tvInputActivated = "0";
+      el.readOnly = true;
+      el.setAttribute("inputmode", "none");
+      el.setAttribute("virtualkeyboardpolicy", "manual");
+    }
+
+    function initTvTextInputActivation() {
+      if (!isAndroidTv) return;
+      document.querySelectorAll("input, textarea").forEach(lockTvTextInput);
+
+      document.addEventListener("focusin", (event) => {
+        const el = event.target;
+        if (!isTvManagedTextInput(el)) return;
+        lockTvTextInput(el);
+      });
+
+      document.addEventListener("focusout", (event) => {
+        const el = event.target;
+        if (!isTvManagedTextInput(el)) return;
+        setTimeout(() => {
+          if (document.activeElement === el) return;
+          relockTvTextInput(el);
+        }, 0);
+      });
+
+      document.addEventListener("pointerdown", (event) => {
+        const el = event.target && event.target.closest ? event.target.closest("input,textarea") : null;
+        if (!isTvManagedTextInput(el)) return;
+        unlockTvTextInput(el);
+      }, true);
+
+      document.addEventListener("click", (event) => {
+        const el = event.target && event.target.closest ? event.target.closest("input,textarea") : null;
+        if (!isTvManagedTextInput(el)) return;
+        unlockTvTextInput(el);
+      }, true);
+
+      document.addEventListener("keydown", (event) => {
+        const el = event.target;
+        if (!isTvManagedTextInput(el)) return;
+        const key = getTvEventKey(event);
+        if (!TV_SELECT_KEYS.has(key)) return;
+        if (!el.readOnly) return;
+        event.preventDefault();
+        unlockTvTextInput(el);
+        if (typeof el.focus === "function") el.focus({ preventScroll: true });
+      }, true);
+    }
+
+    function isElementVisibleForTvNavigation(el) {
+      if (!el || !el.isConnected) return false;
+      if (el.hidden) return false;
+      if (el.disabled) return false;
+      const style = window.getComputedStyle(el);
+      if (!style) return false;
+      if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") return false;
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }
+
+    function getTvFocusableElements() {
+      const selectors = [
+        "button:not([disabled])",
+        "input:not([disabled])",
+        "select:not([disabled])",
+        "textarea:not([disabled])",
+        "a[href]",
+        "iframe",
+        "[tabindex]:not([tabindex='-1'])"
+      ].join(", ");
+      const root = (isAndroidTv && layoutRootEl.classList.contains("is-details-open"))
+        ? document.querySelector(".player-panel")
+        : document;
+      const queryRoot = root || document;
+      return Array.from(queryRoot.querySelectorAll(selectors))
+        .filter((el) => {
+          if (!isElementVisibleForTvNavigation(el)) return false;
+          if (isAndroidTv && el.tagName === "IFRAME") return false;
+          return true;
+        });
+    }
+
+    function focusElementForTv(el) {
+      if (!el || typeof el.focus !== "function") return false;
+      if (isTvManagedTextInput(el)) {
+        lockTvTextInput(el);
+      }
+      el.focus({ preventScroll: true });
+      if (typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+      return true;
+    }
+
+    function getDefaultTvFocusTarget(focusables) {
+      if (searchBtnEl && focusables.includes(searchBtnEl)) return searchBtnEl;
+      const activeCard = resultsEl.querySelector(".movie-card.active");
+      if (activeCard && focusables.includes(activeCard)) return activeCard;
+      const firstCard = resultsEl.querySelector(".movie-card");
+      if (firstCard && focusables.includes(firstCard)) return firstCard;
+      if (searchInputEl && focusables.includes(searchInputEl)) return searchInputEl;
+      return focusables[0] || null;
+    }
+
+    function findNextTvFocusable(current, direction, focusables) {
+      if (!current || !focusables.length) return null;
+      const currentRect = current.getBoundingClientRect();
+      const currentCx = currentRect.left + currentRect.width / 2;
+      const currentCy = currentRect.top + currentRect.height / 2;
+      let best = null;
+      let bestScore = Number.POSITIVE_INFINITY;
+
+      focusables.forEach((candidate) => {
+        if (!candidate || candidate === current) return;
+        const rect = candidate.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = cx - currentCx;
+        const dy = cy - currentCy;
+
+        let primary = 0;
+        let secondary = 0;
+        if (direction === "left") {
+          if (dx >= -4) return;
+          primary = -dx;
+          secondary = Math.abs(dy);
+        } else if (direction === "right") {
+          if (dx <= 4) return;
+          primary = dx;
+          secondary = Math.abs(dy);
+        } else if (direction === "up") {
+          if (dy >= -4) return;
+          primary = -dy;
+          secondary = Math.abs(dx);
+        } else if (direction === "down") {
+          if (dy <= 4) return;
+          primary = dy;
+          secondary = Math.abs(dx);
+        } else {
+          return;
+        }
+
+        const distance = Math.hypot(dx, dy);
+        const score = primary * 1000 + secondary * 10 + distance;
+        if (score < bestScore) {
+          best = candidate;
+          bestScore = score;
+        }
+      });
+      return best;
+    }
+
+    function buildResultCardRows(cards) {
+      const rows = [];
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        const top = rect.top;
+        let row = rows.find((entry) => Math.abs(entry.top - top) <= 18);
+        if (!row) {
+          row = { top, cards: [] };
+          rows.push(row);
+        }
+        row.cards.push(card);
+      });
+      rows.sort((a, b) => a.top - b.top);
+      rows.forEach((row) => {
+        row.cards.sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+      });
+      return rows;
+    }
+
+    function findAdjacentResultCard(current, direction) {
+      if (!current || !current.classList || !current.classList.contains("movie-card")) return null;
+      const cards = Array.from(resultsEl.querySelectorAll(".movie-card")).filter(isElementVisibleForTvNavigation);
+      if (!cards.length) return null;
+      const rows = buildResultCardRows(cards);
+      let rowIndex = -1;
+      let colIndex = -1;
+
+      rows.some((row, rIdx) => {
+        const idx = row.cards.indexOf(current);
+        if (idx === -1) return false;
+        rowIndex = rIdx;
+        colIndex = idx;
+        return true;
+      });
+      if (rowIndex < 0 || colIndex < 0) return null;
+
+      if (direction === "left") {
+        return rows[rowIndex].cards[colIndex - 1] || null;
+      }
+      if (direction === "right") {
+        return rows[rowIndex].cards[colIndex + 1] || null;
+      }
+      if (direction === "up") {
+        const prevRow = rows[rowIndex - 1];
+        if (!prevRow) return null;
+        return prevRow.cards[Math.min(colIndex, prevRow.cards.length - 1)] || null;
+      }
+      if (direction === "down") {
+        const nextRow = rows[rowIndex + 1];
+        if (!nextRow) return null;
+        return nextRow.cards[Math.min(colIndex, nextRow.cards.length - 1)] || null;
+      }
+      return null;
+    }
+
+    function focusIframePlayer() {
+      const iframe = playerHostEl.querySelector("iframe");
+      if (!iframe) return false;
+      iframe.setAttribute("tabindex", "0");
+      return focusElementForTv(iframe);
+    }
+
+    function updatePlayerEnterButtonState() {
+      if (!playerEnterBtnEl) return;
+      if (!isAndroidTv) {
+        playerEnterBtnEl.hidden = true;
+        playerEnterBtnEl.disabled = true;
+        return;
+      }
+      const hasLocalIframe = Boolean(playerHostEl.querySelector("iframe"));
+      const canEnter = hasLocalIframe && (!state.playerDetached || state.detachedMode !== "host");
+      playerEnterBtnEl.hidden = !canEnter;
+      playerEnterBtnEl.disabled = !canEnter;
+    }
 
     function escapeHtml(text) {
       return String(text)
@@ -1139,11 +1902,27 @@
       layoutRootEl.classList.add("is-details-open");
     }
 
+    function focusTvDetailsPanelDefault() {
+      if (!isAndroidTv) return;
+      const candidates = [
+        detailCloseBtnEl,
+        sourceSwitchEl.querySelector(".source-btn.active"),
+        sourceSwitchEl.querySelector(".source-btn"),
+        playerEnterBtnEl
+      ].filter(Boolean);
+      for (const candidate of candidates) {
+        if (focusElementForTv(candidate)) return;
+      }
+    }
+
     function closeDetailsPanel() {
       const wasOpen = layoutRootEl.classList.contains("is-details-open");
       layoutRootEl.classList.remove("is-details-open");
       state.selectedId = null;
       state.selectedType = null;
+      state.selectedSources = [];
+      resetProviderAvailability();
+      renderProviderSwitch();
       resultsEl.querySelectorAll(".movie-card.active").forEach((el) => el.classList.remove("active"));
       if (detailsCloseTimer) {
         clearTimeout(detailsCloseTimer);
@@ -1157,12 +1936,20 @@
           state.selectedSourceUrl = "";
           hideStatus();
         }
+        updatePlayerEnterButtonState();
         detailsCloseTimer = null;
       };
       if (wasOpen) {
         detailsCloseTimer = setTimeout(cleanup, 360);
       } else {
         cleanup();
+      }
+      if (isAndroidTv) {
+        requestAnimationFrame(() => {
+          const firstCard = resultsEl.querySelector(".movie-card");
+          if (firstCard && focusElementForTv(firstCard)) return;
+          if (searchBtnEl) focusElementForTv(searchBtnEl);
+        });
       }
     }
 
@@ -1360,12 +2147,15 @@
 
     function detachPlayer() {
       if (state.playerDetached) return;
-      if (canUseHostFloating) {
+      const hasActiveIframe = Boolean(playerHostEl.querySelector("iframe"));
+      if (canUseHostFloating && !hasActiveIframe) {
         state.playerDetached = true;
+        state.detachedMode = "host";
         stageEl.classList.add("is-detached");
         playerPlaceholderEl.style.display = "flex";
         playerHostEl.innerHTML = "";
         setDetachButtonState();
+        updatePlayerEnterButtonState();
         if (state.selectedSourceUrl) {
           postToHost("video:detach-player", {
             url: state.selectedSourceUrl,
@@ -1378,32 +2168,38 @@
       if (!floatingPlayerBodyEl) return;
       floatingPlayerBodyEl.appendChild(playerHostEl);
       state.playerDetached = true;
+      state.detachedMode = "local";
       stageEl.classList.add("is-detached");
       playerPlaceholderEl.style.display = "flex";
       floatingPlayerEl.classList.add("visible");
       requestAnimationFrame(() => pinFloatingPlayerToCurrentRect());
       setDetachButtonState();
+      updatePlayerEnterButtonState();
     }
 
     function dockPlayer() {
       if (!state.playerDetached) return;
-      if (canUseHostFloating) {
+      if (canUseHostFloating && state.detachedMode === "host") {
         state.playerDetached = false;
+        state.detachedMode = "";
         stageEl.classList.remove("is-detached");
         playerPlaceholderEl.style.display = "";
         setDetachButtonState();
         postToHost("video:dock-player");
         if (state.selectedSourceUrl) mountIframe(state.selectedSourceUrl);
+        updatePlayerEnterButtonState();
         return;
       }
       stageEl.insertBefore(playerHostEl, statusBoxEl);
       state.playerDetached = false;
+      state.detachedMode = "";
       stageEl.classList.remove("is-detached");
       playerPlaceholderEl.style.display = "";
       if (floatingPlayerEl) {
         floatingPlayerEl.classList.remove("visible");
       }
       setDetachButtonState();
+      updatePlayerEnterButtonState();
     }
 
     function mediaLabel(mediaType) {
@@ -1600,6 +2396,9 @@
         cardEl.style.setProperty("--stagger", `${Math.min(index, 12) * 34}ms`);
         cardEl.dataset.id = String(card.id);
         cardEl.dataset.type = card.mediaType;
+        cardEl.tabIndex = 0;
+        cardEl.setAttribute("role", "button");
+        cardEl.setAttribute("aria-label", `${card.title} (${card.year})`);
 
         const imgSrc = card.poster || card.backdrop || buildPosterFallback(card.title);
         warmPosterImage(imgSrc);
@@ -1619,6 +2418,12 @@
         `;
 
         cardEl.addEventListener("click", () => onSelectCard(card, cardEl));
+        cardEl.addEventListener("keydown", (event) => {
+          const key = getTvEventKey(event);
+          if (!TV_SELECT_KEYS.has(key)) return;
+          event.preventDefault();
+          onSelectCard(card, cardEl);
+        });
         resultsEl.appendChild(cardEl);
       });
     }
@@ -1680,12 +2485,48 @@
       target.classList.add("active");
     }
 
-    function balancerSourceCacheKey(kpId) {
-      return `kp::${String(kpId || "")}`;
+    function providerLabel(providerId) {
+      return PROVIDERS.find((item) => item.id === providerId)?.label || providerId;
     }
 
-    function getCachedBalancerSources(kpId) {
-      const key = balancerSourceCacheKey(kpId);
+    function isProviderId(value) {
+      return PROVIDERS.some((item) => item.id === value);
+    }
+
+    function getProviderButtons() {
+      return Array.from(sourceSwitchEl.querySelectorAll(".source-btn"));
+    }
+
+    function resetProviderAvailability() {
+      state.providerAvailability = createProviderAvailabilityState();
+    }
+
+    function setProviderAvailability(providerId, isAvailable) {
+      if (!state.providerAvailability || typeof state.providerAvailability !== "object") {
+        resetProviderAvailability();
+      }
+      if (!isProviderId(providerId)) return;
+      state.providerAvailability[providerId] = Boolean(isAvailable);
+    }
+
+    function renderProviderSwitch(loadingProvider = "") {
+      const loading = String(loadingProvider || "");
+      getProviderButtons().forEach((button) => {
+        const providerId = String(button.dataset.provider || "");
+        const active = providerId === state.selectedProvider;
+        const availability = state.providerAvailability?.[providerId];
+        button.classList.toggle("active", active);
+        button.classList.toggle("dimmed", availability === false);
+        button.disabled = Boolean(loading && loading === providerId);
+      });
+    }
+
+    function balancerSourceCacheKey(providerId, kpId) {
+      return `${String(providerId || "alloha")}::kp::${String(kpId || "")}`;
+    }
+
+    function getCachedBalancerSources(providerId, kpId) {
+      const key = balancerSourceCacheKey(providerId, kpId);
       const row = balancerSourcesCache.get(key);
       if (!row) return null;
       if (Number(row.expiresAt || 0) <= Date.now()) {
@@ -1695,92 +2536,381 @@
       return Array.isArray(row.sources) ? row.sources : null;
     }
 
-    function setCachedBalancerSources(kpId, sources) {
+    function setCachedBalancerSources(providerId, kpId, sources) {
       if (!Array.isArray(sources) || !sources.length) return;
-      const key = balancerSourceCacheKey(kpId);
+      const key = balancerSourceCacheKey(providerId, kpId);
       balancerSourcesCache.set(key, {
         sources,
         expiresAt: Date.now() + BALANCER_SOURCE_CACHE_TTL_MS
       });
     }
 
-    async function fetchBalancer(balancer, kpId) {
+    function normalizeProviderSources(payload, fallbackSource = "Source") {
+      const rawSources = Array.isArray(payload?.sources) ? payload.sources : [];
+      const dedupe = new Set();
+      const sources = [];
+      rawSources.forEach((item) => {
+        const rawUrl = String(item?.iframeUrl || item?.iframe || item?.url || "").trim();
+        const iframeUrl = normalizeIframeUrl(rawUrl);
+        if (!iframeUrl) return;
+        if (dedupe.has(iframeUrl)) return;
+        dedupe.add(iframeUrl);
+        const source = String(item?.source || item?.name || fallbackSource).trim() || fallbackSource;
+        sources.push({ source, iframeUrl });
+      });
+      return sources;
+    }
+
+    function normalizeIframeUrl(raw) {
+      let value = String(raw || "").trim();
+      if (!value) return "";
+
+      if (
+        (value.startsWith('"') && value.endsWith('"'))
+        || (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1).trim();
+      }
+
+      value = value
+        .replaceAll("\\/", "/")
+        .replaceAll("\\u0026", "&")
+        .replaceAll("\\u003F", "?")
+        .replaceAll("\\u003f", "?")
+        .replaceAll("\\u003D", "=")
+        .replaceAll("\\u003d", "=")
+        .replaceAll("\\u002F", "/")
+        .replaceAll("\\u002f", "/");
+
+      if (value.startsWith("//")) value = `https:${value}`;
+
+      if (!/^https?:\/\//i.test(value)) {
+        const urlMatch = value.match(/https?:\\\/\\\/[^\s"'<]+|https?:\/\/[^\s"'<]+/i);
+        if (urlMatch && urlMatch[0]) {
+          value = urlMatch[0].replaceAll("\\/", "/");
+        }
+      }
+
+      if (!/^https?:\/\//i.test(value)) return "";
+      return value;
+    }
+
+    function extractIframeUrlFromHtml(html) {
+      const value = String(html || "").trim();
+      if (!value) return "";
+      const attributePatterns = [
+        /<iframe[^>]*\bdata-src\s*=\s*["']([^"']+)["']/i,
+        /<iframe[^>]*\bsrc\s*=\s*["']([^"']+)["']/i
+      ];
+      for (const pattern of attributePatterns) {
+        const match = value.match(pattern);
+        if (!match || !match[1]) continue;
+        const normalized = normalizeIframeUrl(
+          String(match[1])
+            .replaceAll("&amp;", "&")
+            .replaceAll("&#x2F;", "/")
+            .replaceAll("&#47;", "/")
+        );
+        if (normalized) return normalized;
+      }
+      return "";
+    }
+
+    async function parseJsonLoose(response) {
+      const contentType = (response.headers.get("content-type") || "").toLowerCase();
+      if (contentType.includes("application/json")) {
+        try {
+          return await response.json();
+        } catch {
+          return null;
+        }
+      }
+      const text = await response.text();
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return null;
+      let parsed;
       try {
-        const url = balancer.url(kpId);
-        const response = await fetch(url, {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        return null;
+      }
+      if (typeof parsed === "string") {
+        const nested = parsed.trim();
+        if ((nested.startsWith("{") && nested.endsWith("}")) || (nested.startsWith("[") && nested.endsWith("]"))) {
+          try {
+            return JSON.parse(nested);
+          } catch {
+            return null;
+          }
+        }
+      }
+      return parsed;
+    }
+
+    function normalizeAllohaDirectSources(payload) {
+      const data = payload && typeof payload === "object" ? (payload.data || payload) : null;
+      if (!data || typeof data !== "object") return [];
+      const rows = [];
+      const push = (source, iframeUrl) => {
+        rows.push({ source, iframeUrl });
+      };
+
+      push("Alloha", data.iframe || data.player_iframe || data.iframe_url || "");
+
+      const translation = data.translation_iframe;
+      if (Array.isArray(translation)) {
+        translation.forEach((row, index) => {
+          const url = row?.iframe || row?.url || row || "";
+          push(`Озвучка ${index + 1}`, url);
+        });
+      } else if (translation && typeof translation === "object") {
+        Object.entries(translation).forEach(([name, row]) => {
+          const url = row?.iframe || row?.url || row || "";
+          push(name || "Озвучка", url);
+        });
+      }
+
+      if (data.iframe_trailer) {
+        push("Трейлер", data.iframe_trailer);
+      }
+      return normalizeProviderSources({ sources: rows }, "Alloha");
+    }
+
+    function normalizeCollapsDirectSources(payload) {
+      const list = Array.isArray(payload?.results) ? payload.results : [];
+      const rows = list.map((row, index) => ({
+        source: row?.translator ? `Collaps · ${row.translator}` : (index === 0 ? "Collaps" : `Collaps ${index + 1}`),
+        iframeUrl: row?.iframe_url || row?.iframe || row?.url || ""
+      }));
+      return normalizeProviderSources({ sources: rows }, "Collaps");
+    }
+
+    function normalizeKinobdDirectSources(payload) {
+      const list = Array.isArray(payload)
+        ? payload
+        : (Array.isArray(payload?.data) ? payload.data : []);
+      const rows = list.map((row, index) => {
+        const htmlIframe = row?.iframe || row?.player || "";
+        const iframeUrl = (
+          row?.iframe_url
+          || row?.iframeUrl
+          || row?.url
+          || row?.player_url
+          || extractIframeUrlFromHtml(htmlIframe)
+          || ""
+        );
+        const name = String(
+          row?.translation
+          || row?.translator
+          || row?.voice
+          || row?.name
+          || ""
+        ).trim();
+        return {
+          source: name ? `KinoBD · ${name}` : (index === 0 ? "KinoBD" : `KinoBD ${index + 1}`),
+          iframeUrl
+        };
+      });
+      return normalizeProviderSources({ sources: rows }, "KinoBD");
+    }
+
+    function normalizeFlixcdnDirectSources(payload) {
+      const list = Array.isArray(payload?.result)
+        ? payload.result
+        : (Array.isArray(payload?.results)
+          ? payload.results
+          : (Array.isArray(payload?.data) ? payload.data : []));
+      const rows = [];
+      list.forEach((row, index) => {
+        const providerId = String(row?.id || row?.movie_id || row?.show_id || "").trim();
+        if (!providerId) return;
+        const name = String(
+          row?.translation
+          || row?.translator
+          || row?.voice
+          || row?.name
+          || row?.title
+          || ""
+        ).trim();
+        rows.push({
+          source: name ? `FlixCDN · ${name}` : (index === 0 ? "FlixCDN" : `FlixCDN ${index + 1}`),
+          iframeUrl: `https://player0.flixcdn.space/show/${encodeURIComponent(providerId)}`
+        });
+      });
+      if (!rows.length) {
+        const fallbackId = String(payload?.id || payload?.movie_id || payload?.show_id || "").trim();
+        if (fallbackId) {
+          rows.push({
+            source: "FlixCDN",
+            iframeUrl: `https://player0.flixcdn.space/show/${encodeURIComponent(fallbackId)}`
+          });
+        }
+      }
+      return normalizeProviderSources({ sources: rows }, "FlixCDN");
+    }
+
+    function getProviderProxyEndpoints(providerId) {
+      const base = String(effectiveProxyBase || "").trim().replace(/\/+$/, "");
+      if (!base) return [];
+      const tails = Array.isArray(PROVIDER_PROXY_ENDPOINTS?.[providerId]) ? PROVIDER_PROXY_ENDPOINTS[providerId] : [];
+      const out = [];
+      tails.forEach((tail) => {
+        const clean = String(tail || "").trim().replace(/^\/+/, "");
+        if (!clean) return;
+        const endpoint = `${base}/${clean}`;
+        if (!out.includes(endpoint)) out.push(endpoint);
+      });
+      return out;
+    }
+
+    async function requestProviderSourcesViaProxy(providerId, kpId) {
+      const endpoints = getProviderProxyEndpoints(providerId);
+      const providerConfig = DIRECT_PROVIDER_CONFIG[providerId] || null;
+      const providerToken = String(providerConfig?.token || "").trim();
+      let lastError = null;
+
+      for (const endpoint of endpoints) {
+        let response;
+        try {
+          const url = new URL(endpoint);
+          const normalizedKp = String(kpId || "").trim();
+          url.searchParams.set("kp", normalizedKp);
+          if (providerToken) {
+            url.searchParams.set("token", providerToken);
+          }
+          url.searchParams.set("_", String(Date.now()));
+          if (providerId === "alloha") {
+            url.searchParams.set("raw", "1");
+          }
+          response = await fetch(url.toString(), {
+            method: "GET",
+            mode: "cors",
+            credentials: "omit",
+            cache: "no-store",
+            headers: { Accept: "application/json, text/plain, */*" }
+          });
+        } catch (error) {
+          lastError = new Error(`${providerId.toUpperCase()}_PROXY_NETWORK_ERROR`);
+          continue;
+        }
+
+        if (!response.ok) {
+          lastError = new Error(`${providerId.toUpperCase()}_PROXY_HTTP_${response.status}`);
+          continue;
+        }
+
+        const responseClone = response.clone();
+        const payload = await parseJsonLoose(response);
+        if (!payload || typeof payload !== "object") {
+          let rawText = "";
+          try {
+            rawText = String(await responseClone.text()).trim().toLowerCase();
+          } catch {}
+          if (rawText === "ok") {
+            lastError = new Error(`${providerId.toUpperCase()}_PROXY_RETURNS_OK`);
+          } else {
+            lastError = new Error(`${providerId.toUpperCase()}_PROXY_NON_JSON_RESPONSE`);
+          }
+          continue;
+        }
+        if (payload.ok === false) {
+          lastError = new Error(String(payload.error || `${providerId.toUpperCase()}_PROXY_ERROR`));
+          continue;
+        }
+        if (providerId === "alloha" && Array.isArray(payload.sources)) {
+          return normalizeProviderSources(payload, "Alloha");
+        }
+        if (providerId === "collaps" && Array.isArray(payload.sources)) {
+          return normalizeProviderSources(payload, "Collaps");
+        }
+        if (providerId === "flixcdn" && Array.isArray(payload.sources)) {
+          return normalizeProviderSources(payload, "FlixCDN");
+        }
+        if (providerId === "kinobd" && Array.isArray(payload.sources)) {
+          return normalizeProviderSources(payload, "KinoBD");
+        }
+        if (providerId === "alloha") return normalizeAllohaDirectSources(payload);
+        if (providerId === "collaps") return normalizeCollapsDirectSources(payload);
+        if (providerId === "flixcdn") return normalizeFlixcdnDirectSources(payload);
+        if (providerId === "kinobd") return normalizeKinobdDirectSources(payload);
+      }
+
+      throw lastError || new Error(`${providerId.toUpperCase()}_PROXY_UNAVAILABLE`);
+    }
+
+    async function requestProviderSourcesDirect(providerId, kpId) {
+      const provider = DIRECT_PROVIDER_CONFIG[providerId];
+      if (!provider || typeof provider.buildUrl !== "function") {
+        throw new Error(`${providerId.toUpperCase()}_UNSUPPORTED_PROVIDER`);
+      }
+
+      let response;
+      try {
+        response = await fetch(provider.buildUrl(kpId), {
           method: "GET",
           mode: "cors",
           credentials: "omit",
           cache: "no-store",
           headers: { Accept: "application/json, text/plain, */*" }
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const contentType = (response.headers.get("content-type") || "").toLowerCase();
-        let data;
-        if (contentType.includes("application/json")) {
-          data = await response.json();
-        } else {
-          const text = await response.text();
-          try {
-            data = JSON.parse(text);
-          } catch (parseError) {
-            throw new Error("Invalid JSON response");
-          }
-        }
-
-        const iframeUrl = balancer.extract(data);
-        if (iframeUrl && typeof iframeUrl === "string" && iframeUrl.trim()) {
-          return {
-            source: balancer.name,
-            iframeUrl: iframeUrl.trim()
-          };
-        }
-        return null;
       } catch (error) {
-        throw error;
+        throw new Error(`${providerId.toUpperCase()}_NETWORK_ERROR`);
       }
+
+      if (!response.ok) {
+        throw new Error(`${providerId.toUpperCase()}_HTTP_${response.status}`);
+      }
+
+      const payload = await parseJsonLoose(response);
+      if (!payload || typeof payload !== "object") {
+        throw new Error(`${providerId.toUpperCase()}_NON_JSON_RESPONSE`);
+      }
+
+      if (providerId === "alloha") {
+        return normalizeAllohaDirectSources(payload);
+      }
+      if (providerId === "collaps") {
+        return normalizeCollapsDirectSources(payload);
+      }
+      if (providerId === "flixcdn") {
+        return normalizeFlixcdnDirectSources(payload);
+      }
+      if (providerId === "kinobd") {
+        return normalizeKinobdDirectSources(payload);
+      }
+      return [];
     }
 
-    async function requestBalancerSources(kpId) {
+    async function requestProviderSources(providerId, kpId) {
       if (!kpId || !String(kpId).trim()) {
         console.warn("Empty Kinopoisk ID provided");
         return [];
       }
+      const provider = DIRECT_PROVIDER_CONFIG[providerId];
+      if (!provider || typeof provider.buildUrl !== "function") {
+        throw new Error(`${providerId.toUpperCase()}_UNSUPPORTED_PROVIDER`);
+      }
 
-      console.log(`Requesting sources from ${BALANCERS.length} balancers for KP ID: ${kpId}`);
-      const promises = BALANCERS.map((balancer) => fetchBalancer(balancer, kpId));
-      const results = await Promise.allSettled(promises);
-      
-      const sources = results
-        .map((result, index) => {
-          if (result.status === "fulfilled" && result.value) {
-            console.log(`✓ ${BALANCERS[index].name}: found source`);
-            return result.value;
-          } else if (result.status === "rejected") {
-            console.warn(`✗ ${BALANCERS[index].name}: ${result.reason?.message || "error"}`);
-          } else {
-            console.log(`✗ ${BALANCERS[index].name}: no source found`);
+      if (provider.preferProxy) {
+        try {
+          return await requestProviderSourcesViaProxy(providerId, kpId);
+        } catch (proxyError) {
+          if (provider.disableDirect) {
+            throw proxyError;
           }
-          return null;
-        })
-        .filter(Boolean);
+          return requestProviderSourcesDirect(providerId, kpId);
+        }
+      }
 
-      console.log(`Found ${sources.length} sources total`);
-
-      // Сортируем: приоритет Колапс и Алоха
-      sources.sort((a, b) => {
-        if (a.source === "Колапс") return -1;
-        if (b.source === "Колапс") return 1;
-        if (a.source === "Алоха") return -1;
-        if (b.source === "Алоха") return 1;
-        return 0;
-      });
-
-      return sources;
+      try {
+        return await requestProviderSourcesDirect(providerId, kpId);
+      } catch (directError) {
+        try {
+          return await requestProviderSourcesViaProxy(providerId, kpId);
+        } catch (proxyError) {
+          throw directError;
+        }
+      }
     }
 
     function mountIframe(url) {
@@ -1788,11 +2918,12 @@
       playerHostEl.innerHTML = "";
       hideStatus();
       state.selectedSourceUrl = url;
-      if (state.playerDetached && canUseHostFloating) {
+      if (state.playerDetached && canUseHostFloating && state.detachedMode === "host") {
         postToHost("video:update-player", {
           url,
           title: heroTitleEl.textContent || "Киносреда • Плеер"
         });
+        updatePlayerEnterButtonState();
         return;
       }
 
@@ -1800,43 +2931,91 @@
       iframe.src = url;
       iframe.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
       iframe.allowFullscreen = true;
+      iframe.tabIndex = 0;
+      iframe.title = "Видео плеер";
 
       iframe.addEventListener("load", () => {
         iframe.classList.add("ready");
+        updatePlayerEnterButtonState();
       });
 
       playerHostEl.appendChild(iframe);
+      updatePlayerEnterButtonState();
     }
 
-    async function loadBalancerSources(kpId) {
+    function getFallbackProviders(providerId) {
+      return PROVIDERS.map((item) => item.id).filter((id) => id !== providerId);
+    }
+
+    async function loadBalancerSources(kpId, options = {}) {
       if (!kpId) {
         showStatus("No KP ID", "Не удалось получить ID Кинопоиск для этого фильма. Попробуйте другой фильм.");
         return;
       }
 
-      const cachedSources = getCachedBalancerSources(kpId);
-      if (cachedSources && cachedSources.length) {
-        state.selectedSources = cachedSources;
-        mountIframe(cachedSources[0].iframeUrl);
-        hideStatus();
+      const force = Boolean(options.force);
+      const allowFallback = options.allowFallback !== false;
+      const requestedProvider = isProviderId(options.providerId)
+        ? options.providerId
+        : (isProviderId(state.selectedProvider) ? state.selectedProvider : "alloha");
+      const attemptProviders = [requestedProvider, ...(allowFallback ? getFallbackProviders(requestedProvider) : [])];
+
+      state.selectedProvider = requestedProvider;
+      renderProviderSwitch(requestedProvider);
+      let lastError = null;
+
+      for (const providerId of attemptProviders) {
+        state.selectedProvider = providerId;
+        renderProviderSwitch(providerId);
+
+        if (!force) {
+          const cachedSources = getCachedBalancerSources(providerId, kpId);
+          if (cachedSources && cachedSources.length) {
+            setProviderAvailability(providerId, true);
+            state.selectedSources = cachedSources;
+            renderProviderSwitch();
+            mountIframe(cachedSources[0].iframeUrl);
+            hideStatus();
+            return;
+          }
+        }
+
+        showStatus("Loading", `Загружаю источники ${providerLabel(providerId)}...`, true);
+        try {
+          const sources = await requestProviderSources(providerId, kpId);
+          if (sources.length) {
+            setProviderAvailability(providerId, true);
+            state.selectedSources = sources;
+            setCachedBalancerSources(providerId, kpId, sources);
+            state.selectedProvider = providerId;
+            renderProviderSwitch();
+            mountIframe(sources[0].iframeUrl);
+            hideStatus();
+            return;
+          }
+          setProviderAvailability(providerId, false);
+          lastError = new Error(`${providerId.toUpperCase()}_NO_SOURCES`);
+        } catch (error) {
+          setProviderAvailability(providerId, false);
+          lastError = error;
+        }
+      }
+
+      renderProviderSwitch();
+      const message = String(lastError?.message || "");
+      if (message.includes("PROXY_RETURNS_OK")) {
+        showStatus("Proxy Error", "Маршрут /ytm/alloha/players отдает 'ok' вместо JSON. На realtime запущен старый backend без резолва Alloha.", false);
         return;
       }
-
-      showStatus("Loading", "Загружаю доступные источники плеера...", true);
-
-      try {
-        const sources = await requestBalancerSources(kpId);
-        state.selectedSources = sources;
-        setCachedBalancerSources(kpId, sources);
-        if (!sources.length) {
-          showStatus("No Stream", "Источник не найден. Попробуйте другой фильм, либо другой тип поиска.");
-          return;
-        }
-        mountIframe(sources[0].iframeUrl);
-      } catch (error) {
-        console.error("Balancer error:", error);
-        showStatus("Connection Error", "Не удалось получить источники от балансеров. Проверьте подключение к интернету.", false);
+      if (message.includes("NETWORK_ERROR") || message.includes("CORS")) {
+        showStatus("CORS Error", "Браузер блокирует прямой запрос к источнику. Для такого режима нужен CORS на стороне провайдера.", false);
+        return;
       }
+      if (message.includes("NON_JSON_RESPONSE")) {
+        showStatus("Response Error", "Источник вернул не-JSON ответ.", false);
+        return;
+      }
+      showStatus("No Stream", "Не удалось получить ссылки iframe от доступных источников.", false);
     }
 
     async function fetchDetails(card) {
@@ -1866,18 +3045,34 @@
     async function onSelectCard(card, cardEl) {
       state.selectedId = card.id;
       state.selectedType = card.mediaType;
+      resetProviderAvailability();
+      renderProviderSwitch();
       markActiveCard(cardEl);
       openDetailsPanel();
+      if (isAndroidTv) {
+        requestAnimationFrame(() => focusTvDetailsPanelDefault());
+      }
       setHero(card);
 
       showStatus("Loading", "Подготавливаю карточку...", true);
 
+      let detailsResolved = false;
       try {
         const details = await fetchDetails(card);
         setHero({ ...card, details });
+        detailsResolved = true;
+      } catch (error) {
+        console.warn("Details request failed:", error);
+      }
+
+      try {
         await loadBalancerSources(card.id);
       } catch (error) {
-        showStatus("Error", "Не удалось загрузить информацию о фильме.");
+        showStatus("Error", "Не удалось подключить встроенный плеер.");
+      }
+
+      if (!detailsResolved && !state.selectedSourceUrl) {
+        showStatus("Error", "Не удалось загрузить фильм во встроенных плеерах.");
       }
     }
 
@@ -1931,6 +3126,47 @@
       search(searchInputEl.value);
     }
 
+    function handleTvArrowNavigation(event) {
+      const key = getTvEventKey(event);
+      if (!TV_ARROW_KEYS.has(key)) return;
+      if (event.defaultPrevented) return;
+      if (isTextEntryElement(event.target)) return;
+      const direction = key === "ArrowLeft"
+        ? "left"
+        : key === "ArrowRight"
+          ? "right"
+          : key === "ArrowUp"
+            ? "up"
+            : "down";
+      const focusables = getTvFocusableElements();
+      if (!focusables.length) return;
+      const current = focusables.includes(document.activeElement) ? document.activeElement : null;
+      if (!current) {
+        const fallback = getDefaultTvFocusTarget(focusables);
+        if (fallback && focusElementForTv(fallback)) {
+          event.preventDefault();
+        }
+        return;
+      }
+      if (current.classList && current.classList.contains("movie-card")) {
+        const cardTarget = findAdjacentResultCard(current, direction);
+        if (cardTarget && focusElementForTv(cardTarget)) {
+          event.preventDefault();
+          return;
+        }
+      }
+      const next = findNextTvFocusable(current, direction, focusables);
+      if (!next || next === current) {
+        if (direction === "left" && requestHostSidebarFocus()) {
+          event.preventDefault();
+        }
+        return;
+      }
+      if (focusElementForTv(next)) {
+        event.preventDefault();
+      }
+    }
+
     modeSwitchEl.addEventListener("click", (event) => {
       const button = event.target.closest(".mode-btn");
       if (!button) return;
@@ -1939,14 +3175,37 @@
       setMode(mode);
     });
 
+    sourceSwitchEl.addEventListener("click", (event) => {
+      const button = event.target.closest(".source-btn");
+      if (!button) return;
+      const providerId = String(button.dataset.provider || "").trim().toLowerCase();
+      if (!isProviderId(providerId)) return;
+      state.selectedProvider = providerId;
+      renderProviderSwitch();
+      if (!state.selectedId) return;
+      loadBalancerSources(state.selectedId, {
+        providerId,
+        allowFallback: true,
+        force: false
+      });
+    });
+
     document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") return;
-      if (state.playerDetached) {
-        dockPlayer();
-        return;
-      }
-      if (layoutRootEl.classList.contains("is-details-open")) {
-        closeDetailsPanel();
+      const key = getTvEventKey(event);
+      if (!TV_BACK_KEYS.has(key)) return;
+      handleTvBackAction(event);
+    });
+
+    document.addEventListener("keydown", handleTvArrowNavigation);
+
+    document.addEventListener("backbutton", (event) => {
+      handleTvBackAction(event);
+    }, true);
+
+    window.addEventListener("popstate", (event) => {
+      if (!isAndroidTv) return;
+      if (handleTvBackAction(event)) {
+        rearmTvBackHistoryGuard();
       }
     });
 
@@ -1962,11 +3221,13 @@
     window.addEventListener("message", (event) => {
       const data = event && event.data ? event.data : null;
       if (!data || typeof data !== "object") return;
-      if (data.type === "video:host-docked" && state.playerDetached) {
+      if (data.type === "video:host-docked" && state.playerDetached && state.detachedMode === "host") {
         state.playerDetached = false;
+        state.detachedMode = "";
         stageEl.classList.remove("is-detached");
         playerPlaceholderEl.style.display = "";
         setDetachButtonState();
+        updatePlayerEnterButtonState();
         if (state.selectedSourceUrl) mountIframe(state.selectedSourceUrl);
       }
     });
@@ -1991,6 +3252,12 @@
       closeDetailsPanel();
     });
 
+    if (playerEnterBtnEl) {
+      playerEnterBtnEl.addEventListener("click", () => {
+        focusIframePlayer();
+      });
+    }
+
     detachBtnEl.addEventListener("click", () => {
       if (window.matchMedia("(max-width: 1100px)").matches) {
         requestNativePictureInPicture();
@@ -2007,9 +3274,20 @@
       setDetachButtonState();
     });
 
+    renderProviderSwitch();
     setDetachButtonState();
+    updatePlayerEnterButtonState();
+    initTvTextInputActivation();
+    ensureTvBackHistoryGuard();
 
     search("");
+    requestAnimationFrame(() => {
+      if (isAndroidTv) {
+        focusElementForTv(searchBtnEl || modeSwitchEl.querySelector(".mode-btn.active") || searchInputEl);
+        return;
+      }
+      focusElementForTv(searchInputEl);
+    });
   </script>
 </body>
 </html>

@@ -411,6 +411,11 @@
       touch-action: pan-y;
     }
 
+    .progress:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+    }
+
     .progress-fill {
       position: absolute;
       inset: 0 auto 0 0;
@@ -484,6 +489,12 @@
       border-color: rgba(252, 211, 77, 0.62);
       color: var(--accent-2);
       transform: translateY(-1px);
+    }
+
+    .volume-btn:focus-visible,
+    .volume-slider:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
     }
 
     .volume-btn:active {
@@ -581,6 +592,11 @@
     .ctl:hover::after {
       opacity: 1;
       transform: scale(1);
+    }
+
+    .ctl:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
     }
 
     .ctl:active {
@@ -963,6 +979,11 @@
       transform: translateY(-1px);
     }
 
+    .playlist-menu-create:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+    }
+
     .playlist-menu-create-icon {
       width: 20px;
       height: 20px;
@@ -1229,6 +1250,12 @@
     .added-by-filter-option:hover {
       border-color: rgba(245, 158, 11, 0.42);
       background: rgba(245, 158, 11, 0.12);
+    }
+
+    .added-by-filter-option:focus-visible,
+    .playlist-option:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
     }
 
     .added-by-filter-option.is-active {
@@ -1619,6 +1646,12 @@
       padding: 10px;
     }
 
+    .ytm-collection-item:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+      border-color: rgba(252, 211, 77, 0.62);
+    }
+
     .ytm-collection-head {
       display: grid;
       grid-template-columns: 52px minmax(0, 1fr) auto;
@@ -1918,6 +1951,13 @@
       border-color: rgba(245, 158, 11, 0.45);
     }
 
+    .track-item:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
+      border-color: rgba(252, 211, 77, 0.62);
+      background: rgba(17, 12, 6, 0.92);
+    }
+
     .track-item.playing {
       border-color: rgba(252, 211, 77, 0.72);
       background: rgba(18, 13, 7, 0.95);
@@ -2044,6 +2084,13 @@
       transform: translateY(-1px);
       border-color: rgba(245, 158, 11, 0.62);
       box-shadow: 0 8px 18px rgba(84, 54, 13, 0.35);
+    }
+
+    .icon-btn:focus-visible,
+    .cover-play-btn:focus-visible,
+    .ytm-collection-toggle:focus-visible {
+      outline: 2px solid rgba(252, 211, 77, 0.9);
+      outline-offset: 2px;
     }
 
     .icon-btn.active {
@@ -2364,6 +2411,9 @@
       body.mobile-library-open .panel-body {
         overflow: visible;
       }
+      body.mobile-library-open .page {
+        overflow: hidden;
+      }
       body.mobile-library-open .panel {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
@@ -2372,8 +2422,11 @@
         height: 100dvh;
         min-height: 100svh;
         min-height: 100dvh;
-        padding-bottom: calc(132px + var(--mobile-bottom-guard));
-        overflow: hidden;
+        padding-bottom: calc(84px + var(--mobile-bottom-guard));
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
       }
       .layout {
         grid-template-columns: 1fr;
@@ -2387,10 +2440,10 @@
         min-height: auto;
       }
       .panel-body {
-        padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
+        padding: 12px 8px calc(64px + var(--mobile-bottom-guard));
       }
       .panel-body.is-mobile-library-open {
-        padding: 12px 8px calc(106px + var(--mobile-bottom-guard));
+        padding: 12px 8px calc(64px + var(--mobile-bottom-guard));
         overflow: visible;
       }
       .mobile-library-toggle {
@@ -2402,7 +2455,7 @@
         max-width: none;
         height: 42px;
         margin-top: 10px;
-        margin-bottom: calc(18px + var(--mobile-bottom-guard) + 28px);
+        margin-bottom: calc(10px + var(--mobile-bottom-guard));
         border: 1px solid rgba(245, 158, 11, 0.34);
         border-radius: 12px;
         background: linear-gradient(150deg, rgba(25, 18, 10, 0.9), rgba(14, 10, 6, 0.82));
@@ -2624,7 +2677,7 @@
       .desktop-library-column .track-item {
         position: relative;
         grid-template-columns: 46px minmax(0, 1fr);
-        align-items: start;
+        align-items: center;
         border-radius: 14px;
         border-left: 1px solid rgba(245, 158, 11, 0.16);
         border-right: 1px solid rgba(245, 158, 11, 0.16);
@@ -2632,6 +2685,14 @@
       .desktop-library-column .track-cover-wrap {
         width: 46px;
         height: 46px;
+        align-self: center;
+        justify-self: center;
+      }
+      .desktop-library-column .track-info {
+        align-self: center;
+        display: grid;
+        align-content: center;
+        gap: 2px;
       }
       .desktop-library-column .track-item[data-context="shared"] .track-info {
         padding-right: 124px;
@@ -3041,7 +3102,7 @@
       }
 
       .page {
-        padding: 12px 8px calc(132px + var(--mobile-bottom-guard));
+        padding: 12px 8px calc(84px + var(--mobile-bottom-guard));
         min-height: 100svh;
         min-height: 100dvh;
       }
@@ -3442,6 +3503,293 @@
       border: none;
       box-shadow: none;
     }
+
+    html.android-tv,
+    html.android-tv body {
+      height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+
+    html.android-tv body {
+      padding: 0;
+    }
+
+    html.android-tv .page {
+      height: 100dvh;
+      min-height: 100dvh;
+      padding: 10px 12px 12px;
+      overflow: hidden;
+    }
+
+    html.android-tv .layout,
+    html.android-tv .panel {
+      height: 100%;
+      min-height: 0;
+    }
+
+    html.android-tv .panel {
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    html.android-tv .panel-body {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(420px, 0.88fr) minmax(420px, 1.12fr);
+      grid-template-rows: minmax(0, 1fr);
+      gap: 14px;
+      padding: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(245, 158, 11, 0.17);
+      border-radius: 22px;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+    }
+
+    html.android-tv .desktop-player-column {
+      --tv-player-content-width: clamp(300px, 94%, 680px);
+      --tv-volume-width: clamp(220px, 58%, 340px);
+      padding: 14px 14px 12px;
+      min-height: 0;
+      overflow: hidden;
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 16px;
+      background:
+        radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.12), rgba(252, 211, 77, 0)),
+        rgba(10, 8, 5, 0.56);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
+    }
+
+    html.android-tv .desktop-library-column {
+      position: relative;
+      inset: auto;
+      z-index: auto;
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      max-height: none;
+      min-height: 0;
+      padding: 14px 14px 12px;
+      border: 1px solid rgba(245, 158, 11, 0.16);
+      border-radius: 16px;
+      background:
+        radial-gradient(130% 120% at 0% 0%, rgba(252, 211, 77, 0.12), rgba(252, 211, 77, 0)),
+        rgba(10, 8, 5, 0.56);
+      box-shadow: none;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      pointer-events: auto;
+      visibility: visible;
+      transform: none;
+      opacity: 1;
+    }
+
+    html.android-tv .desktop-library-column .list-toolbar {
+      margin-top: 10px;
+      flex: 0 0 auto;
+    }
+
+    html.android-tv .desktop-library-column #sharedList {
+      margin-top: 10px;
+      max-height: none;
+      min-height: 0;
+      flex: 1 1 auto;
+      height: 100%;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+
+    html.android-tv .desktop-library-column .list {
+      max-height: none;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: 18px;
+      scroll-padding-bottom: 18px;
+    }
+
+    html.android-tv .current-track {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      text-align: center;
+      gap: 12px;
+      width: var(--tv-player-content-width);
+      margin: 0 auto 8px;
+      min-height: 0;
+      align-content: center;
+    }
+
+    html.android-tv .cover-carousel {
+      width: min(100%, 56vh);
+      max-width: 560px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      margin-inline: auto;
+      overflow: hidden;
+      overflow: clip;
+      border-radius: 22px;
+    }
+
+    html.android-tv .cover-wrap {
+      width: 100%;
+      height: 100%;
+      border-radius: 22px;
+      box-shadow: none;
+    }
+
+    html.android-tv .cover-wrap img {
+      object-fit: contain;
+      background: transparent;
+    }
+
+    html.android-tv .current-track > div:last-child {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    html.android-tv .cover-peek {
+      display: none !important;
+    }
+
+    html.android-tv .meta-title {
+      font-size: clamp(20px, 2.1vw, 27px);
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    html.android-tv .meta-artists {
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    html.android-tv .progress-wrap {
+      width: var(--tv-player-content-width);
+      margin: 8px auto;
+    }
+
+    html.android-tv .controls-row {
+      width: var(--tv-player-content-width);
+      margin: 12px auto 8px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    html.android-tv .controls {
+      position: static;
+      left: auto;
+      transform: none;
+      width: auto;
+      max-width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: nowrap;
+    }
+
+    html.android-tv .volume-wrap {
+      width: var(--tv-player-content-width);
+      display: flex;
+      justify-content: center;
+      margin: 0;
+    }
+
+    html.android-tv .volume-control {
+      width: var(--tv-volume-width);
+      margin: 0 auto;
+    }
+
+    html.android-tv .ctl {
+      width: 42px;
+      height: 42px;
+    }
+
+    html.android-tv .ctl--big {
+      width: 56px;
+      height: 56px;
+    }
+
+    html.android-tv .desktop-library-column .track-item {
+      min-height: 62px;
+      grid-template-columns: 54px minmax(0, 1fr);
+      align-items: center !important;
+    }
+    body.android-tv .desktop-library-column .track-item {
+      min-height: 62px;
+      grid-template-columns: 54px minmax(0, 1fr);
+      align-items: center !important;
+    }
+
+    html.android-tv .desktop-library-column .track-cover-wrap {
+      align-self: center !important;
+      justify-self: center !important;
+      place-self: center !important;
+      margin: 0 !important;
+    }
+    body.android-tv .desktop-library-column .track-cover-wrap {
+      align-self: center !important;
+      justify-self: center !important;
+      place-self: center !important;
+      margin: 0 !important;
+    }
+
+    html.android-tv .desktop-library-column .track-info {
+      align-self: center !important;
+      min-height: 54px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+    }
+    body.android-tv .desktop-library-column .track-info {
+      align-self: center !important;
+      min-height: 54px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
+    }
+
+    html.android-tv .desktop-library-column .track-info h3 {
+      font-size: 13px;
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    html.android-tv .desktop-library-column .track-info p {
+      font-size: 11px;
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    html.android-tv .desktop-library-column .track-meta-line {
+      margin-top: 0;
+      line-height: 1.15;
+    }
+
+    html.android-tv .desktop-library-column .track-actions,
+    html.android-tv .desktop-library-column .track-corner-actions {
+      display: none !important;
+    }
+
+    html.android-tv .mobile-library-toggle,
+    html.android-tv .mobile-library-head,
+    html.android-tv .mobile-library-backdrop,
+    html.android-tv .desktop-layout-toggle {
+      display: none !important;
+    }
   </style>
 </head>
 <body class="noise">
@@ -3473,7 +3821,7 @@
                 <span id="timeCurrent">00:00</span>
                 <span id="timeTotal">00:00</span>
               </div>
-              <div class="progress" id="progressBar" aria-label="Позиция трека">
+              <div class="progress" id="progressBar" aria-label="Позиция трека" tabindex="0">
                 <div class="progress-fill" id="progressFill"></div>
               </div>
             </div>
@@ -3663,7 +4011,7 @@
           <span id="fsTimeCurrent">00:00</span>
           <span id="fsTimeTotal">00:00</span>
         </div>
-        <div class="progress" id="fsProgressBar" aria-label="Позиция трека в полноэкранном режиме">
+        <div class="progress" id="fsProgressBar" aria-label="Позиция трека в полноэкранном режиме" tabindex="0">
           <div class="progress-fill" id="fsProgressFill"></div>
         </div>
 
@@ -3982,6 +4330,7 @@
         ymSearchDataVersion: 0,
         ymSearchRenderedVersion: -1,
         ymSearchChunkSize: 10,
+        sharedListAutofillScheduled: false,
         ymSearchLoadingMore: false,
         ymSearchLoading: false,
         ymSearchRequestSeq: 0,
@@ -4001,6 +4350,7 @@
         desktopLayoutAppliedSplit: false,
         activeToolPanel: "",
         mobileLibraryOpen: false,
+        tvLibraryOpen: false,
         addHelpOpen: false,
         filter: "all",
         addedByFilter: "all",
@@ -4153,6 +4503,7 @@
       };
       let fullscreenResizeTimeout = null;
       let desktopLayoutAnimTimeout = null;
+      let tvTrackCenteringRafId = 0;
       let lastPersistedSecond = -1;
       let lastPersistedTrackKey = "";
       let lastPersistedPaused = true;
@@ -4162,8 +4513,336 @@
         startY: 0,
         offsetY: 0
       };
+      const TV_ARROW_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+      const TV_SELECT_KEYS = new Set(["Enter", "NumpadEnter", " ", "Spacebar"]);
+      const TV_BACK_KEYS = new Set(["Escape", "Backspace", "BrowserBack", "GoBack"]);
+      const TV_KEYCODE_MAP = {
+        4: "BrowserBack",
+        19: "ArrowUp",
+        20: "ArrowDown",
+        21: "ArrowLeft",
+        22: "ArrowRight",
+        23: "Enter",
+        66: "Enter",
+        111: "Escape"
+      };
+      const forceTvLayout = (() => {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const value = String(params.get("force_tv") || params.get("tv") || "").trim().toLowerCase();
+          return value === "1" || value === "true" || value === "yes";
+        } catch (_) {
+          return false;
+        }
+      })();
+      const isAndroidTv = (() => {
+        if (forceTvLayout) return true;
+        const ua = String(navigator.userAgent || "").toLowerCase();
+        if (!ua.includes("android")) return false;
+        if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
+          return true;
+        }
+        if (ua.includes(" tv") || ua.includes("tv ")) return true;
+        try {
+          const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
+          const isFinePointer = !!(window.matchMedia && window.matchMedia("(pointer:fine)").matches);
+          const longEdge = Math.max(
+            Number((window.screen && window.screen.width) || 0),
+            Number((window.screen && window.screen.height) || 0)
+          );
+          const shortEdge = Math.min(
+            Number((window.screen && window.screen.width) || 0),
+            Number((window.screen && window.screen.height) || 0)
+          );
+          if (!isFinePointer && maxTouchPoints === 0 && longEdge >= 960 && shortEdge >= 540) {
+            return true;
+          }
+        } catch (_) {}
+        return false;
+      })();
+      if (isAndroidTv) {
+        document.documentElement.classList.add("android-tv");
+        if (document.body) document.body.classList.add("android-tv");
+      }
+      let tvNavigationBound = false;
+
+      function requestHostSidebarFocus() {
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "tv:focus-sidebar" }, "*");
+            return true;
+          }
+        } catch (_) {}
+        return false;
+      }
+
+      function getTvEventKey(event) {
+        const raw = String(event && event.key ? event.key : "");
+        if (TV_ARROW_KEYS.has(raw) || TV_SELECT_KEYS.has(raw) || TV_BACK_KEYS.has(raw)) {
+          return raw;
+        }
+        const code = Number(event && (event.keyCode || event.which || 0));
+        return TV_KEYCODE_MAP[code] || raw;
+      }
 
       function toast() {}
+
+      function isTextEntryElementForTv(el) {
+        if (!el) return false;
+        if (el.isContentEditable) return true;
+        const tag = String(el.tagName || "").toUpperCase();
+        if (tag === "TEXTAREA" || tag === "SELECT") return true;
+        if (tag !== "INPUT") return false;
+        const type = String(el.type || "text").toLowerCase();
+        return !["button", "submit", "reset", "checkbox", "radio", "range", "file", "color"].includes(type);
+      }
+
+      function isTvManagedTextInput(el) {
+        if (!el || !isAndroidTv) return false;
+        if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+        return isTextEntryElementForTv(el) && !el.disabled;
+      }
+
+      function lockTvTextInput(el) {
+        if (!isTvManagedTextInput(el)) return;
+        if (el.dataset.tvManagedInput !== "1") {
+          el.dataset.tvManagedInput = "1";
+        }
+        if (el instanceof HTMLInputElement) {
+          if (!el.dataset.tvInputType) {
+            el.dataset.tvInputType = String(el.getAttribute("type") || el.type || "text").toLowerCase();
+          }
+          if (el.dataset.tvInputType === "search") {
+            el.setAttribute("type", "text");
+          }
+        }
+        el.dataset.tvInputActivated = "0";
+        el.readOnly = true;
+        el.setAttribute("inputmode", "none");
+        el.setAttribute("virtualkeyboardpolicy", "manual");
+      }
+
+      function unlockTvTextInput(el) {
+        if (!isTvManagedTextInput(el)) return;
+        if (el.dataset.tvManagedInput !== "1") return;
+        el.dataset.tvInputActivated = "1";
+        el.readOnly = false;
+        if (el instanceof HTMLInputElement) {
+          const initialType = String(el.dataset.tvInputType || "").toLowerCase();
+          if (initialType && el.getAttribute("type") !== initialType) {
+            el.setAttribute("type", initialType);
+          }
+        }
+        if (el.getAttribute("inputmode") === "none") {
+          el.removeAttribute("inputmode");
+        }
+        if (el.getAttribute("virtualkeyboardpolicy") === "manual") {
+          el.removeAttribute("virtualkeyboardpolicy");
+        }
+      }
+
+      function relockTvTextInput(el) {
+        if (!isTvManagedTextInput(el)) return;
+        if (el.dataset.tvManagedInput !== "1") return;
+        if (el instanceof HTMLInputElement) {
+          const initialType = String(el.dataset.tvInputType || "").toLowerCase();
+          if (initialType === "search" && el.getAttribute("type") !== "text") {
+            el.setAttribute("type", "text");
+          }
+        }
+        el.dataset.tvInputActivated = "0";
+        el.readOnly = true;
+        el.setAttribute("inputmode", "none");
+        el.setAttribute("virtualkeyboardpolicy", "manual");
+      }
+
+      function initTvTextInputActivation() {
+        if (!isAndroidTv) return;
+        document.querySelectorAll("input, textarea").forEach(lockTvTextInput);
+
+        document.addEventListener("focusin", (event) => {
+          const el = event.target;
+          if (!isTvManagedTextInput(el)) return;
+          lockTvTextInput(el);
+        });
+
+        document.addEventListener("focusout", (event) => {
+          const el = event.target;
+          if (!isTvManagedTextInput(el)) return;
+          setTimeout(() => {
+            if (document.activeElement === el) return;
+            relockTvTextInput(el);
+          }, 0);
+        });
+
+        document.addEventListener("pointerdown", (event) => {
+          const el = event.target && event.target.closest ? event.target.closest("input,textarea") : null;
+          if (!isTvManagedTextInput(el)) return;
+          unlockTvTextInput(el);
+        }, true);
+
+        document.addEventListener("click", (event) => {
+          const el = event.target && event.target.closest ? event.target.closest("input,textarea") : null;
+          if (!isTvManagedTextInput(el)) return;
+          unlockTvTextInput(el);
+        }, true);
+
+        document.addEventListener("keydown", (event) => {
+          const el = event.target;
+          if (!isTvManagedTextInput(el)) return;
+          const key = getTvEventKey(event);
+          if (!TV_SELECT_KEYS.has(key)) return;
+          if (!el.readOnly) return;
+          event.preventDefault();
+          unlockTvTextInput(el);
+          if (typeof el.focus === "function") el.focus({ preventScroll: true });
+        }, true);
+      }
+
+      function isElementVisibleForTvNavigation(el) {
+        if (!el || !el.isConnected) return false;
+        if (el.hidden || el.disabled) return false;
+        const style = window.getComputedStyle(el);
+        if (!style) return false;
+        if (style.display === "none" || style.visibility === "hidden" || style.pointerEvents === "none") return false;
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      }
+
+      function getTvFocusableElements() {
+        const selectors = [
+          "button:not([disabled])",
+          "input:not([disabled])",
+          "select:not([disabled])",
+          "textarea:not([disabled])",
+          "a[href]",
+          "[tabindex]:not([tabindex='-1'])"
+        ].join(", ");
+        return Array.from(document.querySelectorAll(selectors)).filter(isElementVisibleForTvNavigation);
+      }
+
+      function focusElementForTv(el) {
+        if (!el || typeof el.focus !== "function") return false;
+        if (isTvManagedTextInput(el)) {
+          lockTvTextInput(el);
+        }
+        el.focus({ preventScroll: true });
+        if (typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ block: "nearest", inline: "nearest" });
+        }
+        return true;
+      }
+
+      function getDefaultTvFocusTarget(focusables) {
+        if (isAndroidTv && state.tvLibraryOpen) {
+          const closeLibraryBtn = els && els.mobileLibraryToggleBtn;
+          if (closeLibraryBtn && focusables.includes(closeLibraryBtn)) return closeLibraryBtn;
+          const firstTrack = document.querySelector(".track-item");
+          if (firstTrack && focusables.includes(firstTrack)) return firstTrack;
+        }
+        if (isAndroidTv && !state.tvLibraryOpen && els && els.mobileLibraryToggleBtn && focusables.includes(els.mobileLibraryToggleBtn)) {
+          return els.mobileLibraryToggleBtn;
+        }
+        if (els && els.playBtn && focusables.includes(els.playBtn)) return els.playBtn;
+        if (els && els.currentCoverWrap && focusables.includes(els.currentCoverWrap)) return els.currentCoverWrap;
+        const activeTrack = document.querySelector(".track-item.playing");
+        if (activeTrack && focusables.includes(activeTrack)) return activeTrack;
+        const firstTrack = document.querySelector(".track-item");
+        if (firstTrack && focusables.includes(firstTrack)) return firstTrack;
+        return focusables[0] || null;
+      }
+
+      function findNextTvFocusable(current, direction, focusables) {
+        if (!current || !focusables.length) return null;
+        const currentRect = current.getBoundingClientRect();
+        const currentCx = currentRect.left + currentRect.width / 2;
+        const currentCy = currentRect.top + currentRect.height / 2;
+        let best = null;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        focusables.forEach((candidate) => {
+          if (!candidate || candidate === current) return;
+          const rect = candidate.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dx = cx - currentCx;
+          const dy = cy - currentCy;
+
+          let primary = 0;
+          let secondary = 0;
+          if (direction === "left") {
+            if (dx >= -4) return;
+            primary = -dx;
+            secondary = Math.abs(dy);
+          } else if (direction === "right") {
+            if (dx <= 4) return;
+            primary = dx;
+            secondary = Math.abs(dy);
+          } else if (direction === "up") {
+            if (dy >= -4) return;
+            primary = -dy;
+            secondary = Math.abs(dx);
+          } else if (direction === "down") {
+            if (dy <= 4) return;
+            primary = dy;
+            secondary = Math.abs(dx);
+          } else {
+            return;
+          }
+
+          const distance = Math.hypot(dx, dy);
+          const score = primary * 1000 + secondary * 10 + distance;
+          if (score < bestScore) {
+            best = candidate;
+            bestScore = score;
+          }
+        });
+        return best;
+      }
+
+      function handleTvDirectionalNavigation(event) {
+        const key = getTvEventKey(event);
+        if (!TV_ARROW_KEYS.has(key)) return;
+        if (event.defaultPrevented) return;
+        if (isTextEntryElementForTv(event.target)) return;
+        const active = document.activeElement;
+        if (active && active.tagName === "INPUT" && String(active.type || "").toLowerCase() === "range") return;
+
+        const focusables = getTvFocusableElements();
+        if (!focusables.length) return;
+        const current = focusables.includes(active) ? active : null;
+        if (!current) {
+          const fallback = getDefaultTvFocusTarget(focusables);
+          if (fallback && focusElementForTv(fallback)) {
+            event.preventDefault();
+          }
+          return;
+        }
+
+        const direction = key === "ArrowLeft"
+          ? "left"
+          : key === "ArrowRight"
+            ? "right"
+            : key === "ArrowUp"
+              ? "up"
+              : "down";
+        const next = findNextTvFocusable(current, direction, focusables);
+        if (!next || next === current) {
+          if (direction === "left" && requestHostSidebarFocus()) {
+            event.preventDefault();
+          }
+          return;
+        }
+        if (focusElementForTv(next)) {
+          event.preventDefault();
+        }
+      }
+
+      function initTvNavigation() {
+        if (tvNavigationBound) return;
+        tvNavigationBound = true;
+        window.addEventListener("keydown", handleTvDirectionalNavigation);
+      }
 
       function safeJson(value, fallback = null) {
         try {
@@ -4328,7 +5007,7 @@
           }
         }
 
-        if (panel === "search" && els.searchInput) {
+        if (!isAndroidTv && panel === "search" && els.searchInput) {
           requestAnimationFrame(() => els.searchInput && els.searchInput.focus());
         }
         if (panel === "add") {
@@ -4339,13 +5018,15 @@
             resetYmSearchLazyState();
           }
           renderSearchList();
-          requestAnimationFrame(() => {
-            if (els.ymSearchInput) {
-              els.ymSearchInput.focus();
-            } else if (els.trackUrlInput) {
-              els.trackUrlInput.focus();
-            }
-          });
+          if (!isAndroidTv) {
+            requestAnimationFrame(() => {
+              if (els.ymSearchInput) {
+                els.ymSearchInput.focus();
+              } else if (els.trackUrlInput) {
+                els.trackUrlInput.focus();
+              }
+            });
+          }
         }
         if (isMobileViewport() && (panel === "search" || panel === "add")) {
           setMobileLibraryOpen(true);
@@ -4924,12 +5605,14 @@
       }
 
       function isDesktopViewport() {
+        if (isAndroidTv) return true;
         const wideEnough = window.matchMedia("(min-width: 820px)").matches;
         const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
         return wideEnough && finePointer;
       }
 
       function isMobileViewport() {
+        if (isAndroidTv) return false;
         return window.matchMedia("(max-width: 819px)").matches;
       }
 
@@ -5008,6 +5691,26 @@
       }
 
       function syncMobileLibraryUi() {
+        if (isAndroidTv) {
+          const open = Boolean(state.tvLibraryOpen);
+          if (els.panelBody) {
+            els.panelBody.classList.toggle("is-tv-library-open", open);
+            els.panelBody.classList.remove("is-mobile-library-open");
+          }
+          if (els.mobileLibraryToggleBtn) {
+            els.mobileLibraryToggleBtn.classList.toggle("is-open", open);
+            els.mobileLibraryToggleBtn.setAttribute("aria-expanded", open ? "true" : "false");
+            els.mobileLibraryToggleBtn.textContent = open ? "Скрыть список треков" : "Список треков";
+          }
+          if (els.mobileLibraryBackdrop) {
+            els.mobileLibraryBackdrop.hidden = true;
+            els.mobileLibraryBackdrop.classList.remove("is-open");
+          }
+          if (document.body) {
+            document.body.classList.remove("mobile-library-open");
+          }
+          return;
+        }
         const mobile = isMobileViewport();
         if (!mobile && state.mobileLibraryOpen) {
           state.mobileLibraryOpen = false;
@@ -5035,6 +5738,11 @@
       }
 
       function setMobileLibraryOpen(nextOpen) {
+        if (isAndroidTv) {
+          state.tvLibraryOpen = Boolean(nextOpen);
+          syncMobileLibraryUi();
+          return;
+        }
         if (!isMobileViewport()) {
           state.mobileLibraryOpen = false;
           syncMobileLibraryUi();
@@ -5048,7 +5756,25 @@
         setPlaylistMenuOpen(false);
         setAddedByFilterMenuOpen(false);
         setAddHelpOpen(false);
+        if (isAndroidTv) {
+          state.tvLibraryOpen = false;
+          syncMobileLibraryUi();
+          return;
+        }
         setMobileLibraryOpen(false);
+      }
+
+      function focusTvLibraryDefaultTarget() {
+        if (!isAndroidTv || !state.tvLibraryOpen) return;
+        const candidates = [
+          els.playlistSelectorBtn,
+          document.querySelector(".track-item.playing"),
+          document.querySelector(".track-item"),
+          els.mobileLibraryToggleBtn
+        ].filter(Boolean);
+        for (const candidate of candidates) {
+          if (focusElementForTv(candidate)) return;
+        }
       }
 
       function clearDesktopLayoutAnimation() {
@@ -5695,9 +6421,21 @@
         els.progressFill.style.width = `${progress}%`;
         els.timeCurrent.textContent = formatTime(current);
         els.timeTotal.textContent = durationPending ? "--:--" : formatTime(total);
+        if (els.progressBar) {
+          els.progressBar.setAttribute("aria-valuemin", "0");
+          els.progressBar.setAttribute("aria-valuemax", "100");
+          els.progressBar.setAttribute("aria-valuenow", String(Math.round(progress)));
+          els.progressBar.setAttribute("aria-valuetext", `${formatTime(current)} из ${durationPending ? "--:--" : formatTime(total)}`);
+        }
         if (els.fsProgressFill) els.fsProgressFill.style.width = `${progress}%`;
         if (els.fsTimeCurrent) els.fsTimeCurrent.textContent = formatTime(current);
         if (els.fsTimeTotal) els.fsTimeTotal.textContent = durationPending ? "--:--" : formatTime(total);
+        if (els.fsProgressBar) {
+          els.fsProgressBar.setAttribute("aria-valuemin", "0");
+          els.fsProgressBar.setAttribute("aria-valuemax", "100");
+          els.fsProgressBar.setAttribute("aria-valuenow", String(Math.round(progress)));
+          els.fsProgressBar.setAttribute("aria-valuetext", `${formatTime(current)} из ${durationPending ? "--:--" : formatTime(total)}`);
+        }
         updateMediaSessionPositionState();
         notifyParentPlayerState();
         persistPlaybackSnapshot(false);
@@ -7658,6 +8396,9 @@
         li.dataset.context = context === "shared" ? "shared" : "search";
         li.dataset.trackKey = track.key || "";
         li.dataset.trackId = track.trackId || "";
+        li.tabIndex = 0;
+        li.setAttribute("role", "button");
+        li.setAttribute("aria-label", `${String(track.title || "Трек")} — ${String(track.artists && track.artists.length ? track.artists.join(", ") : "Без артиста")}`);
         if (searchCollectionKey) {
           li.dataset.searchCollectionKey = searchCollectionKey;
           track._searchCollectionKey = searchCollectionKey;
@@ -7739,9 +8480,65 @@
           bindImageFallback(coverImage);
         }
 
+        if (isAndroidTv) {
+          const isSharedContext = context === "shared";
+          li.style.alignItems = "center";
+          const coverWrap = li.querySelector(".track-cover-wrap");
+          if (coverWrap) {
+            coverWrap.style.alignSelf = "center";
+            coverWrap.style.justifySelf = "center";
+            coverWrap.style.margin = "0";
+            if (isSharedContext) {
+              coverWrap.style.flex = "0 0 54px";
+            }
+          }
+          const info = li.querySelector(".track-info");
+          if (info) {
+            info.style.alignSelf = "center";
+            info.style.display = "grid";
+            info.style.alignContent = "center";
+            info.style.gap = "2px";
+            if (isSharedContext) {
+              info.style.flex = "1 1 auto";
+            }
+          }
+          const titleEl = li.querySelector(".track-info h3");
+          if (titleEl) {
+            titleEl.style.margin = "0";
+            titleEl.style.lineHeight = "1.15";
+          }
+          const artistEl = li.querySelector(".track-info p");
+          if (artistEl) {
+            artistEl.style.margin = "0";
+            artistEl.style.lineHeight = "1.15";
+          }
+          const metaEl = li.querySelector(".track-meta-line");
+          if (metaEl) {
+            metaEl.style.marginTop = "0";
+            metaEl.style.lineHeight = "1.15";
+          }
+          if (isSharedContext) {
+            const actions = li.querySelector(".track-actions");
+            if (actions) actions.style.display = "none";
+            const cornerActions = li.querySelector(".track-corner-actions");
+            if (cornerActions) cornerActions.style.display = "none";
+          }
+        }
+
         li.addEventListener("click", async (event) => {
           const actionEl = event.target.closest("[data-action]");
-          if (!actionEl) return;
+          if (!actionEl) {
+            if (isAndroidTv) {
+              const interactive = event.target.closest("a,button,input,select,textarea,[contenteditable='true']");
+              if (!interactive) {
+                const playBtn = li.querySelector('[data-action="play"]');
+                if (playBtn) {
+                  playBtn.click();
+                }
+              }
+            }
+            return;
+          }
           const action = actionEl.getAttribute("data-action");
           if (action === "play") {
             const source = context === "shared" ? "shared" : "search";
@@ -7796,6 +8593,17 @@
           }
         });
 
+        li.addEventListener("keydown", (event) => {
+          if (event.target !== li) return;
+          const key = getTvEventKey(event);
+          if (!TV_SELECT_KEYS.has(key)) return;
+          event.preventDefault();
+          const playBtn = li.querySelector('[data-action="play"]');
+          if (playBtn) {
+            playBtn.click();
+          }
+        });
+
         return li;
       }
 
@@ -7833,6 +8641,112 @@
         if (bottomGap > 160) return;
         state.albumListRenderCount = Math.min(totalCount, state.albumListRenderCount + state.listChunkSize);
         renderSharedList();
+      }
+
+      function maybeAutofillSharedList() {
+        if (!els.sharedList) return;
+        const isAlbumsView = getActivePlaylistLibraryView() === "albums";
+        const totalCount = isAlbumsView
+          ? (Array.isArray(state.renderedAlbums) ? state.renderedAlbums.length : 0)
+          : (Array.isArray(state.renderedTracks) ? state.renderedTracks.length : 0);
+        const renderedCount = isAlbumsView ? state.renderedAlbumDomCount : state.renderedTrackDomCount;
+        if (!totalCount || renderedCount >= totalCount) return;
+
+        const isScrollable = els.sharedList.scrollHeight > (els.sharedList.clientHeight + 4);
+        if (isScrollable) return;
+
+        if (isAlbumsView) {
+          const nextCount = Math.min(totalCount, state.albumListRenderCount + state.listChunkSize);
+          if (nextCount <= state.albumListRenderCount) return;
+          state.albumListRenderCount = nextCount;
+        } else {
+          const nextCount = Math.min(totalCount, state.listRenderCount + state.listChunkSize);
+          if (nextCount <= state.listRenderCount) return;
+          state.listRenderCount = nextCount;
+        }
+        renderSharedList();
+      }
+
+      function maybeLoadMoreSharedByFocus(targetEl) {
+        if (!els.sharedList || !targetEl) return;
+        const inSharedList = els.sharedList.contains(targetEl);
+        if (!inSharedList) return;
+        const isAlbumsView = getActivePlaylistLibraryView() === "albums";
+        if (isAlbumsView) {
+          const items = Array.from(els.sharedList.querySelectorAll(".ytm-collection-item"));
+          const focusedItem = targetEl.closest ? targetEl.closest(".ytm-collection-item") : null;
+          if (!focusedItem || !items.length) return;
+          const idx = items.indexOf(focusedItem);
+          if (idx < 0 || idx < items.length - 2) return;
+          const totalCount = Array.isArray(state.renderedAlbums) ? state.renderedAlbums.length : 0;
+          if (!totalCount || state.renderedAlbumDomCount >= totalCount) return;
+          state.albumListRenderCount = Math.min(totalCount, state.albumListRenderCount + state.listChunkSize);
+          renderSharedList();
+          return;
+        }
+        const items = Array.from(els.sharedList.querySelectorAll(".track-item"));
+        const focusedItem = targetEl.closest ? targetEl.closest(".track-item") : null;
+        if (!focusedItem || !items.length) return;
+        const idx = items.indexOf(focusedItem);
+        if (idx < 0 || idx < items.length - 2) return;
+        const totalCount = Array.isArray(state.renderedTracks) ? state.renderedTracks.length : 0;
+        if (!totalCount || state.renderedTrackDomCount >= totalCount) return;
+        state.listRenderCount = Math.min(totalCount, state.listRenderCount + state.listChunkSize);
+        renderSharedList();
+      }
+
+      function applyTvSharedListTrackCentering() {
+        if (!isAndroidTv || !els.sharedList) return;
+        const items = Array.from(els.sharedList.querySelectorAll(".track-item"));
+        if (!items.length) return;
+
+        items.forEach((item) => {
+          const coverWrap = item.querySelector(".track-cover-wrap");
+          const info = item.querySelector(".track-info");
+          if (!coverWrap || !info) return;
+
+          item.style.display = "flex";
+          item.style.alignItems = "center";
+          item.style.gap = "10px";
+          coverWrap.style.flex = "0 0 54px";
+          info.style.flex = "1 1 auto";
+          coverWrap.style.transform = "";
+          info.style.transform = "";
+
+          const itemRect = item.getBoundingClientRect();
+          if (!itemRect.height) return;
+          const coverRect = coverWrap.getBoundingClientRect();
+          const infoRect = info.getBoundingClientRect();
+          const contentTop = Math.min(coverRect.top, infoRect.top);
+          const contentBottom = Math.max(coverRect.bottom, infoRect.bottom);
+          const itemCenterY = itemRect.top + itemRect.height / 2;
+          const contentCenterY = (contentTop + contentBottom) / 2;
+          const delta = itemCenterY - contentCenterY;
+          const shift = Math.max(-8, Math.min(8, Math.round(delta)));
+          if (!shift) return;
+          coverWrap.style.transform = `translateY(${shift}px)`;
+          info.style.transform = `translateY(${shift}px)`;
+        });
+      }
+
+      function queueTvSharedListTrackCentering() {
+        if (!isAndroidTv || !els.sharedList) return;
+        if (tvTrackCenteringRafId) {
+          cancelAnimationFrame(tvTrackCenteringRafId);
+        }
+        tvTrackCenteringRafId = requestAnimationFrame(() => {
+          tvTrackCenteringRafId = 0;
+          applyTvSharedListTrackCentering();
+        });
+      }
+
+      function scheduleSharedListAutofill() {
+        if (!els.sharedList || state.sharedListAutofillScheduled) return;
+        state.sharedListAutofillScheduled = true;
+        requestAnimationFrame(() => {
+          state.sharedListAutofillScheduled = false;
+          maybeAutofillSharedList();
+        });
       }
 
       function resetYmSearchLazyState() {
@@ -8072,6 +8986,8 @@
         updateStats();
         updateCoverPeekUI();
         updateMediaSessionTrackActions();
+        scheduleSharedListAutofill();
+        queueTvSharedListTrackCentering();
       }
 
       function renderSharedAlbumsList() {
@@ -8154,6 +9070,8 @@
         updateStats();
         updateCoverPeekUI();
         updateMediaSessionTrackActions();
+        scheduleSharedListAutofill();
+        queueTvSharedListTrackCentering();
       }
 
       function renderSharedList() {
@@ -8800,6 +9718,9 @@
         const li = document.createElement("li");
         li.className = "ytm-collection-item";
         li.dataset.collectionKey = key;
+        li.tabIndex = 0;
+        li.setAttribute("role", "button");
+        li.setAttribute("aria-label", `${String(album && album.title || "Альбом")} — открыть треки`);
         const coverUrl = pickBestCoverUrl(album && album.coverUrl || FALLBACK_COVER);
         const sourceUrl = String(album && album.sourceUrl || "").trim();
         const title = escapeHtml(String(album && album.title || "Альбом"));
@@ -8852,6 +9773,14 @@
               toast(`Не удалось удалить альбом: ${error.message || error}`, "err");
             });
           }
+        });
+
+        li.addEventListener("keydown", (event) => {
+          if (event.target !== li) return;
+          const key = getTvEventKey(event);
+          if (!TV_SELECT_KEYS.has(key)) return;
+          event.preventDefault();
+          togglePlaylistAlbum(album.kind, album.collectionId).catch(() => {});
         });
 
         if (!isOpen || !entry) return li;
@@ -9086,6 +10015,9 @@
         const li = document.createElement("li");
         li.className = "ytm-collection-item";
         li.dataset.collectionKey = key;
+        li.tabIndex = 0;
+        li.setAttribute("role", "button");
+        li.setAttribute("aria-label", `${String(collection && collection.title || "Подборка")} — открыть треки`);
 
         const coverUrl = pickBestCoverUrl(collection && collection.coverUrl || FALLBACK_COVER);
         const sourceUrl = String(collection && collection.sourceUrl || "").trim();
@@ -9130,6 +10062,14 @@
 
         const coverImage = li.querySelector(".ytm-collection-cover");
         if (coverImage) bindImageFallback(coverImage);
+
+        li.addEventListener("keydown", (event) => {
+          if (event.target !== li) return;
+          const key = getTvEventKey(event);
+          if (!TV_SELECT_KEYS.has(key)) return;
+          event.preventDefault();
+          toggleYtmCollection(collection && collection.kind, collection && collection.id).catch(() => {});
+        });
 
         if (!isOpen || !entry) return li;
         const body = document.createElement("div");
@@ -11275,7 +12215,8 @@
         if (els.currentCoverWrap) {
           els.currentCoverWrap.addEventListener("click", handleMainCoverToggle);
           els.currentCoverWrap.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
+            const key = getTvEventKey(event);
+            if (!TV_SELECT_KEYS.has(key)) return;
             event.preventDefault();
             handleMainCoverToggle();
           });
@@ -11292,26 +12233,70 @@
           });
         }
         window.addEventListener("keydown", (event) => {
-          if (event.key === "Escape" && state.fullscreenOpen) {
+          const key = getTvEventKey(event);
+          if (!TV_BACK_KEYS.has(key)) return;
+          if (!isAndroidTv && key !== "Escape" && isTextEntryElementForTv(event.target)) return;
+          let handled = false;
+          if (isAndroidTv && isTextEntryElementForTv(event.target)) {
+            if (typeof event.target.blur === "function") {
+              event.target.blur();
+              if (isTvManagedTextInput(event.target)) {
+                relockTvTextInput(event.target);
+              }
+            }
+            event.preventDefault();
+            handled = true;
+          }
+          if (state.fullscreenOpen) {
+            event.preventDefault();
             setFullscreenOpen(false);
+            handled = true;
           }
-          if (event.key === "Escape" && state.trackEditModalOpen) {
+          if (state.trackEditModalOpen) {
+            event.preventDefault();
             setTrackEditModalOpen(false);
+            handled = true;
           }
-          if (event.key === "Escape" && state.trackDeleteModalOpen) {
+          if (state.trackDeleteModalOpen) {
+            event.preventDefault();
             setTrackDeleteModalOpen(false);
+            handled = true;
           }
-          if (event.key === "Escape" && state.mobileLibraryOpen) {
+          if (state.mobileLibraryOpen) {
+            event.preventDefault();
             closeMobileLibrarySheet();
+            handled = true;
           }
-          if (event.key === "Escape" && state.addHelpOpen) {
+          if (isAndroidTv && state.tvLibraryOpen) {
+            event.preventDefault();
+            closeMobileLibrarySheet();
+            if (els.mobileLibraryToggleBtn) {
+              requestAnimationFrame(() => focusElementForTv(els.mobileLibraryToggleBtn));
+            }
+            handled = true;
+          }
+          if (state.addHelpOpen) {
+            event.preventDefault();
             setAddHelpOpen(false);
+            handled = true;
           }
-          if (event.key === "Escape" && state.playlistCreateModalOpen) {
+          if (state.playlistCreateModalOpen) {
+            event.preventDefault();
             setPlaylistCreateModalOpen(false);
+            handled = true;
           }
-          if (event.key === "Escape") {
-            setPlaylistMenuOpen(false);
+          if (els.playlistSelectorRoot && els.playlistSelectorRoot.classList.contains("is-open")) {
+            event.preventDefault();
+            handled = true;
+          }
+          if (els.addedByFilterRoot && els.addedByFilterRoot.classList.contains("is-open")) {
+            event.preventDefault();
+            handled = true;
+          }
+          setPlaylistMenuOpen(false);
+          setAddedByFilterMenuOpen(false);
+          if (!handled && requestHostSidebarFocus()) {
+            event.preventDefault();
           }
         });
         window.addEventListener("resize", () => {
@@ -11327,6 +12312,7 @@
           if (els.playlistSelectorRoot && els.playlistSelectorRoot.classList.contains("is-open")) {
             updatePlaylistMenuPosition();
           }
+          queueTvSharedListTrackCentering();
         });
         window.addEventListener("orientationchange", () => {
           setTimeout(() => {
@@ -11354,10 +12340,14 @@
         }
         if (els.mobileLibraryToggleBtn) {
           els.mobileLibraryToggleBtn.addEventListener("click", () => {
-            if (state.mobileLibraryOpen) {
+            const isOpen = isAndroidTv ? state.tvLibraryOpen : state.mobileLibraryOpen;
+            if (isOpen) {
               closeMobileLibrarySheet();
             } else {
               setMobileLibraryOpen(true);
+            }
+            if (isAndroidTv && state.tvLibraryOpen) {
+              requestAnimationFrame(() => focusTvLibraryDefaultTarget());
             }
           });
         }
@@ -11599,6 +12589,10 @@
               maybeLoadMoreSharedTracks();
             });
           }, { passive: true });
+          els.sharedList.addEventListener("focusin", (event) => {
+            maybeLoadMoreSharedByFocus(event.target);
+            queueTvSharedListTrackCentering();
+          });
         }
         if (els.ymSearchList) {
           els.ymSearchList.addEventListener("click", (event) => {
@@ -12000,6 +12994,47 @@
             await seekByClientX(event.clientX, els.fsProgressBar);
           });
         }
+        const bindProgressKeyboardControl = (progressEl) => {
+          if (!progressEl) return;
+          progressEl.tabIndex = 0;
+          progressEl.setAttribute("role", "slider");
+          progressEl.addEventListener("keydown", (event) => {
+            const duration = getKnownTrackDurationSec();
+            const current = Number(els.audio.currentTime || 0);
+            const seekStep = event.shiftKey ? 30 : 10;
+            const shouldResume = !els.audio.paused;
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              const next = Math.max(0, current - seekStep);
+              seekToTime(next, { resume: shouldResume }).catch(() => {});
+              return;
+            }
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              const maxDuration = Number.isFinite(duration) && duration > 0 ? duration : current + seekStep;
+              const next = Math.min(maxDuration, current + seekStep);
+              seekToTime(next, { resume: shouldResume }).catch(() => {});
+              return;
+            }
+            if (event.key === "Home") {
+              event.preventDefault();
+              seekToTime(0, { resume: shouldResume }).catch(() => {});
+              return;
+            }
+            if (event.key === "End") {
+              if (!Number.isFinite(duration) || duration <= 0) return;
+              event.preventDefault();
+              seekToTime(duration, { resume: shouldResume }).catch(() => {});
+              return;
+            }
+            if (TV_SELECT_KEYS.has(getTvEventKey(event))) {
+              event.preventDefault();
+              if (els.playBtn) els.playBtn.click();
+            }
+          });
+        };
+        bindProgressKeyboardControl(els.progressBar);
+        bindProgressKeyboardControl(els.fsProgressBar);
         if (els.fsPlayBtn) {
           els.fsPlayBtn.addEventListener("click", () => {
             els.playBtn.click();
@@ -12199,7 +13234,7 @@
           });
 
           document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape") setAddedByFilterMenuOpen(false);
+            if (TV_BACK_KEYS.has(getTvEventKey(event))) setAddedByFilterMenuOpen(false);
           });
         }
         if (els.sortSelect) {
@@ -12452,6 +13487,8 @@
           state.sharedTracksLoaded = true;
         }
         initClearButtonsForTextInputs();
+        initTvNavigation();
+        initTvTextInputActivation();
         bindEvents();
         configureMediaSessionActions();
         setRepeatMode("off");
@@ -12459,6 +13496,10 @@
         els.audio.playbackRate = 1;
         setVolume(0.85, { persist: false });
         restoreSettings();
+        if (isAndroidTv) {
+          state.desktopSplitPreferred = false;
+          state.mobileLibraryOpen = false;
+        }
         updatePlaylistSelectorUi();
         syncPlaylistLibraryViewUi();
         renderPlaylistSelectorMenu();

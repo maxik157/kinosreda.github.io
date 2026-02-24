@@ -1506,6 +1506,12 @@
         .sidebar-mug-link:hover {
             transform: translateY(-1px);
         }
+        .sidebar-logo-link:focus-visible,
+        .sidebar-mug-link:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
 
         .sidebar-collapse-btn {
             position: absolute;
@@ -1530,6 +1536,10 @@
             border-color: var(--accent-border-50);
             background: rgba(245, 158, 11, 0.15);
             transform: translateX(1px);
+        }
+        .sidebar-collapse-btn:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
         }
 
         .sidebar-nav {
@@ -1561,6 +1571,13 @@
             background: rgba(245, 158, 11, 0.12);
             color: #fff7ed;
             box-shadow: inset 3px 0 0 var(--accent-400);
+        }
+        .sidebar-link:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.16);
+            color: #fff7ed;
         }
         .sidebar-link--danger {
             color: rgba(248, 113, 113, 0.92);
@@ -1708,6 +1725,11 @@
         .sidebar-mini-btn:hover {
             border-color: var(--accent-border-40);
             background: rgba(245, 158, 11, 0.08);
+        }
+        .sidebar-mini-btn:focus-visible,
+        .sidebar-mini-progress:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
         }
         .sidebar-mini-btn:active {
             transform: scale(0.97);
@@ -1915,6 +1937,11 @@
             backface-visibility: hidden;
             will-change: transform;
         }
+        body.layout-sidebar .service-frame iframe:focus-visible,
+        body.layout-sidebar .service-frame iframe:focus {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: -2px;
+        }
         body.layout-sidebar.page-backlog-active .content-shell {
             height: calc(100vh - var(--header-offset, 0px));
             overflow: hidden;
@@ -1950,6 +1977,10 @@
         .mobile-burger:hover {
             border-color: var(--accent-border-50);
             background: rgba(245, 158, 11, 0.12);
+        }
+        .mobile-burger:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
         }
         .mobile-burger:active {
             transform: scale(0.97);
@@ -2184,6 +2215,13 @@
             background: rgba(245, 158, 11, 0.12);
             color: #fff7ed;
             box-shadow: inset 3px 0 0 var(--accent-400);
+        }
+        .mobile-nav-link:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.9);
+            outline-offset: 2px;
+            border-color: var(--accent-border-50);
+            background: rgba(245, 158, 11, 0.16);
+            color: #fff7ed;
         }
         .mobile-nav-link--danger {
             color: rgba(248, 113, 113, 0.92);
@@ -3515,7 +3553,12 @@
                             <h2 class="text-2xl font-bold text-amber-400 flex items-center gap-3">
                                 <span class="text-3xl">🍺</span> Рейтинг пива
                             </h2>
-                            <span id="beerCountBadge" class="text-xs px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200">Пива: 0</span>
+                            <a id="beerCountBadge" href="beer.html" title="Открыть пространство пива"
+                               onclick="if (document.body.classList.contains('layout-sidebar')) { openSidebarPage('svc_beer_space'); return false; } return true;"
+                               class="text-xs px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-200 no-underline hover:text-amber-200 focus:text-amber-200"
+                               style="text-decoration:none">
+                                Пива: 0
+                            </a>
 
                             <!-- Search (by beer name) -->
                             <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
@@ -3726,6 +3769,11 @@
         <div id="svc_profile" data-page="svc_profile" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
                 <iframe title="Профиль" data-src="profile.html" loading="lazy" scrolling="yes"></iframe>
+            </div>
+        </div>
+        <div id="svc_beer_space" data-page="svc_beer_space" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Пространство пива" data-src="beer.html" loading="lazy" scrolling="no"></iframe>
             </div>
         </div>
         <div id="svc_roulette" data-page="svc_roulette" class="page page-service max-w-7xl mx-auto">
@@ -4651,6 +4699,7 @@
             beer: 'beerSection',
             svc_pokaki: 'svc_pokaki',
             svc_profile: 'svc_profile',
+            svc_beer_space: 'svc_beer_space',
             svc_roulette: 'svc_roulette',
             svc_planning: 'svc_planning',
             svc_board: 'svc_board',
@@ -4662,6 +4711,8 @@
         };
         const SIDEBAR_MUSIC_FALLBACK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23f59e0b'/%3E%3Cstop offset='1' stop-color='%23fcd34d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='16' fill='%230b0f17'/%3E%3Ccircle cx='30' cy='28' r='34' fill='url(%23g)' fill-opacity='.35'/%3E%3Ccircle cx='94' cy='96' r='36' fill='url(%23g)' fill-opacity='.28'/%3E%3Cpath fill='white' fill-opacity='.9' d='M79 28v42c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V41l-30 6v32c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V40l48-10z'/%3E%3C/svg%3E";
         const SIDEBAR_REALTIME_BASE = 'https://realtime.xn--80ahcljthqi.xn--p1ai';
+        const VIDEO_SERVICE_VERSION = '20260221-10';
+        const MUSIC_SERVICE_VERSION = '20260221-5';
         const SIDEBAR_MINI_PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>';
         const SIDEBAR_MINI_PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg>';
         let activeLayoutPage = 'calendar';
@@ -4676,6 +4727,21 @@
         let globalVideoFloatDragRaf = null;
         let globalVideoFloatResizeState = null;
         let globalVideoFloatResizeRaf = null;
+        let sidebarTvNavigationBound = false;
+        let appBackHandlerBound = false;
+        const SIDEBAR_TV_NAV_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+        const SIDEBAR_TV_SELECT_KEYS = new Set(['Enter', 'NumpadEnter', ' ', 'Spacebar']);
+        const SIDEBAR_TV_BACK_KEYS = new Set(['Escape', 'Backspace', 'BrowserBack', 'GoBack']);
+        const SIDEBAR_TV_KEYCODE_MAP = {
+            4: 'BrowserBack',
+            19: 'ArrowUp',
+            20: 'ArrowDown',
+            21: 'ArrowLeft',
+            22: 'ArrowRight',
+            23: 'Enter',
+            66: 'Enter',
+            111: 'Escape'
+        };
         const SIDEBAR_MINI_PLAYERS = {
             desktop: {
                 root: 'sidebarMusicMini',
@@ -4925,8 +4991,61 @@
             } catch (_) {}
             return null;
         }
+        function isAndroidTvRuntime() {
+            try {
+                const ua = String((navigator && navigator.userAgent) || '').toLowerCase();
+                if (!ua.includes('android')) return false;
+                if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
+                    return true;
+                }
+                if (ua.includes(' tv') || ua.includes('tv ')) return true;
+                const maxTouchPoints = Number((navigator && navigator.maxTouchPoints) || 0);
+                const isFinePointer = !!(window.matchMedia && window.matchMedia('(pointer:fine)').matches);
+                const longEdge = Math.max(
+                    Number((window.screen && window.screen.width) || 0),
+                    Number((window.screen && window.screen.height) || 0)
+                );
+                const shortEdge = Math.min(
+                    Number((window.screen && window.screen.width) || 0),
+                    Number((window.screen && window.screen.height) || 0)
+                );
+                if (!isFinePointer && maxTouchPoints === 0 && longEdge >= 960 && shortEdge >= 540) {
+                    return true;
+                }
+            } catch (_) {}
+            return false;
+        }
+        function isForceTvRequested() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const raw = String(params.get('force_tv') || params.get('tv') || '').trim().toLowerCase();
+                if (raw === '1' || raw === 'true' || raw === 'yes') return true;
+            } catch (_) {}
+            return isAndroidTvRuntime();
+        }
+        function withForceTvParam(rawUrl) {
+            const value = String(rawUrl || '').trim();
+            if (!value) return value;
+            if (!isForceTvRequested()) return value;
+            try {
+                const parsed = new URL(value, window.location.href);
+                parsed.searchParams.set('force_tv', '1');
+                if (parsed.origin === window.location.origin) {
+                    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+                }
+                return parsed.toString();
+            } catch (_) {
+                const divider = value.includes('?') ? '&' : '?';
+                return `${value}${divider}force_tv=1`;
+            }
+        }
         function buildVideoServiceSrc() {
-            return `video.html?proxy_base=${encodeURIComponent(SIDEBAR_REALTIME_BASE)}`;
+            const base = `video.html?proxy_base=${encodeURIComponent(SIDEBAR_REALTIME_BASE)}&v=${encodeURIComponent(VIDEO_SERVICE_VERSION)}`;
+            return withForceTvParam(base);
+        }
+        function buildMusicServiceSrc() {
+            const base = `music.html?v=${encodeURIComponent(MUSIC_SERVICE_VERSION)}`;
+            return withForceTvParam(base);
         }
         function getPlanningEventIdFromUrl() {
             try {
@@ -5020,6 +5139,476 @@
             return !!active.closest('.page-service');
         }
 
+        function isTextEditingElement(el) {
+            if (!el) return false;
+            if (el.isContentEditable) return true;
+            const tag = String(el.tagName || '').toUpperCase();
+            if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+            if (tag !== 'INPUT') return false;
+            const type = String(el.type || 'text').toLowerCase();
+            return !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'file', 'color'].includes(type);
+        }
+
+        function getTvEventKey(event) {
+            const raw = String(event && event.key ? event.key : '');
+            if (SIDEBAR_TV_NAV_KEYS.has(raw) || SIDEBAR_TV_SELECT_KEYS.has(raw) || SIDEBAR_TV_BACK_KEYS.has(raw)) {
+                return raw;
+            }
+            const code = Number(event && (event.keyCode || event.which || 0));
+            return SIDEBAR_TV_KEYCODE_MAP[code] || raw;
+        }
+
+        function isElementVisibleForTvNavigation(el) {
+            if (!el || !el.isConnected) return false;
+            if (el.hidden) return false;
+            const style = window.getComputedStyle(el);
+            if (!style || style.display === 'none' || style.visibility === 'hidden') return false;
+            if (style.pointerEvents === 'none') return false;
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        }
+
+        function focusElementForTvNavigation(el) {
+            if (!el || typeof el.focus !== 'function') return false;
+            el.focus({ preventScroll: true });
+            if (typeof el.scrollIntoView === 'function') {
+                el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+            return true;
+        }
+
+        function getTvFocusableElementsWithin(root) {
+            if (!root) return [];
+            const selectors = [
+                'button:not([disabled])',
+                'input:not([disabled]):not([type="hidden"])',
+                'select:not([disabled])',
+                'textarea:not([disabled])',
+                'a[href]',
+                'iframe',
+                '[tabindex]:not([tabindex="-1"])',
+                '[role="button"]'
+            ].join(', ');
+            return Array.from(root.querySelectorAll(selectors)).filter((el) => {
+                if (!isElementVisibleForTvNavigation(el)) return false;
+                if (el.closest('.sidebar') || el.closest('#mobileSidebar')) return false;
+                return true;
+            });
+        }
+
+        function getActiveDesktopContentTvFocusables() {
+            const scopes = [];
+            const activePage = document.querySelector('.page.is-active:not([hidden])');
+            if (activePage) scopes.push(activePage);
+            const floating = document.getElementById('globalVideoFloat');
+            if (floating && floating.classList.contains('is-visible')) scopes.push(floating);
+            if (!scopes.length) {
+                const shell = document.querySelector('.content-shell');
+                if (shell) scopes.push(shell);
+            }
+            const result = [];
+            const dedupe = new Set();
+            scopes.forEach((scope) => {
+                getTvFocusableElementsWithin(scope).forEach((el) => {
+                    if (dedupe.has(el)) return;
+                    dedupe.add(el);
+                    result.push(el);
+                });
+            });
+            return result;
+        }
+
+        function getDefaultDesktopContentTvFocusTarget(focusables) {
+            if (!Array.isArray(focusables) || !focusables.length) return null;
+            const activeServiceFrame = document.querySelector('.page-service.is-active:not([hidden]) iframe');
+            if (activeServiceFrame && focusables.includes(activeServiceFrame)) return activeServiceFrame;
+            const activePage = document.querySelector('.page.is-active:not([hidden])');
+            if (activePage) {
+                const preferred = getTvFocusableElementsWithin(activePage)[0];
+                if (preferred && focusables.includes(preferred)) return preferred;
+            }
+            return focusables[0];
+        }
+
+        function findNextTvFocusableByDirection(current, direction, focusables) {
+            if (!current || !Array.isArray(focusables) || !focusables.length) return null;
+            const currentRect = current.getBoundingClientRect();
+            const currentCx = currentRect.left + currentRect.width / 2;
+            const currentCy = currentRect.top + currentRect.height / 2;
+            let best = null;
+            let bestScore = Number.POSITIVE_INFINITY;
+
+            focusables.forEach((candidate) => {
+                if (!candidate || candidate === current) return;
+                const rect = candidate.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const dx = cx - currentCx;
+                const dy = cy - currentCy;
+                let primary = 0;
+                let secondary = 0;
+
+                if (direction === 'left') {
+                    if (dx >= -4) return;
+                    primary = -dx;
+                    secondary = Math.abs(dy);
+                } else if (direction === 'right') {
+                    if (dx <= 4) return;
+                    primary = dx;
+                    secondary = Math.abs(dy);
+                } else if (direction === 'up') {
+                    if (dy >= -4) return;
+                    primary = -dy;
+                    secondary = Math.abs(dx);
+                } else if (direction === 'down') {
+                    if (dy <= 4) return;
+                    primary = dy;
+                    secondary = Math.abs(dx);
+                } else {
+                    return;
+                }
+
+                const distance = Math.hypot(dx, dy);
+                const score = primary * 1000 + secondary * 10 + distance;
+                if (score < bestScore) {
+                    best = candidate;
+                    bestScore = score;
+                }
+            });
+
+            return best;
+        }
+
+        function isNativeKeyboardInteractiveElement(el) {
+            if (!el) return false;
+            const tag = String(el.tagName || '').toUpperCase();
+            return tag === 'BUTTON'
+                || tag === 'A'
+                || tag === 'INPUT'
+                || tag === 'TEXTAREA'
+                || tag === 'SELECT';
+        }
+
+        function enhanceKeyboardClickableElements(root = document) {
+            if (!root || !root.querySelectorAll) return;
+            root.querySelectorAll('[onclick]').forEach((el) => {
+                if (!el || isNativeKeyboardInteractiveElement(el)) return;
+                if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+                if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+                if (el.dataset.keyboardBound === '1') return;
+                el.dataset.keyboardBound = '1';
+                el.addEventListener('keydown', (event) => {
+                    if (event.target !== el) return;
+                    const key = getTvEventKey(event);
+                    if (!SIDEBAR_TV_SELECT_KEYS.has(key)) return;
+                    if (event.defaultPrevented) return;
+                    event.preventDefault();
+                    el.click();
+                });
+            });
+        }
+
+        function markServiceFramesFocusable() {
+            document.querySelectorAll('.page-service iframe').forEach((frame) => {
+                frame.setAttribute('tabindex', '0');
+            });
+        }
+
+        function getDesktopSidebarTvFocusables() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return [];
+            const selectors = [
+                '.sidebar-logo-link',
+                '.sidebar-mug-link',
+                '.sidebar-link',
+                '#sidebarCollapseBtn',
+                '.sidebar-mini-jump',
+                '.sidebar-mini-btn',
+                '.sidebar-mini-progress'
+            ].join(', ');
+            return Array.from(sidebar.querySelectorAll(selectors)).filter(isElementVisibleForTvNavigation);
+        }
+
+        function getMobileSidebarTvFocusables() {
+            const menu = document.getElementById('mobileSidebar');
+            if (!menu || !menu.classList.contains('is-open')) return [];
+            const result = [];
+            const toggleBtn = document.getElementById('mobileSidebarToggle');
+            if (isElementVisibleForTvNavigation(toggleBtn)) result.push(toggleBtn);
+            const selectors = [
+                '.mobile-nav-link',
+                '.sidebar-mini-jump',
+                '.sidebar-mini-btn',
+                '.sidebar-mini-progress'
+            ].join(', ');
+            menu.querySelectorAll(selectors).forEach((el) => {
+                if (isElementVisibleForTvNavigation(el)) result.push(el);
+            });
+            return result;
+        }
+
+        function getActiveSidebarLinkElement() {
+            return document.querySelector('.sidebar [data-page-link].active')
+                || document.querySelector('.sidebar [data-page-link]')
+                || document.querySelector('.sidebar .sidebar-logo-link');
+        }
+
+        function focusSidebarNavigationTarget() {
+            const target = getActiveSidebarLinkElement();
+            if (!target) return false;
+            return focusElementForTvNavigation(target);
+        }
+
+        function focusActiveServiceFrame() {
+            const activeServiceSection = document.querySelector('.page-service.is-active:not([hidden])');
+            if (!activeServiceSection) return false;
+            ensureServiceFrame(activeServiceSection);
+            const frame = activeServiceSection.querySelector('iframe');
+            if (!frame) return false;
+            frame.setAttribute('tabindex', '0');
+            focusElementForTvNavigation(frame);
+            return document.activeElement === frame;
+        }
+
+        function getActiveServiceFrameElement() {
+            const activeServiceSection = document.querySelector('.page-service.is-active:not([hidden])');
+            if (!activeServiceSection) return null;
+            ensureServiceFrame(activeServiceSection);
+            return activeServiceSection.querySelector('iframe');
+        }
+
+        function dispatchBackEventToServiceFrame(frame) {
+            if (!frame || !frame.contentWindow) return false;
+            try {
+                const frameWindow = frame.contentWindow;
+                const frameDocument = frameWindow.document;
+                const eventInit = {
+                    key: 'BrowserBack',
+                    code: 'BrowserBack',
+                    keyCode: 4,
+                    which: 4,
+                    bubbles: true,
+                    cancelable: true
+                };
+                const browserBackEvent = new frameWindow.KeyboardEvent('keydown', eventInit);
+                const canceledOnDocument = frameDocument ? frameDocument.dispatchEvent(browserBackEvent) === false : false;
+                const canceledOnWindow = frameWindow.dispatchEvent(new frameWindow.KeyboardEvent('keydown', eventInit)) === false;
+                if (canceledOnDocument || canceledOnWindow || browserBackEvent.defaultPrevented) return true;
+
+                const escapeInit = { key: 'Escape', code: 'Escape', keyCode: 111, which: 111, bubbles: true, cancelable: true };
+                const escapeEvent = new frameWindow.KeyboardEvent('keydown', escapeInit);
+                const escapeCanceledDoc = frameDocument ? frameDocument.dispatchEvent(escapeEvent) === false : false;
+                const escapeCanceledWin = frameWindow.dispatchEvent(new frameWindow.KeyboardEvent('keydown', escapeInit)) === false;
+                return escapeCanceledDoc || escapeCanceledWin || escapeEvent.defaultPrevented;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function handleAppBackNavigation(event = null) {
+            let handled = false;
+
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            if (mobileSidebar && mobileSidebar.classList.contains('is-open')) {
+                closeMobileMenu();
+                handled = true;
+            }
+
+            if (!handled && globalVideoFloatState.visible) {
+                closeGlobalVideoFloat({ notifyVideoFrame: true });
+                handled = true;
+            }
+
+            if (!handled) {
+                const activeFrame = getActiveServiceFrameElement();
+                if (activeFrame) {
+                    handled = dispatchBackEventToServiceFrame(activeFrame);
+                }
+            }
+
+            if (!handled) {
+                const desktopSidebarEnabled = document.body.classList.contains('layout-sidebar') && isDesktopLayout();
+                const activeEl = document.activeElement;
+                const inDesktopSidebar = Boolean(activeEl && activeEl.closest && activeEl.closest('.sidebar'));
+                if (desktopSidebarEnabled && !inDesktopSidebar) {
+                    handled = focusSidebarNavigationTarget();
+                }
+            }
+
+            if (!handled && activeLayoutPage && activeLayoutPage !== 'calendar') {
+                setActivePage('calendar', { push: true });
+                handled = true;
+            }
+
+            if (!handled) {
+                handled = focusSidebarNavigationTarget() || true;
+            }
+
+            if (handled && event) {
+                if (typeof event.preventDefault === 'function') event.preventDefault();
+                if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+                if (typeof event.stopPropagation === 'function') event.stopPropagation();
+            }
+            return handled;
+        }
+
+        function bindAppBackHandler() {
+            if (appBackHandlerBound) return;
+            appBackHandlerBound = true;
+
+            document.addEventListener('backbutton', (event) => {
+                handleAppBackNavigation(event);
+            }, true);
+        }
+
+        function moveLinearTvFocus(elements, currentEl, delta) {
+            if (!Array.isArray(elements) || !elements.length) return false;
+            const active = currentEl && elements.includes(currentEl) ? currentEl : null;
+            const index = active ? elements.indexOf(active) : (delta > 0 ? -1 : 0);
+            let nextIndex = index + delta;
+            if (nextIndex < 0) nextIndex = elements.length - 1;
+            if (nextIndex >= elements.length) nextIndex = 0;
+            const next = elements[nextIndex];
+            return focusElementForTvNavigation(next);
+        }
+
+        function focusActiveDesktopContentTarget() {
+            if (focusActiveServiceFrame()) return true;
+            const focusables = getActiveDesktopContentTvFocusables();
+            const target = getDefaultDesktopContentTvFocusTarget(focusables);
+            if (!target) return false;
+            return focusElementForTvNavigation(target);
+        }
+
+        function handleSidebarTvNavigation(event) {
+            const key = getTvEventKey(event);
+            if (!SIDEBAR_TV_NAV_KEYS.has(key)) return;
+            if (event.defaultPrevented) return;
+            if (isTextEditingElement(event.target)) return;
+
+            const activeEl = document.activeElement;
+            const desktopSidebarEnabled = document.body.classList.contains('layout-sidebar') && isDesktopLayout();
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            const mobileMenuOpen = Boolean(mobileSidebar && mobileSidebar.classList.contains('is-open'));
+            const inDesktopSidebar = Boolean(desktopSidebarEnabled && activeEl && activeEl.closest && activeEl.closest('.sidebar'));
+            const inDesktopContent = Boolean(desktopSidebarEnabled && activeEl && activeEl.closest && activeEl.closest('.content-shell'));
+
+            if (mobileMenuOpen) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const focusables = getMobileSidebarTvFocusables();
+                if (!focusables.length) {
+                    focusElementForTvNavigation(document.getElementById('mobileSidebarToggle'));
+                    return;
+                }
+                if (!focusables.includes(activeEl)) {
+                    if (focusElementForTvNavigation(focusables[0])) {
+                        return;
+                    }
+                }
+                const step = (key === 'ArrowDown' || key === 'ArrowRight') ? 1 : -1;
+                moveLinearTvFocus(focusables, activeEl, step);
+                return;
+            }
+
+            if (!desktopSidebarEnabled) return;
+
+            if (key === 'ArrowUp' || key === 'ArrowDown') {
+                const step = key === 'ArrowDown' ? 1 : -1;
+                if (inDesktopSidebar) {
+                    const moved = moveLinearTvFocus(getDesktopSidebarTvFocusables(), activeEl, step);
+                    if (moved) event.preventDefault();
+                    return;
+                }
+                if (!inDesktopContent) {
+                    const moved = focusSidebarNavigationTarget();
+                    if (moved) event.preventDefault();
+                } else {
+                    const focusables = getActiveDesktopContentTvFocusables();
+                    const current = focusables.includes(activeEl) ? activeEl : getDefaultDesktopContentTvFocusTarget(focusables);
+                    const direction = key === 'ArrowUp' ? 'up' : 'down';
+                    const next = current ? findNextTvFocusableByDirection(current, direction, focusables) : null;
+                    const moved = focusElementForTvNavigation(next || current);
+                    if (moved) event.preventDefault();
+                }
+                return;
+            }
+
+            if (key === 'ArrowRight' && inDesktopSidebar) {
+                if (focusActiveDesktopContentTarget()) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            const focusables = getActiveDesktopContentTvFocusables();
+            const current = focusables.includes(activeEl) ? activeEl : null;
+            const direction = key === 'ArrowLeft'
+                ? 'left'
+                : key === 'ArrowRight'
+                    ? 'right'
+                    : null;
+            if (!direction) return;
+
+            if (direction === 'left' && inDesktopContent) {
+                if (focusSidebarNavigationTarget()) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            if (!inDesktopSidebar && !current) {
+                if (direction === 'left' && focusSidebarNavigationTarget()) {
+                    event.preventDefault();
+                } else if (direction === 'right' && focusActiveDesktopContentTarget()) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            if (current) {
+                const next = findNextTvFocusableByDirection(current, direction, focusables);
+                if (next && focusElementForTvNavigation(next)) {
+                    event.preventDefault();
+                    return;
+                }
+                if (direction === 'left' && focusSidebarNavigationTarget()) {
+                    event.preventDefault();
+                }
+            }
+        }
+
+        function handleSidebarTvBackNavigation(event) {
+            const key = getTvEventKey(event);
+            if (!SIDEBAR_TV_BACK_KEYS.has(key)) return;
+            if (event.defaultPrevented) return;
+            if (key !== 'Escape' && isTextEditingElement(event.target)) return;
+
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            if (mobileSidebar && mobileSidebar.classList.contains('is-open')) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closeMobileMenu();
+                return;
+            }
+
+            if (key === 'Escape') return;
+            handleAppBackNavigation(event);
+        }
+
+        function initSidebarTvNavigation() {
+            markServiceFramesFocusable();
+            if (sidebarTvNavigationBound) return;
+            sidebarTvNavigationBound = true;
+            document.addEventListener('keydown', handleSidebarTvNavigation, true);
+            document.addEventListener('keydown', handleSidebarTvBackNavigation, true);
+            requestAnimationFrame(() => {
+                const active = document.activeElement;
+                if (isTextEditingElement(active)) return;
+                focusSidebarNavigationTarget();
+            });
+        }
+
         function moveControlBlocks() {
             const snowBlock = document.getElementById('snowToggleBlock');
             const isSidebar = document.body.classList.contains('layout-sidebar');
@@ -5041,6 +5630,11 @@
             }
             if (persist) {
                 localStorage.setItem(SIDEBAR_COLLAPSE_LS_KEY, collapsed ? '1' : '0');
+            }
+            if (!collapsed && document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                requestAnimationFrame(() => {
+                    focusSidebarNavigationTarget();
+                });
             }
             scheduleSidebarLogoFit(60);
             scheduleSidebarLogoFit(320);
@@ -5065,6 +5659,9 @@
         function ensureServiceFrame(section) {
             if (!section || !section.classList.contains('page-service')) return;
             const frame = section.querySelector('iframe[data-src]');
+            if (frame) {
+                frame.setAttribute('tabindex', '0');
+            }
             if (section.id === 'svc_gallery' && !isDesktopLayout()) {
                 if (frame) frame.removeAttribute('src');
                 return;
@@ -5082,6 +5679,16 @@
             }
             if (section.id === 'svc_video') {
                 const desired = buildVideoServiceSrc();
+                if (desired) {
+                    frame.setAttribute('data-src', desired);
+                    if (frame.getAttribute('src') !== desired) {
+                        frame.setAttribute('src', desired);
+                    }
+                }
+                return;
+            }
+            if (section.id === 'svc_music') {
+                const desired = buildMusicServiceSrc();
                 if (desired) {
                     frame.setAttribute('data-src', desired);
                     if (frame.getAttribute('src') !== desired) {
@@ -5438,7 +6045,7 @@
             const serviceActive = useSidebar && isServicePage;
             document.body.classList.toggle('page-service-active', serviceActive);
             document.documentElement.classList.toggle('page-service-active', serviceActive);
-            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music' || resolved === 'svc_video';
+            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music' || resolved === 'svc_video' || resolved === 'svc_beer_space';
             const chatWrap = document.getElementById('chatBtnWrap');
             if (chatWrap) chatWrap.style.display = hideChatOnPage ? 'none' : '';
             if (hideChatOnPage && typeof toggleChat === 'function') {
@@ -5460,6 +6067,11 @@
                     unloadServiceFrame(section);
                 }
             });
+            markServiceFramesFocusable();
+            const activeSection = useSidebar
+                ? document.querySelector(`.page[data-page="${resolved}"]`)
+                : document.getElementById(PAGE_IDS[resolved] || '');
+            enhanceKeyboardClickableElements(activeSection || document);
             document.querySelectorAll('[data-page-link]').forEach((btn) => {
                 const isActive = btn.dataset.pageLink === resolved;
                 btn.classList.toggle('active', isActive);
@@ -5517,6 +6129,11 @@
             } else {
                 setActivePage(page, { push: true });
             }
+            if (document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                requestAnimationFrame(() => {
+                    focusSidebarNavigationTarget();
+                });
+            }
         }
 
         function openProfilePage(e) {
@@ -5554,6 +6171,16 @@
             if (isOpen) {
                 applySidebarMiniPlayerState();
                 setTimeout(() => requestMusicStateSnapshot(), 0);
+                const focusMobileMenu = () => {
+                    const focusables = getMobileSidebarTvFocusables();
+                    focusElementForTvNavigation(focusables[0] || btn);
+                };
+                requestAnimationFrame(() => requestAnimationFrame(focusMobileMenu));
+                setTimeout(focusMobileMenu, 180);
+            } else {
+                requestAnimationFrame(() => {
+                    focusElementForTvNavigation(btn);
+                });
             }
         }
 
@@ -5587,7 +6214,10 @@
             });
 
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') closeMobileMenu();
+                const key = getTvEventKey(e);
+                if (key === 'Escape' || key === 'BrowserBack' || key === 'Backspace' || key === 'GoBack') {
+                    closeMobileMenu();
+                }
             });
         }
 
@@ -5920,10 +6550,13 @@
             updateUserProfile();
 
             initLayoutShell();
+            enhanceKeyboardClickableElements(document);
             initSidebarMiniPlayerControls();
             applySidebarMiniPlayerState();
             setTimeout(() => requestMusicStateSnapshot(), 0);
             initMobileMenu();
+            initSidebarTvNavigation();
+            bindAppBackHandler();
             initGlobalVideoFloat();
 
             initBeerSticky();
@@ -5953,6 +6586,17 @@
                 }
                 if (data.type === 'music:state') {
                     handleSidebarMusicStateMessage(data.payload || data);
+                    return;
+                }
+                if (data.type === 'tv:focus-sidebar') {
+                    const mobileSidebar = document.getElementById('mobileSidebar');
+                    const mobileOpen = !!(mobileSidebar && mobileSidebar.classList.contains('is-open'));
+                    if (mobileOpen) {
+                        const focusables = getMobileSidebarTvFocusables();
+                        focusElementForTvNavigation(focusables[0] || document.getElementById('mobileSidebarToggle'));
+                    } else {
+                        focusSidebarNavigationTarget();
+                    }
                     return;
                 }
                 if (data.type === 'video:detach-player') {
@@ -6031,7 +6675,7 @@
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
                 { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },
-                { href: 'music.html', icon: '🎧', label: 'Музыка', page: 'svc_music' },
+                { href: buildMusicServiceSrc(), icon: '🎧', label: 'Музыка', page: 'svc_music' },
                 { href: 'snacks.html', icon: '🥨', label: 'Перекусы', page: 'svc_snacks' },
                 { href: 'water.html', icon: '💧', label: 'Трекер воды', page: 'svc_water' }
             ];
@@ -6127,6 +6771,7 @@
             if (servicesMobile) servicesMobile.innerHTML = servicesMobileHTML;
             if (profileMobile) profileMobile.innerHTML = profileMobileHTML;
             if (logoutMobile) logoutMobile.innerHTML = logoutMobileHTML;
+            markServiceFramesFocusable();
         }
 
         function getCurrentUserAvatarUrl() {
@@ -7125,6 +7770,7 @@
                     </div>
                 `;
             }
+            enhanceKeyboardClickableElements(container);
         }
 
         function getNearestMeetingDateKey() {
@@ -8030,6 +8676,7 @@
             
             if (upcoming.length === 0) {
                 container.innerHTML = '<p class="text-gray-600 text-center italic py-4 text-sm">Нет запланированных встреч</p>';
+                enhanceKeyboardClickableElements(container);
                 return;
             }
             
@@ -8058,6 +8705,7 @@
                     </div>
                 `;
             }).join('');
+            enhanceKeyboardClickableElements(container);
         }
 
         // Backlog Methods
@@ -8226,6 +8874,7 @@
                 </div>
             `;
             
+            enhanceKeyboardClickableElements(board);
             setupBacklogDragDrop();
             syncBacklogHeight();
         }
