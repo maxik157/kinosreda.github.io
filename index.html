@@ -2580,7 +2580,7 @@
         .services-dropdown { display: block; }
         .services-flat { display: none; }
 
-        /* Snow mode */
+        /* Sakura petals mode */
         .snow {
             position: fixed;
             top: 0;
@@ -2598,29 +2598,86 @@
         }
         .snowflake {
             position: absolute;
-            top: -32px;
-            font-size: 16px !important;
-            line-height: 1;
-            color: rgba(255,255,255,0.9);
-            text-shadow: 0 0 10px rgba(255,255,255,0.15);
-            filter: drop-shadow(0 0 6px rgba(59,130,246,0.12));
+            left: 0;
+            top: 0;
+            width: var(--petal-size, 14px);
+            height: calc(var(--petal-size, 14px) * 0.78);
+            border-radius: 72% 36% 72% 44%;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background-image:
+                radial-gradient(circle at 26% 24%, rgba(255,255,255,0.92) 0 23%, transparent 45%),
+                linear-gradient(145deg, var(--petal-top, rgba(253, 205, 227, 0.95)), var(--petal-bottom, rgba(236, 72, 153, 0.7)));
+            box-shadow:
+                inset 0 -2px 5px rgba(157, 23, 77, 0.18),
+                0 6px 14px rgba(244, 114, 182, 0.25);
+            filter: drop-shadow(0 0 7px rgba(249, 168, 212, 0.22));
             opacity: 0.8;
-            animation-name: snowFall;
-            animation-timing-function: linear;
-            animation-iteration-count: infinite;
-            will-change: transform;
+            transform: translate3d(-200px, -200px, 0);
+            transform-origin: 54% 64%;
+            will-change: transform, opacity;
         }
-        @keyframes snowFall {
-            from { transform: translate3d(0, -10px, 0) rotate(0deg); }
-            to { transform: translate3d(var(--drift, 0px), 110vh, 0) rotate(360deg); }
+        .snowflake::before {
+            content: '';
+            position: absolute;
+            left: 16%;
+            top: 14%;
+            width: 34%;
+            height: 22%;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.34);
+            filter: blur(0.4px);
+            transform: rotate(-14deg);
+            pointer-events: none;
+        }
+        .snowflake::after {
+            content: '';
+            position: absolute;
+            left: var(--vein-left, 55%);
+            top: 12%;
+            width: 1px;
+            height: 68%;
+            background: rgba(157, 23, 77, var(--vein-alpha, 0.24));
+            border-radius: 999px;
+            transform: rotate(var(--vein-tilt, 12deg));
+        }
+        .snowflake--a {
+            border-radius: 72% 36% 72% 44%;
+        }
+        .snowflake--b {
+            border-radius: 65% 45% 78% 30%;
+            height: calc(var(--petal-size, 14px) * 0.84);
+            transform-origin: 48% 62%;
+        }
+        .snowflake--c {
+            border-radius: 84% 30% 62% 50%;
+            height: calc(var(--petal-size, 14px) * 0.74);
+            transform-origin: 58% 60%;
+        }
+        .snowflake--d {
+            border-radius: 60% 42% 82% 36%;
+            height: calc(var(--petal-size, 14px) * 0.88);
+            transform-origin: 50% 66%;
+        }
+        .snowflake--e {
+            border-radius: 76% 34% 66% 46%;
+            clip-path: polygon(4% 8%, 40% 0%, 100% 26%, 90% 84%, 45% 100%, 2% 76%);
+            transform-origin: 57% 63%;
+        }
+        .snowflake--f {
+            border-radius: 58% 52% 72% 40%;
+            height: calc(var(--petal-size, 14px) * 0.8);
+            transform-origin: 46% 67%;
         }
 
-        /* Mobile performance: smaller flakes, less expensive effects */
+        /* Mobile performance: lighter effects */
         @media (pointer: coarse) {
             .snowflake {
-                text-shadow: 0 0 6px rgba(255,255,255,0.12);
+                box-shadow: inset 0 -1px 3px rgba(157, 23, 77, 0.16);
                 filter: none;
                 opacity: 0.7;
+            }
+            .snowflake::before {
+                display: none;
             }
         }
 
@@ -2631,19 +2688,34 @@
         .snow-toggle {
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         .snow-switch {
             position: relative;
-            width: 52px;
-            height: 30px;
+            width: 68px;
+            height: 34px;
             border-radius: 999px;
-            background: rgba(31, 41, 55, 0.85);
-            border: 1px solid rgba(245, 158, 11, 0.22);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 10px 30px rgba(0,0,0,0.35);
-            transition: background 0.2s ease, border-color 0.2s ease;
+            background: linear-gradient(140deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.92));
+            border: 1px solid rgba(249, 168, 212, 0.28);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 10px 24px rgba(0,0,0,0.35);
+            transition: background 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
             cursor: pointer;
             user-select: none;
+            overflow: hidden;
+            backdrop-filter: blur(6px);
+        }
+        .snow-switch::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: inherit;
+            background: radial-gradient(circle at 22% 55%, rgba(255,255,255,0.08), transparent 46%);
+            pointer-events: none;
+            transition: opacity 0.24s ease;
+        }
+        .snow-switch:focus-visible {
+            outline: 2px solid rgba(244, 114, 182, 0.62);
+            outline-offset: 2px;
         }
         .snow-switch input {
             position: absolute;
@@ -2652,45 +2724,48 @@
         }
         .snow-thumb {
             position: absolute;
-            left: 3px;
+            left: 4px;
             top: 50%;
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             border-radius: 999px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
-            box-shadow: 0 10px 20px rgba(0,0,0,0.35);
+            background: linear-gradient(180deg, rgba(255, 247, 252, 0.98), rgba(252, 231, 243, 0.98));
+            box-shadow: 0 8px 18px rgba(17, 24, 39, 0.35), inset 0 -2px 6px rgba(244, 114, 182, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             line-height: 1;
-            color: rgba(37, 99, 235, 0.9);
+            color: rgba(157, 23, 77, 0.88);
             transform: translate3d(0, -50%, 0);
-            transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.2, 1), color 0.2s ease;
+            transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1), color 0.24s ease, background 0.24s ease;
         }
         .snow-switch.on {
-            /* Amber/orange like the site theme */
-            background: linear-gradient(135deg, rgba(245,158,11,0.98), rgba(217,119,6,0.95));
-            border-color: rgba(245, 158, 11, 0.55);
+            background: linear-gradient(135deg, rgba(251, 113, 173, 0.96), rgba(244, 114, 182, 0.92) 55%, rgba(253, 186, 116, 0.88));
+            border-color: rgba(251, 207, 232, 0.68);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14), 0 12px 28px rgba(244, 114, 182, 0.24);
         }
         html[data-theme="white"] .snow-switch.on {
-            background: linear-gradient(135deg, rgba(255,255,255,0.96), rgba(229,231,235,0.96));
-            border-color: rgba(255,255,255,0.55);
+            background: linear-gradient(135deg, rgba(253, 242, 248, 0.98), rgba(251, 207, 232, 0.96), rgba(254, 205, 211, 0.94));
+            border-color: rgba(244, 114, 182, 0.48);
+        }
+        .snow-switch.on::before {
+            opacity: 0.5;
         }
         .snow-switch.on .snow-thumb {
-            transform: translate3d(22px, -50%, 0);
-            color: rgba(120, 53, 15, 0.95);
+            transform: translate3d(34px, -50%, 0);
+            color: rgba(136, 19, 55, 0.95);
         }
         html[data-theme="white"] .snow-switch.on .snow-thumb {
-            color: rgba(37, 99, 235, 0.9);
+            color: rgba(157, 23, 77, 0.9);
         }
         .snow-icon {
-            font-size: 18px;
+            font-size: 14px;
             line-height: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transform: translateY(0);
-            filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+            transform: translateY(0.5px);
+            filter: drop-shadow(0 0 5px rgba(251, 113, 173, 0.45));
         }
 
         /* Chat panel animation + textarea scrollbar behavior */
@@ -3098,11 +3173,11 @@
             </svg>
                 
                 <div id="snowSlotHeader">
-                    <!-- Snow toggle -->
+                    <!-- Sakura petals toggle -->
                     <div class="snow-toggle ml-1" id="snowToggleBlock">
                         <div class="snow-switch" id="snowSwitch" role="switch" aria-checked="false" tabindex="0" onclick="toggleSnow()">
-                            <input type="checkbox" id="snowToggle" aria-label="Снежинки">
-                            <div class="snow-thumb"><span class="snow-icon">❄</span></div>
+                            <input type="checkbox" id="snowToggle" aria-label="Лепестки сакуры">
+                            <div class="snow-thumb"><span class="snow-icon">🌸</span></div>
                         </div>
                     </div>
                 </div>
@@ -4272,9 +4347,9 @@
         createParticles();
 
         // -----------------
-        // Snow mode
+        // Sakura petals mode
         // -----------------
-        // Prevent the snow overlay from covering the OS scrollbar area on desktop.
+        // Prevent the animated overlay from covering the OS scrollbar area on desktop.
         (function setScrollbarWidthVar(){
             try {
                 const sbw = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
@@ -4286,8 +4361,25 @@
             } catch(_) {}
         })();
 
-        const SNOW_LS_KEY = 'snowModeEnabled';
+        const SNOW_LS_KEY = 'sakuraPetalsEnabled';
+        const LEGACY_SNOW_LS_KEY = 'snowModeEnabled';
         let snowTimer = null;
+        let snowFrame = null;
+        let snowLastTs = 0;
+        let snowWind = 0;
+        let snowWindTarget = 0;
+        let snowPetals = [];
+
+        function isSnowModeEnabled() {
+            const current = localStorage.getItem(SNOW_LS_KEY);
+            if (current !== null) return current === '1';
+            return localStorage.getItem(LEGACY_SNOW_LS_KEY) === '1';
+        }
+
+        function saveSnowMode(enabled) {
+            localStorage.setItem(SNOW_LS_KEY, enabled ? '1' : '0');
+            localStorage.removeItem(LEGACY_SNOW_LS_KEY);
+        }
 
         function setSnowUI(enabled) {
             const snow = document.getElementById('snow');
@@ -4308,9 +4400,9 @@
             }
         }
 
-        // If the tab becomes hidden (mobile: app switch), stop snow to avoid heavy CPU/GPU + freezes.
+        // If tab becomes hidden (mobile app switch), pause animation to reduce CPU/GPU load.
         document.addEventListener('visibilitychange', () => {
-            const enabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            const enabled = isSnowModeEnabled();
             if (document.hidden) {
                 stopSnow();
             } else if (enabled) {
@@ -4319,9 +4411,9 @@
         });
 
         function toggleSnow(force = null) {
-            const current = localStorage.getItem(SNOW_LS_KEY) === '1';
+            const current = isSnowModeEnabled();
             const next = (force === null) ? !current : !!force;
-            localStorage.setItem(SNOW_LS_KEY, next ? '1' : '0');
+            saveSnowMode(next);
             setSnowUI(next);
         }
 
@@ -4329,16 +4421,21 @@
             const snow = document.getElementById('snow');
             if (!snow) return;
             // already running
-            if (snowTimer) return;
+            if (snowTimer || snowFrame) return;
 
             const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            snowLastTs = 0;
+            snowWind = 0;
+            snowWindTarget = (Math.random() * 24) - 12;
+            snowPetals = [];
 
-            // Performance: fewer flakes on mobile AND a bit fewer on desktop (prevents scroll jank)
+            // Performance: fewer petals on mobile to avoid scroll jank.
             const initialCount = isCoarse ? 8 : 14;
             for (let i = 0; i < initialCount; i++) spawnSnowflake(true);
 
-            const interval = isCoarse ? 780 : 420;
+            const interval = isCoarse ? 700 : 360;
             snowTimer = setInterval(() => spawnSnowflake(false), interval);
+            snowFrame = requestAnimationFrame(stepSnow);
         }
 
         function stopSnow() {
@@ -4347,10 +4444,82 @@
                 clearInterval(snowTimer);
                 snowTimer = null;
             }
+            if (snowFrame) {
+                cancelAnimationFrame(snowFrame);
+                snowFrame = null;
+            }
+            snowPetals = [];
+            snowLastTs = 0;
             if (snow) {
-                // Remove flakes immediately to free memory/CPU
+                // Remove petals immediately to free memory/CPU.
                 snow.replaceChildren();
             }
+        }
+
+        function stepSnow(ts) {
+            const snow = document.getElementById('snow');
+            if (!snow) {
+                stopSnow();
+                return;
+            }
+
+            if (!snowLastTs) snowLastTs = ts;
+            let dt = (ts - snowLastTs) / 1000;
+            snowLastTs = ts;
+            if (!Number.isFinite(dt) || dt <= 0) dt = 1 / 60;
+            dt = Math.min(dt, 0.034);
+
+            // Wind changes in slow gusts; petals follow it with inertia.
+            if (Math.random() < dt * 0.45) {
+                snowWindTarget += (Math.random() * 36) - 18;
+                snowWindTarget = Math.max(-58, Math.min(58, snowWindTarget));
+            }
+            snowWind += (snowWindTarget - snowWind) * Math.min(1, dt * 0.9);
+
+            const width = snow.clientWidth || window.innerWidth;
+            const height = snow.clientHeight || window.innerHeight;
+            const active = [];
+
+            for (const petal of snowPetals) {
+                if (!petal || !petal.el || !petal.el.isConnected) continue;
+
+                petal.age += dt;
+
+                const flutter = Math.sin(petal.age * petal.flutterFreq + petal.phase);
+                const gust = flutter * petal.flutterAmp;
+                const follow = Math.min(1, petal.windResponse * dt);
+                petal.vx += ((snowWind + gust) - petal.vx) * follow;
+
+                // Gravity + small aerodynamic braking from flutter.
+                const lift = Math.max(0, Math.sin(petal.age * petal.flutterFreq * 1.35 + petal.phase) * petal.liftAmp);
+                petal.vy = Math.min(petal.maxVy, petal.vy + petal.gravity * dt - lift * dt);
+
+                petal.x += petal.vx * dt;
+                petal.y += petal.vy * dt;
+
+                petal.spin += (petal.spinVel + Math.cos(petal.age * petal.spinFreq + petal.phase) * petal.spinWobble) * dt;
+                const tilt = Math.sin(petal.age * petal.tiltFreq + petal.phase) * petal.tiltAmp;
+                const squash = 1 + Math.sin(petal.age * petal.pulseFreq + petal.phase) * petal.pulseAmp;
+                const squeeze = Math.max(0.82, 2 - squash);
+
+                const fadeStartY = height * 0.78;
+                const fade = (petal.y <= fadeStartY)
+                    ? 1
+                    : Math.max(0, 1 - (petal.y - fadeStartY) / (height * 0.34));
+
+                const opacity = petal.opacity * fade;
+                petal.el.style.opacity = opacity.toFixed(3);
+                petal.el.style.transform = `translate3d(${petal.x.toFixed(2)}px, ${petal.y.toFixed(2)}px, 0) rotate(${petal.spin.toFixed(2)}deg) skewX(${tilt.toFixed(2)}deg) scale(${squash.toFixed(3)}, ${squeeze.toFixed(3)})`;
+
+                if (petal.y > height + 130 || petal.x < -170 || petal.x > width + 170 || opacity < 0.02) {
+                    petal.el.remove();
+                    continue;
+                }
+                active.push(petal);
+            }
+
+            snowPetals = active;
+            snowFrame = requestAnimationFrame(stepSnow);
         }
 
         function spawnSnowflake(isInitial) {
@@ -4358,34 +4527,73 @@
             if (!snow) return;
 
             const isCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            const width = snow.clientWidth || window.innerWidth;
+            const height = snow.clientHeight || window.innerHeight;
+            snowPetals = snowPetals.filter((p) => p && p.el && p.el.isConnected);
 
-            // Cap amount of flakes in DOM (performance)
-            const maxFlakes = isCoarse ? 22 : 45;
-            if (snow.childElementCount >= maxFlakes) return;
+            // Cap amount of petals in DOM (performance)
+            const maxFlakes = isCoarse ? 22 : 46;
+            if (snowPetals.length >= maxFlakes) return;
 
             const flake = document.createElement('div');
-            flake.className = 'snowflake';
-            flake.textContent = '❄';
+            const variants = ['snowflake--a', 'snowflake--b', 'snowflake--c', 'snowflake--d', 'snowflake--e', 'snowflake--f'];
+            const variant = variants[Math.floor(Math.random() * variants.length)];
+            flake.className = `snowflake ${variant}`;
+            flake.setAttribute('aria-hidden', 'true');
 
-            const left = Math.random() * 100;
-            const size = isCoarse ? (8 + Math.random() * 6) : (10 + Math.random() * 12);
-            const duration = isCoarse ? (12 + Math.random() * 12) : (9 + Math.random() * 11);
-            const drift = isCoarse ? (Math.random() * 50 - 25).toFixed(0) + 'px' : (Math.random() * 100 - 50).toFixed(0) + 'px';
-            const opacity = isCoarse ? (0.28 + Math.random() * 0.35) : (0.35 + Math.random() * 0.5);
-            const delay = isInitial ? (Math.random() * (isCoarse ? 6 : 4)) : 0;
+            const size = isCoarse ? (10 + Math.random() * 5.5) : (11 + Math.random() * 10);
+            const opacity = isCoarse ? (0.44 + Math.random() * 0.24) : (0.5 + Math.random() * 0.34);
+            const tones = [
+                { top: 'rgba(255, 236, 245, 0.96)', bottom: 'rgba(244, 114, 182, 0.72)' },
+                { top: 'rgba(255, 226, 238, 0.96)', bottom: 'rgba(251, 113, 133, 0.72)' },
+                { top: 'rgba(254, 228, 248, 0.95)', bottom: 'rgba(236, 72, 153, 0.68)' },
+                { top: 'rgba(254, 215, 226, 0.95)', bottom: 'rgba(219, 39, 119, 0.72)' },
+                { top: 'rgba(255, 243, 244, 0.96)', bottom: 'rgba(251, 146, 60, 0.62)' }
+            ];
+            const tone = tones[Math.floor(Math.random() * tones.length)];
+            const veinTilt = (Math.random() * 22 - 11).toFixed(1) + 'deg';
+            const veinLeft = (50 + Math.random() * 10).toFixed(1) + '%';
 
-            flake.style.left = left + 'vw';
-            flake.style.fontSize = size + 'px';
-            flake.style.opacity = String(opacity);
-            flake.style.animationDuration = duration + 's';
-            flake.style.animationDelay = delay + 's';
-            flake.style.setProperty('--drift', drift);
-
-            // remove after animation
-            const removeAfter = (duration + delay + 0.3) * 1000;
-            setTimeout(() => flake.remove(), removeAfter);
+            flake.style.setProperty('--petal-size', size + 'px');
+            flake.style.setProperty('--petal-top', tone.top);
+            flake.style.setProperty('--petal-bottom', tone.bottom);
+            flake.style.setProperty('--vein-tilt', veinTilt);
+            flake.style.setProperty('--vein-left', veinLeft);
+            flake.style.setProperty('--vein-alpha', (0.2 + Math.random() * 0.25).toFixed(2));
+            flake.style.opacity = opacity.toFixed(3);
 
             snow.appendChild(flake);
+
+            const x = Math.random() * width;
+            const y = isInitial
+                ? (Math.random() * height * 0.88) - (Math.random() * height * 0.32)
+                : (-30 - Math.random() * 120);
+            const sideBias = (Math.random() * 24) - 12;
+
+            snowPetals.push({
+                el: flake,
+                x,
+                y,
+                vx: sideBias,
+                vy: isInitial ? (24 + Math.random() * 62) : (14 + Math.random() * 36),
+                age: Math.random() * 4,
+                phase: Math.random() * Math.PI * 2,
+                gravity: isCoarse ? (14 + Math.random() * 15) : (20 + Math.random() * 24),
+                maxVy: isCoarse ? (105 + Math.random() * 34) : (132 + Math.random() * 55),
+                windResponse: isCoarse ? (1.2 + Math.random() * 0.8) : (1.1 + Math.random() * 1.3),
+                flutterAmp: isCoarse ? (8 + Math.random() * 9) : (10 + Math.random() * 19),
+                flutterFreq: 0.8 + Math.random() * 2.1,
+                liftAmp: 1 + Math.random() * 3.5,
+                spin: Math.random() * 360,
+                spinVel: (Math.random() > 0.5 ? 1 : -1) * (22 + Math.random() * 96),
+                spinWobble: 10 + Math.random() * 30,
+                spinFreq: 1 + Math.random() * 1.8,
+                tiltAmp: 2.5 + Math.random() * 8,
+                tiltFreq: 1.2 + Math.random() * 2.3,
+                pulseAmp: 0.025 + Math.random() * 0.07,
+                pulseFreq: 1.5 + Math.random() * 2.4,
+                opacity
+            });
         }
 
         // State
@@ -6640,8 +6848,8 @@
                 syncHeadFromBody();
             }
 
-            // Snow switch init
-            const snowEnabled = localStorage.getItem(SNOW_LS_KEY) === '1';
+            // Sakura switch init
+            const snowEnabled = isSnowModeEnabled();
             setSnowUI(snowEnabled);
             const sw = document.getElementById('snowSwitch');
             if (sw) {
