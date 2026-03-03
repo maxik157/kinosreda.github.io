@@ -438,6 +438,54 @@
             letter-spacing: -0.01em;
             pointer-events: none;
         }
+        .calendar-day-plan {
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 10px;
+            line-height: 1;
+            font-weight: 700;
+            color: #fcd34d;
+            text-shadow: 0 0 6px rgba(245, 158, 11, 0.55);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .planning-participants-list {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .planning-participant-chip {
+            --pc: #60a5fa;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent);
+            background: color-mix(in srgb, var(--pc) 16%, transparent);
+            color: #e2e8f0;
+            font-size: 11px;
+            line-height: 1;
+            min-height: 22px;
+            max-width: 100%;
+        }
+        .planning-participant-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: var(--pc);
+            flex: 0 0 auto;
+            box-shadow: 0 0 8px color-mix(in srgb, var(--pc) 70%, transparent);
+        }
+        .planning-participant-name {
+            display: inline-block;
+            max-width: 132px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         
         .modal { backdrop-filter: blur(10px); }
         
@@ -1598,6 +1646,11 @@
             margin-top: 6px;
             padding-top: 10px;
             border-top: 1px solid var(--accent-border-10);
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .sidebar-section-title {
             font-size: 10px;
@@ -1606,9 +1659,24 @@
             color: rgba(148, 163, 184, 0.7);
             margin-bottom: 8px;
             padding-left: 2px;
+            flex: 0 0 auto;
+        }
+        #servicesNavSidebar {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+            margin-right: -2px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        #servicesNavSidebar::-webkit-scrollbar {
+            width: 0;
+            height: 0;
         }
         .sidebar-spacer {
-            flex: 1 1 auto;
+            display: none;
         }
         .sidebar-bottom {
             display: flex;
@@ -3446,14 +3514,17 @@
                             </button>
                         </div>
 
-                        <!-- Switch between kino event and wishlist when both exist -->
+                        <!-- Switch between date activity types -->
                         <div id="birthdayModeSwitcher" class="hidden mb-4">
                             <div class="inline-flex rounded-full bg-gray-900/80 border border-amber-500/30 text-xs overflow-hidden">
-                                <button type="button" id="modeEventBtn" onclick="setBirthdayPanelMode('event')" class="px-3 py-1.5 border-r border-amber-500/20 text-gray-300 hover:text-white hover:bg-amber-500/10">
-                                    Участие в киносреде
+                                <button type="button" id="modeEventBtn" onclick="setBirthdayPanelMode('event')" class="px-3 py-1.5 text-gray-300 hover:text-white hover:bg-amber-500/10">
+                                    Киносреда
                                 </button>
                                 <button type="button" id="modeWishlistBtn" onclick="setBirthdayPanelMode('birthday')" class="px-3 py-1.5 text-gray-300 hover:text-white hover:bg-amber-500/10">
-                                    Вишлист
+                                    День рождения
+                                </button>
+                                <button type="button" id="modePlanningBtn" onclick="setBirthdayPanelMode('planning')" class="px-3 py-1.5 text-gray-300 hover:text-white hover:bg-amber-500/10 hidden">
+                                    Мероприятия
                                 </button>
                             </div>
                         </div>
@@ -3595,6 +3666,14 @@
                                 <div class="text-xs text-gray-400 mb-2">Вишлист именинника:</div>
                                 <div id="birthdayWishlistContent" class="space-y-2"></div>
                             </div>
+                        </div>
+
+                        <!-- Planning events for selected date -->
+                        <div id="planningEventsSection" class="bg-gray-900/50 rounded-xl p-4 border border-sky-500/20 hidden">
+                            <h4 class="text-base font-bold text-sky-300 mb-3 flex items-center gap-2">
+                                <span>🧭</span> Мероприятия
+                            </h4>
+                            <div id="planningEventsList" class="space-y-2"></div>
                         </div>
                     </div>
                 </div>
@@ -4624,6 +4703,10 @@
         let eventsMetaTs = null;
         let backlogMetaTs = null;
         let birthdayMetaTs = null;
+        let planningEventsByDate = {};
+        let planningEventsList = [];
+        let planningUsersList = [];
+        let planningDataParticipantsByEvent = {};
         let lastBeerRatingHash = '';
         let lastEventsHash = '';
         let lastBacklogHash = '';
@@ -4677,7 +4760,7 @@
             '12-12': { name: 'Андрей' }
         };
         let birthdayWishlists = {};
-        // 'event' | 'birthday'
+        // 'event' | 'birthday' | 'planning'
         let birthdayPanelMode = 'event';
 
         // Beer table column visibility
@@ -4725,6 +4808,131 @@
             if (!year || !month || !day) return false;
             const d = new Date(year, month - 1, day);
             return d.getDay() === 3;
+        }
+
+        function normalizePlanningDateKey(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+            const parsed = new Date(raw);
+            if (!Number.isFinite(parsed.getTime())) return '';
+            return formatDateKey(parsed);
+        }
+
+        function formatPlanningDateLabel(value) {
+            const key = normalizePlanningDateKey(value);
+            if (!key) return '';
+            const [year, month, day] = key.split('-');
+            return `${day}.${month}.${year}`;
+        }
+
+        function getPlanningParticipantColor(name = '') {
+            const str = String(name || 'guest');
+            let hash = 0;
+            for (let i = 0; i < str.length; i += 1) {
+                hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+            }
+            const hue = Math.abs(hash) % 360;
+            return `hsl(${hue}, 80%, 56%)`;
+        }
+
+        function uniquePlanningNames(input) {
+            const out = [];
+            const seen = new Set();
+            (Array.isArray(input) ? input : []).forEach((raw) => {
+                const name = String(raw || '').trim();
+                if (!name || seen.has(name)) return;
+                seen.add(name);
+                out.push(name);
+            });
+            return out;
+        }
+
+        function normalizePlanningNamesValue(value) {
+            if (Array.isArray(value)) {
+                return uniquePlanningNames(value.flatMap((item) => normalizePlanningNamesValue(item)));
+            }
+            if (value && typeof value === 'object') {
+                return uniquePlanningNames(
+                    Object.keys(value).filter((key) => {
+                        const v = value[key];
+                        return v !== false && v !== 0 && v !== null && v !== undefined && v !== '';
+                    })
+                );
+            }
+            if (typeof value === 'string') {
+                const raw = value.trim();
+                if (!raw) return [];
+                return uniquePlanningNames(raw.split(/[,\n;]+/g).map((part) => part.trim()));
+            }
+            return [];
+        }
+
+        function extractPlanningParticipantsFromDataEntry(payload) {
+            if (!payload || typeof payload !== 'object') return [];
+            const names = [];
+            const sections = Array.isArray(payload.sections) ? payload.sections : [];
+            sections.forEach((section) => {
+                const rows = Array.isArray(section && section.rows) ? section.rows : [];
+                const columns = Array.isArray(section && section.columns) ? section.columns : [];
+                const ownerColumnIds = columns
+                    .filter((col) => col && col.type === 'owners' && col.id)
+                    .map((col) => String(col.id));
+                rows.forEach((row) => {
+                    normalizePlanningNamesValue(row && row.participants).forEach((name) => names.push(name));
+                    normalizePlanningNamesValue(row && row.payers).forEach((name) => names.push(name));
+                    const cells = row && row.cells && typeof row.cells === 'object' ? row.cells : {};
+                    ownerColumnIds.forEach((colId) => {
+                        normalizePlanningNamesValue(cells[colId]).forEach((name) => names.push(name));
+                    });
+                });
+            });
+            return uniquePlanningNames(names).sort((a, b) => collator.compare(a, b));
+        }
+
+        function getPlanningParticipantNames(event, eventId) {
+            const explicit = normalizePlanningNamesValue(event && event.participants);
+            const custom = normalizePlanningNamesValue(event && event.participantsCustom);
+            const derived = Array.isArray(planningDataParticipantsByEvent[eventId])
+                ? planningDataParticipantsByEvent[eventId]
+                : [];
+            const merged = [];
+            const pushList = (list) => {
+                list.forEach((name) => {
+                    if (!merged.includes(name)) merged.push(name);
+                });
+            };
+
+            if (explicit.length) {
+                pushList(explicit);
+            } else if (planningUsersList.length) {
+                pushList(planningUsersList);
+            }
+            pushList(custom);
+            pushList(derived);
+
+            if (!merged.length) return [];
+            return merged.sort((a, b) => collator.compare(a, b));
+        }
+
+        function getPlanningParticipantsCount(event) {
+            if (!event || typeof event !== 'object') return 0;
+            let explicit = [];
+            if (Array.isArray(event.participants)) {
+                explicit = Array.from(new Set(event.participants.map((name) => String(name || '').trim()).filter(Boolean)));
+            } else if (event.participants && typeof event.participants === 'object') {
+                explicit = Array.from(new Set(Object.keys(event.participants).map((name) => String(name || '').trim()).filter(Boolean)));
+            }
+            if (explicit.length) return explicit.length;
+            const custom = Array.isArray(event.participantsCustom)
+                ? Array.from(new Set(event.participantsCustom.map((name) => String(name || '').trim()).filter(Boolean)))
+                : [];
+            return custom.length;
+        }
+
+        function getPlanningEventsForDate(dateKey) {
+            return planningEventsByDate[dateKey] || [];
         }
 
         function loadLocalBirthdayWishlists() {
@@ -6253,7 +6461,11 @@
             const serviceActive = useSidebar && isServicePage;
             document.body.classList.toggle('page-service-active', serviceActive);
             document.documentElement.classList.toggle('page-service-active', serviceActive);
-            const hideChatOnPage = resolved === 'svc_board' || resolved === 'svc_music' || resolved === 'svc_video' || resolved === 'svc_beer_space';
+            const hideChatOnPage = resolved === 'svc_board'
+                || resolved === 'svc_music'
+                || resolved === 'svc_video'
+                || resolved === 'svc_beer_space'
+                || resolved === 'svc_planning';
             const chatWrap = document.getElementById('chatBtnWrap');
             if (chatWrap) chatWrap.style.display = hideChatOnPage ? 'none' : '';
             if (hideChatOnPage && typeof toggleChat === 'function') {
@@ -7837,8 +8049,9 @@
                     if (selectedDate) {
                         const birthday = getBirthdayForDateKey(selectedDate);
                         const hasKino = isKinoSredaDate(selectedDate);
+                        const hasPlanning = getPlanningEventsForDate(selectedDate).length > 0;
                         renderBirthdaySectionForSelectedDate(birthday, hasKino);
-                        applyBirthdayPanelVisibility(hasKino, !!birthday);
+                        applyBirthdayPanelVisibility(hasKino, !!birthday, hasPlanning);
                     }
                 };
                 const fetchBirthdayOnce = () => db.ref('birthdayWishlists').once('value').then(applyBirthdaySnapshot);
@@ -7849,6 +8062,86 @@
                     if (ts) birthdayMetaTs = ts;
                     fetchBirthdayOnce().catch(() => {});
                 });
+
+                const applyPlanningEventsSnapshot = (snapshot) => {
+                    const raw = snapshot.val() || {};
+                    let items = [];
+                    if (Array.isArray(raw)) {
+                        items = raw.filter(Boolean).map((event, idx) => ({
+                            id: (event && event.id) ? String(event.id) : String(idx),
+                            ...(event || {})
+                        }));
+                    } else {
+                        items = Object.entries(raw).map(([id, event]) => ({
+                            id: String(id),
+                            ...(event || {})
+                        }));
+                    }
+                    const normalized = items
+                        .map((event) => {
+                            const dateKey = normalizePlanningDateKey(event && event.date);
+                            if (!dateKey) return null;
+                            const participantNames = getPlanningParticipantNames(event, String(event.id || ''));
+                            return {
+                                id: String(event.id || ''),
+                                name: String((event && event.name) || 'Без названия'),
+                                date: dateKey,
+                                participants: participantNames,
+                                participantsCount: participantNames.length
+                            };
+                        })
+                        .filter(Boolean)
+                        .sort((a, b) => {
+                            if (a.date !== b.date) return a.date.localeCompare(b.date);
+                            return a.name.localeCompare(b.name, 'ru');
+                        });
+
+                    planningEventsList = normalized;
+                    const byDate = {};
+                    normalized.forEach((event) => {
+                        if (!byDate[event.date]) byDate[event.date] = [];
+                        byDate[event.date].push(event);
+                    });
+                    planningEventsByDate = byDate;
+
+                    renderCalendar();
+                    if (selectedDate) renderPanelContent();
+                };
+                db.ref('planning/events').on('value', applyPlanningEventsSnapshot);
+
+                const applyPlanningUsersSnapshot = (snapshot) => {
+                    const raw = snapshot.val() || {};
+                    const nextList = uniquePlanningNames(
+                        Object.values(raw)
+                            .map((user) => (user && user.name) ? String(user.name).trim() : '')
+                            .filter(Boolean)
+                    ).sort((a, b) => collator.compare(a, b));
+                    const prevSig = planningUsersList.join('\u001f');
+                    const nextSig = nextList.join('\u001f');
+                    if (prevSig === nextSig) return;
+                    planningUsersList = nextList;
+                    if (useFirebase && db) {
+                        db.ref('planning/events').once('value').then(applyPlanningEventsSnapshot).catch(() => {});
+                    }
+                };
+                db.ref('users').on('value', applyPlanningUsersSnapshot);
+
+                const applyPlanningDataSnapshot = (snapshot) => {
+                    const raw = snapshot.val() || {};
+                    const nextByEvent = {};
+                    Object.entries(raw).forEach(([id, payload]) => {
+                        const list = extractPlanningParticipantsFromDataEntry(payload);
+                        if (list.length) nextByEvent[String(id)] = list;
+                    });
+                    const prevSig = JSON.stringify(planningDataParticipantsByEvent || {});
+                    const nextSig = JSON.stringify(nextByEvent || {});
+                    if (prevSig === nextSig) return;
+                    planningDataParticipantsByEvent = nextByEvent;
+                    if (useFirebase && db) {
+                        db.ref('planning/events').once('value').then(applyPlanningEventsSnapshot).catch(() => {});
+                    }
+                };
+                db.ref('planning/data').on('value', applyPlanningDataSnapshot);
 
                 // Start chat subscription immediately (for unread badge), even if chat panel was never opened
                 try { ensureChatSubscription(); } catch(_) {}
@@ -7936,6 +8229,9 @@
                 const isWednesday = date.getDay() === 3;
                 const dateKey = formatDateKey(date);
                 const event = getEvent(dateKey);
+                const planningEvents = getPlanningEventsForDate(dateKey);
+                const planningCount = planningEvents.length;
+                const hasPlanningEvents = planningCount > 0;
                 const monthDayKey = String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
                 const birthday = BIRTHDAYS[monthDayKey];
                 const isBirthday = !!birthday;
@@ -7960,7 +8256,7 @@
                     if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black ';
                 } else {
                     classes += 'text-gray-700 ';
-                    if (isBirthday) {
+                    if (isBirthday || hasPlanningEvents) {
                         classes += 'cursor-pointer hover:bg-gray-900/60 ';
                         if (isSelected) classes += 'ring-2 ring-amber-300 ring-offset-2 ring-offset-black scale-110 ';
                     }
@@ -7968,11 +8264,13 @@
                 
                 const attendeeCount = Object.keys(event.attendees || {}).length;
                 const totalBeer = Object.values(event.attendees || {}).reduce((sum, a) => sum + (parseInt(a.beer) || 0), 0);
-                const hasPanel = isWednesday || isBirthday;
+                const hasPanel = isWednesday || isBirthday || hasPlanningEvents;
+                const planningTitle = planningEvents.map((item) => item.name).join(', ');
                 
                 container.innerHTML += `
                     <div class="${classes}" ${hasPanel ? `onclick="openPanel('${dateKey}')"` : ''}>
                         <span class="text-sm font-bold leading-none">${day}</span>
+                        ${hasPlanningEvents ? `<span class="calendar-day-plan" title="Мероприятия: ${escapeHtml(planningTitle || 'планирование')}">${planningCount > 1 ? `🧭${planningCount}` : '🧭'}</span>` : ''}
                         ${isBirthday ? `<span class="absolute top-0.5 right-0.5 text-xs" title="День рождения ${birthday.name}">🎂</span>` : ''}
                         ${hasAttendees ? `<span class="calendar-day-stats">👥${attendeeCount}·🍺${totalBeer}</span>` : ''}
                     </div>
@@ -8035,11 +8333,18 @@
             document.getElementById('eventPlaceholder').classList.add('hidden');
             document.getElementById('eventPanel').classList.remove('hidden');
 
-            // Default mode for panel depending on presence of kino event / birthday
+            // Default tab mode for selected date
             const hasBirthday = !!getBirthdayForDateKey(dateKey);
             const hasKino = isKinoSredaDate(dateKey);
-            if (hasBirthday && !hasKino) {
+            const hasPlanning = getPlanningEventsForDate(dateKey).length > 0;
+            if (hasPlanning && (hasKino || hasBirthday)) {
+                birthdayPanelMode = 'planning';
+            } else if (hasKino) {
+                birthdayPanelMode = 'event';
+            } else if (hasBirthday) {
                 birthdayPanelMode = 'birthday';
+            } else if (hasPlanning) {
+                birthdayPanelMode = 'planning';
             } else {
                 birthdayPanelMode = 'event';
             }
@@ -8053,6 +8358,17 @@
             document.getElementById('eventPanel').classList.add('hidden');
             document.getElementById('eventPlaceholder').classList.remove('hidden');
             renderCalendar();
+        }
+
+        function openPlanningEventFromCalendar(eventId) {
+            const id = String(eventId || '').trim();
+            if (!id) return;
+            const useSidebar = document.body.classList.contains('layout-sidebar');
+            if (useSidebar) {
+                setActivePage('svc_planning', { scroll: false, push: true, planningEventId: id });
+                return;
+            }
+            window.location.href = `planning-event.html?id=${encodeURIComponent(id)}`;
         }
 
         function renderBirthdaySectionForSelectedDate(birthday, hasKino) {
@@ -8293,72 +8609,78 @@
             }
         }
 
-        function applyBirthdayPanelVisibility(hasKino, hasBirthday) {
+        function applyBirthdayPanelVisibility(hasKino, hasBirthday, hasPlanning = false) {
             const eventSections = document.getElementById('eventSections');
             const birthdaySection = document.getElementById('birthdaySection');
+            const planningSection = document.getElementById('planningEventsSection');
             const switcher = document.getElementById('birthdayModeSwitcher');
             const modeEventBtn = document.getElementById('modeEventBtn');
             const modeWishlistBtn = document.getElementById('modeWishlistBtn');
+            const modePlanningBtn = document.getElementById('modePlanningBtn');
 
-            if (!eventSections || !birthdaySection || !switcher || !modeEventBtn || !modeWishlistBtn) return;
+            if (!eventSections || !birthdaySection || !switcher || !modeEventBtn || !modeWishlistBtn || !modePlanningBtn) return;
 
-            // Если нет ни киносреды, ни дня рождения - показываем только eventSections
-            if (!hasKino && !hasBirthday) {
+            const availableModes = [];
+            if (hasKino) availableModes.push('event');
+            if (hasBirthday) availableModes.push('birthday');
+            if (hasPlanning) availableModes.push('planning');
+
+            if (!availableModes.length) {
                 switcher.classList.add('hidden');
-                eventSections.classList.remove('hidden');
+                eventSections.classList.add('hidden');
                 birthdaySection.classList.add('hidden');
+                if (planningSection) planningSection.classList.add('hidden');
                 return;
             }
 
-            // Если есть и киносреда, и день рождения - показываем переключатель
-            if (hasKino && hasBirthday) {
-                switcher.classList.remove('hidden');
-                // Убеждаемся, что режим валидный
-                if (birthdayPanelMode !== 'birthday' && birthdayPanelMode !== 'event') {
-                    birthdayPanelMode = 'event';
-                }
-            } else {
-                // Если только одно из двух - скрываем переключатель и устанавливаем режим автоматически
-                switcher.classList.add('hidden');
-                if (hasBirthday) {
-                    birthdayPanelMode = 'birthday';
-                } else {
-                    birthdayPanelMode = 'event';
-                }
+            if (!availableModes.includes(birthdayPanelMode)) {
+                birthdayPanelMode = availableModes[0];
             }
 
-            // Применяем видимость в зависимости от режима
-            if (birthdayPanelMode === 'birthday') {
-                // Режим вишлиста: скрываем eventSections, показываем birthdaySection
-                eventSections.classList.add('hidden');
-                birthdaySection.classList.remove('hidden');
-                // Обновляем стили кнопок
-                modeEventBtn.classList.remove('bg-amber-500/20', 'text-white');
-                modeEventBtn.classList.add('text-gray-300');
-                modeWishlistBtn.classList.add('bg-amber-500/20', 'text-white');
-                modeWishlistBtn.classList.remove('text-gray-300');
-            } else {
-                // Режим события: показываем eventSections (если есть киносреда), скрываем birthdaySection
-                if (hasKino) {
-                    eventSections.classList.remove('hidden');
-                } else {
-                    eventSections.classList.add('hidden');
+            const hasTabs = availableModes.length > 1;
+            switcher.classList.toggle('hidden', !hasTabs);
+
+            const modeButtons = [
+                { mode: 'event', btn: modeEventBtn },
+                { mode: 'birthday', btn: modeWishlistBtn },
+                { mode: 'planning', btn: modePlanningBtn }
+            ];
+            const visibleButtons = modeButtons.filter((item) => availableModes.includes(item.mode));
+
+            modeButtons.forEach((item) => {
+                const isVisible = availableModes.includes(item.mode);
+                item.btn.classList.toggle('hidden', !isVisible);
+                item.btn.classList.remove('border-r', 'border-amber-500/20');
+            });
+
+            visibleButtons.forEach((item, index) => {
+                if (index < visibleButtons.length - 1) {
+                    item.btn.classList.add('border-r', 'border-amber-500/20');
                 }
-                birthdaySection.classList.add('hidden');
-                // Обновляем стили кнопок
-                modeEventBtn.classList.add('bg-amber-500/20', 'text-white');
-                modeEventBtn.classList.remove('text-gray-300');
-                modeWishlistBtn.classList.remove('bg-amber-500/20', 'text-white');
-                modeWishlistBtn.classList.add('text-gray-300');
+                const isActive = birthdayPanelMode === item.mode;
+                item.btn.classList.toggle('bg-amber-500/20', isActive);
+                item.btn.classList.toggle('text-white', isActive);
+                item.btn.classList.toggle('text-gray-300', !isActive);
+            });
+
+            const showEvent = birthdayPanelMode === 'event' && hasKino;
+            const showBirthday = birthdayPanelMode === 'birthday' && hasBirthday;
+            const showPlanning = birthdayPanelMode === 'planning' && hasPlanning;
+
+            eventSections.classList.toggle('hidden', !showEvent);
+            birthdaySection.classList.toggle('hidden', !showBirthday);
+            if (planningSection) {
+                planningSection.classList.toggle('hidden', !showPlanning);
             }
         }
 
         function setBirthdayPanelMode(mode) {
-            if (mode !== 'event' && mode !== 'birthday') return;
+            if (mode !== 'event' && mode !== 'birthday' && mode !== 'planning') return;
             birthdayPanelMode = mode;
             const hasBirthday = !!getBirthdayForDateKey(selectedDate);
             const hasKino = isKinoSredaDate(selectedDate);
-            applyBirthdayPanelVisibility(hasKino, hasBirthday);
+            const hasPlanning = getPlanningEventsForDate(selectedDate).length > 0;
+            applyBirthdayPanelVisibility(hasKino, hasBirthday, hasPlanning);
         }
 
         function updateBirthdayWishlist(path, payload, onSuccess, onError) {
@@ -8553,12 +8875,98 @@
             renderBirthdaySectionForSelectedDate(birthday, hasKino);
         }
 
+        function renderPlanningEventsForSelectedDate(dateKey) {
+            const section = document.getElementById('planningEventsSection');
+            const list = document.getElementById('planningEventsList');
+            if (!section || !list) return false;
+
+            const events = getPlanningEventsForDate(dateKey);
+            list.innerHTML = '';
+            if (!events.length) {
+                section.classList.add('hidden');
+                return false;
+            }
+
+            events.forEach((eventItem) => {
+                const card = document.createElement('article');
+                card.className = 'rounded-xl border border-sky-500/25 bg-sky-500/10 hover:bg-sky-500/15 transition p-3 flex items-center justify-between gap-3';
+
+                const info = document.createElement('div');
+                info.className = 'min-w-0';
+
+                const title = document.createElement('div');
+                title.className = 'text-sm font-semibold text-white truncate';
+                title.textContent = eventItem.name || 'Без названия';
+
+                const meta = document.createElement('div');
+                meta.className = 'text-xs text-sky-200/90 mt-1';
+                const count = Number(eventItem.participantsCount || 0);
+                const dateLabel = formatPlanningDateLabel(eventItem.date);
+                meta.textContent = dateLabel
+                    ? `${dateLabel} · Участников: ${count}`
+                    : `Участников: ${count}`;
+
+                const participantsWrap = document.createElement('div');
+                participantsWrap.className = 'planning-participants-list';
+                const participants = Array.isArray(eventItem.participants) ? eventItem.participants : [];
+                if (participants.length) {
+                    const previewLimit = 7;
+                    const preview = participants.slice(0, previewLimit);
+                    preview.forEach((name) => {
+                        const chip = document.createElement('span');
+                        chip.className = 'planning-participant-chip';
+                        chip.style.setProperty('--pc', getPlanningParticipantColor(name));
+                        chip.title = name;
+
+                        const dot = document.createElement('span');
+                        dot.className = 'planning-participant-dot';
+                        const text = document.createElement('span');
+                        text.className = 'planning-participant-name';
+                        text.textContent = name;
+
+                        chip.appendChild(dot);
+                        chip.appendChild(text);
+                        participantsWrap.appendChild(chip);
+                    });
+                    if (participants.length > previewLimit) {
+                        const more = document.createElement('span');
+                        more.className = 'planning-participant-chip';
+                        more.textContent = `+${participants.length - previewLimit}`;
+                        participantsWrap.appendChild(more);
+                    }
+                } else {
+                    const unknown = document.createElement('span');
+                    unknown.className = 'text-[11px] text-sky-200/70';
+                    unknown.textContent = 'Участники не указаны';
+                    participantsWrap.appendChild(unknown);
+                }
+
+                info.appendChild(title);
+                info.appendChild(meta);
+                info.appendChild(participantsWrap);
+
+                const openBtn = document.createElement('button');
+                openBtn.type = 'button';
+                openBtn.className = 'shrink-0 px-3 py-1.5 rounded-lg border border-sky-400/50 bg-sky-500/20 hover:bg-sky-500/30 text-sky-100 text-xs font-semibold transition';
+                openBtn.textContent = 'Открыть';
+                openBtn.addEventListener('click', () => openPlanningEventFromCalendar(eventItem.id));
+
+                card.appendChild(info);
+                card.appendChild(openBtn);
+                list.appendChild(card);
+            });
+
+            section.classList.remove('hidden');
+            return true;
+        }
+
         function renderPanelContent() {
             const event = getEvent(selectedDate);
             const userName = getUserName();
             const birthday = getBirthdayForDateKey(selectedDate);
             const hasBirthday = !!birthday;
             const hasKino = isKinoSredaDate(selectedDate);
+            const hasPlanning = renderPlanningEventsForSelectedDate(selectedDate);
 
             // Update RSVP / kino sections
             const rsvpTitle = document.getElementById('rsvpTitle');
@@ -8699,7 +9107,7 @@
             // Birthday / wishlist section - render content first
             renderBirthdaySectionForSelectedDate(birthday, hasKino);
             // Then apply visibility based on mode
-            applyBirthdayPanelVisibility(hasKino, hasBirthday);
+            applyBirthdayPanelVisibility(hasKino, hasBirthday, hasPlanning);
         }
 
         // Event Actions

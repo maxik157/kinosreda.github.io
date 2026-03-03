@@ -131,6 +131,10 @@
             color: #fff;
             min-height: 100vh;
         }
+        body.planning-booting main {
+            opacity: 0;
+            pointer-events: none;
+        }
         @font-face {
             font-family: 'Egyptian Bold Extended';
             src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
@@ -209,41 +213,109 @@
             border-radius: 18px;
             backdrop-filter: blur(8px);
         }
+        .planning-shell {
+            display: grid;
+            gap: 12px;
+        }
+        .planning-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
         .card-flat {
             border: 0;
             box-shadow: none;
         }
         .event-card {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
+            min-height: 120px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .event-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 16px 35px rgba(245,158,11,0.14);
         }
+        .event-summary {
+            min-width: 0;
+            flex: 1;
+        }
         .event-title {
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--accent-200);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .event-meta {
             color: #9ca3af;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+        .event-tags {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .event-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(245,158,11,0.08);
+            color: #d1d5db;
+            font-size: 0.7rem;
+            line-height: 1.2;
+        }
+        .event-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-left: 4px;
+        }
+        .event-action {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-border-20);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.92rem;
+            background: rgba(245,158,11,0.08);
+            color: var(--accent-200);
+        }
+        .event-action:hover {
+            border-color: var(--accent-border-50);
+            background: rgba(245,158,11,0.16);
+        }
+        .event-open {
+            border-color: var(--accent-border-30);
+            color: #fcd34d;
         }
         .modal {
             position: fixed;
             inset: 0;
             background: rgba(0,0,0,0.85);
             display: none;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
             z-index: 60;
-            padding: calc(env(safe-area-inset-top, 12px) + 8px) 14px calc(env(safe-area-inset-bottom, 12px) + 12px);
+            padding: max(20px, env(safe-area-inset-top, 16px)) 14px max(20px, env(safe-area-inset-bottom, 16px));
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+        }
+        @media (max-height: 760px), (max-width: 640px) {
+            .modal {
+                align-items: flex-start;
+            }
         }
         .modal.active { display: flex; }
         .modal-card {
@@ -344,28 +416,35 @@
         }
     </style>
 </head>
-<body class="bg-dark min-h-screen">
+<body class="bg-dark min-h-screen planning-booting">
     <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8">
-        <section class="p-0">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <h2 class="text-lg md:text-xl font-semibold text-amber-200">Мероприятия</h2>
+        <section class="planning-shell p-0">
+            <div class="planning-head">
+                <div>
+                    <div class="text-xs text-gray-400 uppercase tracking-[0.15em]">Планирование</div>
+                    <h2 class="text-lg md:text-2xl font-semibold text-amber-200 mt-1">Мероприятия</h2>
+                    <p class="text-xs text-gray-400 mt-1">Создавайте поездки, распределяйте задачи и считайте расходы без хаоса в чате.</p>
+                </div>
                 <div class="flex items-center gap-3">
-                    <span id="eventCount" class="text-xs text-gray-400">0 мероприятий</span>
                     <button id="addEventBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition">
                         + Добавить мероприятие
                     </button>
                 </div>
             </div>
-            <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4"></div>
             <div id="emptyState" class="text-gray-400 text-sm mt-4 hidden">Пока нет мероприятий. Добавьте первое событие справа сверху.</div>
         </section>
     </main>
 
-    <div class="modal" id="addEventModal" role="dialog" aria-modal="true" aria-labelledby="addEventTitle">
+        <div class="modal" id="addEventModal" role="dialog" aria-modal="true" aria-labelledby="addEventTitle">
         <div class="modal-card">
             <h3 id="addEventTitle" class="text-lg font-semibold text-amber-200">Новое мероприятие</h3>
             <p class="text-xs text-gray-400 mt-1">Введите название события.</p>
             <input id="eventNameInput" class="modal-input mt-4" type="text" placeholder="Название мероприятия" />
+            <div class="mt-3">
+                <div class="text-xs text-gray-400 mb-2">Дата</div>
+                <input id="eventDateInput" class="modal-input" type="date" />
+            </div>
             <div class="mt-4">
                 <div class="text-xs text-gray-400 mb-2">Участники</div>
                 <div class="participant-actions">
@@ -404,6 +483,45 @@
         let usersList = [];
         let eventCustomParticipants = [];
         let editingEventId = null;
+        let initialEventsSnapshotReady = false;
+        let initialUsersSnapshotReady = false;
+        let initialPlanningRenderCommitted = false;
+        let initialPlanningFallbackTimer = null;
+
+        function hidePlanningBootGuard() {
+            document.body.classList.remove('planning-booting');
+        }
+
+        function commitInitialPlanningRender() {
+            if (initialPlanningRenderCommitted) return;
+            initialPlanningRenderCommitted = true;
+            if (initialPlanningFallbackTimer) {
+                clearTimeout(initialPlanningFallbackTimer);
+                initialPlanningFallbackTimer = null;
+            }
+            renderEvents();
+            hidePlanningBootGuard();
+        }
+
+        function maybeCommitInitialPlanningRender() {
+            if (initialPlanningRenderCommitted) return;
+            if (initialEventsSnapshotReady && initialUsersSnapshotReady) {
+                commitInitialPlanningRender();
+            }
+        }
+
+        function ensurePlanningInitialRenderFallback() {
+            if (initialPlanningFallbackTimer) return;
+            initialPlanningFallbackTimer = setTimeout(() => {
+                initialPlanningFallbackTimer = null;
+                if (initialPlanningRenderCommitted) return;
+                if (initialEventsSnapshotReady) {
+                    commitInitialPlanningRender();
+                } else {
+                    hidePlanningBootGuard();
+                }
+            }, 900);
+        }
 
         function initFirebase() {
             if (!firebase.apps.length) {
@@ -421,6 +539,11 @@
                 }
                 events.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
                 eventsCache = events;
+                initialEventsSnapshotReady = true;
+                if (!initialPlanningRenderCommitted) {
+                    maybeCommitInitialPlanningRender();
+                    return;
+                }
                 renderEvents();
             });
         }
@@ -436,50 +559,82 @@
                     ? getSelectedEventParticipantsFromModal()
                     : null;
                 renderEventParticipantsList(selected);
+                initialUsersSnapshotReady = true;
+                if (!initialPlanningRenderCommitted) {
+                    maybeCommitInitialPlanningRender();
+                    return;
+                }
+                renderEvents();
             });
         }
 
-        function formatDate(ts) {
-            try {
-                const d = new Date(ts);
-                return d.toLocaleDateString('ru-RU');
-            } catch (_) {
-                return '—';
+        function formatEventDate(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            const lower = raw.toLowerCase();
+            if (lower === 'без даты' || lower === 'none' || lower === 'null' || lower === 'undefined' || lower === '-') {
+                return '';
             }
+            const parsed = new Date(raw);
+            if (!Number.isFinite(parsed.getTime())) {
+                return /\d/.test(raw) ? raw : '';
+            }
+            return parsed.toLocaleDateString('ru-RU');
         }
 
         function renderEvents() {
             const list = document.getElementById('eventsList');
             const empty = document.getElementById('emptyState');
-            const count = document.getElementById('eventCount');
+            const filteredEvents = eventsCache.slice();
 
             list.innerHTML = '';
-            count.textContent = `${eventsCache.length} мероприятий`;
 
-            if (!eventsCache.length) {
+            if (!filteredEvents.length) {
                 empty.classList.remove('hidden');
+                empty.textContent = 'Пока нет мероприятий. Добавьте первое событие справа сверху.';
                 return;
             }
 
             empty.classList.add('hidden');
-            eventsCache.forEach(event => {
+            filteredEvents.forEach(event => {
                 const canDelete = currentUserLogin === 'max';
                 const card = document.createElement('a');
                 card.href = `planning-event.html?id=${encodeURIComponent(event.id)}`;
                 card.className = 'card event-card p-4';
+                const explicitParticipants = Array.isArray(event.participants)
+                    ? Array.from(new Set(event.participants.map((name) => String(name || '').trim()).filter(Boolean)))
+                    : [];
+                const customParticipants = Array.isArray(event.participantsCustom)
+                    ? Array.from(new Set(event.participantsCustom.map((name) => String(name || '').trim()).filter(Boolean)))
+                    : [];
+                const customOnly = customParticipants.filter((name) => !usersList.includes(name));
+                const participantsCount = explicitParticipants.length
+                    ? explicitParticipants.length
+                    : (usersList.length + customOnly.length);
+                const dateLabel = formatEventDate(event.date);
                 card.innerHTML = `
-                    <div>
-                        <div class="event-title">${event.name}</div>
-                        <div class="event-meta">Создано: ${formatDate(event.createdAt)}</div>
+                    <div class="event-summary">
+                        <div class="event-title">${escapeHtml(event.name || 'Без названия')}</div>
+                        ${dateLabel ? `<div class="event-meta">Дата: ${escapeHtml(dateLabel)}</div>` : ''}
+                        <div class="event-meta">Участников: ${participantsCount}</div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button type="button" class="text-amber-300 hover:text-amber-200 text-lg px-2" data-edit-event="${event.id}" title="Редактировать">✎</button>
-                        ${canDelete ? `<button type="button" class="text-red-300 hover:text-red-200 text-lg px-2" data-delete-event="${event.id}" title="Удалить">🗑️</button>` : ''}
-                        <div class="text-amber-300 text-lg">→</div>
+                    <div class="event-actions">
+                        <button type="button" class="event-action" data-edit-event="${event.id}" title="Редактировать">✎</button>
+                        ${canDelete ? `<button type="button" class="event-action" data-delete-event="${event.id}" title="Удалить">🗑</button>` : ''}
+                        <span class="event-action event-open" aria-hidden="true">→</span>
                     </div>
                 `;
                 list.appendChild(card);
             });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         }
 
         function renderEventParticipantsList(selected) {
@@ -574,10 +729,12 @@
         function openAddEventModal() {
             const modal = document.getElementById('addEventModal');
             const input = document.getElementById('eventNameInput');
+            const dateInput = document.getElementById('eventDateInput');
             if (!modal || !input) return;
             editingEventId = null;
             setEventModalMode('add');
             input.value = '';
+            if (dateInput) dateInput.value = '';
             eventCustomParticipants = [];
             renderEventParticipantsList(null);
             const customInput = document.getElementById('eventParticipantsCustomInput');
@@ -589,10 +746,12 @@
         function openEditEventModal(event) {
             const modal = document.getElementById('addEventModal');
             const input = document.getElementById('eventNameInput');
+            const dateInput = document.getElementById('eventDateInput');
             if (!modal || !input || !event) return;
             editingEventId = event.id;
             setEventModalMode('edit');
             input.value = event.name || '';
+            if (dateInput) dateInput.value = String(event.date || '').trim();
             const storedCustom = Array.isArray(event.participantsCustom) ? event.participantsCustom : [];
             const storedParticipants = Array.isArray(event.participants) ? event.participants : [];
             const inferredCustom = storedParticipants.filter(name => !usersList.includes(name));
@@ -613,8 +772,10 @@
 
         function createEvent() {
             const input = document.getElementById('eventNameInput');
+            const dateInput = document.getElementById('eventDateInput');
             if (!input) return;
             const trimmed = input.value.trim();
+            const eventDate = dateInput ? String(dateInput.value || '').trim() : '';
             if (!trimmed || !db) return;
             const selected = getSelectedEventParticipantsFromModal();
             const participants = Array.isArray(selected) ? selected : [];
@@ -622,7 +783,7 @@
             const customParticipants = participants.filter(name => !usersList.includes(name));
 
             if (editingEventId) {
-                const update = { name: trimmed };
+                const update = { name: trimmed, date: eventDate };
                 if (participants.length && (hasCustom || participants.length < usersList.length)) {
                     update.participants = participants;
                 } else {
@@ -637,6 +798,7 @@
             } else {
                 const payload = {
                     name: trimmed,
+                    date: eventDate,
                     createdAt: Date.now()
                 };
                 if (participants.length && (hasCustom || participants.length < usersList.length)) {
@@ -707,11 +869,16 @@
             if (e.key === 'Enter') createEvent();
             if (e.key === 'Escape') closeAddEventModal();
         });
+        document.getElementById('eventDateInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') createEvent();
+            if (e.key === 'Escape') closeAddEventModal();
+        });
         document.getElementById('eventParticipantsCustomInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') addCustomParticipantToEventModal();
             if (e.key === 'Escape') closeAddEventModal();
         });
         initProfileName();
+        ensurePlanningInitialRenderFallback();
         initFirebase();
         initUsers();
         notifyParentPlanningRoute('list');
