@@ -564,8 +564,8 @@
         .collab-status.collab-users-panel {
             --online-count: 1;
             min-width: 0;
-            width: clamp(70px, calc(10px + (var(--online-count) * 78px)), min(760px, 62vw));
-            max-width: min(760px, 62vw);
+            width: clamp(124px, calc(26px + (var(--online-count) * 94px)), min(920px, 72vw));
+            max-width: min(920px, 72vw);
             flex: 0 0 auto;
             justify-content: flex-end;
         }
@@ -687,7 +687,7 @@
             align-items: center;
             gap: 5px;
             min-width: 0;
-            max-width: 180px;
+            max-width: clamp(132px, 17vw, 240px);
             border: 1px solid rgba(148,163,184,0.35);
             background: linear-gradient(180deg, rgba(18,25,38,0.94), rgba(10,16,28,0.95));
             color: #e5e7eb;
@@ -705,6 +705,9 @@
             color: #fca5a5;
             border-color: rgba(248,113,113,0.45);
             background: rgba(127,29,29,0.33);
+            min-width: fit-content;
+            max-width: 100%;
+            flex: 0 1 auto;
         }
         .collab-person-chip.state.connecting {
             color: #fde68a;
@@ -771,9 +774,12 @@
             display: none;
         }
         .collab-person-name {
+            display: block;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            min-width: 0;
+            max-width: 100%;
         }
         .card.card-elevated {
             z-index: 2000;
@@ -2594,7 +2600,7 @@
                 font-size: 0.7rem;
             }
             .collab-person-chip {
-                max-width: 132px;
+                max-width: clamp(112px, 39vw, 168px);
                 padding: 4px 8px 4px 6px;
                 font-size: 0.68rem;
             }
@@ -5753,7 +5759,7 @@
             const status = document.getElementById('collabStatus');
             if (!status) return;
             const safeMode = mode || '';
-            const fallbackText = text || (safeMode === 'connecting' ? 'Подключение…' : 'Оффлайн');
+            const fallbackText = text || (safeMode === 'connecting' ? 'Подключение' : 'Оффлайн');
             if (safeMode !== 'online'
                 && collabStatusMode === safeMode
                 && collabStatusText === fallbackText) {
@@ -5900,7 +5906,10 @@
             if (stateText) {
                 const stateClass = mode === 'connecting' ? 'connecting' : '';
                 list.innerHTML = `<span class="collab-person-chip state ${stateClass}">${escapeHtml(stateText)}</span>`;
-                if (status) status.style.setProperty('--online-count', '1');
+                if (status) {
+                    const textUnits = Math.max(1.4, Math.min(4.8, (String(stateText || '').trim().length + 4) / 7));
+                    status.style.setProperty('--online-count', String(textUnits));
+                }
                 if (toggle) {
                     toggle.classList.add('hidden');
                     toggle.setAttribute('aria-expanded', 'false');
@@ -5922,9 +5931,12 @@
             if (people.length <= limit) collabPeopleExpanded = false;
             const visiblePeople = collabPeopleExpanded ? people : people.slice(0, limit);
             const hiddenCount = Math.max(0, people.length - visiblePeople.length);
-            const widthUnits = collabPeopleExpanded
-                ? people.length
-                : (visiblePeople.length + Math.min(2.4, hiddenCount * 0.35));
+            const nameUnits = visiblePeople.reduce((sum, person) => {
+                const len = String(person && person.name ? person.name : '').trim().length;
+                return sum + Math.max(0.72, Math.min(1.35, len / 10));
+            }, 0);
+            const hiddenUnits = hiddenCount > 0 ? Math.min(2.2, 0.7 + (hiddenCount * 0.3)) : 0;
+            const widthUnits = Math.max(1, nameUnits + hiddenUnits);
             if (status) status.style.setProperty('--online-count', String(Math.max(1, widthUnits)));
             const chips = visiblePeople.map((person) => {
                 const speaking = person.self ? voiceTalking : isRemoteVoiceSpeaking(person.id);
@@ -6627,14 +6639,7 @@
                 if (rawX < 0 || rawY < 0) continue;
                 const remoteStack = Boolean(Number(cursor.stack || 0));
                 const crossLayout = remoteStack !== localStack;
-                const primaryAnchor = (cursor.anchor && typeof cursor.anchor === 'object') ? cursor.anchor : null;
-                const hasAltTrack = Boolean(cursor.trackAnchor && typeof cursor.trackAnchor === 'object');
-                const primaryKind = String(primaryAnchor && primaryAnchor.k ? primaryAnchor.k : '');
-                const primaryIsTrack = primaryKind === 'section-track'
-                    || primaryKind === 'section-card'
-                    || primaryKind.endsWith('-track')
-                    || primaryKind === 'raw';
-                const useDesktopViewport = !crossLayout && !localStack && primaryIsTrack && !hasAltTrack;
+                const useDesktopViewport = !crossLayout && !localStack;
                 const anchoredPoint = resolveCursorPacketPoint(cursor, {
                     preferFallbackForTrack: useDesktopViewport,
                     forceViewport: useDesktopViewport
@@ -9450,7 +9455,7 @@
             initCollabPeopleToggle();
             renderCollabCursors();
             updateCollabPeerCount();
-            updateCollabStatusNames('Подключение…');
+            updateCollabStatusNames('Подключение');
             updateQuickStats();
             initExpensePieControls();
             initCollabTransport();
@@ -9714,7 +9719,6 @@
                 if (document.visibilityState === 'hidden') {
                     sendCollabPacket({ type: 'cursor', x: -1, y: -1, docX: -1, docY: -1, ts: Date.now() });
                     emitCollabPresence('hidden');
-                    stopVoiceTalk();
                 } else {
                     setTimeout(() => {
                         emitCollabPresence('visible');
@@ -9742,7 +9746,7 @@
                 if (voiceMode === 'hold') stopVoiceTalk();
             });
             window.addEventListener('blur', () => {
-                stopVoiceTalk();
+                if (voiceMode === 'hold') stopVoiceTalk();
             });
             window.addEventListener('beforeunload', closeCollabTransport);
 
