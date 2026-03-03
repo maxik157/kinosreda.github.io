@@ -3060,16 +3060,20 @@
         ];
         const collabClientId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
         const collabRemoteCursors = new Map();
+        const collabRemotePeers = new Map();
         const collabCursorVisuals = new Map();
         let collabSend = null;
         let collabSocket = null;
         let collabTransportMode = 'offline';
         let collabReconnectTimer = null;
+        let collabReconnectAttempt = 0;
+        let collabHeartbeatTimer = null;
         let collabStatusMode = '';
         let collabStatusText = '';
         let collabCursorTick = 0;
         let collabClickTick = 0;
         let collabCursorRaf = null;
+        let collabRenderRaf = null;
         const WS_OPEN_STATE = 1;
         let collabLastSentCursor = {
             x: NaN,
@@ -3081,7 +3085,8 @@
         let collabLastPointer = {
             clientX: Math.max(0, (window.innerWidth || 0) * 0.5),
             clientY: Math.max(0, (window.innerHeight || 0) * 0.5),
-            anchorSectionId: ''
+            anchorSectionId: '',
+            anchorKind: ''
         };
         let collabPeopleExpanded = false;
         const COLLAB_PEOPLE_COLLAPSED_LIMIT = 3;
@@ -3107,6 +3112,9 @@
         const VOICE_ICON_TALK = './voice-cat.gif';
         const VOICE_TALKING_HEARTBEAT_MS = 1400;
         const VOICE_REMOTE_SPEAKING_TTL_MS = 4200;
+        const COLLAB_PRESENCE_TTL_MS = 90000;
+        const COLLAB_CURSOR_TTL_MS = 60000;
+        const COLLAB_HEARTBEAT_INTERVAL_MS = 4500;
         const VOICE_ICE_SERVERS = [
             { urls: 'stun:stun.l.google.com:19302' },
             {
@@ -5756,6 +5764,7 @@
             status.classList.toggle('online', mode === 'online');
             status.classList.toggle('offline', mode === 'offline');
             if (mode === 'online') {
+                collabReconnectAttempt = 0;
                 collabStatusText = '';
                 updateCollabStatusNames();
                 return;
@@ -5764,8 +5773,89 @@
             updateCollabStatusNames(fallbackText);
         }
 
+        function touchCollabPeer(payload, now = Date.now()) {
+            if (!payload || typeof payload !== 'object') return null;
+            const id = String(payload.id || payload.clientId || payload.from || '').trim();
+            if (!id || id === String(collabClientId)) return null;
+            const prev = collabRemotePeers.get(id) || null;
+            const name = normalizeCollabVisibleName(payload.name || (prev && prev.name) || 'Участник');
+            const color = String(payload.color || (prev && prev.color) || getColorForName(name || id));
+            const next = {
+                id,
+                name,
+                color,
+                lastSeenAt: now
+            };
+            collabRemotePeers.set(id, next);
+            return next;
+        }
+
+        function pruneCollabPresence(now = Date.now()) {
+            const peerTtl = Math.max(4000, COLLAB_PRESENCE_TTL_MS);
+            const cursorTtl = Math.max(3000, COLLAB_CURSOR_TTL_MS);
+            for (const [id, peer] of collabRemotePeers.entries()) {
+                if (!peer || !Number.isFinite(peer.lastSeenAt) || (now - peer.lastSeenAt > peerTtl)) {
+                    collabRemotePeers.delete(id);
+                }
+            }
+            for (const [id, cursor] of collabRemoteCursors.entries()) {
+                if (!cursor || !Number.isFinite(cursor.ts) || (now - cursor.ts > cursorTtl)) {
+                    collabRemoteCursors.delete(id);
+                    const visual = collabCursorVisuals.get(id);
+                    if (visual && visual.el) visual.el.classList.add('hidden');
+                }
+            }
+            Array.from(voiceRemoteSpeaking.keys()).forEach((id) => {
+                if (!collabRemotePeers.has(String(id))) voiceRemoteSpeaking.delete(String(id));
+            });
+            Array.from(voiceAnalyserSpeaking.keys()).forEach((id) => {
+                if (!collabRemotePeers.has(String(id))) voiceAnalyserSpeaking.delete(String(id));
+            });
+        }
+
+        function emitCollabPresence(reason = 'heartbeat') {
+            return sendCollabPacket({
+                type: 'presence',
+                id: collabClientId,
+                name: getCollabTransportName(),
+                color: getCollabSelfColor(),
+                mode: collabTransportMode || '',
+                reason: String(reason || ''),
+                ts: Date.now()
+            });
+        }
+
+        function stopCollabHeartbeat() {
+            if (!collabHeartbeatTimer) return;
+            clearInterval(collabHeartbeatTimer);
+            collabHeartbeatTimer = null;
+        }
+
+        function startCollabHeartbeat() {
+            stopCollabHeartbeat();
+            collabHeartbeatTimer = window.setInterval(() => {
+                if (collabClosing) return;
+                const visible = document.visibilityState !== 'hidden';
+                const sent = emitCollabPresence(visible ? 'heartbeat' : 'heartbeat-hidden');
+                if (visible) {
+                    emitCollabCursor(collabLastPointer.clientX, collabLastPointer.clientY, { force: true });
+                }
+                updateCollabPeerCount();
+                if (!sent && !collabClosing) {
+                    if (collabSocket) {
+                        try { collabSocket.close(); } catch (_) {}
+                    }
+                    if (collabWebTransport) {
+                        try { collabWebTransport.close(); } catch (_) {}
+                    }
+                    scheduleCollabReconnect(700);
+                }
+            }, COLLAB_HEARTBEAT_INTERVAL_MS);
+        }
+
         function getOnlinePeople() {
             const now = Date.now();
+            pruneCollabPresence(now);
             const people = [{
                 id: collabClientId,
                 name: getCollabTransportName(),
@@ -5773,23 +5863,24 @@
                 self: true
             }];
             const seenIds = new Set([String(collabClientId)]);
-            for (const [, cursor] of collabRemoteCursors.entries()) {
-                if (!cursor || !Number.isFinite(cursor.ts) || (now - cursor.ts > 15000)) continue;
-                const rawX = Number(cursor.x);
-                const rawY = Number(cursor.y);
-                if (rawX < 0 || rawY < 0) continue;
-                const name = normalizeCollabVisibleName(cursor.name || '');
-                if (!name) continue;
-                const id = String(cursor.id || '');
-                if (!id || seenIds.has(id)) continue;
+            const peers = Array.from(collabRemotePeers.values())
+                .filter((peer) => peer && peer.id && Number.isFinite(peer.lastSeenAt) && (now - peer.lastSeenAt <= COLLAB_PRESENCE_TTL_MS))
+                .sort((a, b) => {
+                    const byName = collator.compare(String(a.name || ''), String(b.name || ''));
+                    if (byName !== 0) return byName;
+                    return collatorEn.compare(String(a.id || ''), String(b.id || ''));
+                });
+            peers.forEach((peer) => {
+                const id = String(peer.id || '');
+                if (!id || seenIds.has(id)) return;
                 seenIds.add(id);
                 people.push({
                     id,
-                    name,
-                    color: getColorForName(name),
+                    name: normalizeCollabVisibleName(peer.name || ''),
+                    color: String(peer.color || getColorForName(peer.name || id)),
                     self: false
                 });
-            }
+            });
             return people;
         }
 
@@ -5881,6 +5972,14 @@
             if (!Number.isFinite(num)) return 0;
             if (num < 0) return 0;
             if (num > 1) return 1;
+            return num;
+        }
+
+        function clampTrackRatio(value) {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return 0;
+            if (num < -0.45) return -0.45;
+            if (num > 1.45) return 1.45;
             return num;
         }
 
@@ -6027,6 +6126,17 @@
             const safeTarget = (target === document.documentElement || target === document.body)
                 ? (document.querySelector('main') || document.body || target)
                 : target;
+            const makeElementTrack = (element, key, extra = {}) => {
+                if (!element || !key) return null;
+                const rect = element.getBoundingClientRect();
+                if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+                return {
+                    k: key,
+                    rx: clamp01((clientX - rect.left) / rect.width),
+                    ry: clamp01((clientY - rect.top) / rect.height),
+                    ...extra
+                };
+            };
             const getCardRect = (card) => {
                 if (!card) return null;
                 const rect = card.getBoundingClientRect();
@@ -6038,18 +6148,38 @@
                 if (!sid) return null;
                 return document.querySelector(`#sectionsContainer .card[data-section-id="${cssEscapeSafe(sid)}"]`);
             };
-            const distanceToRect = (x, y, rect) => {
-                if (!rect) return Number.POSITIVE_INFINITY;
-                const dx = x < rect.left ? (rect.left - x) : (x > rect.right ? (x - rect.right) : 0);
-                const dy = y < rect.top ? (rect.top - y) : (y > rect.bottom ? (y - rect.bottom) : 0);
-                return Math.hypot(dx, dy);
-            };
             const makeSectionAnchor = (card, rect) => ({
                 k: 'section-track',
                 s: card.dataset.sectionId || '',
-                rx: clamp01((clientX - rect.left) / rect.width),
-                ry: clamp01((clientY - rect.top) / rect.height)
+                rx: clampTrackRatio((clientX - rect.left) / rect.width),
+                ry: clampTrackRatio((clientY - rect.top) / rect.height)
             });
+            const makeSectionAnchorById = (sectionId) => {
+                const card = cardById(sectionId);
+                const rect = getCardRect(card);
+                if (!card || !rect) return null;
+                return makeSectionAnchor(card, rect);
+            };
+
+            const portalSectionId = (() => {
+                if (safeTarget.closest('#ownerMenuPortal') && activeOwnerTarget && activeOwnerTarget.sectionId) {
+                    return String(activeOwnerTarget.sectionId);
+                }
+                if (safeTarget.closest('#beerMenuPortal') && activeBeerTarget && activeBeerTarget.sectionId) {
+                    return String(activeBeerTarget.sectionId);
+                }
+                if (safeTarget.closest('#participantMenuPortal') && activeParticipantTarget && activeParticipantTarget.sectionId) {
+                    return String(activeParticipantTarget.sectionId);
+                }
+                if (safeTarget.closest('#stickyPortal') && stickySectionId) {
+                    return String(stickySectionId);
+                }
+                return '';
+            })();
+            if (portalSectionId) {
+                const portalAnchor = makeSectionAnchorById(portalSectionId);
+                if (portalAnchor) return portalAnchor;
+            }
 
             const directCard = safeTarget.closest('.card[data-section-id]');
             if (directCard) {
@@ -6059,36 +6189,23 @@
                 }
             }
 
-            // Keep anchor stable around floating controls/menus above the same section.
-            const stickyMargin = 34;
-            const stickyId = collabLastPointer && collabLastPointer.anchorSectionId
-                ? String(collabLastPointer.anchorSectionId)
-                : '';
-            if (stickyId) {
-                const stickyCard = cardById(stickyId);
-                const stickyRect = getCardRect(stickyCard);
-                if (stickyRect && distanceToRect(clientX, clientY, stickyRect) <= stickyMargin) {
-                    return makeSectionAnchor(stickyCard, stickyRect);
-                }
+            const topbar = safeTarget.closest('.event-topbar');
+            if (topbar) {
+                const topbarAnchor = makeElementTrack(topbar, 'topbar-track');
+                if (topbarAnchor) return topbarAnchor;
             }
-
-            let nearestCard = null;
-            let nearestRect = null;
-            let nearestDist = Number.POSITIVE_INFINITY;
-            const cards = document.querySelectorAll('#sectionsContainer .card[data-section-id]');
-            for (let i = 0; i < cards.length; i += 1) {
-                const card = cards[i];
-                const rect = getCardRect(card);
-                if (!rect) continue;
-                const dist = distanceToRect(clientX, clientY, rect);
-                if (dist < nearestDist) {
-                    nearestDist = dist;
-                    nearestCard = card;
-                    nearestRect = rect;
-                }
+            const expensePanel = safeTarget.closest('#expensePanel');
+            if (expensePanel) {
+                const expenseAnchor = makeElementTrack(expensePanel, 'expense-track');
+                if (expenseAnchor) return expenseAnchor;
             }
-            if (nearestCard && nearestRect && nearestDist <= stickyMargin) {
-                return makeSectionAnchor(nearestCard, nearestRect);
+            const modalCard = safeTarget.closest('.modal.active .modal-card');
+            if (modalCard) {
+                const modalRoot = modalCard.closest('.modal.active[id]');
+                const modalAnchor = makeElementTrack(modalCard, 'modal-track', {
+                    m: modalRoot && modalRoot.id ? String(modalRoot.id) : ''
+                });
+                if (modalAnchor) return modalAnchor;
             }
 
             const main = document.querySelector('main') || document.body;
@@ -6216,14 +6333,21 @@
                         return anchor.s ? `#sectionsContainer .card[data-section-id="${val('s')}"]` : '';
                     case 'main-track':
                         return 'main';
+                    case 'topbar-track':
+                        return '.event-topbar';
+                    case 'expense-track':
+                        return '#expensePanel';
+                    case 'modal-track':
+                        return anchor.m ? `#${val('m')} .modal-card` : '.modal.active .modal-card';
                     default:
                         return '';
                 }
             })();
             const found = pickVisible(query);
             if (found) {
-                const rx = clamp01(anchor.rx);
-                const ry = clamp01(anchor.ry);
+                const isTrackAnchor = typeof anchor.k === 'string' && anchor.k.endsWith('-track');
+                const rx = isTrackAnchor ? clampTrackRatio(anchor.rx) : clamp01(anchor.rx);
+                const ry = isTrackAnchor ? clampTrackRatio(anchor.ry) : clamp01(anchor.ry);
                 return {
                     x: found.rect.left + (found.rect.width * rx),
                     y: found.rect.top + (found.rect.height * ry)
@@ -6281,12 +6405,12 @@
                 const samples = state.samples;
                 const last = samples[samples.length - 1];
                 const shouldAppend = !last
-                    || (now - last.t) >= 8
-                    || Math.hypot(sampleX - last.x, sampleY - last.y) >= 0.35;
+                    || (now - last.t) >= 6
+                    || Math.hypot(sampleX - last.x, sampleY - last.y) >= 0.2;
                 if (shouldAppend) {
                     samples.push({ x: sampleX, y: sampleY, t: now });
-                    if (samples.length > 16) {
-                        samples.splice(0, samples.length - 16);
+                    if (samples.length > 24) {
+                        samples.splice(0, samples.length - 24);
                     }
                 } else {
                     last.x = sampleX;
@@ -6313,8 +6437,8 @@
                     state.el.classList.add('hidden');
                     continue;
                 }
-                const interpolationDelay = 72;
-                const maxExtrapolationMs = 110;
+                const interpolationDelay = 58;
+                const maxExtrapolationMs = 26;
                 const renderTime = now - interpolationDelay;
                 while (samples.length >= 3 && samples[1].t <= renderTime) {
                     samples.shift();
@@ -6351,8 +6475,8 @@
                 const distance = Math.hypot(dx, dy);
                 const baseCatchUp = distance > 180 ? 0.74
                     : distance > 90 ? 0.62
-                        : distance > 36 ? 0.5
-                            : 0.38;
+                        : distance > 36 ? 0.54
+                            : 0.4;
                 const alpha = 1 - Math.pow(1 - baseCatchUp, elapsed / 16);
                 if (Math.abs(dx) + Math.abs(dy) > Math.max(window.innerWidth, window.innerHeight) * 0.85) {
                     state.x = desiredX;
@@ -6386,13 +6510,22 @@
             collabCursorRaf = window.requestAnimationFrame(step);
         }
 
+        function scheduleRenderCollabCursors() {
+            if (collabRenderRaf) return;
+            collabRenderRaf = window.requestAnimationFrame(() => {
+                collabRenderRaf = null;
+                renderCollabCursors();
+            });
+        }
+
         function renderCollabCursors() {
             const layer = document.getElementById('collabLayer');
             if (!layer) return;
             const now = Date.now();
+            pruneCollabPresence(now);
             const activeIds = new Set();
             for (const [id, cursor] of collabRemoteCursors.entries()) {
-                if (!cursor || !Number.isFinite(cursor.ts) || (now - cursor.ts > 15000)) {
+                if (!cursor || !Number.isFinite(cursor.ts) || (now - cursor.ts > COLLAB_CURSOR_TTL_MS)) {
                     collabRemoteCursors.delete(id);
                     continue;
                 }
@@ -6419,8 +6552,7 @@
                     state.el.classList.add('hidden');
                 }
             }
-            const moving = paintCollabCursorVisuals(now);
-            if (moving) scheduleCollabCursorAnimation();
+            scheduleCollabCursorAnimation();
             updateCollabPeerCount();
         }
 
@@ -6987,6 +7119,7 @@
             if (!data || typeof data !== 'object') return;
             if (data.type === 'init') {
                 collabRemoteCursors.clear();
+                collabRemotePeers.clear();
                 for (const [, state] of collabCursorVisuals.entries()) {
                     if (state && state.el) state.el.remove();
                 }
@@ -6995,8 +7128,9 @@
                 cursors.forEach((cursor) => {
                     if (!cursor || cursor.id === collabClientId) return;
                     collabRemoteCursors.set(String(cursor.id), cursor);
+                    touchCollabPeer(cursor);
                 });
-                renderCollabCursors();
+                scheduleRenderCollabCursors();
                 scheduleVoicePeerSync(40, true);
                 setCollabStatus('online');
                 return;
@@ -7007,6 +7141,7 @@
                     const cursorId = String(cursor.id);
                     const hadCursor = collabRemoteCursors.has(cursorId);
                     let rosterChanged = false;
+                    touchCollabPeer(cursor);
                     if (Number(cursor.x) < 0 || Number(cursor.y) < 0) {
                         if (hadCursor) {
                             collabRemoteCursors.delete(cursorId);
@@ -7016,19 +7151,28 @@
                         collabRemoteCursors.set(cursorId, cursor);
                         if (!hadCursor) rosterChanged = true;
                     }
-                    renderCollabCursors();
+                    scheduleRenderCollabCursors();
                     if (rosterChanged) scheduleVoicePeerSync(28, true);
+                }
+                return;
+            }
+            if (data.type === 'presence') {
+                const peer = touchCollabPeer(data);
+                if (peer) {
+                    updateCollabPeerCount();
+                    scheduleVoicePeerSync(80, false);
                 }
                 return;
             }
             if (data.type === 'leave' && data.id) {
                 const leftId = String(data.id);
                 collabRemoteCursors.delete(leftId);
+                collabRemotePeers.delete(leftId);
                 const visual = collabCursorVisuals.get(leftId);
                 if (visual && visual.el) visual.el.remove();
                 collabCursorVisuals.delete(leftId);
                 closeVoicePeer(leftId);
-                renderCollabCursors();
+                scheduleRenderCollabCursors();
                 scheduleVoicePeerSync(20, true);
                 return;
             }
@@ -7051,7 +7195,8 @@
         function sendCollabPacket(payload) {
             if (typeof collabSend !== 'function') return false;
             try {
-                collabSend(payload);
+                const result = collabSend(payload);
+                if (result === false) return false;
                 return true;
             } catch (_) {
                 return false;
@@ -7228,7 +7373,7 @@
             return { wsUrl, wtUrl, wsFallbackUrls };
         }
 
-        function tryOpenWebSocket(url, timeoutMs = 3600) {
+        function tryOpenWebSocket(url, timeoutMs = 5200) {
             return new Promise((resolve) => {
                 let socket = null;
                 let settled = false;
@@ -7266,28 +7411,44 @@
             });
         }
 
-        function scheduleCollabReconnect(delay = 1500) {
+        function scheduleCollabReconnect(delay = 0) {
             if (collabClosing || collabReconnectTimer) return;
+            const hasExplicitDelay = Number.isFinite(Number(delay)) && Number(delay) > 0;
+            const baseDelay = hasExplicitDelay
+                ? Math.max(450, Number(delay))
+                : Math.min(15000, Math.round(850 * Math.pow(1.65, collabReconnectAttempt)));
+            const jitter = Math.round(baseDelay * (0.12 + (Math.random() * 0.2)));
+            const reconnectDelay = Math.min(20000, baseDelay + jitter);
+            collabReconnectAttempt = Math.min(12, collabReconnectAttempt + 1);
             collabReconnectTimer = setTimeout(() => {
                 collabReconnectTimer = null;
                 initCollabTransport({ silent: true });
-            }, delay);
+            }, reconnectDelay);
+        }
+
+        function markCollabConnected() {
+            setCollabStatus('online');
+            collabReconnectAttempt = 0;
+            emitCollabPresence('join');
+            emitCollabCursor(window.innerWidth * 0.5, window.innerHeight * 0.5, { force: true });
+            startCollabHeartbeat();
+            updateCollabPeerCount();
+            scheduleVoicePeerSync(36, true);
         }
 
         function attachCollabSocket(socket) {
             collabSocket = socket;
             collabTransportMode = 'websocket';
             collabSend = (payload) => {
-                if (socket.readyState === WS_OPEN_STATE) {
-                    socket.send(JSON.stringify(payload));
-                }
+                if (socket.readyState !== WS_OPEN_STATE) return false;
+                socket.send(JSON.stringify(payload));
+                return true;
             };
             let openedHandled = false;
             const onOpen = () => {
                 if (openedHandled) return;
                 openedHandled = true;
-                setCollabStatus('online');
-                emitCollabCursor(window.innerWidth * 0.5, window.innerHeight * 0.5, { force: true });
+                markCollabConnected();
                 emitCollabAction('Подключился к событию');
             };
             socket.addEventListener('open', onOpen);
@@ -7298,9 +7459,14 @@
                 if (!data) return;
                 handleCollabPayload(data);
             });
+            let closedHandled = false;
             const onClose = () => {
+                if (closedHandled) return;
+                closedHandled = true;
+                stopCollabHeartbeat();
                 collabSend = null;
                 collabSocket = null;
+                collabTransportMode = 'offline';
                 stopVoiceTalk();
                 closeAllVoicePeers();
                 setCollabStatus('offline', 'Оффлайн');
@@ -7328,24 +7494,30 @@
                 collabSend = (payload) => {
                     const line = `${JSON.stringify(payload)}\n`;
                     writer.write(encoder.encode(line)).catch(() => {});
+                    return true;
                 };
-                setCollabStatus('online');
-                emitCollabCursor(window.innerWidth * 0.5, window.innerHeight * 0.5, { force: true });
+                markCollabConnected();
                 emitCollabAction('Подключился к событию');
 
                 transport.closed.then(() => {
                     if (collabClosing) return;
+                    stopCollabHeartbeat();
                     collabSend = null;
                     collabWebTransport = null;
+                    collabTransportMode = 'offline';
                     stopVoiceTalk();
                     closeAllVoicePeers();
+                    setCollabStatus('offline', 'Оффлайн');
                     scheduleCollabReconnect();
                 }).catch(() => {
                     if (collabClosing) return;
+                    stopCollabHeartbeat();
                     collabSend = null;
                     collabWebTransport = null;
+                    collabTransportMode = 'offline';
                     stopVoiceTalk();
                     closeAllVoicePeers();
+                    setCollabStatus('offline', 'Оффлайн');
                     scheduleCollabReconnect();
                 });
 
@@ -7368,8 +7540,11 @@
                     }
                 })().catch(() => {
                     if (!collabClosing) {
+                        stopCollabHeartbeat();
+                        collabTransportMode = 'offline';
                         stopVoiceTalk();
                         closeAllVoicePeers();
+                        setCollabStatus('offline', 'Оффлайн');
                         scheduleCollabReconnect();
                     }
                 });
@@ -7379,6 +7554,7 @@
                     try { collabWebTransport.close(); } catch (_) {}
                 }
                 collabWebTransport = null;
+                collabTransportMode = 'offline';
                 collabSend = null;
                 return false;
             }
@@ -7386,6 +7562,7 @@
 
         async function initCollabTransport(options = {}) {
             if (!eventId) return;
+            stopCollabHeartbeat();
             const { wsUrl, wtUrl, wsFallbackUrls } = getCollabUrls();
             if (!options.silent) {
                 setCollabStatus('connecting');
@@ -7413,19 +7590,27 @@
             const lastAnchorSectionId = collabLastPointer && collabLastPointer.anchorSectionId
                 ? String(collabLastPointer.anchorSectionId)
                 : '';
-            collabLastPointer = { clientX: safeX, clientY: safeY, anchorSectionId: lastAnchorSectionId };
+            const lastAnchorKind = collabLastPointer && collabLastPointer.anchorKind
+                ? String(collabLastPointer.anchorKind)
+                : '';
+            collabLastPointer = {
+                clientX: safeX,
+                clientY: safeY,
+                anchorSectionId: lastAnchorSectionId,
+                anchorKind: lastAnchorKind
+            };
             const prevX = collabLastSentCursor.x;
             const prevY = collabLastSentCursor.y;
             const hasPrev = Number.isFinite(prevX) && Number.isFinite(prevY);
             const movedPx = hasPrev ? Math.hypot(safeX - prevX, safeY - prevY) : Number.POSITIVE_INFINITY;
             const sinceLast = now - (collabLastSentCursor.ts || 0);
-            let minInterval = 32;
-            if (movedPx >= 12) minInterval = 16;
-            else if (movedPx >= 5) minInterval = 20;
-            else if (movedPx >= 2) minInterval = 26;
+            let minInterval = 20;
+            if (movedPx >= 10) minInterval = 14;
+            else if (movedPx >= 4) minInterval = 16;
+            else if (movedPx >= 1.5) minInterval = 18;
             if (!options.force) {
                 if (sinceLast < minInterval) return;
-                if (hasPrev && movedPx < 0.5 && sinceLast < 90) return;
+                if (hasPrev && movedPx < 0.25 && sinceLast < 48) return;
             }
             const x = Math.max(0, Math.min(1, safeX / Math.max(window.innerWidth, 1)));
             const y = Math.max(0, Math.min(1, safeY / Math.max(window.innerHeight, 1)));
@@ -7435,6 +7620,7 @@
             collabCursorTick = now;
             collabLastSentCursor = { x: safeX, y: safeY, ts: now };
             collabLastPointer.anchorSectionId = anchor.k === 'section-track' ? String(anchor.s || '') : '';
+            collabLastPointer.anchorKind = String(anchor.k || '');
             sendCollabPacket({
                 type: 'cursor',
                 x,
@@ -7499,6 +7685,7 @@
                 clearTimeout(collabReconnectTimer);
                 collabReconnectTimer = null;
             }
+            stopCollabHeartbeat();
             stopVoiceTalk();
             closeAllVoicePeers();
             sendCollabPacket({ type: 'leave' });
@@ -7510,6 +7697,7 @@
                 try { collabWebTransport.close(); } catch (_) {}
                 collabWebTransport = null;
             }
+            collabTransportMode = 'offline';
             collabSend = null;
         }
 
@@ -9132,7 +9320,7 @@
             window.addEventListener('scroll', scheduleStickyUpdate, { passive: true });
             window.addEventListener('resize', updateStickyHeaders);
             window.addEventListener('resize', scheduleResponsiveSectionLayout);
-            window.addEventListener('resize', renderCollabCursors, { passive: true });
+            window.addEventListener('resize', scheduleRenderCollabCursors, { passive: true });
             window.addEventListener('resize', scheduleQuickParticipantsLayout, { passive: true });
             document.addEventListener('scroll', scheduleStickyUpdate, true);
 
@@ -9390,21 +9578,32 @@
                 emitCollabClick(e ? e.clientX : NaN, e ? e.clientY : NaN);
             });
             document.addEventListener('pointermove', (e) => {
+                if (e && typeof e.getCoalescedEvents === 'function') {
+                    const points = e.getCoalescedEvents();
+                    if (points && points.length) {
+                        const p = points[points.length - 1];
+                        emitCollabCursor(p.clientX, p.clientY);
+                        return;
+                    }
+                }
                 emitCollabCursor(e.clientX, e.clientY);
             }, { passive: true });
             const onAnyScroll = () => {
                 emitCollabCursor(collabLastPointer.clientX, collabLastPointer.clientY);
-                renderCollabCursors();
+                scheduleRenderCollabCursors();
             };
             window.addEventListener('scroll', onAnyScroll, { passive: true });
             document.addEventListener('scroll', onAnyScroll, { passive: true, capture: true });
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'hidden') {
                     sendCollabPacket({ type: 'cursor', x: -1, y: -1, docX: -1, docY: -1, ts: Date.now() });
+                    emitCollabPresence('hidden');
                     stopVoiceTalk();
                 } else {
                     setTimeout(() => {
+                        emitCollabPresence('visible');
                         emitCollabCursor(window.innerWidth * 0.5, window.innerHeight * 0.5, { force: true });
+                        updateCollabPeerCount();
                     }, 120);
                 }
             });

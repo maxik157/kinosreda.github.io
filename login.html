@@ -20,6 +20,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <!-- Logo font: load selected font from Google Fonts (per-user) -->
@@ -87,7 +88,12 @@
         })();
     </script>
     <style>
-        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
         /* Hide only the logo text until the chosen logo font is loaded */
         html:not(.logo-font-ready) .logo-text { opacity: 0; }
@@ -105,8 +111,10 @@
             font-family: 'Comfortaa', cursive;
             background: var(--bg);
             color: #fff;
-            min-height: 100vh;
+            height: var(--vvh, 100vh);
+            min-height: var(--vvh, 100vh);
             overflow: hidden;
+            overscroll-behavior: none;
         }
         @font-face {
             font-family: 'Egyptian Bold Extended';
@@ -117,6 +125,8 @@
         }
         :root {
             --logo-font: 'Rubik Wet Paint';
+            --vvh: 100dvh;
+            --keyboard-shift: 0px;
             /* Theme variables (Beer by default) */
             --accent-200: #fde68a;
             --accent-300: #fcd34d;
@@ -233,14 +243,34 @@
             background: linear-gradient(90deg, #f59e0b, #f97316);
             color: #0b0b0f;
         }
+        .btn-main:focus-visible {
+            outline: 2px solid rgba(252, 211, 77, 0.95);
+            outline-offset: 2px;
+        }
         html[data-theme="white"] .btn-main {
             background: linear-gradient(90deg, #ffffff, #e5e7eb);
             color: #0b0b0f;
             box-shadow: 0 10px 26px rgba(255,255,255,0.10);
         }
         .btn-main:hover { filter: brightness(1.05); }
-    
-        @media (max-width: 520px) {
+
+        .login-main {
+            height: var(--vvh, 100vh);
+            min-height: var(--vvh, 100vh);
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            overflow: hidden;
+        }
+        .login-grid { max-height: 100%; align-content: center; }
+        .login-card {
+            width: 100%;
+            max-width: 760px;
+            margin-inline: auto;
+            transition: transform 0.22s ease;
+            will-change: transform;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
             input[type="text"],
             input[type="number"],
             input[type="email"],
@@ -255,6 +285,29 @@
                 font-size: 16px !important;
             }
         }
+
+        @media (max-width: 1023px) {
+            .login-grid {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .login-hero svg { height: 96px; }
+            body.keyboard-open .login-main { justify-content: flex-start; }
+            body.keyboard-open .login-hero {
+                opacity: 0;
+                visibility: hidden;
+                height: 0;
+                margin: 0;
+                overflow: hidden;
+                pointer-events: none;
+            }
+            body.keyboard-open .login-card {
+                transform: translateY(calc(-1 * var(--keyboard-shift, 0px)));
+            }
+        }
 </style>
 </head>
 <body class="relative">
@@ -263,10 +316,10 @@
     <div class="orb" style="bottom:-80px; right:-120px; background:#8b5cf6;"></div>
     <div class="particles" id="particles"></div>
 
-    <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
-        <div class="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
+    <main id="loginMain" class="login-main relative z-10 flex items-center justify-center px-4">
+        <div id="loginGrid" class="login-grid max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
             <!-- Left: Hero -->
-            <div class="space-y-6 text-center lg:text-left">
+            <div class="login-hero space-y-6 text-center lg:text-left">
                 <svg class="w-full max-w-xl h-32 mx-auto lg:mx-0 float pulse-glow" viewBox="0 0 580 120" style="overflow: visible;">
                     <defs>
                         <linearGradient id="beerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -315,7 +368,7 @@
             </div>
 
             <!-- Right: Form -->
-            <div class="glass rounded-2xl p-8 shadow-2xl border border-amber-500/20">
+            <div id="loginCard" class="login-card glass rounded-2xl p-6 sm:p-8 shadow-2xl border border-amber-500/20">
                 <h2 class="text-2xl font-bold text-amber-300 mb-6 text-center">Вход в систему</h2>
                 <div id="errorMessage" class="hidden bg-red-900/30 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-4 text-sm">
                     Неверный логин или пароль
@@ -428,6 +481,213 @@
             }
         });
 
+        (function setupMobileKeyboardLayout(){
+            const root = document.documentElement;
+            const body = document.body;
+            const card = document.getElementById('loginCard');
+            const fieldSelector = 'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), textarea, select';
+
+            if (!card) return;
+
+            function isEditableField(node) {
+                return !!(node && node.matches && node.matches(fieldSelector));
+            }
+
+            function setViewportHeightVar() {
+                const vv = window.visualViewport;
+                const height = vv ? vv.height : window.innerHeight;
+                root.style.setProperty('--vvh', `${Math.round(height)}px`);
+            }
+
+            function resetKeyboardShift() {
+                body.classList.remove('keyboard-open');
+                root.style.setProperty('--keyboard-shift', '0px');
+            }
+
+            function updateKeyboardLayout() {
+                const vv = window.visualViewport;
+                const active = document.activeElement;
+                const hasFocusedField = isEditableField(active);
+
+                if (!vv || !hasFocusedField) {
+                    resetKeyboardShift();
+                    return;
+                }
+
+                const keyboardHeight = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+                const keyboardOpen = keyboardHeight > 80;
+                body.classList.toggle('keyboard-open', keyboardOpen);
+
+                if (!keyboardOpen) {
+                    root.style.setProperty('--keyboard-shift', '0px');
+                    return;
+                }
+
+                const activeRect = active.getBoundingClientRect();
+                const visibleBottom = vv.height - 14;
+                const overlap = activeRect.bottom - visibleBottom;
+
+                if (overlap <= 0) {
+                    root.style.setProperty('--keyboard-shift', '0px');
+                    return;
+                }
+
+                const cardRect = card.getBoundingClientRect();
+                const maxShift = Math.max(0, cardRect.top - 8);
+                const shift = Math.min(maxShift, Math.ceil(overlap + 8));
+                root.style.setProperty('--keyboard-shift', `${Math.max(0, shift)}px`);
+            }
+
+            function refreshViewportLayout() {
+                setViewportHeightVar();
+                updateKeyboardLayout();
+            }
+
+            refreshViewportLayout();
+            window.addEventListener('resize', refreshViewportLayout, { passive: true });
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', refreshViewportLayout, { passive: true });
+                window.visualViewport.addEventListener('scroll', updateKeyboardLayout, { passive: true });
+            }
+
+            document.addEventListener('focusin', () => {
+                setTimeout(updateKeyboardLayout, 30);
+            });
+
+            document.addEventListener('focusout', () => {
+                setTimeout(updateKeyboardLayout, 80);
+            });
+        })();
+
+        (function setupTvKeyboardNavigation() {
+            const TV_ARROW_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+            const TV_SELECT_KEYS = new Set(['Enter', 'NumpadEnter', ' ', 'Spacebar']);
+            const fieldSelector = 'input:not([type="hidden"]):not([disabled]), button:not([disabled])';
+            const loginInput = document.getElementById('loginInput');
+
+            function isEditableField(el) {
+                if (!el) return false;
+                if (el.isContentEditable) return true;
+                const tag = String(el.tagName || '').toUpperCase();
+                if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+                if (tag !== 'INPUT') return false;
+                const type = String(el.type || 'text').toLowerCase();
+                return !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'file', 'color'].includes(type);
+            }
+
+            function isVisible(el) {
+                if (!el || !el.isConnected) return false;
+                if (el.hidden || el.disabled) return false;
+                const style = window.getComputedStyle(el);
+                if (!style || style.display === 'none' || style.visibility === 'hidden') return false;
+                const rect = el.getBoundingClientRect();
+                return rect.width > 0 && rect.height > 0;
+            }
+
+            function focusableElements() {
+                return Array.from(document.querySelectorAll(fieldSelector)).filter(isVisible);
+            }
+
+            function focusElement(el) {
+                if (!el || typeof el.focus !== 'function') return false;
+                el.focus({ preventScroll: true });
+                if (typeof el.scrollIntoView === 'function') {
+                    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                }
+                return true;
+            }
+
+            function findNextByDirection(current, direction, items) {
+                if (!current || !items.length) return null;
+                const currentRect = current.getBoundingClientRect();
+                const currentCx = currentRect.left + currentRect.width / 2;
+                const currentCy = currentRect.top + currentRect.height / 2;
+                let best = null;
+                let bestScore = Number.POSITIVE_INFINITY;
+
+                items.forEach((candidate) => {
+                    if (!candidate || candidate === current) return;
+                    const rect = candidate.getBoundingClientRect();
+                    const cx = rect.left + rect.width / 2;
+                    const cy = rect.top + rect.height / 2;
+                    const dx = cx - currentCx;
+                    const dy = cy - currentCy;
+                    let primary = 0;
+                    let secondary = 0;
+
+                    if (direction === 'left') {
+                        if (dx >= -4) return;
+                        primary = -dx;
+                        secondary = Math.abs(dy);
+                    } else if (direction === 'right') {
+                        if (dx <= 4) return;
+                        primary = dx;
+                        secondary = Math.abs(dy);
+                    } else if (direction === 'up') {
+                        if (dy >= -4) return;
+                        primary = -dy;
+                        secondary = Math.abs(dx);
+                    } else if (direction === 'down') {
+                        if (dy <= 4) return;
+                        primary = dy;
+                        secondary = Math.abs(dx);
+                    } else {
+                        return;
+                    }
+
+                    const distance = Math.hypot(dx, dy);
+                    const score = primary * 1000 + secondary * 10 + distance;
+                    if (score < bestScore) {
+                        best = candidate;
+                        bestScore = score;
+                    }
+                });
+
+                return best;
+            }
+
+            document.addEventListener('keydown', (event) => {
+                if (event.defaultPrevented) return;
+                const activeEl = document.activeElement;
+
+                if (TV_ARROW_KEYS.has(event.key)) {
+                    if (isEditableField(activeEl) && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+                        return;
+                    }
+                    const items = focusableElements();
+                    if (!items.length) return;
+                    const current = items.includes(activeEl) ? activeEl : null;
+                    const fallback = current || loginInput || items[0];
+                    const direction = event.key === 'ArrowLeft'
+                        ? 'left'
+                        : event.key === 'ArrowRight'
+                            ? 'right'
+                            : event.key === 'ArrowUp'
+                                ? 'up'
+                                : 'down';
+                    const next = findNextByDirection(fallback, direction, items) || fallback;
+                    if (focusElement(next)) {
+                        event.preventDefault();
+                    }
+                    return;
+                }
+
+                if (!TV_SELECT_KEYS.has(event.key)) return;
+                if (isEditableField(activeEl)) return;
+                if (activeEl && activeEl.tagName === 'BUTTON') {
+                    event.preventDefault();
+                    activeEl.click();
+                }
+            });
+
+            requestAnimationFrame(() => {
+                if (loginInput && isVisible(loginInput)) {
+                    focusElement(loginInput);
+                }
+            });
+        })();
+
         // Firebase config
         const firebaseConfig = {
             apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
@@ -447,6 +707,9 @@
         let db = null;
 
         // Инициализация Firebase
+        if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+            firebase.database.INTERNAL.forceLongPolling();
+        }
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
