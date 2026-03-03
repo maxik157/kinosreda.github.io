@@ -6356,6 +6356,62 @@
             return null;
         }
 
+        function resolveCursorPacketPoint(packet, options = {}) {
+            if (!packet || typeof packet !== 'object') return null;
+            const rawX = Number(packet.x);
+            const rawY = Number(packet.y);
+            const fallbackPoint = (Number.isFinite(rawX) && Number.isFinite(rawY))
+                ? {
+                    x: clamp01(rawX) * Math.max(window.innerWidth || 0, 1),
+                    y: clamp01(rawY) * Math.max(window.innerHeight || 0, 1)
+                }
+                : null;
+            const anchor = (packet.anchor && typeof packet.anchor === 'object') ? packet.anchor : null;
+            const forceViewport = options.forceViewport === true;
+            if (forceViewport && fallbackPoint) return fallbackPoint;
+            const preferFallbackForTrack = options.preferFallbackForTrack !== false;
+            const localStack = isMobileSectionsStackMode();
+            const resolveAnchor = (candidate) => {
+                if (!candidate || typeof candidate !== 'object') return null;
+                const point = resolveCursorAnchorPoint(candidate);
+                if (point) return point;
+                const sectionId = String(candidate.cs || candidate.s || '').trim();
+                if (sectionId) {
+                    const card = document.querySelector(`#sectionsContainer .card[data-section-id="${cssEscapeSafe(sectionId)}"]`);
+                    if (card) {
+                        const rect = card.getBoundingClientRect();
+                        if (rect && rect.width > 0 && rect.height > 0) {
+                            const cardRx = Number.isFinite(Number(candidate.crx))
+                                ? clamp01(candidate.crx)
+                                : (Number.isFinite(Number(candidate.rx)) ? clamp01(candidate.rx) : 0.5);
+                            const cardRy = Number.isFinite(Number(candidate.cry))
+                                ? clamp01(candidate.cry)
+                                : (Number.isFinite(Number(candidate.ry)) ? clamp01(candidate.ry) : 0.5);
+                            return {
+                                x: rect.left + (rect.width * cardRx),
+                                y: rect.top + (rect.height * cardRy)
+                            };
+                        }
+                    }
+                }
+                const isTrack = candidate.k === 'section-track' || candidate.k === 'section-card' || String(candidate.k || '').endsWith('-track');
+                if (fallbackPoint && preferFallbackForTrack && isTrack && !localStack) {
+                    // Track anchors are less stable across dynamic cards, fallback keeps movement continuous.
+                    return fallbackPoint;
+                }
+                return null;
+            };
+            const primaryPoint = resolveAnchor(anchor);
+            if (primaryPoint) return primaryPoint;
+            const altTrackAnchor = (packet.trackAnchor && typeof packet.trackAnchor === 'object') ? packet.trackAnchor : null;
+            const altPoint = resolveAnchor(altTrackAnchor);
+            if (altPoint) return altPoint;
+            if (!anchor && !altTrackAnchor) {
+                return fallbackPoint;
+            }
+            return fallbackPoint;
+        }
+
         function ensureCollabCursorVisual(id, cursor, targetPoint, layer, now) {
             let state = collabCursorVisuals.get(id);
             if (!state || !state.el || !state.el.isConnected) {
@@ -6405,12 +6461,12 @@
                 const samples = state.samples;
                 const last = samples[samples.length - 1];
                 const shouldAppend = !last
-                    || (now - last.t) >= 6
-                    || Math.hypot(sampleX - last.x, sampleY - last.y) >= 0.2;
+                    || (now - last.t) >= 4
+                    || Math.hypot(sampleX - last.x, sampleY - last.y) >= 0.08;
                 if (shouldAppend) {
                     samples.push({ x: sampleX, y: sampleY, t: now });
-                    if (samples.length > 24) {
-                        samples.splice(0, samples.length - 24);
+                    if (samples.length > 40) {
+                        samples.splice(0, samples.length - 40);
                     }
                 } else {
                     last.x = sampleX;
@@ -6425,6 +6481,13 @@
             return state;
         }
 
+        function clearCollabCursorVisuals() {
+            for (const [, state] of collabCursorVisuals.entries()) {
+                if (state && state.el) state.el.remove();
+            }
+            collabCursorVisuals.clear();
+        }
+
         function paintCollabCursorVisuals(now = Date.now()) {
             let hasMoving = false;
             for (const [id, state] of collabCursorVisuals.entries()) {
@@ -6437,8 +6500,8 @@
                     state.el.classList.add('hidden');
                     continue;
                 }
-                const interpolationDelay = 58;
-                const maxExtrapolationMs = 26;
+                const interpolationDelay = 46;
+                const maxExtrapolationMs = 24;
                 const renderTime = now - interpolationDelay;
                 while (samples.length >= 3 && samples[1].t <= renderTime) {
                     samples.shift();
@@ -6446,17 +6509,32 @@
                 let desiredX = samples[0].x;
                 let desiredY = samples[0].y;
                 if (samples.length >= 2) {
-                    const a = samples[0];
-                    const b = samples[1];
+                    let segIndex = 0;
+                    while (segIndex < samples.length - 2 && samples[segIndex + 1].t < renderTime) {
+                        segIndex += 1;
+                    }
+                    const a = samples[segIndex];
+                    const b = samples[Math.min(segIndex + 1, samples.length - 1)];
                     if (renderTime <= a.t) {
                         desiredX = a.x;
                         desiredY = a.y;
                     } else if (renderTime < b.t) {
                         const span = Math.max(1, b.t - a.t);
                         const u = Math.max(0, Math.min(1, (renderTime - a.t) / span));
-                        const smoothU = u * u * (3 - (2 * u));
-                        desiredX = a.x + ((b.x - a.x) * smoothU);
-                        desiredY = a.y + ((b.y - a.y) * smoothU);
+                        const p0 = samples[Math.max(0, segIndex - 1)];
+                        const p1 = a;
+                        const p2 = b;
+                        const p3 = samples[Math.min(samples.length - 1, segIndex + 2)];
+                        const u2 = u * u;
+                        const u3 = u2 * u;
+                        const catmull = (v0, v1, v2, v3) => 0.5 * (
+                            (2 * v1)
+                            + ((-v0 + v2) * u)
+                            + (((2 * v0) - (5 * v1) + (4 * v2) - v3) * u2)
+                            + ((-v0 + (3 * v1) - (3 * v2) + v3) * u3)
+                        );
+                        desiredX = catmull(p0.x, p1.x, p2.x, p3.x);
+                        desiredY = catmull(p0.y, p1.y, p2.y, p3.y);
                     } else {
                         const tail = samples[samples.length - 1];
                         const prev = samples[Math.max(0, samples.length - 2)];
@@ -6473,17 +6551,22 @@
                 const dx = desiredX - state.x;
                 const dy = desiredY - state.y;
                 const distance = Math.hypot(dx, dy);
-                const baseCatchUp = distance > 180 ? 0.74
-                    : distance > 90 ? 0.62
-                        : distance > 36 ? 0.54
-                            : 0.4;
+                const baseCatchUp = distance > 220 ? 0.5
+                    : distance > 120 ? 0.42
+                        : distance > 48 ? 0.34
+                            : 0.25;
                 const alpha = 1 - Math.pow(1 - baseCatchUp, elapsed / 16);
                 if (Math.abs(dx) + Math.abs(dy) > Math.max(window.innerWidth, window.innerHeight) * 0.85) {
                     state.x = desiredX;
                     state.y = desiredY;
                 } else {
-                    state.x += dx * alpha;
-                    state.y += dy * alpha;
+                    if (distance < 0.25) {
+                        state.x = desiredX;
+                        state.y = desiredY;
+                    } else {
+                        state.x += dx * alpha;
+                        state.y += dy * alpha;
+                    }
                     if (Math.abs(dx) > 0.06 || Math.abs(dy) > 0.06) hasMoving = true;
                 }
                 const drawX = state.x;
@@ -6522,6 +6605,16 @@
             const layer = document.getElementById('collabLayer');
             if (!layer) return;
             const now = Date.now();
+            const localStack = isMobileSectionsStackMode();
+            if (localStack) {
+                clearCollabCursorVisuals();
+                if (collabCursorRaf) {
+                    cancelAnimationFrame(collabCursorRaf);
+                    collabCursorRaf = null;
+                }
+                updateCollabPeerCount();
+                return;
+            }
             pruneCollabPresence(now);
             const activeIds = new Set();
             for (const [id, cursor] of collabRemoteCursors.entries()) {
@@ -6532,9 +6625,20 @@
                 const rawX = Number(cursor.x);
                 const rawY = Number(cursor.y);
                 if (rawX < 0 || rawY < 0) continue;
-                const hasAnchor = !!(cursor.anchor && typeof cursor.anchor === 'object');
-                if (!hasAnchor) continue;
-                const anchoredPoint = resolveCursorAnchorPoint(cursor.anchor);
+                const remoteStack = Boolean(Number(cursor.stack || 0));
+                const crossLayout = remoteStack !== localStack;
+                const primaryAnchor = (cursor.anchor && typeof cursor.anchor === 'object') ? cursor.anchor : null;
+                const hasAltTrack = Boolean(cursor.trackAnchor && typeof cursor.trackAnchor === 'object');
+                const primaryKind = String(primaryAnchor && primaryAnchor.k ? primaryAnchor.k : '');
+                const primaryIsTrack = primaryKind === 'section-track'
+                    || primaryKind === 'section-card'
+                    || primaryKind.endsWith('-track')
+                    || primaryKind === 'raw';
+                const useDesktopViewport = !crossLayout && !localStack && primaryIsTrack && !hasAltTrack;
+                const anchoredPoint = resolveCursorPacketPoint(cursor, {
+                    preferFallbackForTrack: useDesktopViewport,
+                    forceViewport: useDesktopViewport
+                });
                 if (!anchoredPoint) continue;
                 ensureCollabCursorVisual(id, cursor, anchoredPoint, layer, now);
                 activeIds.add(id);
@@ -6558,16 +6662,20 @@
 
         function triggerCollabCursorClick(packet) {
             if (!packet || !packet.id || String(packet.id) === String(collabClientId)) return;
+            if (isMobileSectionsStackMode()) return;
             let visual = collabCursorVisuals.get(String(packet.id));
-            if ((!visual || !visual.el || !visual.el.isConnected) && packet.anchor) {
+            if (!visual || !visual.el || !visual.el.isConnected) {
                 const layer = document.getElementById('collabLayer');
-                const point = resolveCursorAnchorPoint(packet.anchor);
+                const point = resolveCursorPacketPoint(packet, { preferFallbackForTrack: false });
                 if (layer && point) {
                     const cursor = collabRemoteCursors.get(String(packet.id)) || {
                         id: String(packet.id),
                         name: normalizeCollabVisibleName(packet.name || 'Участник'),
                         ts: Date.now(),
-                        anchor: packet.anchor
+                        anchor: packet.anchor,
+                        x: packet.x,
+                        y: packet.y,
+                        stack: packet.stack
                     };
                     visual = ensureCollabCursorVisual(String(packet.id), cursor, point, layer, Date.now());
                 }
@@ -7604,18 +7712,23 @@
             const hasPrev = Number.isFinite(prevX) && Number.isFinite(prevY);
             const movedPx = hasPrev ? Math.hypot(safeX - prevX, safeY - prevY) : Number.POSITIVE_INFINITY;
             const sinceLast = now - (collabLastSentCursor.ts || 0);
-            let minInterval = 20;
-            if (movedPx >= 10) minInterval = 14;
-            else if (movedPx >= 4) minInterval = 16;
-            else if (movedPx >= 1.5) minInterval = 18;
+            const desktopMode = !isMobileSectionsStackMode();
+            let minInterval = desktopMode ? 12 : 18;
+            if (movedPx >= 10) minInterval = desktopMode ? 8 : 14;
+            else if (movedPx >= 4) minInterval = desktopMode ? 10 : 16;
+            else if (movedPx >= 1.5) minInterval = desktopMode ? 12 : 18;
             if (!options.force) {
                 if (sinceLast < minInterval) return;
-                if (hasPrev && movedPx < 0.25 && sinceLast < 48) return;
+                if (hasPrev && movedPx < (desktopMode ? 0.12 : 0.2) && sinceLast < (desktopMode ? 28 : 40)) return;
             }
             const x = Math.max(0, Math.min(1, safeX / Math.max(window.innerWidth, 1)));
             const y = Math.max(0, Math.min(1, safeY / Math.max(window.innerHeight, 1)));
             const { x: scrollX, y: scrollY } = getPageScrollOffsets();
-            const anchor = buildCursorTrackAnchor(safeX, safeY);
+            const exactAnchor = buildCursorAnchor(safeX, safeY);
+            const trackAnchor = buildCursorTrackAnchor(safeX, safeY);
+            const anchor = (exactAnchor && exactAnchor.k && exactAnchor.k !== 'raw')
+                ? exactAnchor
+                : (trackAnchor || exactAnchor);
             if (!anchor) return;
             collabCursorTick = now;
             collabLastSentCursor = { x: safeX, y: safeY, ts: now };
@@ -7628,6 +7741,8 @@
                 docX: Math.max(0, safeX + scrollX),
                 docY: Math.max(0, safeY + scrollY),
                 anchor,
+                trackAnchor: trackAnchor || undefined,
+                stack: isMobileSectionsStackMode() ? 1 : 0,
                 ts: now
             });
         }
@@ -7650,6 +7765,7 @@
                 docX: Math.max(0, safeX + scrollX),
                 docY: Math.max(0, safeY + scrollY),
                 anchor,
+                stack: isMobileSectionsStackMode() ? 1 : 0,
                 ts: now
             });
         }
