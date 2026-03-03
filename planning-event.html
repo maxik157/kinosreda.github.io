@@ -52,6 +52,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303e"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
@@ -3069,6 +3070,7 @@
         let collabCursorTick = 0;
         let collabClickTick = 0;
         let collabCursorRaf = null;
+        const WS_OPEN_STATE = 1;
         let collabLastSentCursor = {
             x: NaN,
             y: NaN,
@@ -3118,6 +3120,9 @@
         const cellActionDebounce = new Map();
 
         function initFirebase() {
+            if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                firebase.database.INTERNAL.forceLongPolling();
+            }
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
@@ -6998,6 +7003,23 @@
         function getCollabUrls() {
             const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const isLoopbackHost = (host = '') => host === 'localhost' || host === '127.0.0.1' || host === '::1';
+            const normalizeWsBase = (base, preferSecure = false) => {
+                const raw = String(base || '').trim();
+                if (!raw) return '';
+                try {
+                    if (/^wss?:\/\//i.test(raw)) {
+                        const parsed = new URL(raw);
+                        const proto = preferSecure ? 'wss:' : parsed.protocol;
+                        return `${proto}//${parsed.host}`.replace(/\/+$/, '');
+                    }
+                    if (/^https?:\/\//i.test(raw)) {
+                        const parsed = new URL(raw);
+                        const proto = preferSecure || parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+                        return `${proto}//${parsed.host}`.replace(/\/+$/, '');
+                    }
+                } catch (_) {}
+                return '';
+            };
             const params = new URLSearchParams(window.location.search);
             const queryWsBase = (params.get('wsBase')
                 || params.get('realtimeWsBase')
@@ -7046,6 +7068,30 @@
                 } catch (_) {}
             }
             const wsFallbackBases = [];
+            const appendWsFallbackBase = (base) => {
+                const safe = String(base || '').trim().replace(/\/+$/, '');
+                if (!safe) return;
+                if (safe === wsBase) return;
+                if (wsFallbackBases.includes(safe)) return;
+                wsFallbackBases.push(safe);
+            };
+            const realtimeWsCandidates = [];
+            const appendRealtimeWsCandidate = (base, preferSecure = true) => {
+                const safe = normalizeWsBase(base, preferSecure);
+                if (!safe) return;
+                if (realtimeWsCandidates.includes(safe)) return;
+                realtimeWsCandidates.push(safe);
+            };
+            appendRealtimeWsCandidate(window.KINOSREDA_REALTIME_WS_BASE, true);
+            appendRealtimeWsCandidate(window.PLANNING_REALTIME_WS_BASE, true);
+            try {
+                const rtdbBypass = window.__KINOSREDA_RTDB_RF_BYPASS__;
+                if (rtdbBypass && rtdbBypass.activeProxyBase) {
+                    appendRealtimeWsCandidate(rtdbBypass.activeProxyBase, true);
+                }
+            } catch (_) {}
+            appendRealtimeWsCandidate('https://realtime.киносреда.рф', true);
+            appendRealtimeWsCandidate('https://realtime.xn--80ahcljthqi.xn--p1ai', true);
             if (!wsBase) {
                 const hostname = pageHostname;
                 const port = String(window.location.port || '');
@@ -7054,19 +7100,46 @@
                     || /\.test$/i.test(hostname);
                 const sameHostBase = `${wsProtocol}//${window.location.host}`;
                 const host8080Base = `${wsProtocol}//${hostname}:8080`;
-                if (isLocalLike && port && port !== '8080') {
+                if (pageIsLoopback && !configuredWsBaseRaw && realtimeWsCandidates.length) {
+                    // На локальной странице по умолчанию целимся в удаленный realtime, а loopback оставляем запасным.
+                    wsBase = realtimeWsCandidates[0];
+                    appendWsFallbackBase(host8080Base);
+                    appendWsFallbackBase(sameHostBase);
+                } else if (isLocalLike && port && port !== '8080') {
                     // Local dev чаще держит realtime на :8080, даже если UI отдается с :5500/:5173.
                     wsBase = host8080Base;
-                    wsFallbackBases.push(sameHostBase);
+                    appendWsFallbackBase(sameHostBase);
                 } else {
                     wsBase = sameHostBase;
                     if (port && port !== '8080') {
-                        wsFallbackBases.push(host8080Base);
+                        appendWsFallbackBase(host8080Base);
                     }
                 }
                 if (pageIsLoopback) {
-                    wsFallbackBases.push(`${wsProtocol}//localhost:8080`);
-                    wsFallbackBases.push(`${wsProtocol}//127.0.0.1:8080`);
+                    appendWsFallbackBase(`${wsProtocol}//localhost:8080`);
+                    appendWsFallbackBase(`${wsProtocol}//127.0.0.1:8080`);
+                } else if (hostname && !hostname.startsWith('realtime.')) {
+                    const parts = hostname.split('.').filter(Boolean);
+                    if (parts.length >= 2) {
+                        appendWsFallbackBase(`${wsProtocol}//realtime.${parts.join('.')}`);
+                    }
+                    appendWsFallbackBase(`${wsProtocol}//realtime.киносреда.рф`);
+                    appendWsFallbackBase(`${wsProtocol}//realtime.xn--80ahcljthqi.xn--p1ai`);
+                }
+            }
+            realtimeWsCandidates.forEach((base) => appendWsFallbackBase(base));
+            if (wsBase) {
+                appendWsFallbackBase(`${wsProtocol}//${window.location.host}`);
+                if (pageIsLoopback) {
+                    appendWsFallbackBase(`${wsProtocol}//localhost:8080`);
+                    appendWsFallbackBase(`${wsProtocol}//127.0.0.1:8080`);
+                } else if (pageHostname && !pageHostname.startsWith('realtime.')) {
+                    const parts = pageHostname.split('.').filter(Boolean);
+                    if (parts.length >= 2) {
+                        appendWsFallbackBase(`${wsProtocol}//realtime.${parts.join('.')}`);
+                    }
+                    appendWsFallbackBase(`${wsProtocol}//realtime.киносреда.рф`);
+                    appendWsFallbackBase(`${wsProtocol}//realtime.xn--80ahcljthqi.xn--p1ai`);
                 }
             }
             const selfColor = getCollabSelfColor();
@@ -7087,6 +7160,13 @@
                     wtUrl = `${wsBaseUrl.origin}/planning-sync/wt?event=${encodeURIComponent(eventId)}&id=${encodeURIComponent(collabClientId)}&name=${encodeURIComponent(transportName)}&color=${encodeURIComponent(selfColor)}`;
                 } catch (_) {}
             }
+            try {
+                window.__PLANNING_COLLAB_ENDPOINTS__ = {
+                    wsUrl,
+                    wsFallbackUrls: wsFallbackUrls.slice(),
+                    wtUrl
+                };
+            } catch (_) {}
             return { wsUrl, wtUrl, wsFallbackUrls };
         }
 
@@ -7140,7 +7220,7 @@
             collabSocket = socket;
             collabTransportMode = 'websocket';
             collabSend = (payload) => {
-                if (socket.readyState === WebSocket.OPEN) {
+                if (socket.readyState === WS_OPEN_STATE) {
                     socket.send(JSON.stringify(payload));
                 }
             };
@@ -7153,7 +7233,7 @@
                 emitCollabAction('Подключился к событию');
             };
             socket.addEventListener('open', onOpen);
-            if (socket.readyState === WebSocket.OPEN) onOpen();
+            if (socket.readyState === WS_OPEN_STATE) onOpen();
             socket.addEventListener('message', (event) => {
                 let data = null;
                 try { data = JSON.parse(event.data); } catch (_) {}
