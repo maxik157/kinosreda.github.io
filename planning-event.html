@@ -3080,7 +3080,8 @@
         let collabClosing = false;
         let collabLastPointer = {
             clientX: Math.max(0, (window.innerWidth || 0) * 0.5),
-            clientY: Math.max(0, (window.innerHeight || 0) * 0.5)
+            clientY: Math.max(0, (window.innerHeight || 0) * 0.5),
+            anchorSectionId: ''
         };
         let collabPeopleExpanded = false;
         const COLLAB_PEOPLE_COLLAPSED_LIMIT = 3;
@@ -6026,18 +6027,70 @@
             const safeTarget = (target === document.documentElement || target === document.body)
                 ? (document.querySelector('main') || document.body || target)
                 : target;
-            const card = safeTarget.closest('.card[data-section-id]');
-            if (card) {
+            const getCardRect = (card) => {
+                if (!card) return null;
                 const rect = card.getBoundingClientRect();
-                if (rect && rect.width > 0 && rect.height > 0) {
-                    return {
-                        k: 'section-track',
-                        s: card.dataset.sectionId || '',
-                        rx: clamp01((clientX - rect.left) / rect.width),
-                        ry: clamp01((clientY - rect.top) / rect.height)
-                    };
+                if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+                return rect;
+            };
+            const cardById = (sectionId) => {
+                const sid = String(sectionId || '').trim();
+                if (!sid) return null;
+                return document.querySelector(`#sectionsContainer .card[data-section-id="${cssEscapeSafe(sid)}"]`);
+            };
+            const distanceToRect = (x, y, rect) => {
+                if (!rect) return Number.POSITIVE_INFINITY;
+                const dx = x < rect.left ? (rect.left - x) : (x > rect.right ? (x - rect.right) : 0);
+                const dy = y < rect.top ? (rect.top - y) : (y > rect.bottom ? (y - rect.bottom) : 0);
+                return Math.hypot(dx, dy);
+            };
+            const makeSectionAnchor = (card, rect) => ({
+                k: 'section-track',
+                s: card.dataset.sectionId || '',
+                rx: clamp01((clientX - rect.left) / rect.width),
+                ry: clamp01((clientY - rect.top) / rect.height)
+            });
+
+            const directCard = safeTarget.closest('.card[data-section-id]');
+            if (directCard) {
+                const directRect = getCardRect(directCard);
+                if (directRect) {
+                    return makeSectionAnchor(directCard, directRect);
                 }
             }
+
+            // Keep anchor stable around floating controls/menus above the same section.
+            const stickyMargin = 34;
+            const stickyId = collabLastPointer && collabLastPointer.anchorSectionId
+                ? String(collabLastPointer.anchorSectionId)
+                : '';
+            if (stickyId) {
+                const stickyCard = cardById(stickyId);
+                const stickyRect = getCardRect(stickyCard);
+                if (stickyRect && distanceToRect(clientX, clientY, stickyRect) <= stickyMargin) {
+                    return makeSectionAnchor(stickyCard, stickyRect);
+                }
+            }
+
+            let nearestCard = null;
+            let nearestRect = null;
+            let nearestDist = Number.POSITIVE_INFINITY;
+            const cards = document.querySelectorAll('#sectionsContainer .card[data-section-id]');
+            for (let i = 0; i < cards.length; i += 1) {
+                const card = cards[i];
+                const rect = getCardRect(card);
+                if (!rect) continue;
+                const dist = distanceToRect(clientX, clientY, rect);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestCard = card;
+                    nearestRect = rect;
+                }
+            }
+            if (nearestCard && nearestRect && nearestDist <= stickyMargin) {
+                return makeSectionAnchor(nearestCard, nearestRect);
+            }
+
             const main = document.querySelector('main') || document.body;
             if (!main) return null;
             const rect = main.getBoundingClientRect();
@@ -6293,9 +6346,14 @@
                 }
                 const elapsed = Math.max(1, Math.min(90, now - (state.lastStepAt || now)));
                 state.lastStepAt = now;
-                const alpha = 1 - Math.pow(0.08, elapsed / 16);
                 const dx = desiredX - state.x;
                 const dy = desiredY - state.y;
+                const distance = Math.hypot(dx, dy);
+                const baseCatchUp = distance > 180 ? 0.74
+                    : distance > 90 ? 0.62
+                        : distance > 36 ? 0.5
+                            : 0.38;
+                const alpha = 1 - Math.pow(1 - baseCatchUp, elapsed / 16);
                 if (Math.abs(dx) + Math.abs(dy) > Math.max(window.innerWidth, window.innerHeight) * 0.85) {
                     state.x = desiredX;
                     state.y = desiredY;
@@ -7352,19 +7410,22 @@
             const now = Date.now();
             const safeX = Number.isFinite(clientX) ? clientX : Math.max(window.innerWidth * 0.5, 0);
             const safeY = Number.isFinite(clientY) ? clientY : Math.max(window.innerHeight * 0.5, 0);
-            collabLastPointer = { clientX: safeX, clientY: safeY };
+            const lastAnchorSectionId = collabLastPointer && collabLastPointer.anchorSectionId
+                ? String(collabLastPointer.anchorSectionId)
+                : '';
+            collabLastPointer = { clientX: safeX, clientY: safeY, anchorSectionId: lastAnchorSectionId };
             const prevX = collabLastSentCursor.x;
             const prevY = collabLastSentCursor.y;
             const hasPrev = Number.isFinite(prevX) && Number.isFinite(prevY);
             const movedPx = hasPrev ? Math.hypot(safeX - prevX, safeY - prevY) : Number.POSITIVE_INFINITY;
             const sinceLast = now - (collabLastSentCursor.ts || 0);
-            let minInterval = 52;
-            if (movedPx >= 14) minInterval = 16;
-            else if (movedPx >= 6) minInterval = 24;
-            else if (movedPx >= 2) minInterval = 34;
+            let minInterval = 32;
+            if (movedPx >= 12) minInterval = 16;
+            else if (movedPx >= 5) minInterval = 20;
+            else if (movedPx >= 2) minInterval = 26;
             if (!options.force) {
                 if (sinceLast < minInterval) return;
-                if (hasPrev && movedPx < 0.7 && sinceLast < 120) return;
+                if (hasPrev && movedPx < 0.5 && sinceLast < 90) return;
             }
             const x = Math.max(0, Math.min(1, safeX / Math.max(window.innerWidth, 1)));
             const y = Math.max(0, Math.min(1, safeY / Math.max(window.innerHeight, 1)));
@@ -7373,6 +7434,7 @@
             if (!anchor) return;
             collabCursorTick = now;
             collabLastSentCursor = { x: safeX, y: safeY, ts: now };
+            collabLastPointer.anchorSectionId = anchor.k === 'section-track' ? String(anchor.s || '') : '';
             sendCollabPacket({
                 type: 'cursor',
                 x,
