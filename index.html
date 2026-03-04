@@ -1439,8 +1439,9 @@
             body.layout-sidebar .sidebar {
                 display: block;
                 position: sticky;
-                top: 0;
-                height: 100%;
+                top: var(--layout-top-pad);
+                height: calc(100dvh - var(--layout-top-pad) - var(--layout-bottom-pad));
+                max-height: calc(100dvh - var(--layout-top-pad) - var(--layout-bottom-pad));
                 z-index: 20;
             }
             body.layout-sidebar .content-shell {
@@ -1485,9 +1486,11 @@
             box-shadow: none;
             transition: width 0.28s ease;
             width: var(--sidebar-width);
+            overflow: visible;
         }
         .sidebar-inner {
             height: 100%;
+            min-height: 0;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -1647,7 +1650,7 @@
             margin-top: 6px;
             padding-top: 10px;
             border-top: 1px solid var(--accent-border-10);
-            flex: 1 1 auto;
+            flex: 1 1 0;
             min-height: 0;
             display: flex;
             flex-direction: column;
@@ -1669,12 +1672,18 @@
             overflow-x: hidden;
             padding-right: 2px;
             margin-right: -2px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent-border-50) transparent;
         }
         #servicesNavSidebar::-webkit-scrollbar {
-            width: 0;
-            height: 0;
+            width: 8px;
+            height: 8px;
+        }
+        #servicesNavSidebar::-webkit-scrollbar-thumb {
+            background: var(--accent-border-50);
+            border-radius: 999px;
+            border: 2px solid transparent;
+            background-clip: content-box;
         }
         .sidebar-spacer {
             display: none;
@@ -1685,6 +1694,7 @@
             gap: 10px;
             padding-top: 10px;
             border-top: 1px solid var(--accent-border-10);
+            flex: 0 0 auto;
         }
         .sidebar-mini-player {
             width: 100%;
@@ -3941,6 +3951,11 @@
                 <iframe title="Планирование" data-src="planning.html" loading="lazy" scrolling="yes"></iframe>
             </div>
         </div>
+        <div id="svc_call" data-page="svc_call" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Звонки" data-src="call.html" loading="lazy" scrolling="yes" allow="microphone; autoplay"></iframe>
+            </div>
+        </div>
         <div id="svc_board" data-page="svc_board" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
                 <iframe title="Доска" data-src="board.html" data-unload="1" loading="lazy" scrolling="yes"></iframe>
@@ -5119,6 +5134,7 @@
             svc_beer_space: 'svc_beer_space',
             svc_roulette: 'svc_roulette',
             svc_planning: 'svc_planning',
+            svc_call: 'svc_call',
             svc_board: 'svc_board',
             svc_gallery: 'svc_gallery',
             svc_video: 'svc_video',
@@ -6466,7 +6482,8 @@
                 || resolved === 'svc_music'
                 || resolved === 'svc_video'
                 || resolved === 'svc_beer_space'
-                || resolved === 'svc_planning';
+                || resolved === 'svc_planning'
+                || resolved === 'svc_call';
             const chatWrap = document.getElementById('chatBtnWrap');
             if (chatWrap) chatWrap.style.display = hideChatOnPage ? 'none' : '';
             if (hideChatOnPage && typeof toggleChat === 'function') {
@@ -7093,6 +7110,7 @@
             const services = [
                 { href: 'pokaki.html', icon: '💩', label: 'График покаков', page: 'svc_pokaki' },
                 { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
+                { href: 'call.html', icon: '📞', label: 'Звонки', page: 'svc_call' },
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
                 { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },

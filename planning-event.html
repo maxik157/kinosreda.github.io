@@ -564,8 +564,8 @@
         .collab-status.collab-users-panel {
             --online-count: 1;
             min-width: 0;
-            width: clamp(124px, calc(26px + (var(--online-count) * 94px)), min(920px, 72vw));
-            max-width: min(920px, 72vw);
+            width: auto;
+            max-width: min(1100px, 78vw);
             flex: 0 0 auto;
             justify-content: flex-end;
         }
@@ -678,16 +678,23 @@
             flex-wrap: nowrap;
             gap: 6px;
             min-width: 0;
-            flex: 1 1 auto;
-            overflow: hidden;
+            flex: 0 1 auto;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             justify-content: flex-end;
+        }
+        .collab-status-people::-webkit-scrollbar {
+            width: 0;
+            height: 0;
         }
         .collab-person-chip {
             display: inline-flex;
             align-items: center;
             gap: 5px;
             min-width: 0;
-            max-width: clamp(132px, 17vw, 240px);
+            max-width: min(620px, 72vw);
             border: 1px solid rgba(148,163,184,0.35);
             background: linear-gradient(180deg, rgba(18,25,38,0.94), rgba(10,16,28,0.95));
             color: #e5e7eb;
@@ -695,6 +702,7 @@
             padding: 5px 10px 5px 7px;
             font-size: 0.72rem;
             line-height: 1;
+            flex: 0 0 auto;
         }
         .collab-person-chip.self {
             border-color: var(--accent-border-50);
@@ -776,10 +784,10 @@
         .collab-person-name {
             display: block;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            overflow: visible;
+            text-overflow: clip;
             min-width: 0;
-            max-width: 100%;
+            max-width: 56ch;
         }
         .card.card-elevated {
             z-index: 2000;
@@ -3114,6 +3122,7 @@
         let voicePeerRosterKey = '';
         let voiceTalkingHeartbeatTimer = null;
         let voiceMode = 'hold';
+        let voicePersistentRequested = false;
         const VOICE_ICON_SILENT = './voice-cat.png';
         const VOICE_ICON_TALK = './voice-cat.gif';
         const VOICE_TALKING_HEARTBEAT_MS = 1400;
@@ -5907,7 +5916,7 @@
                 const stateClass = mode === 'connecting' ? 'connecting' : '';
                 list.innerHTML = `<span class="collab-person-chip state ${stateClass}">${escapeHtml(stateText)}</span>`;
                 if (status) {
-                    const textUnits = Math.max(1.4, Math.min(4.8, (String(stateText || '').trim().length + 4) / 7));
+                    const textUnits = Math.max(1.9, Math.min(7.2, (String(stateText || '').trim().length + 7) / 5.2));
                     status.style.setProperty('--online-count', String(textUnits));
                 }
                 if (toggle) {
@@ -5933,9 +5942,9 @@
             const hiddenCount = Math.max(0, people.length - visiblePeople.length);
             const nameUnits = visiblePeople.reduce((sum, person) => {
                 const len = String(person && person.name ? person.name : '').trim().length;
-                return sum + Math.max(0.72, Math.min(1.35, len / 10));
+                return sum + Math.max(1.05, Math.min(2.7, (len + 3) / 7));
             }, 0);
-            const hiddenUnits = hiddenCount > 0 ? Math.min(2.2, 0.7 + (hiddenCount * 0.3)) : 0;
+            const hiddenUnits = hiddenCount > 0 ? Math.min(3.4, 0.95 + (hiddenCount * 0.4)) : 0;
             const widthUnits = Math.max(1, nameUnits + hiddenUnits);
             if (status) status.style.setProperty('--online-count', String(Math.max(1, widthUnits)));
             const chips = visiblePeople.map((person) => {
@@ -6814,6 +6823,9 @@
             if (voiceTalkingHeartbeatTimer) return;
             voiceTalkingHeartbeatTimer = window.setInterval(() => {
                 if (!voiceTalking) return;
+                if (voiceTrack && !voiceTrack.enabled) {
+                    try { voiceTrack.enabled = true; } catch (_) {}
+                }
                 sendVoiceTalkingState(true);
             }, VOICE_TALKING_HEARTBEAT_MS);
         }
@@ -7074,6 +7086,9 @@
         }
 
         function updateVoiceActivity() {
+            if (voiceTalking && voiceTrack && !voiceTrack.enabled) {
+                try { voiceTrack.enabled = true; } catch (_) {}
+            }
             let changed = false;
             voicePeers.forEach((peer, id) => {
                 if (!peer.analyser || !peer.analyserData) return;
@@ -7195,8 +7210,17 @@
             }
         }
 
-        async function startVoiceTalk() {
-            if (voiceTalking) return;
+        async function startVoiceTalk(options = {}) {
+            const persistentMode = options.persistent === true
+                || (options.persistent !== false && voiceMode === 'toggle');
+            voicePersistentRequested = persistentMode;
+            if (voiceTalking) {
+                if (voiceTrack && !voiceTrack.enabled) {
+                    try { voiceTrack.enabled = true; } catch (_) {}
+                }
+                startVoiceTalkingHeartbeat();
+                return;
+            }
             if (typeof RTCPeerConnection !== 'function') {
                 setVoiceHud('NO RTC', false);
                 return;
@@ -7215,7 +7239,10 @@
             updateCollabStatusNames();
         }
 
-        function stopVoiceTalk() {
+        function stopVoiceTalk(options = {}) {
+            if (!options.keepPersistent) {
+                voicePersistentRequested = false;
+            }
             if (!voiceTalking) {
                 stopVoiceTalkingHeartbeat();
                 return;
@@ -7224,7 +7251,9 @@
             if (voiceTrack) voiceTrack.enabled = false;
             setVoiceHud(voiceStream ? 'Активация' : 'OFF', false);
             stopVoiceTalkingHeartbeat();
-            sendVoiceTalkingState(false);
+            if (!options.silent) {
+                sendVoiceTalkingState(false);
+            }
             updateCollabStatusNames();
         }
 
@@ -7547,6 +7576,12 @@
             startCollabHeartbeat();
             updateCollabPeerCount();
             scheduleVoicePeerSync(36, true);
+            if (voicePersistentRequested) {
+                Promise.resolve().then(() => startVoiceTalk({ persistent: true })).catch(() => {});
+            } else if (voiceTalking) {
+                startVoiceTalkingHeartbeat();
+                sendVoiceTalkingState(true);
+            }
         }
 
         function attachCollabSocket(socket) {
@@ -7580,7 +7615,7 @@
                 collabSend = null;
                 collabSocket = null;
                 collabTransportMode = 'offline';
-                stopVoiceTalk();
+                if (voiceMode === 'hold') stopVoiceTalk({ silent: true });
                 closeAllVoicePeers();
                 setCollabStatus('offline', 'Оффлайн');
                 scheduleCollabReconnect();
@@ -7618,7 +7653,7 @@
                     collabSend = null;
                     collabWebTransport = null;
                     collabTransportMode = 'offline';
-                    stopVoiceTalk();
+                    if (voiceMode === 'hold') stopVoiceTalk({ silent: true });
                     closeAllVoicePeers();
                     setCollabStatus('offline', 'Оффлайн');
                     scheduleCollabReconnect();
@@ -7628,7 +7663,7 @@
                     collabSend = null;
                     collabWebTransport = null;
                     collabTransportMode = 'offline';
-                    stopVoiceTalk();
+                    if (voiceMode === 'hold') stopVoiceTalk({ silent: true });
                     closeAllVoicePeers();
                     setCollabStatus('offline', 'Оффлайн');
                     scheduleCollabReconnect();
@@ -7655,7 +7690,7 @@
                     if (!collabClosing) {
                         stopCollabHeartbeat();
                         collabTransportMode = 'offline';
-                        stopVoiceTalk();
+                        if (voiceMode === 'hold') stopVoiceTalk({ silent: true });
                         closeAllVoicePeers();
                         setCollabStatus('offline', 'Оффлайн');
                         scheduleCollabReconnect();
@@ -7691,7 +7726,7 @@
                 return;
             }
             setCollabStatus('offline');
-            stopVoiceTalk();
+            if (voiceMode === 'hold') stopVoiceTalk({ silent: true });
             closeAllVoicePeers();
             scheduleCollabReconnect(2500);
         }
@@ -9719,10 +9754,18 @@
                 if (document.visibilityState === 'hidden') {
                     sendCollabPacket({ type: 'cursor', x: -1, y: -1, docX: -1, docY: -1, ts: Date.now() });
                     emitCollabPresence('hidden');
+                    if (voiceTalking && voiceTrack && !voiceTrack.enabled) {
+                        try { voiceTrack.enabled = true; } catch (_) {}
+                    }
                 } else {
                     setTimeout(() => {
                         emitCollabPresence('visible');
                         emitCollabCursor(window.innerWidth * 0.5, window.innerHeight * 0.5, { force: true });
+                        if (voicePersistentRequested) {
+                            Promise.resolve().then(() => startVoiceTalk({ persistent: true })).catch(() => {});
+                        } else if (voiceTalking && voiceTrack && !voiceTrack.enabled) {
+                            try { voiceTrack.enabled = true; } catch (_) {}
+                        }
                         updateCollabPeerCount();
                     }, 120);
                 }
