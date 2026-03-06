@@ -3546,7 +3546,7 @@
         pipElements: null,
         pipUnsupportedNotified: false,
         toastTimer: null,
-        settingsOpen: loadBoolStorage('callSettingsOpen', true),
+        settingsOpen: false,
         participantsCollapsed: loadBoolStorage('callParticipantsCollapsed', false),
         screenStream: null,
         screenTrack: null,
@@ -4277,6 +4277,7 @@
         });
 
         dom.connectBtn.addEventListener('click', () => {
+          unlockMediaFromGesture().catch(() => {});
           if (state.joined) {
             leaveRoom();
           } else {
@@ -4286,6 +4287,7 @@
 
         if (dom.cameraBtn) {
           dom.cameraBtn.addEventListener('click', () => {
+            unlockMediaFromGesture().catch(() => {});
             if (state.cameraSharing) {
               stopCameraShare('Камера выключена');
             } else {
@@ -4295,6 +4297,7 @@
         }
 
         dom.micBtn.addEventListener('click', () => {
+          unlockMediaFromGesture().catch(() => {});
           state.masterMicEnabled = !state.masterMicEnabled;
           saveStorage('callMasterMic', state.masterMicEnabled ? '1' : '0');
           applyTransmissionState();
@@ -4306,6 +4309,7 @@
 
         if (dom.shareBtn) {
           dom.shareBtn.addEventListener('click', () => {
+            unlockMediaFromGesture().catch(() => {});
             if (state.screenSharing) {
               stopScreenShare('Показ экрана остановлен');
             } else {
@@ -4324,6 +4328,7 @@
 
         if (dom.modeToggleBtn) {
           dom.modeToggleBtn.addEventListener('click', () => {
+            unlockMediaFromGesture().catch(() => {});
             state.modePanelOpen = !state.modePanelOpen;
             saveStorage('callModePanelOpen', state.modePanelOpen ? '1' : '0');
             syncModePanel();
@@ -4346,6 +4351,7 @@
         }
 
         dom.settingsBtn.addEventListener('click', () => {
+          unlockMediaFromGesture().catch(() => {});
           state.settingsOpen = !state.settingsOpen;
           saveStorage('callSettingsOpen', state.settingsOpen ? '1' : '0');
           syncSettingsPanel();
@@ -4509,6 +4515,14 @@
         }, { passive: true });
 
         document.addEventListener('touchend', () => {
+          unlockMediaFromGesture().catch(() => {});
+        }, { passive: true });
+
+        document.addEventListener('touchstart', () => {
+          unlockMediaFromGesture().catch(() => {});
+        }, { passive: true });
+
+        document.addEventListener('click', () => {
           unlockMediaFromGesture().catch(() => {});
         }, { passive: true });
 
@@ -6545,7 +6559,9 @@
             updateLocalStateText();
           } catch (_) {}
         }
-        if (state.ws && state.ws.readyState === WS_OPEN) {
+        if (!state.ws || state.ws.readyState > WS_OPEN) {
+          connectRealtime();
+        } else if (state.ws && state.ws.readyState === WS_OPEN) {
           emitPresence('join');
           syncVoicePeers(true);
         }
