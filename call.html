@@ -798,6 +798,113 @@
       -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M9 5a3 3 0 1 1 6 0v6a3 3 0 1 1-6 0z'/%3E%3Cpath fill='black' d='M5.5 11h2A4.5 4.5 0 0 0 12 15.5A4.5 4.5 0 0 0 16.5 11h2A6.5 6.5 0 0 1 13 17.33V20h2v2H9v-2h2v-2.67A6.5 6.5 0 0 1 5.5 11z'/%3E%3Cpath fill='black' d='M4.28 4.22l15.5 15.5l-1.06 1.06l-15.5-15.5z'/%3E%3C/svg%3E");
     }
 
+    .participant-volume-control {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 3;
+      opacity: 0;
+      transform: translateY(-2px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .participant-card:hover .participant-volume-control,
+    .participant-card:focus-within .participant-volume-control,
+    .participant-volume-control.open {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .participant-volume-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.22), rgba(15, 23, 42, 0.9));
+      box-shadow: 0 8px 16px rgba(2, 6, 23, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+      color: #e2e8f0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .participant-volume-btn:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent-border-40);
+      color: #f8fafc;
+    }
+
+    .participant-volume-btn::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      background: currentColor;
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 10v4h4l5 4V6l-5 4H4z'/%3E%3Cpath fill='black' d='M16.5 8.5a1 1 0 0 1 1.4 0a5 5 0 0 1 0 7a1 1 0 0 1-1.4-1.42a3 3 0 0 0 0-4.16a1 1 0 0 1 0-1.42z'/%3E%3C/svg%3E");
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M4 10v4h4l5 4V6l-5 4H4z'/%3E%3Cpath fill='black' d='M16.5 8.5a1 1 0 0 1 1.4 0a5 5 0 0 1 0 7a1 1 0 0 1-1.4-1.42a3 3 0 0 0 0-4.16a1 1 0 0 1 0-1.42z'/%3E%3C/svg%3E");
+    }
+
+    .participant-volume-pop {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      min-width: 132px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.34);
+      background: rgba(8, 13, 24, 0.96);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 14px 28px rgba(2, 6, 23, 0.56);
+      padding: 8px 9px;
+      display: grid;
+      gap: 6px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px) scale(0.98);
+      transform-origin: top left;
+      pointer-events: none;
+      transition: opacity 0.16s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+    }
+
+    .participant-volume-control.open .participant-volume-pop {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+      transition: opacity 0.16s ease, transform 0.2s ease;
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      .participant-volume-control {
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+    }
+
+    .participant-volume-slider {
+      width: 100%;
+      margin: 0;
+      accent-color: #f59e0b;
+    }
+
+    .participant-volume-value {
+      font-size: 0.62rem;
+      color: #dbe5f5;
+      text-align: right;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
     .avatar-wrap {
       position: relative;
       width: 206px;
@@ -1875,6 +1982,11 @@
       const REMOTE_SPEAK_TTL_MS = 2600;
       const AVATAR_DB_BASE = 'https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app';
       const VOICE_VISUAL_THRESHOLD = 0.07;
+      const ML_VAD_ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
+      const ML_VAD_ASSET_BASE = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/';
+      const ML_VAD_ORT_URL = `${ML_VAD_ORT_BASE}ort.min.js`;
+      const ML_VAD_BUNDLE_URL = `${ML_VAD_ASSET_BASE}bundle.min.js`;
+      let mlVadRuntimePromise = null;
 
       const VOICE_ICE_SERVERS = [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -1966,6 +2078,8 @@
         talkingHeartbeatTimer: null,
         participants: new Map(),
         peers: new Map(),
+        participantVolumes: loadParticipantVolumeStorage(),
+        activeVolumePanelId: '',
         customSelects: new Map(),
         customSelectOpenId: '',
         avatarFetchCache: new Map(),
@@ -1977,6 +2091,9 @@
         localTrack: null,
         localAudioContext: null,
         localSourceNode: null,
+        localGateNode: null,
+        localProcessingNodes: [],
+        localProcessingDestination: null,
         localAnalyser: null,
         localAnalyserData: null,
         localFreqData: null,
@@ -1991,9 +2108,26 @@
         vadTransientHoldUntil: 0,
         vadRecentVoicedFrames: 0,
         vadSpeaking: false,
+        vadVoiceDetected: false,
         vadLastSpokeAt: 0,
+        vadFastStartUntil: 0,
+        vadSpeechSmoothed: 0,
+        vadGateActive: false,
+        vadGateOpenUntil: 0,
+        vadGateCloseSince: 0,
         vadVoiceFrames: 0,
         vadSilenceFrames: 0,
+        mlVad: null,
+        mlVadInitPromise: null,
+        mlVadReady: false,
+        mlVadSpeechProb: 0,
+        mlVadNoiseProb: 1,
+        mlVadPositiveThreshold: 0.33,
+        mlVadNegativeThreshold: 0.22,
+        mlVadLastVoiceAt: 0,
+        mlVadMonitorStream: null,
+        mlVadFallbackUntil: 0,
+        mlVadErrorNotified: false,
         levelSmooth: 0,
         localBandBass: 0,
         localBandMid: 0,
@@ -2052,6 +2186,34 @@
             setMode(mode);
           });
         });
+
+        if (dom.participantsGrid) {
+          dom.participantsGrid.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+            const volumeBtn = target.closest('.participant-volume-btn[data-participant-id]');
+            if (volumeBtn) {
+              event.preventDefault();
+              const participantId = String(volumeBtn.getAttribute('data-participant-id') || '').trim();
+              if (!participantId) return;
+              state.activeVolumePanelId = state.activeVolumePanelId === participantId ? '' : participantId;
+              renderParticipants(true);
+              return;
+            }
+          });
+
+          dom.participantsGrid.addEventListener('input', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (!target) return;
+            const slider = target.closest('.participant-volume-slider[data-participant-id]');
+            if (!slider) return;
+            const participantId = String(slider.getAttribute('data-participant-id') || '').trim();
+            if (!participantId) return;
+            const person = state.participants.get(participantId);
+            const volume = clamp(Number(slider.value || 50) / 100, 0, 2);
+            setParticipantVolume(participantId, person, volume);
+          });
+        }
 
         dom.connectBtn.addEventListener('click', () => {
           if (state.joined) {
@@ -2134,6 +2296,9 @@
           state.vadThreshold = clamp(value, 0.006, 0.06);
           saveStorage('callVadThreshold', String(state.vadThreshold));
           syncVadControls();
+          if (state.mode === 'vad' && state.captureTrack) {
+            initMlVadForCurrentTrack().catch(() => {});
+          }
         });
 
         dom.vadHangover.addEventListener('input', () => {
@@ -2141,6 +2306,9 @@
           state.vadHangoverMs = clamp(value, 120, 1200);
           saveStorage('callVadHangoverMs', String(state.vadHangoverMs));
           syncVadControls();
+          if (state.mode === 'vad' && state.captureTrack) {
+            initMlVadForCurrentTrack().catch(() => {});
+          }
         });
 
         dom.applyAudioBtn.addEventListener('click', async () => {
@@ -2222,7 +2390,12 @@
           }
         });
 
-        document.addEventListener('pointerdown', () => {
+        document.addEventListener('pointerdown', (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (state.activeVolumePanelId && (!target || !target.closest('.participant-volume-control'))) {
+            state.activeVolumePanelId = '';
+            renderParticipants(true);
+          }
           tryResumeAudioContexts();
           tryPlayAllRemoteAudio();
         }, { passive: true });
@@ -2245,6 +2418,7 @@
         state.joined = true;
         state.reconnectAttempt = 0;
         state.hiddenTransmitUntil = 0;
+        ensureRemoteAudioContext();
         tryResumeAudioContexts();
         updateConnectButton();
         updateDockStatus('Подключение...', 'Инициализируем звук и realtime-канал');
@@ -2650,6 +2824,7 @@
           rttMs: (prev && prev.rttMs) || 0,
           lossPct: (prev && prev.lossPct) || 0
         });
+        applyPeerAudioVolume(id);
         if (!avatarUrl && username) {
           resolveParticipantAvatar(id, username);
         }
@@ -2696,6 +2871,7 @@
           rttMs: (prev && prev.rttMs) || 0,
           lossPct: (prev && prev.lossPct) || 0
         });
+        applyPeerAudioVolume(id);
         if (!avatarUrl && username) {
           resolveParticipantAvatar(id, username);
         }
@@ -2846,7 +3022,7 @@
         audio.autoplay = true;
         audio.playsInline = true;
         audio.muted = false;
-        audio.volume = 1;
+        audio.volume = clamp(getParticipantVolume(id, state.participants.get(id)), 0, 1);
         audio.dataset.peerId = id;
         dom.remoteAudioLayer.appendChild(audio);
 
@@ -2873,6 +3049,10 @@
           outKbps: 0,
           prevOutboundBytes: 0,
           prevOutboundTs: 0,
+          remoteSourceNode: null,
+          remoteGainNode: null,
+          remoteDestNode: null,
+          rawRemoteStream: null,
           closed: false
         };
 
@@ -2888,13 +3068,16 @@
             ? event.streams[0]
             : (event.track ? new MediaStream([event.track]) : null);
           if (!stream) return;
+          peer.rawRemoteStream = stream;
+          setupRemoteAnalyser(peer, stream);
           audio.srcObject = stream;
+          audio.muted = false;
           applyOutputDevice(audio).catch(() => {});
           const playPromise = audio.play();
           if (playPromise && typeof playPromise.catch === 'function') {
             playPromise.catch(() => {});
           }
-          setupRemoteAnalyser(peer, stream);
+          applyPeerAudioVolume(id);
         };
 
         pc.onnegotiationneeded = async () => {
@@ -2991,6 +3174,18 @@
         try {
           if (peer.analyser) peer.analyser.disconnect();
         } catch (_) {}
+        try {
+          if (peer.remoteSourceNode) peer.remoteSourceNode.disconnect();
+        } catch (_) {}
+        try {
+          if (peer.remoteGainNode) peer.remoteGainNode.disconnect();
+        } catch (_) {}
+        try {
+          if (peer.remoteDestNode && typeof peer.remoteDestNode.disconnect === 'function') {
+            peer.remoteDestNode.disconnect();
+          }
+        } catch (_) {}
+        peer.rawRemoteStream = null;
 
         try {
           peer.pc.close();
@@ -3272,7 +3467,17 @@
         if (state.localAnalyser) {
           try { state.localAnalyser.disconnect(); } catch (_) {}
         }
+        if (Array.isArray(state.localProcessingNodes)) {
+          state.localProcessingNodes.forEach((node) => {
+            try {
+              if (node && typeof node.disconnect === 'function') node.disconnect();
+            } catch (_) {}
+          });
+        }
         state.localSourceNode = null;
+        state.localGateNode = null;
+        state.localProcessingNodes = [];
+        state.localProcessingDestination = null;
         state.localAnalyser = null;
         state.localAnalyserData = null;
         state.localFreqData = null;
@@ -3303,11 +3508,47 @@
 
         if (state.localAudioContext) {
           const source = state.localAudioContext.createMediaStreamSource(stream);
+          const highPass = state.localAudioContext.createBiquadFilter();
+          highPass.type = 'highpass';
+          highPass.frequency.value = 95;
+          highPass.Q.value = 0.707;
+
+          const lowPass = state.localAudioContext.createBiquadFilter();
+          lowPass.type = 'lowpass';
+          lowPass.frequency.value = 4200;
+          lowPass.Q.value = 0.76;
+
+          const deHiss = state.localAudioContext.createBiquadFilter();
+          deHiss.type = 'highshelf';
+          deHiss.frequency.value = 3600;
+          deHiss.gain.value = -8;
+
+          const compressor = state.localAudioContext.createDynamicsCompressor();
+          compressor.threshold.value = -30;
+          compressor.knee.value = 20;
+          compressor.ratio.value = 4.6;
+          compressor.attack.value = 0.003;
+          compressor.release.value = 0.16;
+
+          const gateGain = state.localAudioContext.createGain();
+          gateGain.gain.value = state.mode === 'vad' ? 0.0001 : 1;
+
+          const destination = state.localAudioContext.createMediaStreamDestination();
+          source.connect(highPass);
+          highPass.connect(lowPass);
+          lowPass.connect(deHiss);
+          deHiss.connect(compressor);
+          compressor.connect(gateGain);
+          gateGain.connect(destination);
+
           const analyser = state.localAudioContext.createAnalyser();
           analyser.fftSize = 1024;
-          source.connect(analyser);
+          compressor.connect(analyser);
 
           state.localSourceNode = source;
+          state.localGateNode = gateGain;
+          state.localProcessingDestination = destination;
+          state.localProcessingNodes = [highPass, lowPass, deHiss, compressor, gateGain];
           state.localAnalyser = analyser;
           state.localAnalyserData = new Uint8Array(analyser.fftSize);
           state.localFreqData = new Uint8Array(analyser.frequencyBinCount);
@@ -3319,8 +3560,12 @@
         }
 
         applyTrackConstraintsForMode();
+        initMlVadForCurrentTrack().catch(() => {});
 
-        const sendTrack = typeof captureTrack.clone === 'function' ? captureTrack.clone() : captureTrack;
+        const processedTrack = state.localProcessingDestination
+          ? state.localProcessingDestination.stream.getAudioTracks()[0]
+          : null;
+        const sendTrack = processedTrack || (typeof captureTrack.clone === 'function' ? captureTrack.clone() : captureTrack);
         try { sendTrack.enabled = state.transmitting; } catch (_) {}
         state.localTrack = sendTrack;
         state.localStream = new MediaStream([sendTrack]);
@@ -3342,6 +3587,12 @@
         state.vadAdaptiveThreshold = Math.max(state.vadThreshold, (state.vadNoiseFloor * 2.25) + 0.0032);
         state.vadTransientHoldUntil = 0;
         state.vadRecentVoicedFrames = 0;
+        state.vadFastStartUntil = 0;
+        state.vadVoiceDetected = false;
+        state.vadSpeechSmoothed = 0;
+        state.vadGateActive = false;
+        state.vadGateOpenUntil = 0;
+        state.vadGateCloseSince = 0;
 
         for (const [, peer] of state.peers.entries()) {
           ensurePeerLocalTrack(peer);
@@ -3352,6 +3603,7 @@
       }
 
       function stopLocalAudio() {
+        stopMlVad(true).catch(() => {});
         if (state.captureStream) {
           state.captureStream.getTracks().forEach((track) => {
             try { track.stop(); } catch (_) {}
@@ -3374,6 +3626,12 @@
         state.vadScore = 0;
         state.vadTransientHoldUntil = 0;
         state.vadRecentVoicedFrames = 0;
+        state.vadFastStartUntil = 0;
+        state.vadVoiceDetected = false;
+        state.vadSpeechSmoothed = 0;
+        state.vadGateActive = false;
+        state.vadGateOpenUntil = 0;
+        state.vadGateCloseSince = 0;
         state.vadVoiceFrames = 0;
         state.vadSilenceFrames = 0;
         state.levelSmooth = 0;
@@ -3390,26 +3648,57 @@
       }
 
       function setupRemoteAnalyser(peer, stream) {
-        if (!peer || !stream) return;
-        if (!state.remoteAudioContext) {
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          if (!Ctx) return;
-          state.remoteAudioContext = new Ctx();
-        }
+        if (!peer || !stream) return null;
+        const remoteCtx = ensureRemoteAudioContext();
+        if (!remoteCtx) return null;
 
         try {
+          if (peer.remoteSourceNode) {
+            try { peer.remoteSourceNode.disconnect(); } catch (_) {}
+          }
+          if (peer.remoteGainNode) {
+            try { peer.remoteGainNode.disconnect(); } catch (_) {}
+          }
+          if (peer.remoteDestNode && typeof peer.remoteDestNode.disconnect === 'function') {
+            try { peer.remoteDestNode.disconnect(); } catch (_) {}
+          }
           if (peer.analyser) {
             try { peer.analyser.disconnect(); } catch (_) {}
           }
-          const source = state.remoteAudioContext.createMediaStreamSource(stream);
-          const analyser = state.remoteAudioContext.createAnalyser();
+          const source = remoteCtx.createMediaStreamSource(stream);
+          const gain = remoteCtx.createGain();
+          gain.gain.value = 0;
+          const analyser = remoteCtx.createAnalyser();
           analyser.fftSize = 512;
           analyser.smoothingTimeConstant = 0.68;
           source.connect(analyser);
+          source.connect(gain);
+          gain.connect(remoteCtx.destination);
+          peer.remoteSourceNode = source;
+          peer.remoteGainNode = gain;
+          peer.remoteDestNode = null;
           peer.analyser = analyser;
           peer.analyserData = new Uint8Array(analyser.fftSize);
           peer.freqData = new Uint8Array(analyser.frequencyBinCount);
-        } catch (_) {}
+          return stream;
+        } catch (_) {
+          peer.remoteSourceNode = null;
+          peer.remoteGainNode = null;
+          peer.remoteDestNode = null;
+          return null;
+        }
+      }
+
+      function ensureRemoteAudioContext() {
+        if (!state.remoteAudioContext) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          state.remoteAudioContext = new Ctx();
+        }
+        if (state.remoteAudioContext.state === 'suspended') {
+          state.remoteAudioContext.resume().catch(() => {});
+        }
+        return state.remoteAudioContext;
       }
 
       async function restartLocalAudio(successMessage = '') {
@@ -3417,6 +3706,193 @@
         refreshDevices().catch(() => {});
         if (successMessage) showToast(successMessage);
         syncVoicePeers(true);
+      }
+
+      function loadExternalScript(url, marker) {
+        if (!url) return Promise.resolve(false);
+        const existing = document.querySelector(`script[data-ext-script="${marker}"]`);
+        if (existing) {
+          if (existing.dataset.loaded === '1') return Promise.resolve(true);
+          return new Promise((resolve) => {
+            const done = () => resolve(existing.dataset.loaded === '1');
+            existing.addEventListener('load', done, { once: true });
+            existing.addEventListener('error', () => resolve(false), { once: true });
+            window.setTimeout(done, 5200);
+          });
+        }
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = url;
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          script.dataset.extScript = marker;
+          script.addEventListener('load', () => {
+            script.dataset.loaded = '1';
+            resolve(true);
+          }, { once: true });
+          script.addEventListener('error', () => resolve(false), { once: true });
+          document.head.appendChild(script);
+        });
+      }
+
+      async function ensureMlVadRuntime() {
+        if (window.vad && window.vad.MicVAD) return true;
+        if (mlVadRuntimePromise) return mlVadRuntimePromise;
+
+        mlVadRuntimePromise = (async () => {
+          const ortOk = await loadExternalScript(ML_VAD_ORT_URL, 'ml-vad-ort');
+          if (!ortOk) return false;
+          const vadOk = await loadExternalScript(ML_VAD_BUNDLE_URL, 'ml-vad-bundle');
+          if (!vadOk) return false;
+          return !!(window.vad && window.vad.MicVAD);
+        })().catch(() => false);
+
+        const ready = await mlVadRuntimePromise;
+        if (!ready) {
+          mlVadRuntimePromise = null;
+        }
+        return ready;
+      }
+
+      function buildVadMonitorStream() {
+        if (!state.captureTrack || state.captureTrack.readyState !== 'live') return null;
+        try {
+          const monitorTrack = typeof state.captureTrack.clone === 'function'
+            ? state.captureTrack.clone()
+            : state.captureTrack;
+          return new MediaStream([monitorTrack]);
+        } catch (_) {
+          return null;
+        }
+      }
+
+      function deriveVadProbabilityThresholds() {
+        const normalized = clamp((state.vadThreshold - 0.006) / (0.06 - 0.006), 0, 1);
+        const positive = clamp(0.19 + (normalized * 0.26), 0.16, 0.52);
+        const negative = clamp(positive - 0.1, 0.08, 0.42);
+        return { positive, negative };
+      }
+
+      async function stopMlVad(resetState = true) {
+        const instance = state.mlVad;
+        state.mlVad = null;
+        state.mlVadReady = false;
+
+        if (instance) {
+          try {
+            if (typeof instance.pause === 'function') {
+              await instance.pause();
+            }
+          } catch (_) {}
+          try {
+            if (typeof instance.destroy === 'function') {
+              await instance.destroy();
+            }
+          } catch (_) {}
+        }
+
+        if (state.mlVadMonitorStream) {
+          state.mlVadMonitorStream.getTracks().forEach((track) => {
+            try { track.stop(); } catch (_) {}
+          });
+          state.mlVadMonitorStream = null;
+        }
+
+        if (resetState) {
+          state.mlVadSpeechProb = 0;
+          state.mlVadNoiseProb = 1;
+          state.mlVadLastVoiceAt = 0;
+          state.mlVadFallbackUntil = 0;
+          state.vadSpeaking = false;
+          state.vadVoiceDetected = false;
+          state.vadSpeechSmoothed = 0;
+          state.vadGateActive = false;
+          state.vadGateOpenUntil = 0;
+          state.vadGateCloseSince = 0;
+        }
+      }
+
+      async function initMlVadForCurrentTrack() {
+        if (state.mode !== 'vad') {
+          await stopMlVad(false);
+          return;
+        }
+        if (!state.captureTrack || state.captureTrack.readyState !== 'live') return;
+        if (state.mlVadInitPromise) return state.mlVadInitPromise;
+
+        state.mlVadInitPromise = (async () => {
+          const runtimeReady = await ensureMlVadRuntime();
+          if (!runtimeReady || !window.vad || !window.vad.MicVAD) {
+            if (!state.mlVadErrorNotified) {
+              state.mlVadErrorNotified = true;
+              showToast('ML VAD недоступен, используем базовый режим');
+            }
+            return;
+          }
+
+          await stopMlVad(false);
+
+          const monitorStream = buildVadMonitorStream();
+          if (!monitorStream) return;
+
+          const { positive, negative } = deriveVadProbabilityThresholds();
+          state.mlVadPositiveThreshold = positive;
+          state.mlVadNegativeThreshold = negative;
+          state.mlVadMonitorStream = monitorStream;
+          state.mlVadSpeechProb = 0;
+          state.mlVadNoiseProb = 1;
+          state.mlVadLastVoiceAt = 0;
+          state.mlVadFallbackUntil = 0;
+
+          const redemption = clamp(Math.round(state.vadHangoverMs * 1.05), 420, 2200);
+
+          const instance = await window.vad.MicVAD.new({
+            stream: monitorStream,
+            model: 'v5',
+            startOnLoad: true,
+            baseAssetPath: ML_VAD_ASSET_BASE,
+            onnxWASMBasePath: ML_VAD_ORT_BASE,
+            positiveSpeechThreshold: positive,
+            negativeSpeechThreshold: negative,
+            redemptionMs: redemption,
+            preSpeechPadMs: 160,
+            minSpeechMs: 120,
+            submitUserSpeechOnPause: false,
+            pauseStream: async (stream) => {
+              if (!stream) return;
+              stream.getTracks().forEach((track) => {
+                try { track.stop(); } catch (_) {}
+              });
+            },
+            onFrameProcessed: (probs) => {
+              const speech = clamp(Number(probs && probs.isSpeech), 0, 1);
+              const noise = clamp(Number(probs && probs.notSpeech), 0, 1);
+              state.mlVadSpeechProb = Number.isFinite(speech) ? speech : 0;
+              state.mlVadNoiseProb = Number.isFinite(noise) ? noise : (1 - state.mlVadSpeechProb);
+              if (state.mlVadSpeechProb >= state.mlVadNegativeThreshold) {
+                state.mlVadLastVoiceAt = Date.now();
+              }
+            },
+            onVADMisfire: () => {},
+            onSpeechStart: () => {
+              state.mlVadLastVoiceAt = Date.now();
+            },
+            onSpeechEnd: () => {}
+          });
+
+          state.mlVad = instance;
+          state.mlVadReady = true;
+          state.mlVadErrorNotified = false;
+        })().catch(() => {
+          if (!state.mlVadErrorNotified) {
+            state.mlVadErrorNotified = true;
+            showToast('Не удалось запустить ML VAD');
+          }
+        }).finally(() => {
+          state.mlVadInitPromise = null;
+        });
+
+        return state.mlVadInitPromise;
       }
 
       function computeRmsFromByteData(data) {
@@ -3441,283 +3917,151 @@
           if (state.localAnalyser && state.localAnalyserData) {
             state.localAnalyser.getByteTimeDomainData(state.localAnalyserData);
             let sum = 0;
-            let peak = 0;
-            let zeroCrossings = 0;
-            let previousSign = 0;
             for (let i = 0; i < state.localAnalyserData.length; i += 1) {
               const value = (state.localAnalyserData[i] - 128) / 128;
-              const abs = Math.abs(value);
               sum += value * value;
-              if (abs > peak) peak = abs;
-              const sign = value >= 0 ? 1 : -1;
-              if (i > 0 && sign !== previousSign) zeroCrossings += 1;
-              previousSign = sign;
             }
 
             const rms = Math.sqrt(sum / state.localAnalyserData.length);
-            const zcr = zeroCrossings / state.localAnalyserData.length;
-            const crest = rms > 0.0001 ? (peak / rms) : 99;
-            const sampleRateHz = (state.localAudioContext && Number(state.localAudioContext.sampleRate)) || 48000;
             state.vadLevel = rms;
-            const noiseAlpha = state.vadSpeaking ? 0.0035 : 0.038;
+            const noiseAlpha = state.vadSpeaking ? 0.006 : 0.045;
             state.vadNoiseFloor = clamp((state.vadNoiseFloor * (1 - noiseAlpha)) + (rms * noiseAlpha), 0.0009, 0.045);
+            state.vadAdaptiveThreshold = Math.max(state.vadThreshold, (state.vadNoiseFloor * 1.8) + 0.0012);
 
-            let speechRatio = 0;
             let lowRatio = 0;
-            let highRatio = 0;
             let presenceRatio = 0;
-            let speechEnergy = 0;
-            let lowEnergy = 0;
-            let highEnergy = 0;
-            let presenceEnergy = 0;
-            let totalEnergy = 0;
-            let noiseSpeechEnergy = 0;
-            let maxSpeechBinEnergy = 0;
-            let flux = 0;
-            let diffAbs = 0;
-            let centroid = 0;
-            let speechFlatness = 1;
+            let highRatio = 0;
 
             if (state.localFreqData && state.localFreqData.length) {
               state.localAnalyser.getByteFrequencyData(state.localFreqData);
               const bins = state.localFreqData.length;
-              if (!state.vadNoiseSpectrum || state.vadNoiseSpectrum.length !== bins) {
-                state.vadNoiseSpectrum = new Float32Array(bins);
-                for (let i = 0; i < bins; i += 1) {
-                  state.vadNoiseSpectrum[i] = 0.0006;
-                }
-              }
-              if (!state.vadPrevSpectrum || state.vadPrevSpectrum.length !== bins) {
-                state.vadPrevSpectrum = new Float32Array(bins);
-              }
-
-              const nyquist = sampleRateHz / 2;
-              const binWidth = nyquist / bins;
-              const speechLowBin = Math.max(0, Math.floor(120 / binWidth));
-              const speechHighBin = Math.min(bins - 1, Math.ceil(4200 / binWidth));
-              const presenceLowBin = Math.max(0, Math.floor(220 / binWidth));
-              const presenceHighBin = Math.min(bins - 1, Math.ceil(2200 / binWidth));
-              const lowHighBin = Math.min(bins - 1, Math.ceil(130 / binWidth));
-              const highLowBin = Math.min(bins - 1, Math.floor(4800 / binWidth));
-              const noise = state.vadNoiseSpectrum;
-              const prevSpectrum = state.vadPrevSpectrum;
-              let speechLogSum = 0;
-              let speechBinCount = 0;
+              const sampleRateHz = (state.localAudioContext && Number(state.localAudioContext.sampleRate)) || 48000;
+              const binWidth = (sampleRateHz / 2) / bins;
+              const lowEnd = Math.max(1, Math.floor(300 / binWidth));
+              const midEnd = Math.max(lowEnd + 1, Math.floor(2800 / binWidth));
+              const highEnd = Math.max(midEnd + 1, Math.floor(7600 / binWidth));
+              let lowEnergy = 0;
+              let midEnergy = 0;
+              let highEnergy = 0;
+              let totalEnergy = 0;
 
               for (let i = 0; i < bins; i += 1) {
                 const amp = Number(state.localFreqData[i] || 0) / 255;
                 const energy = amp * amp;
                 totalEnergy += energy;
-                centroid += energy * (i * binWidth);
-
-                const prev = Number(prevSpectrum[i] || 0);
-                const delta = energy - prev;
-                if (delta > 0) flux += delta;
-                diffAbs += Math.abs(delta);
-                prevSpectrum[i] = energy;
-
-                const isSpeechBin = i >= speechLowBin && i <= speechHighBin;
-                const prevNoise = Number(noise[i] || 0.0006);
-                const likelyVoiceBin = isSpeechBin
-                  && i >= presenceLowBin
-                  && i <= presenceHighBin
-                  && energy > (prevNoise * 1.45);
-                const updateAlpha = likelyVoiceBin
-                  ? (state.vadSpeaking ? 0.0012 : 0.0038)
-                  : (state.vadSpeaking ? 0.0058 : 0.03);
-                noise[i] = clamp((prevNoise * (1 - updateAlpha)) + (energy * updateAlpha), 0.00004, 1);
-
-                if (isSpeechBin) {
-                  speechEnergy += energy;
-                  noiseSpeechEnergy += noise[i];
-                  if (energy > maxSpeechBinEnergy) maxSpeechBinEnergy = energy;
-                  speechLogSum += Math.log(energy + 1e-9);
-                  speechBinCount += 1;
-                }
-                if (i >= presenceLowBin && i <= presenceHighBin) presenceEnergy += energy;
-                if (i <= lowHighBin) lowEnergy += energy;
-                if (i >= highLowBin) highEnergy += energy;
+                if (i < lowEnd) lowEnergy += energy;
+                else if (i < midEnd) midEnergy += energy;
+                else if (i < highEnd) highEnergy += energy;
               }
 
-              const safeTotal = totalEnergy > 0 ? totalEnergy : 1e-7;
-              speechRatio = speechEnergy / safeTotal;
+              const safeTotal = Math.max(1e-7, totalEnergy);
               lowRatio = lowEnergy / safeTotal;
+              presenceRatio = midEnergy / safeTotal;
               highRatio = highEnergy / safeTotal;
-              presenceRatio = presenceEnergy / safeTotal;
-              centroid = centroid / safeTotal;
-              if (speechBinCount > 0) {
-                const geometric = Math.exp(speechLogSum / speechBinCount);
-                const arithmetic = speechEnergy / speechBinCount;
-                speechFlatness = clamp(geometric / (arithmetic + 1e-7), 0, 1.6);
-              }
-            }
-
-            const adaptiveThreshold = Math.max(state.vadThreshold * 0.24, (state.vadNoiseFloor * 1.18) + 0.00018);
-            const whisperThreshold = Math.max(state.vadThreshold * 0.11, (state.vadNoiseFloor * 1.02) + 0.0001);
-            state.vadAdaptiveThreshold = adaptiveThreshold;
-
-            const eps = 1e-7;
-            const snrDb = 10 * Math.log10((speechEnergy + eps) / (noiseSpeechEnergy + eps));
-            const speechBinPeakRatio = maxSpeechBinEnergy / (speechEnergy + eps);
-            const fluxNorm = flux / (speechEnergy + eps);
-            const diffNorm = diffAbs / (totalEnergy + eps);
-            let bestPitchCorr = 0;
-            if (rms >= whisperThreshold * 0.72) {
-              const minLag = Math.max(16, Math.floor(sampleRateHz / 420));
-              const maxLag = Math.min(state.localAnalyserData.length - 8, Math.floor(sampleRateHz / 85));
-              let tdEnergy = 0;
-              for (let i = 0; i < state.localAnalyserData.length; i += 4) {
-                const x = (state.localAnalyserData[i] - 128) / 128;
-                tdEnergy += x * x;
-              }
-              if (tdEnergy > 1e-6 && maxLag > minLag + 2) {
-                for (let lag = minLag; lag <= maxLag; lag += 4) {
-                  let corr = 0;
-                  for (let i = 0; i + lag < state.localAnalyserData.length; i += 4) {
-                    const x = (state.localAnalyserData[i] - 128) / 128;
-                    const y = (state.localAnalyserData[i + lag] - 128) / 128;
-                    corr += x * y;
-                  }
-                  const normalized = corr / (tdEnergy + eps);
-                  if (normalized > bestPitchCorr) bestPitchCorr = normalized;
-                }
-              }
-            }
-            const periodicityScore = clamp((bestPitchCorr - 0.11) / 0.46, 0, 1);
-
-            const snrScore = clamp((snrDb + 1.4) / 13.8, 0, 1);
-            const speechRatioScore = clamp((speechRatio - 0.12) / 0.26, 0, 1);
-            const presenceScore = clamp((presenceRatio - 0.11) / 0.24, 0, 1);
-            const zcrScore = 1 - clamp(Math.abs(zcr - 0.15) / 0.23, 0, 1);
-            const centroidScore = 1 - clamp(Math.abs(centroid - 1700) / 2550, 0, 1);
-            const harmonicScore = 1 - clamp((speechFlatness - 0.26) / 0.56, 0, 1);
-            const loudScore = clamp((rms - whisperThreshold) / 0.02, 0, 1);
-            const lowPenalty = clamp((lowRatio - 0.62) / 0.25, 0, 1);
-            const highPenalty = clamp((highRatio - 0.56) / 0.24, 0, 1);
-            const transientPenalty = (clamp((fluxNorm - 0.5) / 1.05, 0, 1) * 0.62)
-              + (clamp((crest - 6.3) / 8.0, 0, 1) * 0.38);
-            const tonalPenalty = clamp((speechBinPeakRatio - 0.34) / 0.54, 0, 1)
-              * clamp((highRatio - 0.46) / 0.34, 0, 1);
-            const clickPenalty = (1 - periodicityScore)
-              * clamp((speechFlatness - 0.52) / 0.5, 0, 1)
-              * clamp((fluxNorm - 0.26) / 0.84, 0, 1)
-              * clamp((crest - 4.7) / 7.5, 0, 1);
-
-            let confidenceRaw = (snrScore * 0.2)
-              + (speechRatioScore * 0.17)
-              + (presenceScore * 0.15)
-              + (zcrScore * 0.06)
-              + (centroidScore * 0.06)
-              + (periodicityScore * 0.24)
-              + (harmonicScore * 0.16)
-              + (loudScore * 0.11)
-              - (lowPenalty * 0.08)
-              - (highPenalty * 0.12)
-              - (transientPenalty * 0.2)
-              - (tonalPenalty * 0.08)
-              - (clickPenalty * 0.5);
-
-            if (rms < adaptiveThreshold) {
-              const whisperBoost = clamp((snrDb - 2) / 9.5, 0, 1)
-                * clamp((presenceRatio - 0.14) / 0.2, 0, 1)
-                * 0.28;
-              confidenceRaw += whisperBoost;
-            }
-
-            confidenceRaw = clamp(confidenceRaw, 0, 1);
-            state.vadScore = (state.vadScore * 0.74) + (confidenceRaw * 0.26);
-            if (periodicityScore >= 0.15 && snrDb >= 1.1 && speechRatio >= 0.14 && presenceRatio >= 0.09) {
-              state.vadRecentVoicedFrames = Math.min(24, state.vadRecentVoicedFrames + 2);
-            } else {
-              state.vadRecentVoicedFrames = Math.max(0, state.vadRecentVoicedFrames - 1);
-            }
-
-            const impulseLike = !state.vadSpeaking
-              && rms >= whisperThreshold * 1.01
-              && periodicityScore <= 0.13
-              && (
-                (crest >= 4.8 && fluxNorm >= 0.25 && diffNorm >= 0.26 && speechFlatness >= 0.52)
-                || (highRatio >= 0.3 && fluxNorm >= 0.34 && speechRatio <= 0.24)
-              );
-            if (impulseLike) {
-              state.vadTransientHoldUntil = now + 460;
-            }
-            const transientBlocked = !state.vadSpeaking && now < state.vadTransientHoldUntil;
-            const voicedLike = periodicityScore >= 0.15
-              && speechFlatness <= 0.84
-              && highRatio <= 0.72;
-            const fricativeLike = periodicityScore >= 0.05
-              && speechRatio >= 0.25
-              && presenceRatio >= 0.18
-              && highRatio <= 0.5
-              && lowRatio <= 0.77
-              && fluxNorm <= 0.5
-              && diffNorm <= 0.45
-              && speechFlatness <= 0.82;
-            const unvoicedContinuation = state.vadRecentVoicedFrames >= 3 && fricativeLike;
-            const whisperStart = state.vadRecentVoicedFrames === 0
-              && state.vadScore >= 0.34
-              && snrDb >= 5.2
-              && speechRatio >= 0.29
-              && presenceRatio >= 0.21
-              && highRatio <= 0.45
-              && lowRatio <= 0.78
-              && fluxNorm <= 0.43
-              && crest <= 5.6
-              && speechFlatness <= 0.79;
-
-            const strongVoice = rms >= adaptiveThreshold
-              && state.vadScore >= 0.31
-              && snrDb >= 1.6
-              && speechRatio >= 0.14
-              && presenceRatio >= 0.09
-              && highRatio <= 0.72
-              && voicedLike;
-
-            const whisperVoice = rms >= whisperThreshold
-              && state.vadScore >= 0.26
-              && snrDb >= 3.7
-              && speechRatio >= 0.18
-              && presenceRatio >= 0.12
-              && highRatio <= 0.64
-              && lowRatio <= 0.73
-              && zcr <= 0.31
-              && centroid >= 280
-              && centroid <= 4200
-              && (voicedLike || unvoicedContinuation || whisperStart);
-
-            const voiceFrame = !transientBlocked && (strongVoice || whisperVoice);
-            if (voiceFrame) {
-              state.vadVoiceFrames = Math.min(32, state.vadVoiceFrames + (strongVoice ? 1.58 : 0.9));
-              state.vadSilenceFrames = 0;
-              state.vadLastSpokeAt = now;
-            } else {
-              state.vadSilenceFrames = Math.min(24, state.vadSilenceFrames + 1);
-              state.vadVoiceFrames = Math.max(0, state.vadVoiceFrames - (transientBlocked ? 2.4 : 1.45));
             }
 
             const effectiveHangover = document.visibilityState === 'hidden'
               ? Math.max(state.vadHangoverMs, 2400)
               : Math.max(state.vadHangoverMs, 520);
 
-            if (!state.vadSpeaking && state.vadVoiceFrames >= 3.35) {
-              state.vadSpeaking = true;
-            } else if (
-              state.vadSpeaking
-              && state.vadVoiceFrames <= 0.42
-              && state.vadSilenceFrames >= 5
-              && (now - state.vadLastSpokeAt > effectiveHangover)
-            ) {
-              state.vadSpeaking = false;
+            let speaking = false;
+            const { positive, negative } = deriveVadProbabilityThresholds();
+            state.mlVadPositiveThreshold = positive;
+            state.mlVadNegativeThreshold = negative;
+            const speechHint = state.mlVadReady
+              ? clamp(state.mlVadSpeechProb, 0, 1)
+              : clamp(state.vadScore, 0, 1);
+            const fastStartCandidate = rms >= Math.max(0.00045, state.vadNoiseFloor * 0.78)
+              && presenceRatio >= 0.045
+              && highRatio <= 0.93;
+
+            if (state.mlVadReady) {
+              const speechProb = speechHint;
+              const holdByProbability = speechProb >= positive || (state.vadSpeaking && speechProb >= negative);
+              if (speechProb >= (negative - 0.025)) {
+                state.mlVadLastVoiceAt = now;
+              }
+              if (!state.vadSpeaking && fastStartCandidate && speechProb >= (negative - 0.055)) {
+                state.vadFastStartUntil = Math.max(state.vadFastStartUntil, now + 280);
+                state.mlVadLastVoiceAt = now;
+              }
+              const voiceBandGate = presenceRatio >= 0.06 && highRatio <= 0.9;
+              const energyGate = rms >= Math.max(0.00055, state.vadNoiseFloor * 0.84)
+                || speechProb >= (negative + 0.03);
+              const linger = now - state.mlVadLastVoiceAt <= (effectiveHangover * 1.15);
+              speaking = (holdByProbability || linger)
+                && (energyGate || (speechProb >= (positive - 0.045) && voiceBandGate));
+              state.vadScore = speechProb;
+            } else {
+              const openThreshold = Math.max(state.vadThreshold * 0.72, (state.vadNoiseFloor * 1.45) + 0.00085);
+              const closeThreshold = openThreshold * 0.72;
+              const fallbackVoice = rms >= openThreshold || (state.vadSpeaking && rms >= closeThreshold);
+              if (fallbackVoice) {
+                state.mlVadFallbackUntil = now + effectiveHangover;
+                if (!state.vadSpeaking && fastStartCandidate) {
+                  state.vadFastStartUntil = Math.max(state.vadFastStartUntil, now + 260);
+                }
+              }
+              speaking = now <= state.mlVadFallbackUntil;
+              state.vadScore = clamp((rms - closeThreshold) / 0.04, 0, 1);
             }
+            if (!speaking && now < state.vadFastStartUntil) {
+              speaking = true;
+            }
+            if (!speaking && now >= state.vadFastStartUntil) {
+              state.vadFastStartUntil = 0;
+            }
+            state.vadVoiceDetected = speaking;
+            if (speaking) {
+              state.vadLastSpokeAt = now;
+            }
+
+            const speechProbNow = state.mlVadReady ? clamp(state.mlVadSpeechProb, 0, 1) : clamp(state.vadScore, 0, 1);
+            const energyHint = clamp((rms - Math.max(0.00035, state.vadNoiseFloor * 0.66)) / 0.022, 0, 1);
+            const spectralHint = clamp((presenceRatio * 1.05) - (highRatio * 0.28), 0, 1);
+            const activityNow = clamp((speechProbNow * 0.78) + (energyHint * 0.14) + (spectralHint * 0.08), 0, 1);
+            state.vadSpeechSmoothed = (state.vadSpeechSmoothed * 0.74) + (activityNow * 0.26);
+
+            const gateOpenThreshold = state.mlVadReady ? 0.2 : 0.27;
+            const gateCloseThreshold = state.mlVadReady ? 0.1 : 0.16;
+            const minimumOpenMs = 420;
+            const closeDebounceMs = 300;
+            const tailHoldMs = Math.max(effectiveHangover, 760);
+
+            if (!state.vadGateActive && (speaking || state.vadSpeechSmoothed >= gateOpenThreshold)) {
+              state.vadGateActive = true;
+              state.vadGateOpenUntil = now + minimumOpenMs;
+              state.vadGateCloseSince = 0;
+            }
+
+            if (state.vadGateActive) {
+              state.vadGateOpenUntil = Math.max(state.vadGateOpenUntil, state.vadLastSpokeAt + tailHoldMs);
+              const mustHold = now < state.vadGateOpenUntil || speaking;
+              if (mustHold) {
+                state.vadGateCloseSince = 0;
+              } else {
+                const wantsClose = state.vadSpeechSmoothed <= gateCloseThreshold;
+                if (wantsClose) {
+                  if (!state.vadGateCloseSince) state.vadGateCloseSince = now;
+                  if (now - state.vadGateCloseSince >= closeDebounceMs) {
+                    state.vadGateActive = false;
+                    state.vadGateCloseSince = 0;
+                  }
+                } else {
+                  state.vadGateCloseSince = 0;
+                }
+              }
+            }
+
+            state.vadSpeaking = state.vadGateActive;
 
             if (state.vadSpeaking && document.visibilityState === 'hidden') {
               state.hiddenTransmitUntil = Math.max(state.hiddenTransmitUntil, now + 2200);
             }
 
             const meterFromSignal = clamp((rms - Math.max(0.0008, state.vadNoiseFloor * 0.72)) / 0.04, 0, 1);
-            const meterFromConfidence = clamp(state.vadScore * 0.92, 0, 1);
-            const rawMeter = Math.max(meterFromSignal, meterFromConfidence * 0.72);
+            const meterFromModel = state.mlVadReady ? clamp(state.mlVadSpeechProb, 0, 1) : clamp(state.vadScore, 0, 1);
+            const rawMeter = Math.max(meterFromSignal, meterFromModel * 0.78);
             state.levelSmooth = (state.levelSmooth * 0.78) + (rawMeter * 0.22);
             const targetBass = clamp(Math.sqrt(Math.max(0, lowRatio)) * 1.08, 0, 1);
             const targetMid = clamp(Math.sqrt(Math.max(0, presenceRatio)) * 1.26, 0, 1);
@@ -3810,7 +4154,7 @@
         };
 
         step();
-        state.vadTimer = window.setInterval(step, 48);
+        state.vadTimer = window.setInterval(step, 24);
       }
 
       function stopVadLoop() {
@@ -4020,7 +4364,7 @@
           if (document.visibilityState === 'hidden' && state.hiddenTransmitUntil > Date.now()) {
             return true;
           }
-          return state.vadSpeaking;
+          return state.vadGateActive || state.vadSpeaking;
         }
         if (state.mode === 'toggle') {
           return true;
@@ -4030,9 +4374,33 @@
 
       function applyTransmissionState() {
         const shouldTransmit = computeShouldTransmit();
+        const trackLiveAllowed = state.joined && state.masterMicEnabled;
+        const useVadGate = state.mode === 'vad' && !!state.localGateNode;
 
         if (state.localTrack) {
-          try { state.localTrack.enabled = shouldTransmit; } catch (_) {}
+          if (useVadGate) {
+            try { state.localTrack.enabled = trackLiveAllowed; } catch (_) {}
+            if (state.localAudioContext) {
+              try {
+                const now = state.localAudioContext.currentTime;
+                const gate = state.localGateNode.gain;
+                const target = shouldTransmit ? 1 : 0.0001;
+                const tau = shouldTransmit ? 0.0012 : 0.24;
+                gate.cancelScheduledValues(now);
+                gate.setTargetAtTime(target, now, tau);
+              } catch (_) {}
+            }
+          } else {
+            try { state.localTrack.enabled = shouldTransmit; } catch (_) {}
+            if (state.localGateNode && state.localAudioContext) {
+              try {
+                const now = state.localAudioContext.currentTime;
+                const gate = state.localGateNode.gain;
+                gate.cancelScheduledValues(now);
+                gate.setTargetAtTime(1, now, 0.018);
+              } catch (_) {}
+            }
+          }
         }
 
         if (state.transmitting === shouldTransmit) {
@@ -4057,7 +4425,10 @@
         if (state.talkingHeartbeatTimer) return;
         state.talkingHeartbeatTimer = window.setInterval(() => {
           if (!state.transmitting) return;
-          if (state.localTrack && !state.localTrack.enabled) {
+          const keepTrackLive = state.mode === 'vad'
+            ? (state.joined && state.masterMicEnabled)
+            : true;
+          if (state.localTrack && !state.localTrack.enabled && keepTrackLive) {
             try { state.localTrack.enabled = true; } catch (_) {}
           }
           sendTalkingState(true);
@@ -4083,6 +4454,9 @@
         }
         if (mode !== 'vad') {
           state.hiddenTransmitUntil = 0;
+          stopMlVad(false).catch(() => {});
+        } else {
+          initMlVadForCurrentTrack().catch(() => {});
         }
 
         applyTrackConstraintsForMode();
@@ -4513,6 +4887,11 @@
         const remote = Array.from(state.participants.values())
           .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ru', { sensitivity: 'base' }));
 
+        if (state.activeVolumePanelId) {
+          const hasActive = remote.some((person) => person && person.id === state.activeVolumePanelId);
+          if (!hasActive) state.activeVolumePanelId = '';
+        }
+
         for (let i = 0; i < remote.length; i += 1) {
           cards.push(buildRemoteCard(remote[i], now));
         }
@@ -4571,9 +4950,22 @@
           micEnabled: person.micEnabled !== false
         });
         const micBadge = person.micEnabled === false ? renderMicOffBadge() : '';
+        const volume = getParticipantVolume(person.id, person);
+        const volumePercent = Math.round(volume * 100);
+        const volumeOpen = state.activeVolumePanelId === person.id;
+        const volumeControl = `
+          <div class="participant-volume-control ${volumeOpen ? 'open' : ''}" data-participant-id="${escapeHtml(person.id)}">
+            <button class="participant-volume-btn" type="button" data-participant-id="${escapeHtml(person.id)}" aria-label="Громкость ${escapeHtml(person.name)}" title="Громкость"></button>
+            <div class="participant-volume-pop">
+              <input class="participant-volume-slider" type="range" min="0" max="200" step="1" value="${volumePercent}" data-participant-id="${escapeHtml(person.id)}" aria-label="Громкость ${escapeHtml(person.name)}" />
+              <span class="participant-volume-value" data-participant-id="${escapeHtml(person.id)}">${volumePercent}%</span>
+            </div>
+          </div>
+        `;
 
         return `
           <article class="participant-card ${speaking ? 'speaking' : ''}" data-participant-id="${escapeHtml(person.id)}" style="--voice:${voice.toFixed(3)};--bass:${bass.toFixed(3)};--mid:${mid.toFixed(3)};--treble:${treble.toFixed(3)};">
+            ${volumeControl}
             ${micBadge}
             <div class="participant-main">
               ${avatarMarkup}
@@ -4667,6 +5059,106 @@
 
       function renderMicOffBadge() {
         return '<span class="participant-mic-state" aria-label="Микрофон выключен" title="Микрофон выключен"></span>';
+      }
+
+      function buildParticipantVolumeKeys(participantId, participant) {
+        const keys = [];
+        const person = participant || {};
+        const username = normalizeUsername(person.username || '');
+        const name = normalizeName(person.name || '');
+        const id = String(participantId || '').trim();
+
+        if (username) keys.push(`u:${username}`);
+        if (name && name !== 'Гость') keys.push(`n:${name.toLowerCase()}`);
+        if (id) keys.push(`id:${id}`);
+        if (!keys.length) keys.push('id:unknown');
+        return keys;
+      }
+
+      function getParticipantVolume(participantId, participant) {
+        const keys = buildParticipantVolumeKeys(participantId, participant);
+        const map = state.participantVolumes && typeof state.participantVolumes === 'object'
+          ? state.participantVolumes
+          : {};
+        for (let i = 0; i < keys.length; i += 1) {
+          const key = keys[i];
+          if (!Object.prototype.hasOwnProperty.call(map, key)) continue;
+          const value = clamp(Number(map[key]), 0, 2);
+          if (Number.isFinite(value)) return value;
+        }
+        return 0.5;
+      }
+
+      function applyPeerAudioVolume(participantId) {
+        const id = String(participantId || '').trim();
+        if (!id) return;
+        const peer = state.peers.get(id);
+        if (!peer || !peer.audio) return;
+        const person = state.participants.get(id);
+        const volume = clamp(getParticipantVolume(id, person), 0, 2);
+        try {
+          if (volume <= 1) {
+            peer.audio.muted = false;
+            peer.audio.volume = clamp(volume, 0, 1);
+            if (peer.remoteGainNode) {
+              const now = state.remoteAudioContext ? state.remoteAudioContext.currentTime : 0;
+              try {
+                peer.remoteGainNode.gain.cancelScheduledValues(now);
+                peer.remoteGainNode.gain.setTargetAtTime(0, now, 0.02);
+              } catch (_) {
+                peer.remoteGainNode.gain.value = 0;
+              }
+            }
+          } else {
+            const remoteCtx = ensureRemoteAudioContext();
+            if (!peer.remoteGainNode && peer.rawRemoteStream) {
+              setupRemoteAnalyser(peer, peer.rawRemoteStream);
+            }
+            const ready = !!(remoteCtx && remoteCtx.state === 'running');
+            if (peer.remoteGainNode && ready) {
+              const now = remoteCtx ? remoteCtx.currentTime : 0;
+              try {
+                peer.remoteGainNode.gain.cancelScheduledValues(now);
+                peer.remoteGainNode.gain.setTargetAtTime(volume, now, 0.028);
+              } catch (_) {
+                peer.remoteGainNode.gain.value = volume;
+              }
+              peer.audio.muted = true;
+            } else {
+              if (peer.remoteGainNode) {
+                peer.remoteGainNode.gain.value = 0;
+              }
+              peer.audio.muted = false;
+              peer.audio.volume = 1;
+            }
+          }
+        } catch (_) {}
+      }
+
+      function setParticipantVolume(participantId, participant, nextVolume) {
+        const id = String(participantId || '').trim();
+        if (!id) return;
+        const keys = buildParticipantVolumeKeys(id, participant);
+        const primary = keys[0];
+        const sessionKey = `id:${id}`;
+        const volume = clamp(Number(nextVolume), 0, 2);
+        if (!state.participantVolumes || typeof state.participantVolumes !== 'object') {
+          state.participantVolumes = {};
+        }
+        state.participantVolumes[primary] = Number(volume.toFixed(3));
+        state.participantVolumes[sessionKey] = Number(volume.toFixed(3));
+        saveStorage('callParticipantVolumes', JSON.stringify(state.participantVolumes));
+
+        applyPeerAudioVolume(id);
+
+        if (dom.participantsGrid) {
+          const valueText = `${Math.round(volume * 100)}%`;
+          const labels = dom.participantsGrid.querySelectorAll('.participant-volume-value[data-participant-id]');
+          for (let i = 0; i < labels.length; i += 1) {
+            if (String(labels[i].dataset.participantId || '') !== id) continue;
+            labels[i].textContent = valueText;
+          }
+        }
       }
 
       function startStatsLoop() {
@@ -5070,6 +5562,26 @@
           return value == null ? fallback : value;
         } catch (_) {
           return fallback;
+        }
+      }
+
+      function loadParticipantVolumeStorage() {
+        const raw = loadStorage('callParticipantVolumes', '{}');
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed || typeof parsed !== 'object') return {};
+          const cleaned = {};
+          const entries = Object.entries(parsed);
+          for (let i = 0; i < entries.length; i += 1) {
+            const key = String(entries[i][0] || '').trim();
+            if (!key) continue;
+            const value = clamp(Number(entries[i][1]), 0, 2);
+            if (!Number.isFinite(value)) continue;
+            cleaned[key] = Number(value.toFixed(3));
+          }
+          return cleaned;
+        } catch (_) {
+          return {};
         }
       }
 
