@@ -7,14 +7,30 @@
   <script>
     (function () {
       try {
+        const GUEST_PROFILE_KEY = 'publicCallGuestProfile';
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = String(params.get('name') || '').trim().slice(0, 32);
         const currentUserRaw = localStorage.getItem('currentUser');
-        if (!currentUserRaw) {
-          window.location.replace('login.html');
+        if (currentUserRaw) {
+          window.__publicGuestMode = false;
+          document.documentElement.classList.add('authed');
           return;
         }
+        window.__publicGuestMode = true;
+        let guestProfile = null;
+        try {
+          guestProfile = JSON.parse(localStorage.getItem(GUEST_PROFILE_KEY) || 'null');
+        } catch (_) {}
+        if (fromQuery) {
+          guestProfile = { name: fromQuery, username: '', avatarUrl: '' };
+          localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile));
+        }
+        const hasGuestName = guestProfile && String(guestProfile.name || '').trim();
+        window.__publicGuestProfile = hasGuestName ? guestProfile : null;
+        if (!hasGuestName) document.documentElement.classList.add('guest-name-pending');
         document.documentElement.classList.add('authed');
       } catch (_) {
-        window.location.replace('login.html');
+        window.location.replace('index.html');
       }
     })();
     (function () {
@@ -78,7 +94,7 @@
       visibility: hidden;
     }
 
-    html.room-picker-open body {
+    html.guest-name-pending body {
       overflow: hidden;
     }
 
@@ -2246,418 +2262,286 @@
       outline: none;
     }
 
-    html.room-picker-open .back-to-picker {
+    html.guest-name-pending .back-to-picker {
       opacity: 0;
       pointer-events: none;
     }
 
-    .room-picker {
+    .guest-entry {
       position: fixed;
       inset: 0;
-      z-index: 38;
+      z-index: 40;
       display: grid;
       place-items: center;
       padding: 18px;
       background:
-        radial-gradient(circle at 18% 18%, rgba(245, 158, 11, 0.18), transparent 30%),
-        radial-gradient(circle at 82% 20%, rgba(59, 130, 246, 0.14), transparent 30%),
-        radial-gradient(circle at 50% 84%, rgba(16, 185, 129, 0.12), transparent 38%),
-        rgba(3, 8, 18, 0.8);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+        radial-gradient(circle at 18% 20%, rgba(245, 158, 11, 0.22), transparent 34%),
+        radial-gradient(circle at 82% 18%, rgba(59, 130, 246, 0.18), transparent 32%),
+        radial-gradient(circle at 50% 88%, rgba(16, 185, 129, 0.16), transparent 40%),
+        rgba(2, 6, 16, 0.82);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
-      transition: opacity 0.26s ease, visibility 0s linear 0.26s;
+      transition: opacity 0.28s ease, visibility 0s linear 0.28s;
     }
 
-    html.room-picker-open .room-picker {
+    html.guest-name-pending .guest-entry {
       opacity: 1;
       visibility: visible;
       pointer-events: auto;
-      transition: opacity 0.26s ease;
+      transition: opacity 0.28s ease;
     }
 
-    .room-picker-card {
-      width: min(100%, 940px);
-      padding: 28px;
+    .guest-entry-card {
+      position: relative;
+      width: min(100%, 560px);
+      padding: 26px;
       border-radius: 30px;
       border: 1px solid var(--accent-border-30);
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
-        rgba(7, 12, 22, 0.9);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)),
+        rgba(7, 12, 22, 0.88);
       box-shadow:
-        0 30px 80px rgba(0, 0, 0, 0.46),
+        0 30px 80px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    }
-
-    .room-picker-head {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .room-picker-title {
-      margin: 0;
-      font-size: clamp(1.55rem, 3vw, 2.4rem);
-      line-height: 1.04;
-      font-weight: 700;
-    }
-
-    .room-picker-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 40px;
-      padding: 0 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.04);
-      color: rgba(226, 232, 240, 0.86);
-      font-size: 0.74rem;
-      white-space: nowrap;
-    }
-
-    .room-picker-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-      gap: 16px;
-    }
-
-    .room-tile {
-      position: relative;
-      border-radius: 26px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background:
-        radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.06), transparent 32%),
-        rgba(7, 12, 22, 0.72);
       overflow: hidden;
     }
 
-    .room-tile::before {
+    .guest-entry-card::before {
       content: '';
       position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(circle at 82% 16%, rgba(245, 158, 11, 0.12), transparent 28%),
-        radial-gradient(circle at 16% 88%, rgba(59, 130, 246, 0.1), transparent 24%);
-      opacity: 0.92;
+      inset: -35% 18% auto;
+      height: 180px;
+      background: radial-gradient(circle, var(--accent-glow), transparent 68%);
+      filter: blur(16px);
+      opacity: 0.9;
       pointer-events: none;
     }
 
-    .room-tile-body {
+    .guest-entry-head,
+    .guest-entry-form {
       position: relative;
       z-index: 1;
-      min-height: 280px;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 18px;
     }
 
-    .room-tile-title {
-      margin: 0;
-      font-size: 1.16rem;
+    .guest-entry-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--accent-200);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .guest-entry-title {
+      margin: 18px 0 10px;
+      font-size: clamp(1.55rem, 4vw, 2.3rem);
+      line-height: 1.05;
       font-weight: 700;
     }
 
-    .room-tile-meta {
-      display: grid;
-      gap: 10px;
-    }
-
-    .room-tile-preview {
-      display: inline-flex;
-      align-items: center;
-      max-width: 100%;
-      min-height: 42px;
-      padding: 0 14px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(226, 232, 240, 0.82);
-      font-size: 0.8rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .room-tile-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .room-tile-btn,
-    .room-inline-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 50px;
-      padding: 0 18px;
-      border: 0;
-      border-radius: 16px;
-      font: inherit;
-      font-weight: 700;
-      text-decoration: none;
-      line-height: 1;
-      cursor: pointer;
-      transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
-    }
-
-    .room-tile-btn:hover,
-    .room-inline-btn:hover,
-    .room-tile-btn:focus-visible,
-    .room-inline-btn:focus-visible {
-      transform: translateY(-1px);
-      filter: saturate(1.05);
-    }
-
-    .room-tile-btn--primary {
-      background: radial-gradient(circle at 30% 24%, rgba(255, 251, 235, 0.74), rgba(245, 158, 11, 0.9));
-      color: #111827;
-      box-shadow: 0 16px 34px rgba(245, 158, 11, 0.24);
-    }
-
-    .room-tile-btn--ghost,
-    .room-inline-btn {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .room-custom-form {
-      position: relative;
-      z-index: 1;
-      min-height: 280px;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .room-slug-wrap {
-      display: flex;
-      align-items: center;
-      min-height: 62px;
-      border-radius: 20px;
-      background: rgba(5, 10, 18, 0.92);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      overflow: hidden;
-    }
-
-    .room-slug-prefix {
-      display: inline-flex;
-      align-items: center;
-      align-self: stretch;
-      padding: 0 16px;
-      color: rgba(226, 232, 240, 0.56);
-      background: rgba(255, 255, 255, 0.03);
-      border-right: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 0.84rem;
-      white-space: nowrap;
-    }
-
-    .room-slug-input {
-      flex: 1;
-      min-width: 0;
-      height: 60px;
-      border: 0;
-      background: transparent;
-      color: var(--text);
-      padding: 0 16px;
-      font: inherit;
-      font-size: 1rem;
-      letter-spacing: 0.01em;
-      text-transform: lowercase;
-    }
-
-    .room-slug-input::placeholder {
-      color: rgba(165, 176, 192, 0.64);
-    }
-
-    .room-slug-input:focus {
-      outline: none;
-    }
-
-    .room-inline-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .room-inline-preview {
-      min-height: 42px;
-      padding: 10px 14px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(226, 232, 240, 0.82);
-      font-size: 0.78rem;
-      line-height: 1.45;
-      word-break: break-all;
-    }
-
-    .room-error {
-      min-height: 1.1em;
+    .guest-entry-text {
       margin: 0;
-      color: #fecaca;
-      font-size: 0.76rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.6;
     }
 
-    .room-history {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    .guest-entry-form {
+      margin-top: 22px;
       display: grid;
+      gap: 14px;
+    }
+
+    .guest-room-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
 
-    .room-history[hidden] {
+    .guest-room-option {
+      position: relative;
+      min-height: 120px;
+      padding: 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+        rgba(7, 12, 22, 0.84);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+      transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+      overflow: hidden;
+    }
+
+    .guest-room-option::before {
+      content: '';
+      position: absolute;
+      inset: auto -12% -38% auto;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.24), transparent 72%);
+      filter: blur(14px);
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .guest-room-option:hover,
+    .guest-room-option:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(245, 158, 11, 0.3);
+      box-shadow: 0 18px 34px rgba(2, 6, 23, 0.34);
+      outline: none;
+    }
+
+    .guest-room-option.active {
+      border-color: rgba(245, 158, 11, 0.44);
+      background:
+        linear-gradient(180deg, rgba(255, 251, 235, 0.1), rgba(255, 255, 255, 0.02)),
+        rgba(10, 18, 30, 0.9);
+      box-shadow:
+        0 18px 34px rgba(2, 6, 23, 0.34),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .guest-room-option-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .guest-room-option-text {
+      display: block;
+      margin-top: 8px;
+      max-width: 16rem;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: rgba(226, 232, 240, 0.78);
+    }
+
+    .guest-room-custom[hidden] {
       display: none;
     }
 
-    .room-history-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .room-history-title {
-      margin: 0;
-      font-size: 0.94rem;
-      font-weight: 700;
-      color: rgba(248, 250, 252, 0.96);
-    }
-
-    .room-history-list {
-      display: flex;
-      flex-wrap: nowrap;
-      gap: 10px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      margin-top: -4px;
-      padding-top: 4px;
-      padding-bottom: 4px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(245, 158, 11, 0.34) transparent;
-    }
-
-    .room-history-list::-webkit-scrollbar {
-      height: 8px;
-    }
-
-    .room-history-list::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .room-history-list::-webkit-scrollbar-thumb {
-      border-radius: 999px;
-      background: rgba(245, 158, 11, 0.24);
-    }
-
-    .room-history-list::-webkit-scrollbar-thumb:hover {
-      background: rgba(245, 158, 11, 0.36);
-    }
-
-    .room-history-item {
-      flex: 0 0 196px;
-      position: relative;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
-        rgba(8, 12, 20, 0.72);
-      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-    }
-
-    .room-history-item:hover,
-    .room-history-item:focus-within {
-      transform: translateY(-1px);
-      border-color: rgba(245, 158, 11, 0.28);
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
-        rgba(9, 15, 28, 0.82);
-    }
-
-    .room-history-open {
-      width: 100%;
-      display: grid;
-      gap: 6px;
-      padding: 16px 40px 13px 14px;
-      border: 0;
-      border-radius: 18px;
-      background: transparent;
-      color: #f8fafc;
-      text-align: left;
-      cursor: pointer;
-      appearance: none;
-    }
-
-    .room-history-open:focus-visible {
-      outline: none;
-    }
-
-    .room-history-remove {
-      position: absolute;
-      top: 8px;
-      right: 8px;
+    .guest-entry-input-wrap--slug::before {
+      inset: 12px auto 12px 14px;
       width: 22px;
-      height: 22px;
-      border: 0;
-      border-radius: 50%;
-      background: rgba(8, 12, 20, 0.78);
-      color: rgba(248, 250, 252, 0.86);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-      transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+      background:
+        linear-gradient(transparent 10px, rgba(255, 255, 255, 0.94) 10px 12px, transparent 12px),
+        radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.94) 0 3px, transparent 4px),
+        radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.94) 0 3px, transparent 4px);
     }
 
-    .room-history-remove:hover,
-    .room-history-remove:focus-visible {
-      transform: scale(1.05);
-      background: rgba(127, 29, 29, 0.8);
-      color: #fff1f2;
-      outline: none;
+    .guest-room-preview {
+      margin: 10px 2px 0;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      color: rgba(226, 232, 240, 0.82);
+      word-break: break-all;
     }
 
-    .room-history-remove::before,
-    .room-history-remove::after {
+    .guest-entry-input-wrap {
+      position: relative;
+      border-radius: 22px;
+      padding: 1px;
+      background: linear-gradient(135deg, var(--accent-border-40), rgba(255, 255, 255, 0.06));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    }
+
+    .guest-entry-input-wrap::before {
       content: '';
       position: absolute;
-      width: 10px;
-      height: 1.6px;
+      inset: 10px auto 10px 14px;
+      width: 22px;
       border-radius: 999px;
-      background: currentColor;
+      background:
+        radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.94) 0 22%, transparent 23%),
+        radial-gradient(circle at 50% 78%, rgba(255, 255, 255, 0.94) 0 34%, transparent 35%);
+      opacity: 0.88;
+      pointer-events: none;
     }
 
-    .room-history-remove::before {
-      transform: rotate(45deg);
+    .guest-entry-input {
+      width: 100%;
+      min-height: 62px;
+      padding: 0 18px 0 50px;
+      border: 0;
+      border-radius: 21px;
+      background: rgba(5, 10, 18, 0.9);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
     }
 
-    .room-history-remove::after {
-      transform: rotate(-45deg);
+    .guest-entry-input::placeholder {
+      color: rgba(165, 176, 192, 0.74);
     }
 
-    .room-history-name {
-      font-size: 0.94rem;
+    .guest-entry-input:focus {
+      outline: none;
+    }
+
+    .guest-entry-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .guest-entry-hint,
+    .guest-entry-error {
+      margin: 0;
+      font-size: 0.78rem;
+      line-height: 1.5;
+    }
+
+    .guest-entry-hint {
+      color: rgba(226, 232, 240, 0.78);
+    }
+
+    .guest-entry-error {
+      color: #fecaca;
+      min-height: 1.2em;
+    }
+
+    .guest-entry-submit {
+      min-width: 154px;
+      min-height: 56px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 28% 24%, rgba(255, 251, 235, 0.72), rgba(245, 158, 11, 0.92));
+      color: #111827;
+      font: inherit;
       font-weight: 700;
-      line-height: 1.15;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 18px 36px rgba(245, 158, 11, 0.28);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
     }
 
-    .room-history-meta {
-      font-size: 0.72rem;
-      line-height: 1.4;
-      color: rgba(226, 232, 240, 0.72);
+    .guest-entry-submit:hover,
+    .guest-entry-submit:focus-visible {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 42px rgba(245, 158, 11, 0.34);
+      filter: saturate(1.06);
+      outline: none;
+    }
+
+    .guest-entry-submit:active {
+      transform: translateY(0);
     }
 
     .hidden-audio {
@@ -2720,14 +2604,6 @@
     }
 
     @media (max-width: 900px) {
-      .room-picker-card {
-        padding: 22px;
-      }
-
-      .room-picker-grid {
-        grid-template-columns: 1fr;
-      }
-
       .participants-panel {
         min-height: 260px;
       }
@@ -2808,99 +2684,6 @@
     }
 
     @media (max-width: 640px) {
-      .room-picker {
-        place-items: start center;
-        overflow: auto;
-        padding: max(12px, env(safe-area-inset-top)) 12px 88px;
-      }
-
-      .room-picker-card {
-        padding: 18px;
-        border-radius: 24px;
-        margin: 0;
-      }
-
-      .back-to-picker {
-        width: 48px;
-        height: 48px;
-      }
-
-      .controls-row {
-        grid-template-columns: 48px minmax(0, 1fr);
-        gap: 10px;
-        min-height: 72px;
-      }
-
-      .controls-row-spacer {
-        display: none;
-      }
-
-      .room-picker-head {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 12px;
-      }
-
-      .room-tile-body,
-      .room-custom-form {
-        min-height: 0;
-        padding: 16px;
-        gap: 12px;
-      }
-
-      .room-slug-wrap {
-        min-height: 54px;
-        border-radius: 18px;
-      }
-
-      .room-slug-prefix {
-        display: none;
-      }
-
-      .room-slug-input {
-        height: 52px;
-        padding: 0 14px;
-        font-size: 0.96rem;
-      }
-
-      .room-inline-preview {
-        min-height: 38px;
-        padding: 9px 12px;
-        font-size: 0.72rem;
-        line-height: 1.38;
-      }
-
-      .room-inline-actions {
-        gap: 8px;
-      }
-
-      .room-inline-btn,
-      .room-tile-btn {
-        min-height: 46px;
-      }
-
-      .room-history {
-        margin-top: 14px;
-        padding-top: 14px;
-      }
-
-      .room-history-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        overflow: visible;
-        margin-top: 0;
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-
-      .room-history-item {
-        flex-basis: auto;
-      }
-
-      .room-history-list {
-        grid-template-columns: 1fr;
-      }
-
       .panel-head {
         padding: 12px 12px 8px;
       }
@@ -3011,6 +2794,46 @@
         font-size: 0.58rem;
         padding: 7px 9px;
       }
+
+      .guest-entry {
+        padding: 14px;
+      }
+
+      .guest-entry-card {
+        padding: 22px 18px 18px;
+        border-radius: 24px;
+      }
+
+      .guest-room-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .guest-room-option {
+        min-height: 104px;
+      }
+
+      .back-to-picker {
+        width: 48px;
+        height: 48px;
+      }
+
+      .controls-row {
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 10px;
+        min-height: 72px;
+      }
+
+      .controls-row-spacer {
+        display: none;
+      }
+
+      .guest-entry-actions {
+        align-items: stretch;
+      }
+
+      .guest-entry-submit {
+        width: 100%;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -3029,44 +2852,39 @@
     <div class="fx-scan"></div>
   </div>
 
-  <div id="roomPicker" class="room-picker" aria-hidden="true">
-    <div class="room-picker-card">
-      <div class="room-picker-head">
-        <h1 class="room-picker-title">Встреча</h1>
+  <div id="guestEntry" class="guest-entry" aria-hidden="true">
+    <div class="guest-entry-card">
+      <div class="guest-entry-head">
+        <h1 class="guest-entry-title">Вход во встречу</h1>
+        <p class="guest-entry-text">Введите имя и выберите комнату.</p>
       </div>
-      <div class="room-picker-grid">
-        <section class="room-tile">
-          <div class="room-tile-body">
-            <div class="room-tile-meta">
-              <h2 class="room-tile-title">Общая</h2>
-            </div>
-            <div class="room-tile-actions">
-              <a id="openDefaultRoomBtn" class="room-tile-btn room-tile-btn--primary" href="/index.html?page=svc_call&callRoom=main" target="_top">Открыть</a>
-            </div>
-          </div>
-        </section>
-        <form id="customRoomForm" class="room-tile room-custom-form" novalidate>
-          <div class="room-tile-meta">
-            <h2 class="room-tile-title">Кастомная</h2>
-            <div class="room-slug-wrap">
-              <span id="roomSlugPrefix" class="room-slug-prefix">meet.html?room=</span>
-              <input id="customRoomInput" class="room-slug-input" type="text" inputmode="latin" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="40" placeholder="teamsync" />
-            </div>
-            <div id="customRoomPreview" class="room-inline-preview">meet.html?room=teamsync</div>
-            <p id="customRoomError" class="room-error" role="alert" aria-live="polite"></p>
-          </div>
-          <div class="room-inline-actions">
-            <a id="openCustomRoomBtn" class="room-inline-btn room-tile-btn--primary" href="/index.html?page=svc_call&callRoom=teamsync" target="_top">Открыть</a>
-            <button id="copyCustomRoomBtn" class="room-inline-btn" type="button">Скопировать</button>
-          </div>
-        </form>
-      </div>
-      <section id="roomHistorySection" class="room-history" hidden>
-        <div class="room-history-head">
-          <h2 class="room-history-title">История встреч</h2>
+      <form id="guestEntryForm" class="guest-entry-form" novalidate>
+        <div class="guest-entry-input-wrap">
+          <input id="guestNameInput" class="guest-entry-input" type="text" maxlength="32" autocomplete="name" placeholder="Введите имя" />
         </div>
-        <div id="roomHistoryList" class="room-history-list"></div>
-      </section>
+        <div class="guest-room-grid" role="group" aria-label="Выбор встречи">
+          <button id="guestDefaultRoomBtn" class="guest-room-option" type="button" data-room-mode="default">
+            <span class="guest-room-option-title">Общая</span>
+            <span class="guest-room-option-text">Основная встреча без отдельного кода комнаты.</span>
+          </button>
+          <button id="guestCustomRoomBtn" class="guest-room-option" type="button" data-room-mode="custom">
+            <span class="guest-room-option-title">Кастомная</span>
+            <span class="guest-room-option-text">Встреча по короткому имени на латинице.</span>
+          </button>
+        </div>
+        <div id="guestCustomRoomWrap" class="guest-room-custom" hidden>
+          <div class="guest-entry-input-wrap guest-entry-input-wrap--slug">
+            <input id="guestCustomRoomInput" class="guest-entry-input" type="text" inputmode="latin" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="40" placeholder="teamsync" />
+          </div>
+          <div id="guestCustomRoomPreview" class="guest-room-preview">https://киносреда.рф/meet/?room=teamsync</div>
+        </div>
+        <div class="guest-entry-actions">
+          <div>
+            <p id="guestEntryError" class="guest-entry-error" role="alert" aria-live="polite"></p>
+          </div>
+          <button id="guestEntrySubmit" class="guest-entry-submit" type="submit">Продолжить</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -3202,7 +3020,7 @@
     </section>
 
     <div class="controls-row">
-      <button id="backToRoomPickerBtn" class="back-to-picker" type="button" aria-label="Назад к выбору встречи" title="К выбору встречи"></button>
+      <button id="backToGuestPickerBtn" class="back-to-picker" type="button" aria-label="Назад к выбору встречи" title="К выбору встречи"></button>
 	    <footer id="controlDock" class="dock">
 	      <button id="connectBtn" class="btn primary" type="button" aria-label="Войти в комнату" title="Войти в комнату">Войти</button>
 	      <button id="cameraBtn" class="btn" type="button" aria-label="Включить камеру" title="Включить камеру">Камера</button>
@@ -3237,9 +3055,6 @@
       const CUSTOM_ROOM_KEY_PREFIX = 'kinosreda-room-';
       const ROOM_QUERY_PARAM = 'room';
       const PUBLIC_MEET_ORIGIN = 'https://киносреда.рф';
-      const ROOM_PICKER_DRAFT_STORAGE_KEY = 'callCustomRoomDraft';
-      const ROOM_HISTORY_CACHE_PREFIX = 'callRoomHistoryCache:';
-      const ROOM_HISTORY_LIMIT = 8;
       const ROOM_SLUG_LIMIT = 40;
       const WS_OPEN = 1;
       const PRESENCE_HEARTBEAT_MS = 5000;
@@ -3247,7 +3062,6 @@
       const TALKING_HEARTBEAT_MS = 1400;
       const REMOTE_SPEAK_TTL_MS = 2600;
       const AVATAR_DB_BASE = 'https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app';
-      const ROOM_HISTORY_DB_ROOT = `${AVATAR_DB_BASE}/callMeetingHistory`;
       const VOICE_VISUAL_THRESHOLD = 0.07;
       const ML_VAD_ORT_BASE = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
       const ML_VAD_ASSET_BASE = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/';
@@ -3321,7 +3135,7 @@
       }
 
       function getRequestedRoomSlug(defaultToCommon = false) {
-        const pathRoute = extractRoomRouteFromPath(CALL_ROUTE_SEGMENT);
+        const pathRoute = extractRoomRouteFromPath(MEET_ROUTE_SEGMENT);
         if (pathRoute.matched && pathRoute.slug) return pathRoute.slug;
         try {
           const params = new URLSearchParams(window.location.search);
@@ -3344,6 +3158,9 @@
         };
       }
 
+      const initialRoomSlug = getRequestedRoomSlug(false);
+      const initialRoomMeta = resolveRoomMeta(initialRoomSlug || '');
+
       function buildSiblingPageUrl(routeSegment, slug = '') {
         const url = new URL(window.location.href);
         const normalizedSlug = normalizeRoomSlug(slug);
@@ -3356,30 +3173,11 @@
         return url.toString();
       }
 
-      function buildPublicMeetingUrl(slug = '') {
-        const normalizedSlug = normalizeRoomSlug(slug);
-        if (!normalizedSlug) {
-          return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/`;
-        }
-        return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=${encodeURIComponent(normalizedSlug)}`;
+      function isPublicGuestMode() {
+        return !!window.__publicGuestMode;
       }
 
-      const initialRoomSlug = getRequestedRoomSlug(false);
-      const initialRoomMeta = resolveRoomMeta(initialRoomSlug || '');
-
       const dom = {
-        roomPicker: document.getElementById('roomPicker'),
-        openDefaultRoomBtn: document.getElementById('openDefaultRoomBtn'),
-        customRoomForm: document.getElementById('customRoomForm'),
-        customRoomInput: document.getElementById('customRoomInput'),
-        openCustomRoomBtn: document.getElementById('openCustomRoomBtn'),
-        roomSlugPrefix: document.getElementById('roomSlugPrefix'),
-        customRoomPreview: document.getElementById('customRoomPreview'),
-        customRoomError: document.getElementById('customRoomError'),
-        copyCustomRoomBtn: document.getElementById('copyCustomRoomBtn'),
-        roomHistorySection: document.getElementById('roomHistorySection'),
-        roomHistoryList: document.getElementById('roomHistoryList'),
-        backToRoomPickerBtn: document.getElementById('backToRoomPickerBtn'),
         appShell: document.getElementById('appShell'),
         transportBadge: document.getElementById('transportBadge'),
         transportText: document.getElementById('transportText'),
@@ -3422,7 +3220,17 @@
         settingsBtn: document.getElementById('settingsBtn'),
         modeButtons: Array.from(document.querySelectorAll('.mode-btn')),
         remoteAudioLayer: document.getElementById('remoteAudioLayer'),
-        toast: document.getElementById('toast')
+        toast: document.getElementById('toast'),
+        guestEntry: document.getElementById('guestEntry'),
+        guestEntryForm: document.getElementById('guestEntryForm'),
+        backToGuestPickerBtn: document.getElementById('backToGuestPickerBtn'),
+        guestDefaultRoomBtn: document.getElementById('guestDefaultRoomBtn'),
+        guestCustomRoomBtn: document.getElementById('guestCustomRoomBtn'),
+        guestNameInput: document.getElementById('guestNameInput'),
+        guestCustomRoomWrap: document.getElementById('guestCustomRoomWrap'),
+        guestCustomRoomInput: document.getElementById('guestCustomRoomInput'),
+        guestCustomRoomPreview: document.getElementById('guestCustomRoomPreview'),
+        guestEntryError: document.getElementById('guestEntryError')
       };
 
       const state = {
@@ -3443,7 +3251,6 @@
         roomSlug: initialRoomMeta.slug,
         roomKey: initialRoomMeta.key,
         roomReady: initialRoomSlug !== null,
-        roomPickerOpen: initialRoomSlug === null,
         joined: false,
         ws: null,
         wsUrl: '',
@@ -3550,10 +3357,8 @@
         activeScreenSourceKey: '',
         screenToolsVisible: false,
         screenToolsIdleTimer: null,
-        roomHistoryItems: [],
-        roomHistoryLoaded: false,
-        roomHistoryLoading: false,
-        lastTrackedRoomHistoryKey: ''
+        guestRoomMode: initialRoomMeta.isDefault ? 'default' : 'custom',
+        guestNameRequired: isPublicGuestMode() && !String((window.__publicGuestProfile && window.__publicGuestProfile.name) || '').trim()
       };
 
       state.self.color = colorForName(state.self.name || state.self.id);
@@ -3561,7 +3366,7 @@
       init();
 
       function init() {
-        initRoomPicker();
+        initGuestEntry();
         syncModePanel();
         syncModeButtons();
         syncSettingsPanel();
@@ -3577,14 +3382,15 @@
         updateShareButton();
         updateTransportBadge('offline', 'Оффлайн');
         bindEvents();
-        renderScreenStage(true);
+       renderScreenStage(true);
         renderParticipants();
         startPruneLoop();
         if (state.roomReady) {
-          trackRoomVisit(initialRoomMeta, 'initial');
-          window.setTimeout(() => {
-            joinRoom().catch(() => {});
-          }, 0);
+          if (!state.guestNameRequired) {
+            window.setTimeout(() => {
+              joinRoom().catch(() => {});
+            }, 0);
+          }
         } else {
           updateTransportBadge('offline', 'Встреча');
         }
@@ -3593,573 +3399,42 @@
         startVadLoop();
       }
 
-      function initRoomPicker() {
-        if (dom.customRoomInput) {
-          const draftSlug = normalizeRoomSlug(
-            initialRoomMeta.isDefault
-              ? loadStorage(ROOM_PICKER_DRAFT_STORAGE_KEY, '')
-              : initialRoomMeta.slug
-          );
-          if (draftSlug) {
-            dom.customRoomInput.value = draftSlug;
-          }
-        }
-        hydrateRoomHistoryFromCache();
-        updateRoomPickerPreview();
-        renderRoomHistory();
-        syncRoomPicker();
-        loadRoomHistory().catch(() => {});
-      }
-
-      function syncRoomPicker() {
-        document.documentElement.classList.toggle('room-picker-open', !!state.roomPickerOpen);
-        if (dom.roomPicker) {
-          dom.roomPicker.setAttribute('aria-hidden', state.roomPickerOpen ? 'false' : 'true');
-        }
-        if (dom.customRoomInput && state.roomPickerOpen) {
-          window.setTimeout(() => {
-            dom.customRoomInput.focus();
-            dom.customRoomInput.select();
-          }, 40);
-        }
-      }
-
-      function updateRoomPickerPreview() {
-        const slug = normalizeRoomSlug(dom.customRoomInput ? dom.customRoomInput.value : '');
-        if (slug) {
-          saveStorage(ROOM_PICKER_DRAFT_STORAGE_KEY, slug);
-        }
-        if (dom.openDefaultRoomBtn) {
-          dom.openDefaultRoomBtn.setAttribute('href', buildSidebarCallUrl(''));
-        }
-        if (dom.openCustomRoomBtn) {
-          dom.openCustomRoomBtn.setAttribute('href', buildSidebarCallUrl(slug || 'teamsync'));
-        }
-        if (dom.customRoomPreview) {
-          dom.customRoomPreview.textContent = buildPublicMeetingUrl(slug || 'teamsync');
-        }
-        if (dom.roomSlugPrefix) {
-          dom.roomSlugPrefix.textContent = `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=`;
-        }
-        syncDraftRoomRoute(slug);
-        if (dom.customRoomInput && dom.customRoomInput.value !== slug) {
-          dom.customRoomInput.value = slug;
-        }
-        if (slug) setCustomRoomError('');
-      }
-
-      function setCustomRoomError(text) {
-        if (!dom.customRoomError) return;
-        dom.customRoomError.textContent = String(text || '');
-      }
-
-      function sanitizeRoomHistoryKey(value) {
-        return String(value || '')
-          .trim()
-          .toLowerCase()
-          .replace(/[^a-z0-9_-]+/g, '_')
-          .replace(/^_+|_+$/g, '')
-          .slice(0, 120);
-      }
-
-      function getRoomHistoryUserKey() {
-        const currentUser = getCurrentUserObject();
-        if (!currentUser) return '';
-        const username = normalizeUsername(currentUser.username || currentUser.login || currentUser.user || state.self.username || '');
-        if (username) return sanitizeRoomHistoryKey(username);
-        const email = sanitizeRoomHistoryKey(currentUser.email || currentUser.mail || '');
-        if (email) return `mail_${email}`;
-        const name = sanitizeRoomHistoryKey(currentUser.name || state.self.name || '');
-        return name ? `name_${name}` : '';
-      }
-
-      function getRoomHistoryCacheKey() {
-        const userKey = getRoomHistoryUserKey();
-        return userKey ? `${ROOM_HISTORY_CACHE_PREFIX}${userKey}` : '';
-      }
-
-      function buildRoomHistoryEntry(raw) {
-        if (!raw || typeof raw !== 'object') return null;
-        const roomSlug = normalizeRoomSlug(raw.roomSlug || raw.slug || '');
-        const isDefault = Boolean(raw.isDefault) || !roomSlug || isCommonRoomSlug(roomSlug);
-        if (isDefault) return null;
-        const visitedAt = Number(raw.lastVisitedAt || raw.visitedAt || 0);
-        return {
-          roomSlug,
-          isDefault: false,
-          label: roomSlug,
-          visitedAt: Number.isFinite(visitedAt) ? visitedAt : 0,
-          publicUrl: buildPublicMeetingUrl(roomSlug),
-          appUrl: buildSidebarCallUrl(roomSlug)
-        };
-      }
-
-      function formatRoomHistoryTime(value) {
-        const timestamp = Number(value || 0);
-        if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
-        try {
-          return new Intl.DateTimeFormat('ru-RU', {
-            day: '2-digit',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-          }).format(new Date(timestamp));
-        } catch (_) {
-          return '';
-        }
-      }
-
-      function persistRoomHistoryCache() {
-        const cacheKey = getRoomHistoryCacheKey();
-        if (!cacheKey) return;
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(state.roomHistoryItems.slice(0, ROOM_HISTORY_LIMIT)));
-        } catch (_) {}
-      }
-
-      function applyRoomHistoryItems(items, persistCache = true) {
-        const normalized = [];
-        const seen = new Set();
-        const source = Array.isArray(items) ? items : [];
-        for (let i = 0; i < source.length; i += 1) {
-          const entry = buildRoomHistoryEntry(source[i]);
-          if (!entry) continue;
-          if (seen.has(entry.roomSlug)) continue;
-          seen.add(entry.roomSlug);
-          normalized.push(entry);
-        }
-        normalized.sort((a, b) => Number(b.visitedAt || 0) - Number(a.visitedAt || 0));
-        state.roomHistoryItems = normalized.slice(0, ROOM_HISTORY_LIMIT);
-        state.roomHistoryLoaded = true;
-        if (persistCache) persistRoomHistoryCache();
-        renderRoomHistory();
-      }
-
-      function hydrateRoomHistoryFromCache() {
-        const cacheKey = getRoomHistoryCacheKey();
-        if (!cacheKey) return;
-        try {
-          const cached = JSON.parse(localStorage.getItem(cacheKey) || '[]');
-          if (Array.isArray(cached) && cached.length) {
-            applyRoomHistoryItems(cached, false);
-          }
-        } catch (_) {}
-      }
-
-      function renderRoomHistory() {
-        if (!dom.roomHistorySection || !dom.roomHistoryList) return;
-        const items = Array.isArray(state.roomHistoryItems) ? state.roomHistoryItems : [];
-        if (!items.length) {
-          dom.roomHistorySection.hidden = true;
-          dom.roomHistoryList.innerHTML = '';
-          return;
-        }
-        dom.roomHistorySection.hidden = false;
-        dom.roomHistoryList.innerHTML = items.map((item) => {
-          const visitedLabel = formatRoomHistoryTime(item.visitedAt);
-          return `
-            <article class="room-history-item" data-room-history-slug="${escapeHtml(item.roomSlug)}" title="${escapeHtml(item.publicUrl)}">
-              <button class="room-history-remove" type="button" data-room-history-remove="${escapeHtml(item.roomSlug)}" aria-label="Удалить ${escapeHtml(item.label)} из истории" title="Удалить"></button>
-              <button class="room-history-open" type="button" data-room-history-slug="${escapeHtml(item.roomSlug)}" aria-label="Открыть встречу ${escapeHtml(item.label)}">
-                <span class="room-history-name">${escapeHtml(item.label)}</span>
-                <span class="room-history-meta">${escapeHtml(visitedLabel)}</span>
-              </button>
-            </article>
-          `;
-        }).join('');
-      }
-
-      async function deleteRoomHistoryEntry(roomSlug) {
-        const normalizedSlug = normalizeRoomSlug(roomSlug);
-        if (!normalizedSlug) return;
-        state.roomHistoryItems = state.roomHistoryItems.filter((item) => item.roomSlug !== normalizedSlug);
-        persistRoomHistoryCache();
-        renderRoomHistory();
-
-        const userKey = getRoomHistoryUserKey();
-        if (!userKey) return;
-        const endpoint = `${ROOM_HISTORY_DB_ROOT}/users/${encodeURIComponent(userKey)}/rooms/${encodeURIComponent(normalizedSlug)}.json`;
-        try {
-          const response = await fetch(endpoint, { method: 'DELETE' });
-          if (!response.ok) throw new Error(`history delete failed: ${response.status}`);
-        } catch (_) {
-          showToast('Не удалось удалить запись из истории');
-          loadRoomHistory().catch(() => {});
-        }
-      }
-
-      async function loadRoomHistory() {
-        const userKey = getRoomHistoryUserKey();
-        if (!userKey || state.roomHistoryLoading) return;
-        state.roomHistoryLoading = true;
-        try {
-          const endpoint = `${ROOM_HISTORY_DB_ROOT}/users/${encodeURIComponent(userKey)}/rooms.json`;
-          const response = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
-          if (!response.ok) throw new Error(`history load failed: ${response.status}`);
-          const payload = await response.json();
-          const nextItems = payload && typeof payload === 'object' ? Object.values(payload) : [];
-          applyRoomHistoryItems(nextItems, true);
-        } catch (_) {
-          renderRoomHistory();
-        } finally {
-          state.roomHistoryLoading = false;
-        }
-      }
-
-      function createRoomVisitPayload(roomMeta, timestamp) {
-        const currentUser = getCurrentUserObject() || {};
-        const username = normalizeUsername(currentUser.username || currentUser.login || currentUser.user || state.self.username || '');
-        const name = normalizeName(currentUser.name || state.self.name || username || 'Гость');
-        const avatarUrl = getShareableAvatarUrl(currentUser.avatarUrl || currentUser.photoURL || currentUser.photoUrl || currentUser.avatar || state.self.avatarUrl || '');
-        const roomSlug = roomMeta.isDefault ? COMMON_ROOM_SLUG : roomMeta.slug;
-        return {
-          roomSlug,
-          isDefault: !!roomMeta.isDefault,
-          roomKey: roomMeta.key,
-          label: roomMeta.isDefault ? 'Общая' : roomSlug,
-          publicUrl: buildPublicMeetingUrl(roomMeta.slug),
-          appUrl: buildSidebarCallUrl(roomMeta.slug),
-          visitedAt: timestamp,
-          actor: {
-            username,
-            name,
-            avatarUrl
-          }
-        };
-      }
-
-      function trackRoomVisit(roomMeta, reason = 'open') {
-        if (!roomMeta || !roomMeta.key) return;
-        const roomId = roomMeta.isDefault ? COMMON_ROOM_SLUG : roomMeta.slug;
-        const visitKey = `${roomId}:${reason}`;
-        if (state.lastTrackedRoomHistoryKey === visitKey) return;
-        state.lastTrackedRoomHistoryKey = visitKey;
-
-        const now = Date.now();
-        const payload = createRoomVisitPayload(roomMeta, now);
-        const roomNode = `${ROOM_HISTORY_DB_ROOT}/rooms/${encodeURIComponent(roomId)}.json`;
-        const eventsNode = `${ROOM_HISTORY_DB_ROOT}/events.json`;
-        const userKey = getRoomHistoryUserKey();
-        const requests = [
-          fetch(eventsNode, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          }),
-          fetch(roomNode, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              roomSlug: payload.roomSlug,
-              isDefault: payload.isDefault,
-              label: payload.label,
-              publicUrl: payload.publicUrl,
-              appUrl: payload.appUrl,
-              lastVisitedAt: now,
-              updatedBy: payload.actor
-            })
-          })
-        ];
-
-        if (userKey) {
-          const userRoomNode = `${ROOM_HISTORY_DB_ROOT}/users/${encodeURIComponent(userKey)}/rooms/${encodeURIComponent(roomId)}.json`;
-          requests.push(fetch(userRoomNode, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              roomSlug: payload.roomSlug,
-              isDefault: payload.isDefault,
-              label: payload.label,
-              publicUrl: payload.publicUrl,
-              appUrl: payload.appUrl,
-              lastVisitedAt: now
-            })
-          }));
-        }
-
-        if (!payload.isDefault) {
-          applyRoomHistoryItems([
-            {
-              roomSlug: payload.roomSlug,
-              isDefault: false,
-              label: payload.label,
-              publicUrl: payload.publicUrl,
-              appUrl: payload.appUrl,
-              lastVisitedAt: now
-            },
-            ...state.roomHistoryItems
-          ], true);
-        }
-
-        Promise.allSettled(requests).catch(() => {});
-      }
-
-      function buildSidebarCallUrl(roomSlug = '') {
-        const url = new URL(window.location.href);
-        const normalizedSlug = normalizeRoomSlug(roomSlug);
-        url.pathname = '/index.html';
-        url.search = '';
-        url.hash = '';
-        url.searchParams.set('page', 'svc_call');
-        url.searchParams.set('callRoom', normalizedSlug || COMMON_ROOM_SLUG);
-        return url.toString();
-      }
-
-      function buildSidebarCallHubUrl() {
-        const url = new URL(window.location.href);
-        url.pathname = '/index.html';
-        url.search = '';
-        url.hash = '';
-        url.searchParams.set('page', 'svc_call');
-        return url.toString();
-      }
-
-      function openRoomPickerLocally() {
-        if (state.joined) {
-          leaveRoom();
-        }
-        closeAllPeers();
-        closeSocket();
-        state.roomSlug = '';
-        state.roomKey = DEFAULT_ROOM_KEY;
-        state.roomReady = false;
-        state.roomPickerOpen = true;
-        state.participants.clear();
-        state.activeScreenOwnerId = '';
-        state.activeCameraStageOwnerId = '';
-        renderScreenStage(true);
-        renderParticipants(true);
-        updateTransportBadge('offline', 'Встреча');
-        updateLocalStateText();
-        state.lastTrackedRoomHistoryKey = '';
-        syncRoomPicker();
-        try {
-          window.history.replaceState({ room: '' }, '', buildSiblingPageUrl(CALL_ROUTE_SEGMENT, ''));
-        } catch (_) {}
-      }
-
-      function returnToRoomPicker() {
-        try {
-          if (window.parent && window.parent !== window && window.top && window.top.location) {
-            window.top.location.href = buildSidebarCallHubUrl();
-            return;
-          }
-        } catch (_) {}
-        openRoomPickerLocally();
-      }
-
-      function activateRoomLocally(slug) {
-        const nextRoom = resolveRoomMeta(slug);
-        const roomChanged = !state.roomReady || nextRoom.key !== state.roomKey;
-        state.roomSlug = nextRoom.slug;
-        state.roomKey = nextRoom.key;
-        state.roomReady = true;
-        state.roomPickerOpen = false;
-        syncRoomPicker();
-        setCustomRoomError('');
-
-        const nextUrl = buildSiblingPageUrl(CALL_ROUTE_SEGMENT, nextRoom.slug);
-        try {
-          window.history.replaceState({ room: nextRoom.slug || '' }, '', nextUrl);
-        } catch (_) {}
-
-        if (roomChanged) {
-          if (state.joined) {
-            leaveRoom();
-          }
-          closeSocket();
-          closeAllPeers();
-          state.participants.clear();
-          state.activeScreenOwnerId = '';
-          state.activeCameraStageOwnerId = '';
-          renderScreenStage(true);
-          renderParticipants(true);
-        }
-
-        trackRoomVisit(nextRoom, roomChanged ? 'switch' : 'resume');
-        updateTransportBadge('offline', 'Оффлайн');
-        window.setTimeout(() => {
-          joinRoom().catch(() => {});
-        }, 0);
-      }
-
-      function activateRoom(slug) {
-        const normalizedSlug = normalizeRoomSlug(slug);
-        const nextRoom = resolveRoomMeta(normalizedSlug);
-        const parentUrl = buildSidebarCallUrl(nextRoom.slug);
-        setCustomRoomError('');
-
-        try {
-          if (window.parent && window.parent !== window) {
-            let parentHref = '';
-            try {
-              parentHref = String(window.parent.location && window.parent.location.href || '').trim();
-            } catch (_) {}
-
-            window.parent.postMessage({
-              type: 'call:route',
-              roomSlug: nextRoom.slug
-            }, '*');
-
-            if (parentHref && parentHref === parentUrl) {
-              activateRoomLocally(nextRoom.slug);
-              return;
-            }
-
-            try {
-              if (window.top && window.top.location) {
-                window.top.location.href = parentUrl;
-                return;
-              }
-            } catch (_) {}
-          }
-        } catch (_) {}
-
-        activateRoomLocally(nextRoom.slug);
-      }
-
-      async function copyRoomLink(slug) {
-        const link = buildPublicMeetingUrl(slug);
-        await navigator.clipboard.writeText(link);
-        showToast('Ссылка скопирована');
-      }
-
-      function syncDraftRoomRoute(slug) {
-        if (!state.roomPickerOpen) return;
-        const nextUrl = buildSiblingPageUrl(CALL_ROUTE_SEGMENT, slug);
-        try {
-          window.history.replaceState({ roomDraft: slug || '' }, '', nextUrl);
-        } catch (_) {}
-      }
-
-      function openTopHrefFromElement(element) {
-        const href = element ? String(element.getAttribute('href') || '').trim() : '';
-        if (!href) return false;
-        try {
-          if (window.top && window.top.location) {
-            window.top.location.href = href;
-            return true;
-          }
-        } catch (_) {}
-        try {
-          window.location.href = href;
-          return true;
-        } catch (_) {}
-        return false;
-      }
-
-      function getTopHrefSafe() {
-        try {
-          if (window.top && window.top.location) {
-            return String(window.top.location.href || '').trim();
-          }
-        } catch (_) {}
-        try {
-          return String(window.location.href || '').trim();
-        } catch (_) {}
-        return '';
-      }
-
       function bindEvents() {
-        if (dom.openDefaultRoomBtn) {
-          dom.openDefaultRoomBtn.addEventListener('click', (event) => {
+        if (dom.guestEntryForm) {
+          dom.guestEntryForm.addEventListener('submit', (event) => {
             event.preventDefault();
-            const targetHref = String(dom.openDefaultRoomBtn.getAttribute('href') || '').trim();
-            const currentTopHref = getTopHrefSafe();
-            if (targetHref && currentTopHref) {
-              try {
-                const currentUrl = new URL(currentTopHref, window.location.href);
-                const targetUrl = new URL(targetHref, window.location.href);
-                const sameTarget = currentUrl.pathname === targetUrl.pathname && currentUrl.search === targetUrl.search;
-                if (sameTarget) {
-                  try {
-                    if (window.parent && window.parent !== window) {
-                      window.parent.postMessage({ type: 'call:route', roomSlug: COMMON_ROOM_SLUG }, '*');
-                    }
-                  } catch (_) {}
-                  activateRoomLocally('');
-                  return;
-                }
-              } catch (_) {}
-            }
-            openTopHrefFromElement(dom.openDefaultRoomBtn);
+            submitGuestEntry();
           });
         }
 
-        if (dom.customRoomInput) {
-          dom.customRoomInput.addEventListener('input', () => {
-            updateRoomPickerPreview();
+        if (dom.backToGuestPickerBtn) {
+          dom.backToGuestPickerBtn.addEventListener('click', () => {
+            returnToGuestRoomPicker();
           });
         }
 
-        if (dom.customRoomForm) {
-          dom.customRoomForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const slug = normalizeRoomSlug(dom.customRoomInput ? dom.customRoomInput.value : '');
-            if (!slug) {
-              setCustomRoomError('Введите ссылку на латинице.');
-              if (dom.customRoomInput) dom.customRoomInput.focus();
-              return;
-            }
-            if (openTopHrefFromElement(dom.openCustomRoomBtn)) {
-              return;
-            }
-            activateRoom(slug);
+        if (dom.guestDefaultRoomBtn) {
+          dom.guestDefaultRoomBtn.addEventListener('click', () => {
+            selectGuestRoomMode('default');
           });
         }
 
-        if (dom.openCustomRoomBtn) {
-          dom.openCustomRoomBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            const slug = normalizeRoomSlug(dom.customRoomInput ? dom.customRoomInput.value : '');
-            if (!slug) {
-              setCustomRoomError('Введите ссылку на латинице.');
-              if (dom.customRoomInput) dom.customRoomInput.focus();
-              return;
-            }
-            updateRoomPickerPreview();
-            openTopHrefFromElement(dom.openCustomRoomBtn);
+        if (dom.guestCustomRoomBtn) {
+          dom.guestCustomRoomBtn.addEventListener('click', () => {
+            selectGuestRoomMode('custom');
           });
         }
 
-        if (dom.copyCustomRoomBtn) {
-          dom.copyCustomRoomBtn.addEventListener('click', () => {
-            const slug = normalizeRoomSlug(dom.customRoomInput ? dom.customRoomInput.value : '');
-            if (!slug) {
-              setCustomRoomError('Введите ссылку на латинице.');
-              if (dom.customRoomInput) dom.customRoomInput.focus();
-              return;
+        if (dom.guestCustomRoomInput) {
+          dom.guestCustomRoomInput.addEventListener('input', () => {
+            const slug = normalizeRoomSlug(dom.guestCustomRoomInput.value);
+            if (dom.guestCustomRoomInput.value !== slug) {
+              dom.guestCustomRoomInput.value = slug;
             }
-            copyRoomLink(slug).catch(() => {
-              showToast('Не удалось скопировать ссылку');
-            });
-          });
-        }
-
-        if (dom.roomHistoryList) {
-          dom.roomHistoryList.addEventListener('click', (event) => {
-            const source = event.target instanceof Element ? event.target : null;
-            if (!source) return;
-            const removeBtn = source.closest('[data-room-history-remove]');
-            if (removeBtn) {
-              event.preventDefault();
-              event.stopPropagation();
-              const slug = normalizeRoomSlug(removeBtn.getAttribute('data-room-history-remove') || '');
-              if (!slug) return;
-              deleteRoomHistoryEntry(slug).catch(() => {});
-              return;
+            updateGuestRoomPreview();
+            if (slug) {
+              setGuestEntryError('');
             }
-            const target = source.closest('[data-room-history-slug]');
-            if (!target) return;
-            const slug = normalizeRoomSlug(target.getAttribute('data-room-history-slug') || '');
-            if (!slug) return;
-            activateRoom(slug);
-          });
-        }
-
-        if (dom.backToRoomPickerBtn) {
-          dom.backToRoomPickerBtn.addEventListener('click', () => {
-            returnToRoomPicker();
           });
         }
 
@@ -4516,9 +3791,8 @@
 
       async function joinRoom() {
         if (state.joined) return;
-        if (!state.roomReady) {
-          state.roomPickerOpen = true;
-          syncRoomPicker();
+        if (!state.roomReady || state.guestNameRequired) {
+          openGuestEntry();
           return;
         }
         state.joined = true;
@@ -8467,12 +7741,247 @@
         }, 2600);
       }
 
+      function buildGuestMeetingUrl(slug = '') {
+        const normalizedSlug = normalizeRoomSlug(slug);
+        if (!normalizedSlug) {
+          return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/`;
+        }
+        return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=${encodeURIComponent(normalizedSlug)}`;
+      }
+
+      function syncTopMeetingRoute(slug = '', push = false) {
+        const nextUrl = buildSiblingPageUrl(MEET_ROUTE_SEGMENT, slug);
+        try {
+          if (window.parent && window.parent !== window) {
+            try {
+              window.parent.postMessage({
+                type: 'meet:route',
+                roomSlug: slug || '',
+                push: !!push
+              }, '*');
+            } catch (_) {}
+            const targetWindow = window.top || window.parent;
+            if (targetWindow && targetWindow.history && typeof targetWindow.history.replaceState === 'function') {
+              if (push && typeof targetWindow.history.pushState === 'function') {
+                targetWindow.history.pushState({ room: slug || '' }, '', nextUrl);
+              } else {
+                targetWindow.history.replaceState({ room: slug || '' }, '', nextUrl);
+              }
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
+      function syncGuestDraftRoomRoute(slug = '') {
+        const nextUrl = buildSiblingPageUrl(MEET_ROUTE_SEGMENT, slug);
+        try {
+          window.history.replaceState({ roomDraft: slug || '' }, '', nextUrl);
+        } catch (_) {}
+        syncTopMeetingRoute(slug, false);
+      }
+
+      function setGuestEntryError(text) {
+        if (!dom.guestEntryError) return;
+        dom.guestEntryError.textContent = String(text || '');
+      }
+
+      function selectGuestRoomMode(mode) {
+        state.guestRoomMode = mode === 'custom' ? 'custom' : 'default';
+        syncGuestRoomControls();
+        updateGuestRoomPreview();
+        if (state.guestRoomMode === 'custom') {
+          syncTopMeetingRoute(resolveGuestDraftRoomSlug(), false);
+        }
+        if (state.guestRoomMode === 'custom' && dom.guestCustomRoomInput) {
+          window.setTimeout(() => {
+            dom.guestCustomRoomInput.focus();
+            dom.guestCustomRoomInput.select();
+          }, 40);
+        }
+      }
+
+      function syncGuestRoomControls() {
+        const isCustom = state.guestRoomMode === 'custom';
+        if (dom.guestDefaultRoomBtn) {
+          dom.guestDefaultRoomBtn.classList.toggle('active', !isCustom);
+          dom.guestDefaultRoomBtn.setAttribute('aria-pressed', !isCustom ? 'true' : 'false');
+        }
+        if (dom.guestCustomRoomBtn) {
+          dom.guestCustomRoomBtn.classList.toggle('active', isCustom);
+          dom.guestCustomRoomBtn.setAttribute('aria-pressed', isCustom ? 'true' : 'false');
+        }
+        if (dom.guestCustomRoomWrap) {
+          dom.guestCustomRoomWrap.hidden = !isCustom;
+        }
+      }
+
+      function updateGuestRoomPreview() {
+        if (dom.guestCustomRoomInput) {
+          const currentValue = normalizeRoomSlug(dom.guestCustomRoomInput.value);
+          if (dom.guestCustomRoomInput.value !== currentValue) {
+            dom.guestCustomRoomInput.value = currentValue;
+          }
+        }
+        if (dom.guestCustomRoomPreview) {
+          const slug = normalizeRoomSlug((dom.guestCustomRoomInput && dom.guestCustomRoomInput.value) || state.roomSlug || '');
+          dom.guestCustomRoomPreview.textContent = buildGuestMeetingUrl(slug || 'teamsync');
+        }
+        if (state.guestRoomMode === 'custom') {
+          syncGuestDraftRoomRoute(resolveGuestDraftRoomSlug());
+        }
+      }
+
+      function resolveGuestDraftRoomSlug() {
+        if (state.guestRoomMode !== 'custom') return '';
+        return normalizeRoomSlug(dom.guestCustomRoomInput ? dom.guestCustomRoomInput.value : '');
+      }
+
+      function applyGuestRoomSelection(slug) {
+        const nextRoom = resolveRoomMeta(slug);
+        const roomChanged = !state.roomReady || nextRoom.key !== state.roomKey;
+
+        state.roomSlug = nextRoom.slug;
+        state.roomKey = nextRoom.key;
+        state.roomReady = true;
+
+        try {
+          window.history.replaceState({ room: nextRoom.slug || '' }, '', buildSiblingPageUrl(MEET_ROUTE_SEGMENT, nextRoom.slug));
+        } catch (_) {}
+        syncTopMeetingRoute(nextRoom.slug, false);
+
+        if (!roomChanged) {
+          return;
+        }
+
+        if (state.joined) {
+          leaveRoom();
+        }
+        closeSocket();
+        closeAllPeers();
+        state.participants.clear();
+        state.activeScreenOwnerId = '';
+        state.activeCameraStageOwnerId = '';
+        renderScreenStage(true);
+        renderParticipants(true);
+        updateTransportBadge('offline', 'Оффлайн');
+        if (!state.guestNameRequired) {
+          window.setTimeout(() => {
+            joinRoom().catch(() => {});
+          }, 0);
+        }
+      }
+
+      function returnToGuestRoomPicker() {
+        if (state.joined) {
+          leaveRoom();
+        }
+        closeAllPeers();
+        closeSocket();
+        state.roomSlug = '';
+        state.roomKey = DEFAULT_ROOM_KEY;
+        state.roomReady = false;
+        state.activeScreenOwnerId = '';
+        state.activeCameraStageOwnerId = '';
+        state.participants.clear();
+        state.guestRoomMode = 'default';
+        syncGuestRoomControls();
+        updateGuestRoomPreview();
+        renderScreenStage(true);
+        renderParticipants(true);
+        updateTransportBadge('offline', 'Встреча');
+        updateLocalStateText();
+        syncGuestEntryVisibility();
+        try {
+          window.history.replaceState({ room: '' }, '', buildSiblingPageUrl(MEET_ROUTE_SEGMENT, ''));
+        } catch (_) {}
+        syncTopMeetingRoute('', false);
+      }
+
+      function initGuestEntry() {
+        if (dom.guestNameInput) {
+          const fallbackName = String((window.__publicGuestProfile && window.__publicGuestProfile.name) || state.self.name || '').trim();
+          dom.guestNameInput.value = fallbackName && !/^Гость(?:\s|$)/i.test(fallbackName) ? fallbackName : '';
+        }
+        if (dom.guestCustomRoomInput && initialRoomMeta.slug && !initialRoomMeta.isDefault) {
+          dom.guestCustomRoomInput.value = initialRoomMeta.slug;
+        }
+        syncGuestRoomControls();
+        updateGuestRoomPreview();
+        syncGuestEntryVisibility();
+        if ((state.guestNameRequired || !state.roomReady) && dom.guestNameInput) {
+          window.setTimeout(() => {
+            dom.guestNameInput.focus();
+            dom.guestNameInput.select();
+          }, 40);
+        }
+      }
+
+      function syncGuestEntryVisibility() {
+        const isOpen = !!state.guestNameRequired || !state.roomReady;
+        document.documentElement.classList.toggle('guest-name-pending', isOpen);
+        if (dom.guestEntry) {
+          dom.guestEntry.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        }
+      }
+
+      function openGuestEntry() {
+        if (!String(state.self.name || '').trim() || /^Гость(?:\s|$)/i.test(String(state.self.name || '').trim())) {
+          state.guestNameRequired = true;
+        }
+        syncGuestEntryVisibility();
+        setGuestEntryError('');
+        syncGuestRoomControls();
+        updateGuestRoomPreview();
+        if (dom.guestNameInput) {
+          const fallback = String((window.__publicGuestProfile && window.__publicGuestProfile.name) || state.self.name || '').trim();
+          dom.guestNameInput.value = fallback && !/^Гость(?:\s|$)/i.test(fallback) ? fallback : '';
+          window.setTimeout(() => {
+            dom.guestNameInput.focus();
+            dom.guestNameInput.select();
+          }, 40);
+        }
+      }
+
+      function submitGuestEntry() {
+        if (!isPublicGuestMode()) return;
+        const nextName = normalizeName(dom.guestNameInput ? dom.guestNameInput.value : '');
+        if (!nextName || nextName === 'Гость') {
+          setGuestEntryError('Введите имя, под которым вас увидят в комнате.');
+          if (dom.guestNameInput) dom.guestNameInput.focus();
+          return;
+        }
+        const nextRoomSlug = state.guestRoomMode === 'custom' ? resolveGuestDraftRoomSlug() : COMMON_ROOM_SLUG;
+        if (state.guestRoomMode === 'custom' && !nextRoomSlug) {
+          setGuestEntryError('Введите латинское имя кастомной встречи.');
+          if (dom.guestCustomRoomInput) dom.guestCustomRoomInput.focus();
+          return;
+        }
+        const guestProfile = { name: nextName, username: '', avatarUrl: '' };
+        try {
+          localStorage.setItem('publicCallGuestProfile', JSON.stringify(guestProfile));
+        } catch (_) {}
+        window.__publicGuestProfile = guestProfile;
+        state.self.name = nextName;
+        state.self.username = '';
+        state.self.avatarUrl = '';
+        state.self.color = colorForName(state.self.name || state.self.id);
+        state.guestNameRequired = false;
+        applyGuestRoomSelection(nextRoomSlug);
+        setGuestEntryError('');
+        syncGuestEntryVisibility();
+        updateSelfPresentation();
+        renderParticipants(true);
+      }
+
       function getCurrentUserObject() {
         try {
-          return JSON.parse(localStorage.getItem('currentUser') || 'null');
+          const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+          if (currentUser) return currentUser;
         } catch (_) {
-          return null;
+          return window.__publicGuestProfile || null;
         }
+        return window.__publicGuestProfile || null;
       }
 
       function getCurrentUserName() {

@@ -26,12 +26,21 @@
                 document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
             } catch(_) {}
         })();
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('page') === 'svc_call') {
+                    document.documentElement.classList.add('boot-call-page');
+                }
+            } catch (_) {}
+        })();
     </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
         /* Hide body until we know the user is authenticated (prevents flicker) */
         html:not(.authed) body { visibility: hidden; }
+        html.boot-call-page:not(.route-ready) body { visibility: hidden; }
     
         @media (max-width: 520px) {
             input[type="text"],
@@ -3958,7 +3967,7 @@
         </div>
         <div id="svc_call" data-page="svc_call" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
-                <iframe title="Звонки" data-src="call.html" loading="lazy" scrolling="yes" allow="microphone; autoplay"></iframe>
+                <iframe title="Встреча" data-src="call.html" loading="lazy" scrolling="yes" allow="microphone; camera; display-capture; autoplay; clipboard-write"></iframe>
             </div>
         </div>
         <div id="svc_board" data-page="svc_board" class="page page-service max-w-7xl mx-auto">
@@ -5119,6 +5128,7 @@
         const SIDEBAR_COLLAPSE_LS_KEY = 'indexSidebarCollapsed';
         const PAGE_LS_KEY = 'indexActivePage';
         const PAGE_URL_PARAM = 'page';
+        const CALL_ROOM_PARAM = 'callRoom';
         const PLANNING_EVENT_PARAM = 'planningEvent';
         let iframeKeyboardOverride = null;
         let iframeKeyboardOverrideTimer = null;
@@ -5477,6 +5487,28 @@
             const base = `music.html?v=${encodeURIComponent(MUSIC_SERVICE_VERSION)}`;
             return withForceTvParam(base);
         }
+        function normalizeCallRoomSlug(value) {
+            const normalized = String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z]+/g, '')
+                .slice(0, 40);
+            return normalized;
+        }
+        function getCallRoomSlugFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                return normalizeCallRoomSlug(params.get(CALL_ROOM_PARAM) || '');
+            } catch (_) {}
+            return '';
+        }
+        function buildCallServiceSrc(roomSlug = '') {
+            const normalizedSlug = normalizeCallRoomSlug(roomSlug);
+            const base = normalizedSlug
+                ? `call.html?room=${encodeURIComponent(normalizedSlug)}`
+                : 'call.html';
+            return withForceTvParam(base);
+        }
         function getPlanningEventIdFromUrl() {
             try {
                 const params = new URLSearchParams(window.location.search);
@@ -5497,10 +5529,18 @@
                 const planningEventId = resolved === 'svc_planning'
                     ? (options.planningEventId !== undefined ? options.planningEventId : getPlanningEventIdFromUrl())
                     : null;
+                const callRoomSlug = resolved === 'svc_call'
+                    ? normalizeCallRoomSlug(options.callRoomSlug !== undefined ? options.callRoomSlug : getCallRoomSlugFromUrl())
+                    : '';
                 if (resolved === 'svc_planning' && planningEventId) {
                     url.searchParams.set(PLANNING_EVENT_PARAM, planningEventId);
                 } else {
                     url.searchParams.delete(PLANNING_EVENT_PARAM);
+                }
+                if (resolved === 'svc_call' && callRoomSlug) {
+                    url.searchParams.set(CALL_ROOM_PARAM, callRoomSlug);
+                } else {
+                    url.searchParams.delete(CALL_ROOM_PARAM);
                 }
                 const next = `${url.pathname}${url.search}${url.hash}`;
                 const state = { page: resolved };
@@ -6127,6 +6167,16 @@
                 }
                 return;
             }
+            if (section.id === 'svc_call') {
+                const desired = buildCallServiceSrc(getCallRoomSlugFromUrl());
+                if (desired) {
+                    frame.setAttribute('data-src', desired);
+                    if (frame.getAttribute('src') !== desired) {
+                        frame.setAttribute('src', desired);
+                    }
+                }
+                return;
+            }
             if (frame.getAttribute('src')) return;
             const src = frame.getAttribute('data-src');
             if (src) frame.setAttribute('src', src);
@@ -6571,6 +6621,27 @@
             }
         }
 
+        function openCallRoomInSidebar(roomSlug = '', options = {}) {
+            const normalizedSlug = normalizeCallRoomSlug(roomSlug);
+            closeMobileMenu();
+            setActivePage('svc_call', { push: options.push !== false, callRoomSlug: normalizedSlug });
+            const section = document.getElementById('svc_call');
+            if (section) {
+                const frame = section.querySelector('iframe[data-src]');
+                const desired = buildCallServiceSrc(normalizedSlug);
+                if (frame) {
+                    frame.setAttribute('data-src', desired);
+                    frame.setAttribute('src', desired);
+                }
+                ensureServiceFrame(section);
+            }
+            if (document.body.classList.contains('layout-sidebar') && isDesktopLayout()) {
+                requestAnimationFrame(() => {
+                    focusSidebarNavigationTarget();
+                });
+            }
+        }
+
         function openProfilePage(e) {
             const useSidebar = document.body.classList.contains('layout-sidebar');
             if (useSidebar) {
@@ -6985,6 +7056,7 @@
             updateUserProfile();
 
             initLayoutShell();
+            document.documentElement.classList.add('route-ready');
             enhanceKeyboardClickableElements(document);
             initSidebarMiniPlayerControls();
             applySidebarMiniPlayerState();
@@ -7011,6 +7083,10 @@
                         if (currentPage === 'svc_planning' && !currentPlanningId) return;
                         setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
                     }
+                    return;
+                }
+                if (data.type === 'call:route') {
+                    openCallRoomInSidebar(data.roomSlug || '', { push: true });
                     return;
                 }
                 if (data.type === 'iframe:keyboard') {
@@ -7109,7 +7185,7 @@
             const services = [
                 { href: 'pokaki.html', icon: '💩', label: 'График покаков', page: 'svc_pokaki' },
                 { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
-                { href: 'call.html', icon: '📞', label: 'Звонки', page: 'svc_call' },
+                { href: 'call.html', icon: '📞', label: 'Встреча', page: 'svc_call' },
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
                 { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },
