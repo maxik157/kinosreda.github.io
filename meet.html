@@ -3118,6 +3118,21 @@
           .slice(0, ROOM_SLUG_LIMIT);
       }
 
+      function isMobileAudioPlatform() {
+        try {
+          const ua = navigator.userAgent || '';
+          const isIOS = /iP(ad|hone|od)/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          const isAndroid = /Android/i.test(ua);
+          return isIOS || isAndroid || navigator.maxTouchPoints > 0;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function shouldUseRawOutgoingAudio() {
+        return isMobileAudioPlatform();
+      }
+
       function isCommonRoomSlug(value) {
         const normalizedSlug = normalizeRoomSlug(value);
         return !normalizedSlug || normalizedSlug === COMMON_ROOM_SLUG || normalizedSlug === LEGACY_COMMON_ROOM_SLUG;
@@ -3765,8 +3780,11 @@
             state.activeVolumePanelId = '';
             renderParticipants(true);
           }
-          tryResumeAudioContexts();
-          tryPlayAllRemoteAudio();
+          unlockMediaFromGesture().catch(() => {});
+        }, { passive: true });
+
+        document.addEventListener('touchend', () => {
+          unlockMediaFromGesture().catch(() => {});
         }, { passive: true });
 
         document.addEventListener('visibilitychange', () => {
@@ -5104,49 +5122,14 @@
           state.localAudioContext.resume().catch(() => {});
         }
 
+        const useRawOutgoingAudio = shouldUseRawOutgoingAudio();
+
         if (state.localAudioContext) {
           const source = state.localAudioContext.createMediaStreamSource(stream);
-          const highPass = state.localAudioContext.createBiquadFilter();
-          highPass.type = 'highpass';
-          highPass.frequency.value = 95;
-          highPass.Q.value = 0.707;
-
-          const lowPass = state.localAudioContext.createBiquadFilter();
-          lowPass.type = 'lowpass';
-          lowPass.frequency.value = 4200;
-          lowPass.Q.value = 0.76;
-
-          const deHiss = state.localAudioContext.createBiquadFilter();
-          deHiss.type = 'highshelf';
-          deHiss.frequency.value = 3600;
-          deHiss.gain.value = -8;
-
-          const compressor = state.localAudioContext.createDynamicsCompressor();
-          compressor.threshold.value = -30;
-          compressor.knee.value = 20;
-          compressor.ratio.value = 4.6;
-          compressor.attack.value = 0.003;
-          compressor.release.value = 0.16;
-
-          const gateGain = state.localAudioContext.createGain();
-          gateGain.gain.value = state.mode === 'vad' ? 0.0001 : 1;
-
-          const destination = state.localAudioContext.createMediaStreamDestination();
-          source.connect(highPass);
-          highPass.connect(lowPass);
-          lowPass.connect(deHiss);
-          deHiss.connect(compressor);
-          compressor.connect(gateGain);
-          gateGain.connect(destination);
-
           const analyser = state.localAudioContext.createAnalyser();
           analyser.fftSize = 1024;
-          compressor.connect(analyser);
 
           state.localSourceNode = source;
-          state.localGateNode = gateGain;
-          state.localProcessingDestination = destination;
-          state.localProcessingNodes = [highPass, lowPass, deHiss, compressor, gateGain];
           state.localAnalyser = analyser;
           state.localAnalyserData = new Uint8Array(analyser.fftSize);
           state.localFreqData = new Uint8Array(analyser.frequencyBinCount);
@@ -5154,6 +5137,51 @@
           state.vadPrevSpectrum = new Float32Array(analyser.frequencyBinCount);
           for (let i = 0; i < state.vadNoiseSpectrum.length; i += 1) {
             state.vadNoiseSpectrum[i] = 0.0006;
+          }
+
+          if (useRawOutgoingAudio) {
+            source.connect(analyser);
+            state.localGateNode = null;
+            state.localProcessingDestination = null;
+            state.localProcessingNodes = [];
+          } else {
+            const highPass = state.localAudioContext.createBiquadFilter();
+            highPass.type = 'highpass';
+            highPass.frequency.value = 95;
+            highPass.Q.value = 0.707;
+
+            const lowPass = state.localAudioContext.createBiquadFilter();
+            lowPass.type = 'lowpass';
+            lowPass.frequency.value = 4200;
+            lowPass.Q.value = 0.76;
+
+            const deHiss = state.localAudioContext.createBiquadFilter();
+            deHiss.type = 'highshelf';
+            deHiss.frequency.value = 3600;
+            deHiss.gain.value = -8;
+
+            const compressor = state.localAudioContext.createDynamicsCompressor();
+            compressor.threshold.value = -30;
+            compressor.knee.value = 20;
+            compressor.ratio.value = 4.6;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.16;
+
+            const gateGain = state.localAudioContext.createGain();
+            gateGain.gain.value = state.mode === 'vad' ? 0.0001 : 1;
+
+            const destination = state.localAudioContext.createMediaStreamDestination();
+            source.connect(highPass);
+            highPass.connect(lowPass);
+            lowPass.connect(deHiss);
+            deHiss.connect(compressor);
+            compressor.connect(gateGain);
+            compressor.connect(analyser);
+            gateGain.connect(destination);
+
+            state.localGateNode = gateGain;
+            state.localProcessingDestination = destination;
+            state.localProcessingNodes = [highPass, lowPass, deHiss, compressor, gateGain];
           }
         }
 
@@ -5777,6 +5805,23 @@
           if (playPromise && typeof playPromise.catch === 'function') {
             playPromise.catch(() => {});
           }
+        }
+      }
+
+      async function unlockMediaFromGesture() {
+        tryResumeAudioContexts();
+        tryPlayAllRemoteAudio();
+        if (!state.joined) return;
+        if (!state.captureTrack && !state.voiceInitPromise) {
+          try {
+            await ensureLocalAudio({ force: false });
+            applyTransmissionState();
+            updateLocalStateText();
+          } catch (_) {}
+        }
+        if (state.ws && state.ws.readyState === WS_OPEN) {
+          emitPresence('join');
+          syncVoicePeers(true);
         }
       }
 
