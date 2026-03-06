@@ -85,6 +85,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -2470,9 +2471,6 @@
         let viewportRestored = false;
         let suppressHiddenSync = false;
         const HIDDEN_CARDS_DB_PATH = 'boardState/hiddenCards';
-        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-        const EVENTS_META_PATH = 'eventsMeta/updatedAt';
-        const BACKLOG_META_PATH = 'backlogMeta/updatedAt';
         const keys = { space: false };
         const eventData = { events: {} };
         let selectedEventDateKey = null;
@@ -2482,9 +2480,6 @@
         let rouletteRotation = 0;
         let rouletteResizeObserver = null;
         let beerDataCache = [];
-        let beerRatingMetaTs = null;
-        let eventsMetaTs = null;
-        let backlogMetaTs = null;
         let rouletteApplyRemote = false;
         let rouletteLastPublished = 0;
         const drawingState = { active: false, tool: 'select', startX: 0, startY: 0, element: null, points: [], textValue: '' };
@@ -5567,9 +5562,7 @@
         function setEvent(dateKey, event) {
             eventData.events[dateKey] = event;
             if (boardDb) {
-                const updates = { events: eventData.events };
-                updates[EVENTS_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                boardDb.ref().update(updates);
+                boardDb.ref('events').set(eventData.events);
             }
         }
 
@@ -6062,6 +6055,9 @@
             if (planningDb) return;
             if (!window.firebase) return;
             try {
+                if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                    firebase.database.INTERNAL.forceLongPolling();
+                }
                 if (boardDb) {
                     planningDb = boardDb;
                 } else {
@@ -6556,9 +6552,7 @@
             list[idx] = target;
             try {
                 const db = firebase.database();
-                const updates = { beerRating: list };
-                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                await db.ref().update(updates);
+                await db.ref('beerRating').set(list);
                 beerDataCache = list;
                 const card = cardsLayer.querySelector(`.card[data-beer-info="${beerId}"]`);
                 if (card) {
@@ -6597,9 +6591,7 @@
             };
             try {
                 const db = firebase.database();
-                const updates = { beerRating: list };
-                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                await db.ref().update(updates);
+                await db.ref('beerRating').set(list);
                 beerDataCache = list;
                 removeBeerInfoLive(beerId);
                 card.remove();
@@ -6844,38 +6836,24 @@
         function initBeerFeed() {
             if (!window.firebase || !firebaseConfig.databaseURL) return;
             try {
+                if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                    firebase.database.INTERNAL.forceLongPolling();
+                }
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 boardDb = firebase.database();
-                const loadBeerRatingOnce = () => {
-                    return boardDb.ref('beerRating').once('value').then((snapshot) => {
-                        const value = snapshot.val() || [];
-                        const list = Array.isArray(value) ? value : Object.values(value);
-                        beerDataCache = list;
-                        renderBeerRating(list);
-                        renderRouletteList();
-                        renderRouletteWheel();
-                    });
-                };
-                boardDb.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    if (ts && ts === beerRatingMetaTs && beerDataCache.length) return;
-                    if (ts) beerRatingMetaTs = ts;
-                    loadBeerRatingOnce().catch(() => {});
+                boardDb.ref('beerRating').on('value', (snapshot) => {
+                    const value = snapshot.val() || [];
+                    const list = Array.isArray(value) ? value : Object.values(value);
+                    beerDataCache = list;
+                    renderBeerRating(list);
+                    renderRouletteList();
+                    renderRouletteWheel();
                 });
-                const loadEventsOnce = () => {
-                    return boardDb.ref('events').once('value').then((snapshot) => {
-                        const value = snapshot.val() || {};
-                        eventData.events = value && typeof value === 'object' ? value : {};
-                        renderEventCalendar();
-                        renderEventPanel();
-                    });
-                };
-                boardDb.ref(EVENTS_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    const hasEvents = eventData.events && Object.keys(eventData.events).length > 0;
-                    if (ts && ts === eventsMetaTs && hasEvents) return;
-                    if (ts) eventsMetaTs = ts;
-                    loadEventsOnce().catch(() => {});
+                boardDb.ref('events').on('value', (snapshot) => {
+                    const value = snapshot.val() || {};
+                    eventData.events = value && typeof value === 'object' ? value : {};
+                    renderEventCalendar();
+                    renderEventPanel();
                 });
                 initBacklogFeed();
                 initPlanningFeed();
@@ -6900,9 +6878,7 @@
 
         function saveBacklog() {
             if (!boardDb) return;
-            const updates = { backlog: backlogData };
-            updates[BACKLOG_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-            boardDb.ref().update(updates);
+            boardDb.ref('backlog').set(backlogData);
         }
 
         function getCardAvgRating(card) {
@@ -7392,20 +7368,11 @@
 
         function initBacklogFeed() {
             if (!boardDb) return;
-            const loadBacklogOnce = () => {
-                return boardDb.ref('backlog').once('value').then((snapshot) => {
-                    const backlog = snapshot.val() || { columns: [], cards: [] };
-                    backlogData.columns = Array.isArray(backlog.columns) ? backlog.columns : Object.values(backlog.columns || {});
-                    backlogData.cards = Array.isArray(backlog.cards) ? backlog.cards : Object.values(backlog.cards || {});
-                    renderBacklog();
-                });
-            };
-            boardDb.ref(BACKLOG_META_PATH).on('value', (snapshot) => {
-                const ts = snapshot.val();
-                const hasData = backlogData.columns.length || backlogData.cards.length;
-                if (ts && ts === backlogMetaTs && hasData) return;
-                if (ts) backlogMetaTs = ts;
-                loadBacklogOnce().catch(() => {});
+            boardDb.ref('backlog').on('value', (snapshot) => {
+                const backlog = snapshot.val() || { columns: [], cards: [] };
+                backlogData.columns = Array.isArray(backlog.columns) ? backlog.columns : Object.values(backlog.columns || {});
+                backlogData.cards = Array.isArray(backlog.cards) ? backlog.cards : Object.values(backlog.cards || {});
+                renderBacklog();
             });
         }
 
@@ -7569,6 +7536,9 @@
                 if (boardDb) {
                     poopDb = boardDb;
                 } else {
+                    if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                        firebase.database.INTERNAL.forceLongPolling();
+                    }
                     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                     poopDb = firebase.database();
                 }
@@ -7684,9 +7654,7 @@
             const next = Array.isArray(beerDataCache) ? [...beerDataCache, beer] : [beer];
             try {
                 const db = firebase.database();
-                const updates = { beerRating: next };
-                updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                await db.ref().update(updates);
+                await db.ref('beerRating').set(next);
                 beerDataCache = next;
                 resetAddBeerForm();
                 closeAddBeerModal();

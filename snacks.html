@@ -53,6 +53,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
@@ -1584,8 +1585,6 @@
         const CALORIE_CALC_LS_KEY = 'snacksCalorieCalc';
         const calcCustomSelectUI = new Map();
         let calcCustomSelectDocBound = false;
-        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-        let beerRatingMetaTs = null;
 
         function initCurrentUser() {
             try {
@@ -3526,22 +3525,17 @@
         }
 
         function initFirebase() {
+            if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                firebase.database.INTERNAL.forceLongPolling();
+            }
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
             state.db = firebase.database();
 
-            const fetchBeerRatingOnce = () => {
-                return state.db.ref('beerRating').once('value').then((snapshot) => {
-                    state.beerRating = normalizeBeerList(snapshot.val());
-                    refreshBeerMenus();
-                });
-            };
-            state.db.ref(BEER_RATING_META_PATH).on('value', snapshot => {
-                const ts = snapshot.val();
-                if (ts && ts === beerRatingMetaTs && state.beerRating.length) return;
-                if (ts) beerRatingMetaTs = ts;
-                fetchBeerRatingOnce().catch(() => {});
+            state.db.ref('beerRating').on('value', snapshot => {
+                state.beerRating = normalizeBeerList(snapshot.val());
+                refreshBeerMenus();
             });
 
             state.db.ref('users').on('value', snapshot => {

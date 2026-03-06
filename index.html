@@ -1006,6 +1006,11 @@
         #beerSticky::after {
             display: none;
         }
+        #openAddBeerBtn {
+            position: relative;
+            z-index: 3;
+            pointer-events: auto;
+        }
         .star-btn {
             transition: all 0.2s;
             cursor: pointer;
@@ -3745,7 +3750,7 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <button onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
+                            <button id="openAddBeerBtn" data-open-add-beer="1" type="button" onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
                                 ➕ Добавить пиво
                             </button>
                         </div>
@@ -4199,10 +4204,10 @@
             <div class="text-center text-gray-400 text-xs mb-2">Оценка: <span id="addBeerRatingValue" class="text-amber-300 font-bold">—</span></div>
             <div class="star-picker mb-5 overflow-x-auto py-2" id="beerAddStarPicker" aria-label="Выбор рейтинга"></div>
             <div class="flex gap-2">
-                <button onclick="addBeer()" class="flex-1 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold py-2 px-4 rounded-xl">
+                <button id="confirmAddBeerBtn" data-confirm-add-beer="1" type="button" onclick="addBeer()" class="flex-1 btn-glow bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold py-2 px-4 rounded-xl">
                     Добавить
                 </button>
-                <button onclick="closeAddBeerModal()" class="flex-1 btn-glow bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">
+                <button id="cancelAddBeerBtn" data-cancel-add-beer="1" type="button" onclick="closeAddBeerModal()" class="flex-1 btn-glow bg-gray-700 text-white font-bold py-2 px-4 rounded-xl">
                     Отмена
                 </button>
             </div>
@@ -4711,14 +4716,6 @@
         let beerSortDirection = 'asc';
         let beerSearchQuery = '';
         let beerCaloriesMode = 'per100';
-        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-        const EVENTS_META_PATH = 'eventsMeta/updatedAt';
-        const BACKLOG_META_PATH = 'backlogMeta/updatedAt';
-        const BIRTHDAY_META_PATH = 'birthdayWishlistsMeta/updatedAt';
-        let beerRatingMetaTs = null;
-        let eventsMetaTs = null;
-        let backlogMetaTs = null;
-        let birthdayMetaTs = null;
         let planningEventsByDate = {};
         let planningEventsList = [];
         let planningUsersList = [];
@@ -6998,6 +6995,8 @@
             initGlobalVideoFloat();
 
             initBeerSticky();
+            initAddBeerButtonFallback();
+            initAddBeerModalActions();
 
             window.addEventListener('message', (e) => {
                 const data = e && e.data ? e.data : null;
@@ -8008,14 +8007,7 @@
                     renderUpcomingEvents();
                     if (selectedDate) renderPanelContent();
                 };
-                const fetchEventsOnce = () => db.ref('events').once('value').then(applyEventsSnapshot);
-                db.ref(EVENTS_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    const hasEvents = data.events && Object.keys(data.events).length > 0;
-                    if (ts && ts === eventsMetaTs && hasEvents) return;
-                    if (ts) eventsMetaTs = ts;
-                    fetchEventsOnce().catch(() => {});
-                });
+                db.ref('events').on('value', applyEventsSnapshot);
 
                 const applyBacklogSnapshot = (snapshot) => {
                     const backlogData = snapshot.val() || { columns: [], cards: [] };
@@ -8033,14 +8025,7 @@
                     lastBacklogHash = JSON.stringify(data.backlog || {});
                     renderBacklog();
                 };
-                const fetchBacklogOnce = () => db.ref('backlog').once('value').then(applyBacklogSnapshot);
-                db.ref(BACKLOG_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    const hasBacklog = data.backlog && (data.backlog.columns?.length || data.backlog.cards?.length);
-                    if (ts && ts === backlogMetaTs && hasBacklog) return;
-                    if (ts) backlogMetaTs = ts;
-                    fetchBacklogOnce().catch(() => {});
-                });
+                db.ref('backlog').on('value', applyBacklogSnapshot);
 
                 const applyBeerRatingSnapshot = (snapshot) => {
                     const beerData = snapshot.val() || [];
@@ -8053,15 +8038,7 @@
                     lastBeerRatingHash = JSON.stringify(data.beerRating || []);
                     renderBeerRating();
                 };
-                const fetchBeerRatingOnce = () => {
-                    return db.ref('beerRating').once('value').then(applyBeerRatingSnapshot);
-                };
-                db.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    if (ts && ts === beerRatingMetaTs && data.beerRating.length) return;
-                    if (ts) beerRatingMetaTs = ts;
-                    fetchBeerRatingOnce().catch(() => {});
-                });
+                db.ref('beerRating').on('value', applyBeerRatingSnapshot);
 
                 const applyBirthdaySnapshot = (snapshot) => {
                     birthdayWishlists = snapshot.val() || {};
@@ -8073,14 +8050,7 @@
                         applyBirthdayPanelVisibility(hasKino, !!birthday, hasPlanning);
                     }
                 };
-                const fetchBirthdayOnce = () => db.ref('birthdayWishlists').once('value').then(applyBirthdaySnapshot);
-                db.ref(BIRTHDAY_META_PATH).on('value', (snapshot) => {
-                    const ts = snapshot.val();
-                    const hasData = birthdayWishlists && Object.keys(birthdayWishlists).length > 0;
-                    if (ts && ts === birthdayMetaTs && hasData) return;
-                    if (ts) birthdayMetaTs = ts;
-                    fetchBirthdayOnce().catch(() => {});
-                });
+                db.ref('birthdayWishlists').on('value', applyBirthdaySnapshot);
 
                 const applyPlanningEventsSnapshot = (snapshot) => {
                     const raw = snapshot.val() || {};
@@ -8183,35 +8153,67 @@
         // Data Methods
         function saveData() {
             if (useFirebase && db) {
-                const updates = {};
+                const writes = [];
                 const eventsHash = JSON.stringify(data.events || {});
                 if (eventsHash !== lastEventsHash) {
-                    updates.events = data.events || {};
-                    updates[EVENTS_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                    lastEventsHash = eventsHash;
+                    writes.push(
+                        db.ref('events').set(data.events || {}).then(() => {
+                            lastEventsHash = eventsHash;
+                        })
+                    );
                 }
                 const backlogHash = JSON.stringify(data.backlog || {});
                 if (backlogHash !== lastBacklogHash) {
-                    updates.backlog = data.backlog || { columns: [], cards: [] };
-                    updates[BACKLOG_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                    lastBacklogHash = backlogHash;
+                    writes.push(
+                        db.ref('backlog').set(data.backlog || { columns: [], cards: [] }).then(() => {
+                            lastBacklogHash = backlogHash;
+                        })
+                    );
                 }
                 const beerHash = JSON.stringify(data.beerRating || []);
                 if (beerHash !== lastBeerRatingHash) {
-                    updates.beerRating = data.beerRating || [];
-                    updates[BEER_RATING_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-                    lastBeerRatingHash = beerHash;
+                    writes.push(
+                        db.ref('beerRating').set(data.beerRating || []).then(() => {
+                            lastBeerRatingHash = beerHash;
+                        })
+                    );
                 }
-                if (Object.keys(updates).length) {
-                    db.ref().update(updates);
-                }
+                if (!writes.length) return Promise.resolve();
+                return Promise.allSettled(writes).then((results) => {
+                    const failed = results.filter((r) => r.status === 'rejected');
+                    if (failed.length) {
+                        console.error('saveData failed for one or more paths', failed.map((item) => item.reason));
+                    }
+                });
             } else {
                 localStorage.setItem('eventData', JSON.stringify(data));
                 renderCalendar();
                 renderUpcomingEvents();
                 renderBacklog();
                 renderBeerRating();
+                return Promise.resolve();
             }
+        }
+
+        function normalizeBeerRatingInMemory() {
+            if (!Array.isArray(data.beerRating)) {
+                data.beerRating = Object.values(data.beerRating || {});
+            }
+            return data.beerRating;
+        }
+
+        function generateBeerId() {
+            return Date.now().toString();
+        }
+
+        function persistBeerUpsert(beer) {
+            if (!(beer && beer.id)) return Promise.reject(new Error('beer id is required'));
+            return saveData();
+        }
+
+        function persistBeerDelete(beerRef) {
+            if (!beerRef) return Promise.resolve();
+            return saveData();
         }
 
         function getEvent(dateKey) {
@@ -8704,10 +8706,7 @@
 
         function updateBirthdayWishlist(path, payload, onSuccess, onError) {
             if (!useFirebase || !db) return false;
-            const updates = {};
-            updates[path] = payload;
-            updates[BIRTHDAY_META_PATH] = firebase.database.ServerValue.TIMESTAMP;
-            db.ref().update(updates).then(() => {
+            db.ref(path).set(payload).then(() => {
                 if (onSuccess) onSuccess();
             }).catch((err) => {
                 if (onError) onError(err);
@@ -10649,7 +10648,7 @@
             const tbody = document.getElementById('beerTableBody');
             if (!beerColumnsVisible) beerColumnsVisible = loadBeerColumnsVisible();
             updateCaloriesModeLabel();
-            const allBeers = data.beerRating || [];
+            const allBeers = normalizeBeerRatingInMemory();
             let beers = allBeers;
             const userName = getUserName();
             
@@ -11025,8 +11024,12 @@
         }
 
         function openAddBeerModal() {
-            document.getElementById('addBeerModal').classList.remove('hidden');
-            document.getElementById('addBeerModal').classList.add('flex');
+            const modal = document.getElementById('addBeerModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.style.display = 'flex';
+            modal.style.zIndex = '12050';
             document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
             document.getElementById('beerCaloriesInput').value = '';
@@ -11046,9 +11049,56 @@
             }));
         }
 
+        function initAddBeerButtonFallback() {
+            const addBeerBtn = document.getElementById('openAddBeerBtn');
+            if (!addBeerBtn || addBeerBtn.dataset.bound === '1') return;
+            addBeerBtn.dataset.bound = '1';
+            addBeerBtn.addEventListener('click', (event) => {
+                // Fallback for environments where inline onclick is blocked/stripped.
+                if (event.defaultPrevented) return;
+                const modal = document.getElementById('addBeerModal');
+                if (modal && modal.classList.contains('flex')) return;
+                openAddBeerModal();
+            });
+            document.addEventListener('click', (event) => {
+                const trigger = event && event.target && event.target.closest
+                    ? event.target.closest('[data-open-add-beer="1"]')
+                    : null;
+                if (!trigger) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const modal = document.getElementById('addBeerModal');
+                if (modal && modal.classList.contains('flex')) return;
+                openAddBeerModal();
+            }, true);
+        }
+
+        function initAddBeerModalActions() {
+            const confirmBtn = document.getElementById('confirmAddBeerBtn');
+            if (confirmBtn && confirmBtn.dataset.bound !== '1' && !confirmBtn.getAttribute('onclick')) {
+                confirmBtn.dataset.bound = '1';
+                confirmBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    addBeer();
+                });
+            }
+            const cancelBtn = document.getElementById('cancelAddBeerBtn');
+            if (cancelBtn && cancelBtn.dataset.bound !== '1' && !cancelBtn.getAttribute('onclick')) {
+                cancelBtn.dataset.bound = '1';
+                cancelBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    closeAddBeerModal();
+                });
+            }
+        }
+
         function closeAddBeerModal() {
-            document.getElementById('addBeerModal').classList.add('hidden');
-            document.getElementById('addBeerModal').classList.remove('flex');
+            const modal = document.getElementById('addBeerModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modal.style.display = '';
+            modal.style.zIndex = '';
         }
 
         function setAddBeerRating(rating) {
@@ -11064,16 +11114,20 @@
             const volume = document.getElementById('beerVolumeInput').value;
             const alcohol = document.getElementById('beerAlcoholInput').value.trim();
             const calories = document.getElementById('beerCaloriesInput').value.trim();
-            const userName = getUserName();
-            
-            if (!name || !alcohol || !userName) {
-                alert('Заполните все поля!');
+            const userName = ((currentUser && (currentUser.name || currentUser.username)) || getUserName() || '').toString().trim();
+
+            if (!name || !userName) {
+                alert('Заполните название пива!');
                 return;
             }
-            
+
+            normalizeBeerRatingInMemory();
+
             const beer = {
-                id: Date.now().toString(),
-                name, type, style, filtered, country, volume, alcohol, calories,
+                id: generateBeerId(),
+                name, type, style, filtered, country, volume,
+                alcohol: alcohol || '0',
+                calories: calories || '',
                 author: userName,
                 ratings: {},
                 timestamp: Date.now()
@@ -11085,12 +11139,24 @@
             }
             
             data.beerRating.push(beer);
-            saveData();
+            renderBeerRating();
             closeAddBeerModal();
+            const savePromise = persistBeerUpsert(beer);
+            if (savePromise && typeof savePromise.catch === 'function') {
+                savePromise.catch((error) => {
+                    console.error('addBeer save failed', error);
+                });
+            }
         }
+
+        // Keep explicit globals for inline handlers and embedded contexts.
+        window.openAddBeerModal = openAddBeerModal;
+        window.closeAddBeerModal = closeAddBeerModal;
+        window.addBeer = addBeer;
 
         function openRateBeerModal(beerId) {
             currentBeerIdForRating = beerId;
+            normalizeBeerRatingInMemory();
             const beer = data.beerRating.find(b => String(b.id) === String(beerId));
             if (!beer) return;
 
@@ -11098,7 +11164,7 @@
             document.getElementById('rateBeerModal').classList.remove('hidden');
             document.getElementById('rateBeerModal').classList.add('flex');
 
-            const userName = getUserName();
+            const userName = ((currentUser && (currentUser.name || currentUser.username)) || getUserName() || '').toString().trim();
             const userRating = beer.ratings && beer.ratings[userName];
 
             // Ensure picker renders every time modal opens
@@ -11115,7 +11181,9 @@
             // Guard against duplicate calls (e.g. swipe "end" firing after a click already saved and closed the modal)
             if (!currentBeerIdForRating) return;
 
-            const userName = getUserName();
+            normalizeBeerRatingInMemory();
+
+            const userName = ((currentUser && (currentUser.name || currentUser.username)) || getUserName() || '').toString().trim();
             if (!userName) {
                 alert('Вы не авторизованы');
                 return;
@@ -11124,9 +11192,17 @@
             const beer = data.beerRating.find(b => String(b.id) === String(currentBeerIdForRating));
             if (beer) {
                 if (!beer.ratings) beer.ratings = {};
-                beer.ratings[userName] = rating;
-                saveData();
+                const safeRating = Math.max(0.5, Math.min(STAR_MAX, Number(rating) || 0));
+                if (!safeRating) return;
+                beer.ratings[userName] = safeRating;
+                renderBeerRating();
                 closeRateBeerModal();
+                const savePromise = persistBeerUpsert(beer);
+                if (savePromise && typeof savePromise.catch === 'function') {
+                    savePromise.catch((error) => {
+                        console.error('rateBeer save failed', error);
+                    });
+                }
             }
         }
 
@@ -11181,8 +11257,14 @@
                 beer.volume = volume;
                 beer.alcohol = alcohol;
                 beer.calories = calories;
-                saveData();
                 closeEditBeerModal();
+                renderBeerRating();
+                const savePromise = persistBeerUpsert(beer);
+                if (savePromise && typeof savePromise.catch === 'function') {
+                    savePromise.catch((error) => {
+                        console.error('saveBeerEdit failed', error);
+                    });
+                }
             }
         }
 
@@ -11212,8 +11294,14 @@
             if (!pendingDeleteBeerId) return;
             const id = pendingDeleteBeerId;
             data.beerRating = (data.beerRating || []).filter(b => String(b.id) !== String(id));
-            saveData();
             closeDeleteBeerModal();
+            renderBeerRating();
+            const savePromise = persistBeerDelete(id);
+            if (savePromise && typeof savePromise.catch === 'function') {
+                savePromise.catch((error) => {
+                    console.error('confirmDeleteBeer failed', error);
+                });
+            }
         }
 
         // Half-star picker (0.5 step) for beer rating
@@ -11263,16 +11351,20 @@
 
                 // Hover preview
                 unit.querySelectorAll('.star-hit').forEach(hit => {
+                    const commitRate = (event) => {
+                        event?.preventDefault?.();
+                        event?.stopPropagation?.();
+                        const v = parseFloat(hit.dataset.val);
+                        setBaseValue(v);
+                        onRate(v);
+                    };
                     hit.addEventListener('mouseenter', () => {
                         const v = parseFloat(hit.dataset.val);
                         applyBeerStarVisual(picker, v, true);
                         setValueText(v);
                     });
-                    hit.addEventListener('click', () => {
-                        const v = parseFloat(hit.dataset.val);
-                        setBaseValue(v);
-                        onRate(v);
-                    });
+                    hit.addEventListener('click', commitRate);
+                    hit.addEventListener('pointerup', commitRate);
                 });
 
                 picker.appendChild(unit);

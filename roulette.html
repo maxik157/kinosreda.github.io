@@ -64,7 +64,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
   <!-- Logo font: load selected font from Google Fonts (per-user) -->
   <script>
@@ -738,6 +739,9 @@
       measurementId: "G-MGW6GF67H3"
     };
 
+    if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+      firebase.database.INTERNAL.forceLongPolling();
+    }
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -746,8 +750,6 @@
     let wheelItems = [];
     let isSpinning = false;
     let currentRotation = 0;
-    const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-    let beerRatingMetaTs = null;
 
     // Utils
     const collator = new Intl.Collator(['ru','en'], { sensitivity: 'base', numeric: false, ignorePunctuation: true });
@@ -1098,18 +1100,10 @@
       }, (dur * 1000) + 80);
     }
 
-    // Load beers from Firebase (meta-driven to reduce downloads)
-    function fetchBeerRatingOnce() {
-      return db.ref('beerRating').once('value').then((snap) => {
-        allBeers = normalizeBeerList(snap.val());
-        renderBeerList();
-      });
-    }
-    db.ref(BEER_RATING_META_PATH).on('value', (snap) => {
-      const ts = snap.val();
-      if (ts && ts === beerRatingMetaTs && allBeers.length) return;
-      if (ts) beerRatingMetaTs = ts;
-      fetchBeerRatingOnce().catch(() => {});
+    // Load beers from Firebase
+    db.ref('beerRating').on('value', (snap) => {
+      allBeers = normalizeBeerList(snap.val());
+      renderBeerList();
     });
 
     // Init

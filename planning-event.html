@@ -3007,8 +3007,6 @@
         let currentUserName = '';
         let usersList = [];
         let beerList = [];
-        const BEER_RATING_META_PATH = 'beerRatingMeta/updatedAt';
-        let beerRatingMetaTs = null;
         let saveTimer = null;
         let suppressNextSnapshot = false;
         let activeOwnerTarget = null;
@@ -9381,28 +9379,20 @@
 
         function initBeerList() {
             if (!db) return;
-            const fetchBeerRatingOnce = () => {
-                return db.ref('beerRating').once('value').then((snapshot) => {
-                    const val = snapshot.val() || [];
-                    let list = [];
-                    if (Array.isArray(val)) list = val;
-                    else list = Object.values(val);
-                    const nextBeerList = list.filter(Boolean).sort((a, b) => {
-                        const an = (a.name || '').toString();
-                        const bn = (b.name || '').toString();
-                        return an.localeCompare(bn, 'ru');
-                    });
-                    const nextSig = nextBeerList.map((item) => `${String((item && item.name) || '').trim()}`).join('\u001f');
-                    if (nextSig === beerListSignature) return;
-                    beerList = nextBeerList;
-                    beerListSignature = nextSig;
+            db.ref('beerRating').on('value', (snapshot) => {
+                const val = snapshot.val() || [];
+                let list = [];
+                if (Array.isArray(val)) list = val;
+                else list = Object.values(val);
+                const nextBeerList = list.filter(Boolean).sort((a, b) => {
+                    const an = (a.name || '').toString();
+                    const bn = (b.name || '').toString();
+                    return an.localeCompare(bn, 'ru');
                 });
-            };
-            db.ref(BEER_RATING_META_PATH).on('value', (snapshot) => {
-                const ts = snapshot.val();
-                if (ts && ts === beerRatingMetaTs && beerList.length) return;
-                if (ts) beerRatingMetaTs = ts;
-                fetchBeerRatingOnce().catch(() => {});
+                const nextSig = nextBeerList.map((item) => `${String((item && item.name) || '').trim()}`).join('\u001f');
+                if (nextSig === beerListSignature) return;
+                beerList = nextBeerList;
+                beerListSignature = nextSig;
             });
         }
 

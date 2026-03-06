@@ -28,7 +28,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
   <style>
     :root {
       --accent: #f59e0b;
@@ -474,7 +475,6 @@
         grabOffsetX: 0,
         grabOffsetY: 0
       },
-      metaTs: null,
       physicsAccumulator: 0,
       maxRadius: 64,
       maxBody: 120,
@@ -1376,8 +1376,8 @@
         throw new Error('Firebase недоступен');
       }
 
-      if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceWebSockets === 'function') {
-        firebase.database.INTERNAL.forceWebSockets();
+      if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+        firebase.database.INTERNAL.forceLongPolling();
       }
 
       if (!firebase.apps.length) {
@@ -1387,10 +1387,7 @@
       state.db = firebase.database();
       await loadBeerData();
 
-      state.db.ref('beerRatingMeta/updatedAt').on('value', (snapshot) => {
-        const ts = snapshot.val();
-        if (ts && ts === state.metaTs && state.beers.length) return;
-        if (ts) state.metaTs = ts;
+      state.db.ref('beerRating').on('value', () => {
         loadBeerData().catch((error) => {
           console.error('[beer] reload failed', error);
         });
