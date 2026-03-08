@@ -2875,7 +2875,7 @@
           <div class="guest-entry-input-wrap guest-entry-input-wrap--slug">
             <input id="guestCustomRoomInput" class="guest-entry-input" type="text" inputmode="latin" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="40" placeholder="teamsync" />
           </div>
-          <div id="guestCustomRoomPreview" class="guest-room-preview">https://киносреда.рф/meet/?room=teamsync</div>
+          <div id="guestCustomRoomPreview" class="guest-room-preview">https://киносреда.рф/meet</div>
         </div>
         <div class="guest-entry-actions">
           <div>
@@ -8028,12 +8028,8 @@
 
       function submitGuestEntry() {
         if (!isPublicGuestMode()) return;
-        const nextName = normalizeName(dom.guestNameInput ? dom.guestNameInput.value : '');
-        if (!nextName || nextName === 'Гость') {
-          setGuestEntryError('Введите имя, под которым вас увидят в комнате.');
-          if (dom.guestNameInput) dom.guestNameInput.focus();
-          return;
-        }
+        const rawName = String(dom.guestNameInput ? dom.guestNameInput.value : '').trim();
+        const nextName = normalizeName(rawName || 'Гость');
         const nextRoomSlug = state.guestRoomMode === 'custom' ? resolveGuestDraftRoomSlug() : COMMON_ROOM_SLUG;
         if (state.guestRoomMode === 'custom' && !nextRoomSlug) {
           setGuestEntryError('Введите латинское имя кастомной встречи.');
@@ -8055,6 +8051,21 @@
         setGuestEntryError('');
         updateSelfPresentation();
         renderParticipants(true);
+
+        try {
+          if (window.parent && window.parent !== window) {
+            try {
+              window.parent.postMessage({
+                type: 'meet:route',
+                roomSlug: nextRoomSlug || '',
+                push: true
+              }, '*');
+            } catch (_) {}
+            applyGuestRoomSelection(nextRoomSlug);
+            syncGuestEntryVisibility();
+            return;
+          }
+        } catch (_) {}
 
         if (nextUrl !== currentUrl) {
           try {

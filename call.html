@@ -3388,10 +3388,9 @@
       }
 
       function buildCallMeetingUrl(slug = '') {
-        const url = new URL('/', `${getCanonicalCallOrigin()}/`);
         const normalizedSlug = normalizeRoomSlug(slug);
-        url.searchParams.set('call', normalizedSlug || COMMON_ROOM_SLUG);
-        return url.toString();
+        const origin = String(getCanonicalCallOrigin() || '').replace(/\/+$/, '');
+        return `${origin}/?call=${encodeURIComponent(normalizedSlug || COMMON_ROOM_SLUG)}`;
       }
 
       const initialRoomSlug = getRequestedRoomSlug(false);
