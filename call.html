@@ -2446,18 +2446,23 @@
       background: rgba(5, 10, 18, 0.92);
       border: 1px solid rgba(255, 255, 255, 0.08);
       overflow: hidden;
+      min-width: 0;
     }
 
     .room-slug-prefix {
       display: inline-flex;
       align-items: center;
       align-self: stretch;
+      min-width: 96px;
       padding: 0 16px;
       color: rgba(226, 232, 240, 0.56);
       background: rgba(255, 255, 255, 0.03);
       border-right: 1px solid rgba(255, 255, 255, 0.06);
       font-size: 0.84rem;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 0 1 auto;
     }
 
     .room-slug-input {
@@ -3041,7 +3046,7 @@
               <h2 class="room-tile-title">Общая</h2>
             </div>
             <div class="room-tile-actions">
-              <a id="openDefaultRoomBtn" class="room-tile-btn room-tile-btn--primary" href="/index.html?page=svc_call&callRoom=main" target="_top">Открыть</a>
+              <a id="openDefaultRoomBtn" class="room-tile-btn room-tile-btn--primary" href="/?call=main" target="_top">Открыть</a>
             </div>
           </div>
         </section>
@@ -3049,14 +3054,14 @@
           <div class="room-tile-meta">
             <h2 class="room-tile-title">Кастомная</h2>
             <div class="room-slug-wrap">
-              <span id="roomSlugPrefix" class="room-slug-prefix">meet.html?room=</span>
-              <input id="customRoomInput" class="room-slug-input" type="text" inputmode="latin" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="40" placeholder="teamsync" />
+              <span id="roomSlugPrefix" class="room-slug-prefix">https://киносреда.рф/?call=</span>
+              <input id="customRoomInput" class="room-slug-input" type="text" inputmode="latin" autocapitalize="off" autocomplete="off" spellcheck="false" maxlength="40" placeholder="Название" />
             </div>
-            <div id="customRoomPreview" class="room-inline-preview">meet.html?room=teamsync</div>
+            <div id="customRoomPreview" class="room-inline-preview">https://киносреда.рф/?call=</div>
             <p id="customRoomError" class="room-error" role="alert" aria-live="polite"></p>
           </div>
           <div class="room-inline-actions">
-            <a id="openCustomRoomBtn" class="room-inline-btn room-tile-btn--primary" href="/index.html?page=svc_call&callRoom=teamsync" target="_top">Открыть</a>
+            <a id="openCustomRoomBtn" class="room-inline-btn room-tile-btn--primary" href="/?call=" target="_top">Открыть</a>
             <button id="copyCustomRoomBtn" class="room-inline-btn" type="button">Скопировать</button>
           </div>
         </form>
@@ -3371,12 +3376,22 @@
         return url.toString();
       }
 
-      function buildPublicMeetingUrl(slug = '') {
-        const normalizedSlug = normalizeRoomSlug(slug);
-        if (!normalizedSlug) {
-          return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/`;
+      function getCanonicalCallOrigin() {
+        const protocol = String(window.location.protocol || '').toLowerCase();
+        const hostname = String(window.location.hostname || '').trim().toLowerCase();
+        const isLocalHost = hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1';
+        const isLocalProtocol = protocol === 'http:' || protocol === 'https:';
+        if (isLocalHost && isLocalProtocol) {
+          return window.location.origin;
         }
-        return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=${encodeURIComponent(normalizedSlug)}`;
+        return 'https://киносреда.рф';
+      }
+
+      function buildCallMeetingUrl(slug = '') {
+        const url = new URL('/', `${getCanonicalCallOrigin()}/`);
+        const normalizedSlug = normalizeRoomSlug(slug);
+        url.searchParams.set('call', normalizedSlug || COMMON_ROOM_SLUG);
+        return url.toString();
       }
 
       const initialRoomSlug = getRequestedRoomSlug(false);
@@ -3386,6 +3401,7 @@
         roomPicker: document.getElementById('roomPicker'),
         openDefaultRoomBtn: document.getElementById('openDefaultRoomBtn'),
         customRoomForm: document.getElementById('customRoomForm'),
+        roomSlugWrap: document.querySelector('.room-slug-wrap'),
         customRoomInput: document.getElementById('customRoomInput'),
         openCustomRoomBtn: document.getElementById('openCustomRoomBtn'),
         roomSlugPrefix: document.getElementById('roomSlugPrefix'),
@@ -3631,12 +3647,24 @@
         if (dom.roomPicker) {
           dom.roomPicker.setAttribute('aria-hidden', state.roomPickerOpen ? 'false' : 'true');
         }
+        syncRoomSlugLayout();
         if (dom.customRoomInput && state.roomPickerOpen) {
           window.setTimeout(() => {
             dom.customRoomInput.focus();
             dom.customRoomInput.select();
           }, 40);
         }
+      }
+
+      function syncRoomSlugLayout() {
+        if (!dom.roomSlugWrap || !dom.roomSlugPrefix) return;
+        const wrapWidth = Math.max(0, Number(dom.roomSlugWrap.clientWidth || 0));
+        if (!wrapWidth) return;
+        dom.roomSlugPrefix.style.maxWidth = 'none';
+        const prefixWidth = Math.ceil(dom.roomSlugPrefix.scrollWidth || 0);
+        const minInputWidth = Math.max(140, Math.min(220, Math.round(wrapWidth * 0.36)));
+        const nextMaxWidth = Math.max(110, wrapWidth - minInputWidth);
+        dom.roomSlugPrefix.style.maxWidth = `${Math.min(prefixWidth + 2, nextMaxWidth)}px`;
       }
 
       function updateRoomPickerPreview() {
@@ -3648,14 +3676,15 @@
           dom.openDefaultRoomBtn.setAttribute('href', buildSidebarCallUrl(''));
         }
         if (dom.openCustomRoomBtn) {
-          dom.openCustomRoomBtn.setAttribute('href', buildSidebarCallUrl(slug || 'teamsync'));
+          dom.openCustomRoomBtn.setAttribute('href', slug ? buildSidebarCallUrl(slug) : '/?call=');
         }
         if (dom.customRoomPreview) {
-          dom.customRoomPreview.textContent = buildPublicMeetingUrl(slug || 'teamsync');
+          dom.customRoomPreview.textContent = slug ? buildCallMeetingUrl(slug) : `${getCanonicalCallOrigin()}/?call=`;
         }
         if (dom.roomSlugPrefix) {
-          dom.roomSlugPrefix.textContent = `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=`;
+          dom.roomSlugPrefix.textContent = `${getCanonicalCallOrigin()}/?call=`;
         }
+        syncRoomSlugLayout();
         syncDraftRoomRoute(slug);
         if (dom.customRoomInput && dom.customRoomInput.value !== slug) {
           dom.customRoomInput.value = slug;
@@ -3704,7 +3733,7 @@
           isDefault: false,
           label: roomSlug,
           visitedAt: Number.isFinite(visitedAt) ? visitedAt : 0,
-          publicUrl: buildPublicMeetingUrl(roomSlug),
+          publicUrl: buildCallMeetingUrl(roomSlug),
           appUrl: buildSidebarCallUrl(roomSlug)
         };
       }
@@ -3832,7 +3861,7 @@
           isDefault: !!roomMeta.isDefault,
           roomKey: roomMeta.key,
           label: roomMeta.isDefault ? 'Общая' : roomSlug,
-          publicUrl: buildPublicMeetingUrl(roomMeta.slug),
+          publicUrl: buildCallMeetingUrl(roomMeta.slug),
           appUrl: buildSidebarCallUrl(roomMeta.slug),
           visitedAt: timestamp,
           actor: {
@@ -3910,13 +3939,11 @@
       }
 
       function buildSidebarCallUrl(roomSlug = '') {
-        const url = new URL(window.location.href);
+        const url = new URL('/', window.location.href);
         const normalizedSlug = normalizeRoomSlug(roomSlug);
-        url.pathname = '/index.html';
         url.search = '';
         url.hash = '';
-        url.searchParams.set('page', 'svc_call');
-        url.searchParams.set('callRoom', normalizedSlug || COMMON_ROOM_SLUG);
+        url.searchParams.set('call', normalizedSlug || COMMON_ROOM_SLUG);
         return url.toString();
       }
 
@@ -4034,7 +4061,7 @@
       }
 
       async function copyRoomLink(slug) {
-        const link = buildPublicMeetingUrl(slug);
+        const link = buildCallMeetingUrl(slug);
         await navigator.clipboard.writeText(link);
         showToast('Ссылка скопирована');
       }
@@ -4106,6 +4133,10 @@
             updateRoomPickerPreview();
           });
         }
+
+        window.addEventListener('resize', () => {
+          syncRoomSlugLayout();
+        });
 
         if (dom.customRoomForm) {
           dom.customRoomForm.addEventListener('submit', (event) => {

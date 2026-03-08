@@ -29,7 +29,7 @@
         (function () {
             try {
                 const params = new URLSearchParams(window.location.search);
-                if (params.get('page') === 'svc_call') {
+                if (params.get('page') === 'svc_call' || params.has('call')) {
                     document.documentElement.classList.add('boot-call-page');
                 }
             } catch (_) {}
@@ -5129,6 +5129,7 @@
         const PAGE_LS_KEY = 'indexActivePage';
         const PAGE_URL_PARAM = 'page';
         const CALL_ROOM_PARAM = 'callRoom';
+        const CALL_SHORT_PARAM = 'call';
         const PLANNING_EVENT_PARAM = 'planningEvent';
         let iframeKeyboardOverride = null;
         let iframeKeyboardOverrideTimer = null;
@@ -5428,6 +5429,7 @@
                 const params = new URLSearchParams(window.location.search);
                 const page = params.get(PAGE_URL_PARAM);
                 if (page && PAGE_IDS[page]) return page;
+                if (params.has(CALL_SHORT_PARAM)) return 'svc_call';
             } catch (_) {}
             return null;
         }
@@ -5498,7 +5500,7 @@
         function getCallRoomSlugFromUrl() {
             try {
                 const params = new URLSearchParams(window.location.search);
-                return normalizeCallRoomSlug(params.get(CALL_ROOM_PARAM) || '');
+                return normalizeCallRoomSlug(params.get(CALL_SHORT_PARAM) || params.get(CALL_ROOM_PARAM) || '');
             } catch (_) {}
             return '';
         }
@@ -5538,9 +5540,15 @@
                     url.searchParams.delete(PLANNING_EVENT_PARAM);
                 }
                 if (resolved === 'svc_call' && callRoomSlug) {
-                    url.searchParams.set(CALL_ROOM_PARAM, callRoomSlug);
-                } else {
+                    url.searchParams.set(CALL_SHORT_PARAM, callRoomSlug);
                     url.searchParams.delete(CALL_ROOM_PARAM);
+                    url.searchParams.delete(PAGE_URL_PARAM);
+                } else {
+                    url.searchParams.delete(CALL_SHORT_PARAM);
+                    url.searchParams.delete(CALL_ROOM_PARAM);
+                    if (resolved === 'svc_call') {
+                        url.searchParams.set(PAGE_URL_PARAM, resolved);
+                    }
                 }
                 const next = `${url.pathname}${url.search}${url.hash}`;
                 const state = { page: resolved };

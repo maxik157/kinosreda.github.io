@@ -10,19 +10,18 @@
         const GUEST_PROFILE_KEY = 'publicCallGuestProfile';
         const params = new URLSearchParams(window.location.search);
         const fromQuery = String(params.get('name') || '').trim().slice(0, 32);
-        const currentUserRaw = localStorage.getItem('currentUser');
-        if (currentUserRaw) {
-          window.__publicGuestMode = false;
-          document.documentElement.classList.add('authed');
-          return;
-        }
+        const directRoom = String(params.get('room') || params.get('meeting') || '').trim();
         window.__publicGuestMode = true;
         let guestProfile = null;
         try {
           guestProfile = JSON.parse(localStorage.getItem(GUEST_PROFILE_KEY) || 'null');
         } catch (_) {}
         if (fromQuery) {
-          guestProfile = { name: fromQuery, username: '', avatarUrl: '' };
+          guestProfile = { name: fromQuery, username: '', avatarUrl: '', manual: true };
+          localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile));
+        }
+        if (directRoom && (!guestProfile || guestProfile.manual !== true)) {
+          guestProfile = { name: 'Гость', username: '', avatarUrl: '', manual: false };
           localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile));
         }
         const hasGuestName = guestProfile && String(guestProfile.name || '').trim();
@@ -2888,7 +2887,7 @@
     </div>
   </div>
 
-  <main id="appShell" class="call-shell settings-open">
+  <main id="appShell" class="call-shell">
 	    <section class="layout">
 	      <section id="screenStagePanel" class="panel screen-stage-panel" aria-hidden="true">
 	        <div id="screenStage" class="screen-stage"></div>
@@ -3353,6 +3352,7 @@
         pipElements: null,
         pipUnsupportedNotified: false,
         toastTimer: null,
+        guestJoinTimer: null,
         settingsOpen: false,
         participantsCollapsed: loadBoolStorage('callParticipantsCollapsed', false),
         screenStream: null,
@@ -7810,6 +7810,10 @@
         return `${PUBLIC_MEET_ORIGIN}/${MEET_ROUTE_SEGMENT}/?${ROOM_QUERY_PARAM}=${encodeURIComponent(normalizedSlug)}`;
       }
 
+      function buildGuestNavigationUrl(slug = '') {
+        return buildSiblingPageUrl(MEET_ROUTE_SEGMENT, slug);
+      }
+
       function syncTopMeetingRoute(slug = '', push = false) {
         const nextUrl = buildSiblingPageUrl(MEET_ROUTE_SEGMENT, slug);
         try {
@@ -7886,11 +7890,28 @@
         }
         if (dom.guestCustomRoomPreview) {
           const slug = normalizeRoomSlug((dom.guestCustomRoomInput && dom.guestCustomRoomInput.value) || state.roomSlug || '');
-          dom.guestCustomRoomPreview.textContent = buildGuestMeetingUrl(slug || 'teamsync');
+          dom.guestCustomRoomPreview.textContent = buildGuestMeetingUrl(slug);
         }
         if (state.guestRoomMode === 'custom') {
           syncGuestDraftRoomRoute(resolveGuestDraftRoomSlug());
         }
+      }
+
+      function scheduleGuestRoomJoin() {
+        if (state.guestJoinTimer) {
+          clearTimeout(state.guestJoinTimer);
+          state.guestJoinTimer = null;
+        }
+        if (state.guestNameRequired || !state.roomReady || state.joined) {
+          return;
+        }
+        state.guestJoinTimer = window.setTimeout(() => {
+          state.guestJoinTimer = null;
+          if (state.guestNameRequired || !state.roomReady || state.joined) {
+            return;
+          }
+          joinRoom().catch(() => {});
+        }, 0);
       }
 
       function resolveGuestDraftRoomSlug() {
@@ -7912,6 +7933,7 @@
         syncTopMeetingRoute(nextRoom.slug, false);
 
         if (!roomChanged) {
+          scheduleGuestRoomJoin();
           return;
         }
 
@@ -7926,14 +7948,14 @@
         renderScreenStage(true);
         renderParticipants(true);
         updateTransportBadge('offline', 'Оффлайн');
-        if (!state.guestNameRequired) {
-          window.setTimeout(() => {
-            joinRoom().catch(() => {});
-          }, 0);
-        }
+        scheduleGuestRoomJoin();
       }
 
       function returnToGuestRoomPicker() {
+        if (state.guestJoinTimer) {
+          clearTimeout(state.guestJoinTimer);
+          state.guestJoinTimer = null;
+        }
         if (state.joined) {
           leaveRoom();
         }
@@ -8018,7 +8040,7 @@
           if (dom.guestCustomRoomInput) dom.guestCustomRoomInput.focus();
           return;
         }
-        const guestProfile = { name: nextName, username: '', avatarUrl: '' };
+        const guestProfile = { name: nextName, username: '', avatarUrl: '', manual: true };
         try {
           localStorage.setItem('publicCallGuestProfile', JSON.stringify(guestProfile));
         } catch (_) {}
@@ -8028,14 +8050,38 @@
         state.self.avatarUrl = '';
         state.self.color = colorForName(state.self.name || state.self.id);
         state.guestNameRequired = false;
-        applyGuestRoomSelection(nextRoomSlug);
+        const nextUrl = buildGuestNavigationUrl(nextRoomSlug);
+        const currentUrl = buildGuestNavigationUrl(state.roomReady ? state.roomSlug : '');
         setGuestEntryError('');
-        syncGuestEntryVisibility();
         updateSelfPresentation();
         renderParticipants(true);
+
+        if (nextUrl !== currentUrl) {
+          try {
+            const target = window.top && window.top.location ? window.top : window;
+            target.location.href = nextUrl;
+            return;
+          } catch (_) {}
+          try {
+            window.location.href = nextUrl;
+            return;
+          } catch (_) {}
+        }
+
+        applyGuestRoomSelection(nextRoomSlug);
+        syncGuestEntryVisibility();
       }
 
       function getCurrentUserObject() {
+        if (isPublicGuestMode()) {
+          const guest = window.__publicGuestProfile || null;
+          if (!guest) return null;
+          return {
+            name: normalizeName(guest.name || 'Гость'),
+            username: '',
+            avatarUrl: ''
+          };
+        }
         try {
           const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
           if (currentUser) return currentUser;
@@ -8046,6 +8092,10 @@
       }
 
       function getCurrentUserName() {
+        if (isPublicGuestMode()) {
+          const guest = window.__publicGuestProfile || null;
+          return normalizeName((guest && guest.name) || 'Гость');
+        }
         try {
           const query = new URLSearchParams(window.location.search);
           const fromQuery = String(query.get('name') || '').trim();
@@ -8058,6 +8108,9 @@
       }
 
       function getCurrentUserUsername() {
+        if (isPublicGuestMode()) {
+          return '';
+        }
         try {
           const query = new URLSearchParams(window.location.search);
           const fromQuery = query.get('username') || query.get('login') || query.get('user');
@@ -8070,6 +8123,9 @@
       }
 
       function getCurrentUserAvatarUrl() {
+        if (isPublicGuestMode()) {
+          return '';
+        }
         try {
           const query = new URLSearchParams(window.location.search);
           const queryAvatar = normalizeAvatarUrl(query.get('avatarUrl') || query.get('avatar') || '');
