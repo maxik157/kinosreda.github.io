@@ -124,6 +124,44 @@
             pointer-events: auto;
         }
 
+        .owner-action {
+            width: 52px;
+            height: 52px;
+            border-radius: 999px;
+            display: inline-grid;
+            place-items: center;
+            color: var(--accent-strong);
+            background-color: transparent;
+            transition:
+                transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 200ms ease,
+                background-color 200ms ease;
+            animation: surfaceIn 620ms cubic-bezier(0.2, 1, 0.3, 1) both;
+        }
+
+        .owner-action:hover {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+            background:
+                linear-gradient(180deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0.06)),
+                var(--surface-strong);
+        }
+
+        .owner-action[hidden] {
+            display: none;
+        }
+
+        .owner-action svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
         .ranking-toggle {
             appearance: none;
             min-width: 164px;
@@ -328,10 +366,12 @@
 
         .rank-index {
             color: var(--text-faint);
-            font-size: 0.68rem;
+            min-width: 18px;
+            font-size: 0.8rem;
             font-weight: 700;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
+            letter-spacing: 0;
+            text-transform: none;
+            font-variant-numeric: tabular-nums;
         }
 
         .rank-copy {
@@ -358,6 +398,24 @@
             line-height: 1.4;
         }
 
+        .rank-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            color: var(--text-faint);
+            font-size: 0.64rem;
+            line-height: 1.2;
+        }
+
+        .rank-meta i {
+            width: 3px;
+            height: 3px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: rgba(255, 245, 230, 0.22);
+        }
+
         .rank-score {
             color: var(--accent-strong);
             font-size: 0.9rem;
@@ -377,8 +435,16 @@
             display: grid;
             grid-template-rows: auto auto minmax(0, 1fr);
             gap: 12px;
+            overflow: visible;
             animation: surfaceIn 760ms cubic-bezier(0.2, 1, 0.3, 1) both;
             transition: opacity 240ms ease, transform 280ms cubic-bezier(0.22, 1, 0.36, 1), visibility 240ms ease;
+        }
+
+        .detail-floating-action {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 10px);
+            z-index: 2;
         }
 
         .detail-head {
@@ -386,6 +452,12 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: 10px;
             align-items: center;
+        }
+
+        .detail-copy {
+            min-width: 0;
+            display: grid;
+            gap: 4px;
         }
 
         .detail-card.is-hidden,
@@ -402,6 +474,16 @@
             line-height: 1.02;
             font-weight: 700;
             word-break: break-word;
+        }
+
+        .detail-copy h1.is-editable {
+            cursor: pointer;
+            transition: color 180ms ease, text-shadow 180ms ease;
+        }
+
+        .detail-copy h1.is-editable:hover {
+            color: var(--accent-strong);
+            text-shadow: 0 0 18px rgba(245, 158, 11, 0.12);
         }
 
         .detail-address {
@@ -527,6 +609,10 @@
             display: none;
         }
 
+        .detail-copy .name-field {
+            min-width: 0;
+        }
+
         .name-input,
         .review-input {
             width: 100%;
@@ -549,6 +635,19 @@
             font-weight: 700;
         }
 
+        .detail-copy .name-input {
+            height: auto;
+            padding: 0 0 6px;
+            border: 0;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.18);
+            border-radius: 0;
+            background: transparent;
+            font-size: clamp(1.18rem, 2.6vw, 1.52rem);
+            line-height: 1.02;
+            font-weight: 700;
+            box-shadow: none;
+        }
+
         .review-input {
             min-height: 94px;
             padding: 14px 16px;
@@ -567,6 +666,11 @@
         .review-input:focus {
             border-color: var(--line-strong);
             box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.1);
+        }
+
+        .detail-copy .name-input:focus {
+            box-shadow: none;
+            border-bottom-color: rgba(245, 158, 11, 0.42);
         }
 
         .rating-editor {
@@ -1417,6 +1521,11 @@
                 padding-right: 52px;
             }
 
+            .detail-floating-action {
+                right: 0;
+                bottom: calc(100% + 8px);
+            }
+
             .detail-side {
                 display: block;
             }
@@ -1534,9 +1643,15 @@
     </aside>
 
     <section id="detailCard" class="detail-card glass" aria-hidden="false">
+        <button id="restaurantDeleteButton" class="owner-action detail-floating-action glass" type="button" aria-label="Удалить ресторан" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12"></path><path d="M9.5 7V5.5h5V7"></path><path d="M9 11v5"></path><path d="M15 11v5"></path><path d="M8 7l.6 11a1 1 0 0 0 1 .9h4.8a1 1 0 0 0 1-.9L16 7"></path></svg>
+        </button>
         <div class="detail-head">
             <div class="detail-copy">
                 <h1 id="placeTitle">Выберите точку</h1>
+                <div id="nameField" class="name-field" hidden>
+                    <input id="nameInput" class="name-input" type="text" maxlength="80" placeholder="Название">
+                </div>
                 <p id="placeAddress" class="detail-address">Смоленск</p>
             </div>
             <div class="detail-side">
@@ -1551,10 +1666,6 @@
         </div>
 
         <form id="reviewForm" class="editor">
-            <div id="nameField" class="name-field">
-                <input id="nameInput" class="name-input" type="text" maxlength="80" placeholder="Название">
-            </div>
-
             <div class="rating-editor">
                 <div class="rating-display">
                     <strong id="draftRatingValue">8.0</strong>
@@ -1700,6 +1811,7 @@
                 lightboxItems: [],
                 lightboxIndex: 0,
                 pendingDeleteEntryId: "",
+                pendingDeleteMode: "review",
                 reviewMotionLockUntil: 0
             };
 
@@ -1712,6 +1824,7 @@
                 filterButtons: Array.from(document.querySelectorAll(".filter-btn")),
                 detailCard: document.getElementById("detailCard"),
                 cardCloseButton: document.getElementById("cardCloseButton"),
+                restaurantDeleteButton: document.getElementById("restaurantDeleteButton"),
                 scorePanel: document.getElementById("scorePanel"),
                 placeTitle: document.getElementById("placeTitle"),
                 placeAddress: document.getElementById("placeAddress"),
@@ -1736,6 +1849,7 @@
                 photoLightboxImage: document.getElementById("photoLightboxImage"),
                 photoLightboxStrip: document.getElementById("photoLightboxStrip"),
                 confirmModal: document.getElementById("confirmModal"),
+                confirmTitle: document.getElementById("confirmTitle"),
                 confirmCancel: document.getElementById("confirmCancel"),
                 confirmAccept: document.getElementById("confirmAccept"),
                 toast: document.getElementById("toast")
@@ -2044,6 +2158,7 @@
 
             function normalizeEntry(id, raw) {
                 if (!raw || typeof raw !== "object") return null;
+                if (raw.deletedAt) return null;
                 const coords = parseCoords(raw.coords || raw);
                 if (!coords) return null;
                 const ratingsObject = raw.ratings && typeof raw.ratings === "object" ? raw.ratings : {};
@@ -2051,6 +2166,9 @@
                     .map(([userId, review]) => normalizeReview(userId, review))
                     .filter(Boolean)
                     .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+                const ownerReview = ratings
+                    .slice()
+                    .sort((a, b) => new Date(a.createdAt || a.updatedAt).getTime() - new Date(b.createdAt || b.updatedAt).getTime())[0] || null;
                 const average = ratings.length
                     ? ratings.reduce((sum, review) => sum + review.rating, 0) / ratings.length
                     : 0;
@@ -2062,6 +2180,8 @@
                     source: String(raw.source || "").trim(),
                     osmType: String(raw.osmType || "").trim(),
                     osmId: String(raw.osmId || "").trim(),
+                    createdBy: normalizeKey(raw.createdBy || (ownerReview ? ownerReview.userId : "")),
+                    createdByName: String(raw.createdByName || (ownerReview ? ownerReview.user : "")).trim(),
                     createdAt: String(raw.createdAt || "").trim(),
                     updatedAt: String(raw.updatedAt || raw.createdAt || "").trim(),
                     ratings,
@@ -2093,6 +2213,7 @@
                     coords: entry.coords.slice(),
                     source: "saved",
                     editableName: false,
+                    createdBy: entry.createdBy || "",
                     osmType: entry.osmType || "",
                     osmId: entry.osmId || ""
                 };
@@ -2108,9 +2229,21 @@
                     coords: coords.slice(),
                     source: "draft",
                     editableName: true,
+                    createdBy: state.userId,
                     osmType: "",
                     osmId: ""
                 };
+            }
+
+            function isPrivilegedUser() {
+                return state.userId === "max" || normalizeKey(state.userName) === "max";
+            }
+
+            function canManageEntry(entry) {
+                if (isPrivilegedUser()) {
+                    return Boolean(entry);
+                }
+                return Boolean(entry && entry.createdBy && entry.createdBy === state.userId);
             }
 
             function compareTop(a, b) {
@@ -2185,6 +2318,7 @@
                 document.body.classList.toggle("is-card-hidden", !state.cardOpen);
                 els.detailCard.classList.toggle("is-hidden", !state.cardOpen);
                 els.detailCard.setAttribute("aria-hidden", state.cardOpen ? "false" : "true");
+                updateOwnerActionVisibility();
             }
 
             function syncRatingEditorOpen(next) {
@@ -2245,6 +2379,18 @@
                 updateSaveState();
             }
 
+            function focusNameInput() {
+                requestAnimationFrame(() => {
+                    try {
+                        els.nameInput.focus({ preventScroll: true });
+                        els.nameInput.select();
+                    } catch (_) {
+                        els.nameInput.focus();
+                        els.nameInput.select();
+                    }
+                });
+            }
+
             function handleNameInput(event) {
                 const value = String(event.target.value || "").trim();
                 if (state.selection && state.selection.editableName) {
@@ -2258,6 +2404,52 @@
                     }
                 }
                 markFormDirty();
+            }
+
+            function activateTitleRename() {
+                if (!state.selection) return;
+                const entry = getSelectionEntry();
+
+                if (state.selection.source === "draft") {
+                    focusNameInput();
+                    return;
+                }
+
+                if (!entry || !canManageEntry(entry)) return;
+
+                state.selection = {
+                    ...state.selection,
+                    name: entry.name,
+                    editableName: true
+                };
+                renderSelection();
+                focusNameInput();
+            }
+
+            async function commitInlineNameEdit() {
+                if (!state.selection || !state.selection.editableName || state.selection.source !== "saved" || state.isSaving) {
+                    return;
+                }
+
+                const entry = getSelectionEntry();
+                if (!entry || !canManageEntry(entry)) {
+                    return;
+                }
+
+                const nextName = String(els.nameInput.value || "").trim();
+                if (!nextName || nextName === entry.name) {
+                    state.selection = {
+                        ...state.selection,
+                        name: entry.name,
+                        editableName: false
+                    };
+                    renderSelection();
+                    return;
+                }
+
+                await saveReview({
+                    preventDefault() {}
+                });
             }
 
             function hydrateDraftFromSelection() {
@@ -2275,6 +2467,7 @@
                 els.rankingToggle.classList.toggle("is-active", state.rankingOpen);
                 els.rankingToggle.setAttribute("aria-expanded", state.rankingOpen ? "true" : "false");
                 els.rankingDock.setAttribute("aria-hidden", state.rankingOpen ? "false" : "true");
+                updateOwnerActionVisibility();
             }
 
             function applyEntries(raw) {
@@ -2459,9 +2652,14 @@
                 els.photoLightboxNext.hidden = true;
             }
 
-            function openDeleteModal(entryId) {
+            function openDeleteModal(mode, entryId) {
                 if (!entryId) return;
                 state.pendingDeleteEntryId = String(entryId);
+                state.pendingDeleteMode = mode === "restaurant" ? "restaurant" : "review";
+                els.confirmTitle.textContent = state.pendingDeleteMode === "restaurant"
+                    ? "Удалить ресторан?"
+                    : "Удалить отзыв?";
+                els.confirmAccept.textContent = state.pendingDeleteMode === "restaurant" ? "Удалить ресторан" : "Удалить";
                 els.confirmModal.classList.add("is-open");
                 els.confirmModal.setAttribute("aria-hidden", "false");
                 requestAnimationFrame(() => {
@@ -2475,16 +2673,24 @@
 
             function closeDeleteModal() {
                 state.pendingDeleteEntryId = "";
+                state.pendingDeleteMode = "review";
+                els.confirmTitle.textContent = "Удалить отзыв?";
+                els.confirmAccept.textContent = "Удалить";
                 els.confirmModal.classList.remove("is-open");
                 els.confirmModal.setAttribute("aria-hidden", "true");
             }
 
-            async function confirmDeleteReview() {
+            async function confirmDeleteAction() {
                 const entryId = state.pendingDeleteEntryId;
+                const mode = state.pendingDeleteMode;
                 closeDeleteModal();
                 if (!entryId) return;
                 const entry = state.entryMap.get(entryId);
                 if (!entry) return;
+                if (mode === "restaurant") {
+                    await deleteOwnedRestaurant(entry);
+                    return;
+                }
                 await deleteOwnReview(entry);
             }
 
@@ -2633,6 +2839,21 @@
                 applyEntries(next);
             }
 
+            function removeEntryFromLocalSnapshot(entryId) {
+                const next = { ...state.entriesRaw };
+                if (!(entryId in next)) return;
+                delete next[entryId];
+                if (state.selection && state.selection.key === entryId) {
+                    state.selection = null;
+                }
+                applyEntries(next);
+            }
+
+            function updateOwnerActionVisibility() {
+                const entry = getSelectionEntry();
+                els.restaurantDeleteButton.hidden = !(entry && canManageEntry(entry) && state.cardOpen && !state.rankingOpen);
+            }
+
             function removeReviewFromLocalSnapshot(entryId, userId) {
                 const next = { ...state.entriesRaw };
                 const existing = next[entryId] && typeof next[entryId] === "object" ? next[entryId] : null;
@@ -2669,6 +2890,41 @@
                 } catch (error) {
                     console.error(error);
                     showToast("Не удалось удалить");
+                } finally {
+                    state.isSaving = false;
+                    updateSaveState();
+                }
+            }
+
+            async function deleteOwnedRestaurant(entry) {
+                if (!entry || !canManageEntry(entry) || state.isSaving) return;
+
+                state.isSaving = true;
+                state.reviewMotionLockUntil = Date.now() + 1400;
+                updateSaveState();
+
+                try {
+                    const now = new Date().toISOString();
+                    if (state.db) {
+                        await state.db.ref(`${DB_ROOT}/${entry.id}`).update({
+                            deletedAt: now,
+                            deletedBy: state.userId,
+                            deletedByName: state.userName,
+                            updatedAt: now
+                        });
+                    }
+
+                    if (state.selection && state.selection.key === entry.id) {
+                        syncRatingEditorOpen(false);
+                        syncCardOpen(false);
+                    }
+
+                    removeEntryFromLocalSnapshot(entry.id);
+                    resetDraftComposer({ forceDirty: false, rating: 8.0 });
+                    showToast("Ресторан удалён");
+                } catch (error) {
+                    console.error(error);
+                    showToast("Не удалось удалить ресторан");
                 } finally {
                     state.isSaving = false;
                     updateSaveState();
@@ -2736,7 +2992,7 @@
                         });
 
                         const deleteButton = createReviewActionButton("delete", "Удалить отзыв", () => {
-                            openDeleteModal(entry.id);
+                            openDeleteModal("review", entry.id);
                         });
 
                         actions.appendChild(editButton);
@@ -2772,6 +3028,8 @@
                 const selection = state.selection;
                 const entry = getSelectionEntry();
                 const average = entry ? entry.average : 0;
+                const canManage = canManageEntry(entry);
+                const canRename = Boolean(selection && (selection.source === "draft" || canManage));
                 const title = selection
                     ? (entry ? entry.name : (String(selection.name || "").trim() || "Новая точка"))
                     : "Выберите точку";
@@ -2781,6 +3039,9 @@
                 const scoreText = getEntryScoreText(entry, "—");
 
                 els.placeTitle.textContent = title;
+                els.placeTitle.classList.toggle("is-editable", canRename);
+                els.placeTitle.setAttribute("title", canRename ? "Переименовать" : "");
+                els.placeTitle.hidden = Boolean(selection && selection.editableName);
                 els.placeAddress.textContent = address;
                 els.scoreValue.textContent = scoreText;
                 els.scoreBarFill.style.transform = `scaleX(${average / 10})`;
@@ -2788,6 +3049,7 @@
                     ? (entry.ratingCount ? formatCount(entry.ratingCount, ["оценка", "оценки", "оценок"]) : "без оценок")
                     : "без оценок";
                 els.scorePanel.disabled = !selection;
+                updateOwnerActionVisibility();
 
                 els.nameField.hidden = !(selection && selection.editableName);
                 if (!selection) {
@@ -2810,7 +3072,7 @@
 
                 const rank = document.createElement("div");
                 rank.className = "rank-index";
-                rank.textContent = `#${String(index + 1).padStart(2, "0")}`;
+                rank.textContent = String(index + 1);
 
                 const copy = document.createElement("div");
                 copy.className = "rank-copy";
@@ -2821,12 +3083,29 @@
                 const subtitle = document.createElement("span");
                 subtitle.textContent = entry.address || formatCoords(entry.coords);
 
+                const meta = document.createElement("div");
+                meta.className = "rank-meta";
+
+                const reviews = document.createElement("span");
+                reviews.textContent = formatCount(entry.ratingCount, ["отзыв", "отзыва", "отзывов"]);
+
+                meta.appendChild(reviews);
+                if (entry.address) {
+                    const dot = document.createElement("i");
+                    dot.setAttribute("aria-hidden", "true");
+                    const city = document.createElement("span");
+                    city.textContent = "Смоленск";
+                    meta.appendChild(dot);
+                    meta.appendChild(city);
+                }
+
                 const score = document.createElement("div");
                 score.className = "rank-score";
                 score.textContent = getEntryScoreText(entry, "нов.");
 
                 copy.appendChild(title);
                 copy.appendChild(subtitle);
+                copy.appendChild(meta);
                 button.appendChild(rank);
                 button.appendChild(copy);
                 button.appendChild(score);
@@ -3563,6 +3842,11 @@
                 const existing = state.entryMap.get(entryId) || getSelectionEntry();
                 const myReview = existing ? existing.myReview : null;
                 const now = new Date().toISOString();
+                const rawReviewText = String(els.reviewInput.value || "").trim().slice(0, 260);
+                const uploadedPhotos = state.draftPhotos
+                    .filter((item) => item.status === "done" && item.url)
+                    .map((item) => item.url)
+                    .slice(0, MAX_PHOTO_COUNT);
 
                 const entryPayload = {
                     name,
@@ -3571,9 +3855,22 @@
                     source: state.selection.osmType && state.selection.osmId ? "osm" : "custom",
                     osmType: state.selection.osmType || "",
                     osmId: state.selection.osmId || "",
+                    createdBy: existing ? (existing.createdBy || state.userId) : state.userId,
+                    createdByName: existing ? (existing.createdByName || state.userName) : state.userName,
                     createdAt: existing ? existing.createdAt : now,
                     updatedAt: now
                 };
+
+                const renameOnly = Boolean(
+                    existing
+                    && state.selection.source === "saved"
+                    && state.selection.editableName
+                    && name !== existing.name
+                    && !state.editingOwnReview
+                    && !rawReviewText
+                    && !uploadedPhotos.length
+                    && (!myReview || Math.abs(rating - myReview.rating) < 0.001)
+                );
 
                 const reviewPayload = {
                     userId: state.userId,
@@ -3583,14 +3880,10 @@
                     version: 2,
                     text: (
                         state.editingOwnReview
-                            ? String(els.reviewInput.value || "").trim().slice(0, 260)
-                            : (String(els.reviewInput.value || "").trim().slice(0, 260) || (myReview ? myReview.text : ""))
+                            ? rawReviewText
+                            : (rawReviewText || (myReview ? myReview.text : ""))
                     ),
                     photos: (() => {
-                        const uploadedPhotos = state.draftPhotos
-                            .filter((item) => item.status === "done" && item.url)
-                            .map((item) => item.url)
-                            .slice(0, MAX_PHOTO_COUNT);
                         if (state.editingOwnReview) {
                             return uploadedPhotos;
                         }
@@ -3607,7 +3900,9 @@
                 try {
                     if (state.db) {
                         await state.db.ref(`${DB_ROOT}/${entryId}`).update(entryPayload);
-                        await state.db.ref(`${DB_ROOT}/${entryId}/ratings/${state.userId}`).set(reviewPayload);
+                        if (!renameOnly) {
+                            await state.db.ref(`${DB_ROOT}/${entryId}/ratings/${state.userId}`).set(reviewPayload);
+                        }
                     }
                     state.selection = {
                         ...state.selection,
@@ -3620,10 +3915,14 @@
                         editableName: false,
                         source: "saved"
                     };
-                    updateLocalSnapshot(entryId, entryPayload, reviewPayload);
+                    if (renameOnly) {
+                        patchEntryMetaInLocalSnapshot(entryId, entryPayload);
+                    } else {
+                        updateLocalSnapshot(entryId, entryPayload, reviewPayload);
+                    }
                     syncRatingEditorOpen(false);
                     resetDraftComposer({ forceDirty: false, rating });
-                    showToast(existing ? "Отзыв обновлён" : "Место добавлено");
+                    showToast(renameOnly ? "Название обновлено" : (existing ? "Отзыв обновлён" : "Место добавлено"));
                 } catch (error) {
                     console.error(error);
                     showToast("Не удалось сохранить");
@@ -3741,6 +4040,21 @@
                     syncRatingEditorOpen(!state.ratingEditorOpen);
                 });
 
+                els.placeTitle.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    activateTitleRename();
+                });
+
+                els.restaurantDeleteButton.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const entry = getSelectionEntry();
+                    if (entry) {
+                        openDeleteModal("restaurant", entry.id);
+                    }
+                });
+
                 els.cardCloseButton.addEventListener("click", (event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -3755,6 +4069,11 @@
 
                 els.photoInput.addEventListener("change", handlePhotoInput);
                 els.nameInput.addEventListener("input", handleNameInput);
+                els.nameInput.addEventListener("blur", () => {
+                    commitInlineNameEdit().catch((error) => {
+                        console.error(error);
+                    });
+                });
                 els.reviewInput.addEventListener("input", markFormDirty);
                 els.reviewForm.addEventListener("submit", saveReview);
 
@@ -3772,7 +4091,7 @@
                 });
 
                 els.confirmCancel.addEventListener("click", closeDeleteModal);
-                els.confirmAccept.addEventListener("click", confirmDeleteReview);
+                els.confirmAccept.addEventListener("click", confirmDeleteAction);
                 els.confirmModal.addEventListener("click", (event) => {
                     if (event.target === els.confirmModal) {
                         closeDeleteModal();
