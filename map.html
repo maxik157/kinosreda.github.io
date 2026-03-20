@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="origin">
+    <title>Карта Смоленска — Киносреда</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+    <script>
+        (function () {
+            try {
+                const currentUser = localStorage.getItem("currentUser");
+                if (!currentUser) {
+                    location.replace("login.html");
+                    return;
+                }
+                document.documentElement.classList.add("authed");
+            } catch (_) {
+                location.replace("login.html");
+            }
+        })();
+        (function () {
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem("siteTheme") || "beer";
+            } catch (_) {}
+        })();
+    </script>
+    <style>
+        :root {
+            --accent-200: #fde68a;
+            --accent-300: #fcd34d;
+            --accent-400: #f59e0b;
+            --accent-500: #f59e0b;
+            --accent-border-10: rgba(245, 158, 11, 0.1);
+            --accent-border-20: rgba(245, 158, 11, 0.2);
+            --accent-border-30: rgba(245, 158, 11, 0.3);
+            --accent-border-50: rgba(245, 158, 11, 0.5);
+            --accent-soft: rgba(245, 158, 11, 0.14);
+            --surface: rgba(15, 15, 15, 0.74);
+            --surface-strong: rgba(8, 8, 8, 0.9);
+            --surface-soft: rgba(20, 20, 20, 0.58);
+            --text-main: #fff;
+            --text-soft: rgba(255, 255, 255, 0.76);
+            --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+            --map-ground-filter: saturate(0.68) hue-rotate(-18deg) brightness(0.62) contrast(1.34);
+            --map-label-filter: saturate(0.78) brightness(0.95) contrast(1.15);
+            --map-overlay: linear-gradient(180deg, rgba(0, 0, 0, 0.48) 0%, rgba(18, 12, 2, 0.22) 35%, rgba(0, 0, 0, 0.56) 100%);
+            --map-vignette: radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.1) 0%, transparent 45%), radial-gradient(circle at 85% 100%, rgba(245, 158, 11, 0.08) 0%, transparent 50%);
+        }
+
+        html[data-theme="white"] {
+            --accent-200: #fff;
+            --accent-300: #fff;
+            --accent-400: #fff;
+            --accent-500: #fff;
+            --accent-border-10: rgba(255, 255, 255, 0.18);
+            --accent-border-20: rgba(255, 255, 255, 0.26);
+            --accent-border-30: rgba(255, 255, 255, 0.34);
+            --accent-border-50: rgba(255, 255, 255, 0.55);
+            --accent-soft: rgba(255, 255, 255, 0.12);
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: "Comfortaa", cursive;
+            color: var(--text-main);
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
+        html:not(.authed) body {
+            visibility: hidden;
+        }
+
+        .map-page {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: var(--map-vignette), #000;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-tint {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: var(--map-overlay);
+            z-index: 5;
+            mix-blend-mode: multiply;
+        }
+
+        .map-grain {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0.24;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+            background-size: 3px 3px;
+            mix-blend-mode: soft-light;
+        }
+
+        #map [class*="ground-pane"] {
+            filter: var(--map-ground-filter) !important;
+            transition: filter 0.22s ease;
+        }
+
+        #map [class*="labels-pane"],
+        #map [class*="places-pane"] {
+            filter: var(--map-label-filter) !important;
+            transition: filter 0.22s ease;
+        }
+
+        #map [class*="copyrights-pane"] {
+            filter: brightness(0.86) contrast(1.14);
+        }
+
+        #map [class*="controls-pane"] [class*="button"],
+        #map [class*="controls-pane"] [class*="listbox__button"],
+        #map [class*="controls-pane"] [class*="control"] {
+            border-radius: 12px !important;
+            border-color: var(--accent-border-30) !important;
+            background: rgba(10, 10, 10, 0.76) !important;
+            backdrop-filter: blur(8px);
+            color: #fff !important;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+        }
+
+        #map [class*="controls-pane"] *,
+        #map [class*="copyright"],
+        #map [class*="copyrights-pane"] * {
+            font-family: "Comfortaa", cursive !important;
+            letter-spacing: 0.01em;
+        }
+
+        html[data-theme="white"] #map [class*="controls-pane"] [class*="button"],
+        html[data-theme="white"] #map [class*="controls-pane"] [class*="listbox__button"],
+        html[data-theme="white"] #map [class*="controls-pane"] [class*="control"] {
+            background: rgba(255, 255, 255, 0.88) !important;
+            color: #111 !important;
+            border-color: rgba(255, 255, 255, 0.62) !important;
+        }
+
+        .ks-marker {
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .ks-marker--bookmark {
+            width: 24px;
+            height: 24px;
+            border-radius: 50% 50% 50% 0;
+            background: var(--accent-400);
+            border: 1px solid rgba(0, 0, 0, 0.45);
+            transform: translate(-50%, -100%) rotate(-45deg);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+        }
+
+        .ks-marker--bookmark::before {
+            content: "";
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.45);
+            left: 7px;
+            top: 7px;
+        }
+
+        .ks-marker--selected {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid var(--accent-300);
+            background: rgba(0, 0, 0, 0.42);
+            box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.14), 0 10px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .ks-marker--selected::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: var(--accent-300);
+        }
+
+        .ui-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .panel {
+            pointer-events: auto;
+            background: var(--surface);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 18px;
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+        }
+
+        .top-panel {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            display: grid;
+            grid-template-columns: minmax(180px, 1fr) minmax(150px, 210px) auto;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .map-page.map-focus .place-panel,
+        .map-page.map-focus .bookmarks-panel,
+        .map-page.map-focus .search-results {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(8px);
+        }
+
+        .map-page.map-focus .top-panel {
+            right: auto;
+            width: min(980px, calc(100vw - 28px));
+        }
+
+        .input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.36);
+            color: #fff;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 12px;
+            height: 42px;
+            padding: 0 12px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-border-50);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .style-select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.38);
+            color: #fff;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 12px;
+            height: 42px;
+            padding: 0 12px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .style-select:focus {
+            border-color: var(--accent-border-50);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0, 0, 0, 0.32);
+            color: #fff;
+            border-radius: 12px;
+            min-height: 42px;
+            padding: 0 14px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.18s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            border-color: var(--accent-border-50);
+            background: var(--accent-soft);
+        }
+
+        .btn-accent {
+            border-color: var(--accent-border-50);
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.35), rgba(245, 158, 11, 0.22));
+            color: #fff;
+        }
+
+        html[data-theme="white"] .btn-accent {
+            color: #111;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 245, 245, 0.82));
+        }
+
+        .search-results {
+            position: absolute;
+            top: 66px;
+            left: 14px;
+            width: min(520px, calc(100vw - 28px));
+            max-height: 310px;
+            overflow-y: auto;
+            display: none;
+            padding: 8px;
+        }
+
+        .search-results.is-open {
+            display: block;
+        }
+
+        .search-item {
+            width: 100%;
+            text-align: left;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.16);
+            color: #fff;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .search-item:hover {
+            border-color: var(--accent-border-30);
+            background: var(--accent-soft);
+        }
+
+        .search-item strong {
+            display: block;
+            font-size: 13px;
+            line-height: 1.3;
+        }
+
+        .search-item span {
+            display: block;
+            margin-top: 4px;
+            font-size: 11px;
+            line-height: 1.35;
+            color: var(--text-soft);
+        }
+
+        .place-panel {
+            position: absolute;
+            right: 14px;
+            top: 84px;
+            width: min(390px, calc(100vw - 28px));
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding: 14px;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1.3;
+        }
+
+        .panel-subtitle {
+            margin: 6px 0 0;
+            font-size: 12px;
+            color: var(--text-soft);
+            line-height: 1.45;
+        }
+
+        .meta-row {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        .badge {
+            border-radius: 999px;
+            border: 1px solid var(--accent-border-30);
+            padding: 5px 10px;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .section-title {
+            margin: 14px 0 8px;
+            font-size: 13px;
+            letter-spacing: 0.01em;
+            color: var(--accent-200);
+        }
+
+        .stars {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .star-btn {
+            appearance: none;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0, 0, 0, 0.26);
+            color: rgba(255, 255, 255, 0.32);
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            transition: 0.16s ease;
+        }
+
+        .star-btn:hover,
+        .star-btn.is-on {
+            color: var(--accent-300);
+            border-color: var(--accent-border-50);
+            background: var(--accent-soft);
+        }
+
+        html[data-theme="white"] .star-btn:hover,
+        html[data-theme="white"] .star-btn.is-on {
+            color: #fff;
+        }
+
+        .review-form textarea {
+            width: 100%;
+            min-height: 82px;
+            resize: vertical;
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .review-form textarea:focus {
+            border-color: var(--accent-border-50);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .review-item {
+            background: var(--surface-soft);
+            border: 1px solid var(--accent-border-20);
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .review-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+
+        .review-rating {
+            color: var(--accent-300);
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+
+        .review-text {
+            margin-top: 7px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .empty-note {
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px dashed var(--accent-border-20);
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        .bookmarks-panel {
+            position: absolute;
+            left: 14px;
+            bottom: 14px;
+            width: min(460px, calc(100vw - 28px));
+            max-height: min(300px, 42vh);
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .bookmark-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bookmark-item {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 8px;
+            align-items: center;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            padding: 9px 10px;
+        }
+
+        .bookmark-item strong {
+            display: block;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .bookmark-item span {
+            display: block;
+            margin-top: 2px;
+            color: var(--text-soft);
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
+        .small-btn {
+            appearance: none;
+            border: 1px solid var(--accent-border-20);
+            background: rgba(0, 0, 0, 0.28);
+            color: #fff;
+            border-radius: 10px;
+            height: 32px;
+            padding: 0 10px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .small-btn:hover {
+            border-color: var(--accent-border-50);
+            background: var(--accent-soft);
+        }
+
+        .toast {
+            position: absolute;
+            left: 50%;
+            bottom: 18px;
+            transform: translateX(-50%) translateY(16px);
+            max-width: min(90vw, 520px);
+            background: var(--surface-strong);
+            border: 1px solid var(--accent-border-30);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.2s ease;
+            z-index: 20;
+            color: #fff;
+        }
+
+        .toast.is-on {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .error-banner {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            top: 72px;
+            z-index: 21;
+            border-radius: 14px;
+            padding: 10px 12px;
+            background: rgba(137, 20, 20, 0.82);
+            border: 1px solid rgba(255, 120, 120, 0.35);
+            font-size: 12px;
+            line-height: 1.45;
+            display: none;
+        }
+
+        .error-banner.is-on {
+            display: block;
+        }
+
+        .link-btn {
+            text-decoration: none;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 14px;
+            min-height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border-30);
+            background: rgba(0, 0, 0, 0.28);
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .link-btn:hover {
+            border-color: var(--accent-border-50);
+            background: var(--accent-soft);
+        }
+
+        @media (max-width: 960px) {
+            .top-panel {
+                grid-template-columns: 1fr;
+            }
+
+            #searchButton {
+                display: none;
+            }
+
+            .top-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+            }
+
+            .place-panel {
+                top: auto;
+                right: 14px;
+                left: 14px;
+                bottom: 14px;
+                width: auto;
+                max-height: 48vh;
+            }
+
+            .bookmarks-panel {
+                left: 14px;
+                right: 14px;
+                width: auto;
+                bottom: calc(48vh + 28px);
+                max-height: 26vh;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .top-panel {
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                gap: 8px;
+                padding: 8px;
+                grid-template-columns: 1fr;
+            }
+
+            .input-wrap {
+                width: 100%;
+            }
+
+            .top-actions {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+            }
+
+            .top-actions .btn,
+            .top-actions .link-btn {
+                width: 100%;
+            }
+
+            .search-results {
+                top: 110px;
+                left: 10px;
+                width: calc(100vw - 20px);
+            }
+
+            .place-panel {
+                left: 10px;
+                right: 10px;
+                bottom: 10px;
+                max-height: 46vh;
+            }
+
+            .bookmarks-panel {
+                left: 10px;
+                right: 10px;
+                width: auto;
+                bottom: calc(46vh + 20px);
+                max-height: 22vh;
+            }
+
+            .bookmark-item {
+                grid-template-columns: 1fr auto;
+            }
+
+            .bookmark-item .small-btn:last-child {
+                grid-column: span 2;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main id="mapPage" class="map-page">
+        <div id="map"></div>
+        <div class="map-tint"></div>
+        <div class="map-grain"></div>
+
+        <div class="ui-layer">
+            <div class="panel top-panel">
+                <div class="input-wrap">
+                    <input id="searchInput" class="search-input" type="text" placeholder="Поиск по Смоленску: адрес, место, улица">
+                    <button id="searchButton" class="btn btn-accent" type="button">Найти</button>
+                </div>
+                <select id="mapStyleSelect" class="style-select" aria-label="Стиль карты">
+                    <option value="cinema">Стиль: Киносреда</option>
+                    <option value="night">Стиль: Ночной город</option>
+                    <option value="light">Стиль: Светлый контраст</option>
+                </select>
+                <div class="top-actions">
+                    <button id="mapFocusToggle" class="btn" type="button">Режим карты</button>
+                    <button id="myLocationButton" class="btn" type="button">Моя геопозиция</button>
+                    <a class="link-btn" href="index.html">На главную</a>
+                </div>
+            </div>
+
+            <div id="searchResults" class="panel search-results"></div>
+
+            <div id="apiErrorBanner" class="error-banner"></div>
+
+            <aside class="panel place-panel">
+                <h2 id="placeTitle" class="panel-title">Выберите место на карте</h2>
+                <p id="placeAddress" class="panel-subtitle">Кликните по заведению на карте или воспользуйтесь поиском. Повторный клик откроет объект в Яндекс Картах.</p>
+                <div class="meta-row">
+                    <span id="placeCoords" class="badge">Координаты: -</span>
+                    <span id="placeSummaryRating" class="badge">Моя оценка: нет</span>
+                    <span id="placeKindBadge" class="badge">Тип: -</span>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button id="bookmarkToggleButton" class="btn btn-accent" type="button">Добавить в закладки</button>
+                    <a id="openYandexMapsLink" class="btn" target="_blank" rel="noopener noreferrer" href="https://yandex.ru/maps/?ll=32.0453%2C54.7826&z=12&l=map">Открыть в Яндекс Картах</a>
+                </div>
+
+                <h3 class="section-title">Оценка и отзыв</h3>
+                <form id="reviewForm" class="review-form">
+                    <div id="ratingStars" class="stars" aria-label="Оценка места"></div>
+                    <textarea id="reviewInput" maxlength="500" placeholder="Напишите отзыв о месте (до 500 символов)"></textarea>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 8px;">
+                        <button class="btn btn-accent" type="submit">Сохранить отзыв</button>
+                    </div>
+                </form>
+
+                <h3 class="section-title">Отзывы</h3>
+                <div id="reviewsContainer" class="review-list">
+                    <div class="empty-note">Пока нет отзывов для этого места.</div>
+                </div>
+            </aside>
+
+            <section class="panel bookmarks-panel">
+                <h3 class="section-title" style="margin-top: 0;">Закладки</h3>
+                <div id="bookmarkList" class="bookmark-list">
+                    <div class="empty-note">Добавляйте места в закладки, чтобы быстро к ним возвращаться.</div>
+                </div>
+            </section>
+        </div>
+
+        <div id="toast" class="toast"></div>
+    </main>
+
+    <script>
+        (function () {
+            const mapState = {
+                map: null,
+                mapApi: null,
+                schemeLayer: null,
+                featuresLayer: null,
+                clickListener: null,
+                selectedPlacemark: null,
+                bookmarkPlacemarks: new Map(),
+                currentPlace: null,
+                skinName: "cinema",
+                storageKey: "",
+                draftRating: 0,
+                lastHotspotClick: null,
+                apiReady: false,
+                data: {
+                    places: {},
+                    bookmarks: []
+                },
+                userName: "Пользователь",
+                userId: "guest",
+                mapFocusMode: false
+            };
+
+            const SMOLENSK_CENTER = [54.7826, 32.0453];
+            const SMOLENSK_BOUNDS = [
+                [54.70, 31.90],
+                [54.90, 32.20]
+            ];
+            const YANDEX_MAPS_API_KEY = "5ff2a8dc-90c6-4dd7-80e4-673b5b4bded0";
+            const GEOCODER_ENDPOINT = "https://geocode-maps.yandex.ru/v1/";
+            const STORAGE_KEY = "kinosreda.map.v1";
+            const MAP_SKIN_KEY = "kinosreda.map.skin.v1";
+            const MAP_UI_KEY = "kinosreda.map.ui.v1";
+            const API_TIMEOUT_MS = 15000;
+            const HOTSPOT_OPEN_WINDOW_MS = 900;
+            const DATE_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
+                dateStyle: "medium",
+                timeStyle: "short"
+            });
+            const MAP_SKINS = {
+                cinema: {
+                    theme: "dark",
+                    groundFilter: "saturate(0.8) brightness(0.68) contrast(1.24)",
+                    labelFilter: "saturate(0.88) brightness(0.97) contrast(1.14)",
+                    overlay: "linear-gradient(180deg, rgba(0, 0, 0, 0.48) 0%, rgba(18, 12, 2, 0.22) 35%, rgba(0, 0, 0, 0.56) 100%)",
+                    vignette: "radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.1) 0%, transparent 45%), radial-gradient(circle at 85% 100%, rgba(245, 158, 11, 0.08) 0%, transparent 50%)",
+                    customization: [
+                        { tags: { all: ["water"] }, elements: "geometry", stylers: [{ color: "#111d2b" }] },
+                        { tags: { all: ["water"] }, elements: "label.text.fill", stylers: [{ color: "#91bce0" }, { scale: 1.04 }] },
+                        { tags: { all: ["land"] }, elements: "geometry", stylers: [{ color: "#11100e" }] },
+                        { tags: { all: ["vegetation"] }, elements: "geometry", stylers: [{ color: "#181d12" }] },
+                        { tags: { all: ["building"] }, elements: "geometry", stylers: [{ color: "#1e1812" }] },
+                        { tags: { all: ["road"] }, elements: "geometry", stylers: [{ color: "#3b2b1a" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry", stylers: [{ color: "#b4772c" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry.stroke", stylers: [{ color: "#ffd799" }, { opacity: 0.5 }] },
+                        { tags: { all: ["road_2"] }, elements: "geometry", stylers: [{ color: "#8b5924" }] },
+                        { tags: { all: ["road_3"] }, elements: "geometry", stylers: [{ color: "#69421b" }] },
+                        { tags: { all: ["road_4"] }, elements: "geometry", stylers: [{ color: "#553617" }] },
+                        { tags: { all: ["road_5"] }, elements: "geometry", stylers: [{ color: "#462d13" }] },
+                        { tags: { all: ["road"] }, elements: "label.text.fill", stylers: [{ color: "#f5dfbf" }, { scale: 1.08 }] },
+                        { tags: { all: ["road"] }, elements: "label.text.outline", stylers: [{ color: "#1f140b" }] },
+                        { tags: { all: ["admin"] }, elements: "geometry.stroke", stylers: [{ color: "#5f4a2b" }, { opacity: 0.56 }] },
+                        { tags: { all: ["poi"] }, elements: "geometry", stylers: [{ color: "#2a2117" }] },
+                        { tags: { all: ["poi"] }, elements: "label.text.fill", stylers: [{ color: "#f4c678" }, { scale: 1.05 }] },
+                        { tags: { all: ["transit"] }, elements: "geometry", stylers: [{ opacity: 0.22 }] },
+                        { tags: { all: ["transit"] }, elements: "label.text.fill", stylers: [{ color: "#8f8a81" }] }
+                    ]
+                },
+                night: {
+                    theme: "dark",
+                    groundFilter: "saturate(0.58) brightness(0.64) contrast(1.28)",
+                    labelFilter: "saturate(0.82) brightness(0.92) contrast(1.2)",
+                    overlay: "linear-gradient(180deg, rgba(0, 0, 0, 0.56) 0%, rgba(5, 14, 24, 0.2) 42%, rgba(0, 0, 0, 0.62) 100%)",
+                    vignette: "radial-gradient(circle at 15% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 45%), radial-gradient(circle at 92% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 56%)",
+                    customization: [
+                        { tags: { all: ["water"] }, elements: "geometry", stylers: [{ color: "#0f2738" }] },
+                        { tags: { all: ["water"] }, elements: "label.text.fill", stylers: [{ color: "#9cc7eb" }] },
+                        { tags: { all: ["land"] }, elements: "geometry", stylers: [{ color: "#0c1118" }] },
+                        { tags: { all: ["vegetation"] }, elements: "geometry", stylers: [{ color: "#102018" }] },
+                        { tags: { all: ["building"] }, elements: "geometry", stylers: [{ color: "#151d29" }] },
+                        { tags: { all: ["road"] }, elements: "geometry", stylers: [{ color: "#203246" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry", stylers: [{ color: "#3a6fa4" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry.stroke", stylers: [{ color: "#83b7ec" }, { opacity: 0.48 }] },
+                        { tags: { all: ["road_2"] }, elements: "geometry", stylers: [{ color: "#325983" }] },
+                        { tags: { all: ["road_3"] }, elements: "geometry", stylers: [{ color: "#2a4566" }] },
+                        { tags: { all: ["road_4"] }, elements: "geometry", stylers: [{ color: "#21354f" }] },
+                        { tags: { all: ["road"] }, elements: "label.text.fill", stylers: [{ color: "#d4e8fb" }, { scale: 1.06 }] },
+                        { tags: { all: ["road"] }, elements: "label.text.outline", stylers: [{ color: "#0f1823" }] },
+                        { tags: { all: ["admin"] }, elements: "geometry.stroke", stylers: [{ color: "#37506c" }, { opacity: 0.52 }] },
+                        { tags: { all: ["poi"] }, elements: "geometry", stylers: [{ color: "#1c2836" }] },
+                        { tags: { all: ["poi"] }, elements: "label.text.fill", stylers: [{ color: "#9dcfff" }, { scale: 1.04 }] },
+                        { tags: { all: ["transit"] }, elements: "geometry", stylers: [{ opacity: 0.18 }] }
+                    ]
+                },
+                light: {
+                    theme: "light",
+                    groundFilter: "saturate(1.02) brightness(1.03) contrast(1.08)",
+                    labelFilter: "saturate(1.04) brightness(1.03) contrast(1.08)",
+                    overlay: "linear-gradient(180deg, rgba(0, 0, 0, 0.24) 0%, rgba(255, 255, 255, 0.06) 45%, rgba(0, 0, 0, 0.3) 100%)",
+                    vignette: "radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.14) 0%, transparent 45%), radial-gradient(circle at 90% 100%, rgba(255, 255, 255, 0.09) 0%, transparent 52%)",
+                    customization: [
+                        { tags: { all: ["water"] }, elements: "geometry", stylers: [{ color: "#afd8ff" }] },
+                        { tags: { all: ["water"] }, elements: "label.text.fill", stylers: [{ color: "#355876" }] },
+                        { tags: { all: ["land"] }, elements: "geometry", stylers: [{ color: "#f6f3ec" }] },
+                        { tags: { all: ["vegetation"] }, elements: "geometry", stylers: [{ color: "#dde8d8" }] },
+                        { tags: { all: ["building"] }, elements: "geometry", stylers: [{ color: "#e0dad0" }] },
+                        { tags: { all: ["road"] }, elements: "geometry", stylers: [{ color: "#fffdfa" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry", stylers: [{ color: "#ffd28a" }] },
+                        { tags: { all: ["road_1"] }, elements: "geometry.stroke", stylers: [{ color: "#ffb44e" }, { opacity: 0.42 }] },
+                        { tags: { all: ["road_2"] }, elements: "geometry", stylers: [{ color: "#ffe7bc" }] },
+                        { tags: { all: ["road_3"] }, elements: "geometry", stylers: [{ color: "#f5ece0" }] },
+                        { tags: { all: ["road"] }, elements: "label.text.fill", stylers: [{ color: "#4c3a25" }, { scale: 1.04 }] },
+                        { tags: { all: ["road"] }, elements: "label.text.outline", stylers: [{ color: "#fff8ee" }] },
+                        { tags: { all: ["admin"] }, elements: "geometry.stroke", stylers: [{ color: "#bca480" }, { opacity: 0.45 }] },
+                        { tags: { all: ["poi"] }, elements: "geometry", stylers: [{ color: "#f2e7d5" }] },
+                        { tags: { all: ["poi"] }, elements: "label.text.fill", stylers: [{ color: "#7b5a30" }, { scale: 1.03 }] },
+                        { tags: { all: ["transit"] }, elements: "geometry", stylers: [{ opacity: 0.2 }] }
+                    ]
+                }
+            };
+
+            const els = {
+                searchInput: document.getElementById("searchInput"),
+                searchButton: document.getElementById("searchButton"),
+                mapStyleSelect: document.getElementById("mapStyleSelect"),
+                mapFocusToggle: document.getElementById("mapFocusToggle"),
+                mapPage: document.getElementById("mapPage"),
+                myLocationButton: document.getElementById("myLocationButton"),
+                searchResults: document.getElementById("searchResults"),
+                placeTitle: document.getElementById("placeTitle"),
+                placeAddress: document.getElementById("placeAddress"),
+                placeCoords: document.getElementById("placeCoords"),
+                placeSummaryRating: document.getElementById("placeSummaryRating"),
+                placeKindBadge: document.getElementById("placeKindBadge"),
+                bookmarkToggleButton: document.getElementById("bookmarkToggleButton"),
+                openYandexMapsLink: document.getElementById("openYandexMapsLink"),
+                reviewForm: document.getElementById("reviewForm"),
+                reviewInput: document.getElementById("reviewInput"),
+                ratingStars: document.getElementById("ratingStars"),
+                reviewsContainer: document.getElementById("reviewsContainer"),
+                bookmarkList: document.getElementById("bookmarkList"),
+                toast: document.getElementById("toast"),
+                apiErrorBanner: document.getElementById("apiErrorBanner")
+            };
+
+            let toastTimer = 0;
+
+            function safeStorageGet(key) {
+                try {
+                    return localStorage.getItem(key);
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function safeStorageSet(key, value) {
+                try {
+                    localStorage.setItem(key, value);
+                } catch (_) {}
+            }
+
+            function resolveInitialSkin() {
+                const saved = safeStorageGet(MAP_SKIN_KEY);
+                if (saved && MAP_SKINS[saved]) return saved;
+                return document.documentElement.dataset.theme === "white" ? "light" : "cinema";
+            }
+
+            function applyMapSkin(skinName, options = {}) {
+                const skin = MAP_SKINS[skinName] || MAP_SKINS.cinema;
+                mapState.skinName = MAP_SKINS[skinName] ? skinName : "cinema";
+
+                document.documentElement.style.setProperty("--map-ground-filter", skin.groundFilter);
+                document.documentElement.style.setProperty("--map-label-filter", skin.labelFilter);
+                document.documentElement.style.setProperty("--map-overlay", skin.overlay);
+                document.documentElement.style.setProperty("--map-vignette", skin.vignette);
+
+                if (els.mapStyleSelect && els.mapStyleSelect.value !== mapState.skinName) {
+                    els.mapStyleSelect.value = mapState.skinName;
+                }
+
+                if (options.persist !== false) {
+                    safeStorageSet(MAP_SKIN_KEY, mapState.skinName);
+                }
+
+                if (mapState.map) {
+                    try {
+                        mapState.map.update({ theme: skin.theme || "dark" });
+                    } catch (_) {}
+                    if (mapState.schemeLayer) {
+                        try {
+                            mapState.schemeLayer.update({ customization: skin.customization || [] });
+                        } catch (_) {}
+                    }
+                }
+            }
+
+            function setMapFocusMode(enabled, options = {}) {
+                const next = Boolean(enabled);
+                mapState.mapFocusMode = next;
+                if (els.mapPage) {
+                    els.mapPage.classList.toggle("map-focus", next);
+                }
+                if (els.mapFocusToggle) {
+                    els.mapFocusToggle.textContent = next ? "Панели" : "Режим карты";
+                    els.mapFocusToggle.classList.toggle("btn-accent", next);
+                }
+                if (options.persist !== false) {
+                    safeStorageSet(`${MAP_UI_KEY}.${mapState.userId}`, JSON.stringify({ mapFocusMode: next }));
+                }
+            }
+
+            function readUiPrefs() {
+                try {
+                    const raw = safeStorageGet(`${MAP_UI_KEY}.${mapState.userId}`);
+                    if (!raw) return { mapFocusMode: true };
+                    const parsed = JSON.parse(raw);
+                    return {
+                        mapFocusMode: Boolean(parsed && parsed.mapFocusMode)
+                    };
+                } catch (_) {
+                    return { mapFocusMode: true };
+                }
+            }
+
+            function readCurrentUserInfo() {
+                try {
+                    const raw = localStorage.getItem("currentUser");
+                    if (!raw) {
+                        return { name: "Пользователь", userId: "guest" };
+                    }
+                    const parsed = JSON.parse(raw);
+                    const name = String(parsed.displayName || parsed.name || parsed.email || "Пользователь");
+                    const userId = normalizeExternalId(parsed.uid || parsed.id || parsed.userId || parsed.email || parsed.name || "guest") || "guest";
+                    return { name, userId };
+                } catch (_) {
+                    return { name: "Пользователь", userId: "guest" };
+                }
+            }
+
+            function getStorageKeyForUser(userId) {
+                const safeUser = normalizeExternalId(userId || "guest") || "guest";
+                return `${STORAGE_KEY}.${safeUser}`;
+            }
+
+            function showToast(message) {
+                if (!message) return;
+                clearTimeout(toastTimer);
+                els.toast.textContent = message;
+                els.toast.classList.add("is-on");
+                toastTimer = setTimeout(() => {
+                    els.toast.classList.remove("is-on");
+                }, 2300);
+            }
+
+            function showApiError(message) {
+                els.apiErrorBanner.textContent = message;
+                els.apiErrorBanner.classList.add("is-on");
+            }
+
+            function hideApiError() {
+                els.apiErrorBanner.classList.remove("is-on");
+            }
+
+            function formatCoords(coords) {
+                if (!Array.isArray(coords) || coords.length < 2) return "-";
+                return coords.map((num) => Number(num).toFixed(6)).join(", ");
+            }
+
+            function toStars(value) {
+                const rating = Math.max(0, Math.min(5, Number(value) || 0));
+                const full = "★".repeat(Math.round(rating));
+                const empty = "☆".repeat(5 - Math.round(rating));
+                return full + empty;
+            }
+
+            function normalizeExternalId(value) {
+                const raw = String(value || "").trim();
+                if (!raw) return "";
+                return raw.toLowerCase().replace(/\s+/g, " ").slice(0, 256);
+            }
+
+            function normalizePlaceKind(kind, source) {
+                const raw = String(kind || "").toLowerCase();
+                if (raw === "venue" || raw === "address" || raw === "point") return raw;
+                if (/(poi|biz|business|organization|company|shop|restaurant|cafe|hotel|bank|pharmacy)/.test(raw)) return "venue";
+                if (/(street|house|locality|district|metro|province|area|address)/.test(raw)) return "address";
+                if (source === "hotspot") return "venue";
+                if (source === "geocoder") return "address";
+                return "point";
+            }
+
+            function placeKindLabel(kind) {
+                if (kind === "venue") return "Тип: заведение";
+                if (kind === "address") return "Тип: адрес";
+                return "Тип: точка";
+            }
+
+            function placeKey(place) {
+                const extId = normalizeExternalId(place && place.externalId);
+                if (extId) return `ext::${extId}`;
+                const safeName = String(place.name || "place").toLowerCase().trim().replace(/\s+/g, " ");
+                const coords = formatCoords(place.coords);
+                return `${safeName}::${coords}`;
+            }
+
+            function normalizePlace(raw) {
+                const coords = Array.isArray(raw.coords) ? [Number(raw.coords[0]), Number(raw.coords[1])] : null;
+                if (!coords || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1])) {
+                    return null;
+                }
+                const source = String(raw.source || "").toLowerCase();
+                return {
+                    name: String(raw.name || "Место на карте"),
+                    address: String(raw.address || ""),
+                    coords,
+                    source,
+                    kind: normalizePlaceKind(raw.kind, source),
+                    externalId: normalizeExternalId(raw.externalId || raw.id || raw.objectId),
+                    yandexUri: String(raw.yandexUri || raw.uri || "").trim()
+                };
+            }
+
+            function saveData() {
+                try {
+                    localStorage.setItem(mapState.storageKey || getStorageKeyForUser(mapState.userId), JSON.stringify(mapState.data));
+                } catch (_) {
+                    showToast("Не удалось сохранить данные в браузере");
+                }
+            }
+
+            function loadData() {
+                try {
+                    const activeKey = mapState.storageKey || getStorageKeyForUser(mapState.userId);
+                    let raw = localStorage.getItem(activeKey);
+                    if (!raw) {
+                        // Legacy fallback for users that had data before personalization by user id.
+                        raw = localStorage.getItem(STORAGE_KEY);
+                    }
+                    if (!raw) return;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== "object") return;
+                    const places = (parsed.places && typeof parsed.places === "object") ? parsed.places : {};
+                    const bookmarks = Array.isArray(parsed.bookmarks) ? parsed.bookmarks.filter((item) => typeof item === "string") : [];
+                    mapState.data = { places, bookmarks };
+                } catch (_) {
+                    mapState.data = { places: {}, bookmarks: [] };
+                }
+            }
+
+            function ensurePlaceRecord(place) {
+                const key = placeKey(place);
+                if (!mapState.data.places[key]) {
+                    mapState.data.places[key] = {
+                        name: place.name,
+                        address: place.address,
+                        coords: place.coords,
+                        kind: place.kind || "point",
+                        source: place.source || "",
+                        externalId: place.externalId || "",
+                        yandexUri: place.yandexUri || "",
+                        reviews: []
+                    };
+                } else {
+                    mapState.data.places[key].name = place.name;
+                    mapState.data.places[key].address = place.address;
+                    mapState.data.places[key].coords = place.coords;
+                    mapState.data.places[key].kind = place.kind || mapState.data.places[key].kind || "point";
+                    mapState.data.places[key].source = place.source || mapState.data.places[key].source || "";
+                    mapState.data.places[key].externalId = place.externalId || mapState.data.places[key].externalId || "";
+                    mapState.data.places[key].yandexUri = place.yandexUri || mapState.data.places[key].yandexUri || "";
+                    if (!Array.isArray(mapState.data.places[key].reviews)) {
+                        mapState.data.places[key].reviews = [];
+                    }
+                }
+                return mapState.data.places[key];
+            }
+
+            function getCurrentPlaceReviews() {
+                if (!mapState.currentPlace) return [];
+                const record = mapState.data.places[placeKey(mapState.currentPlace)];
+                if (!record || !Array.isArray(record.reviews)) return [];
+                return record.reviews;
+            }
+
+            function computeAverageRating(reviews) {
+                if (!reviews.length) return 0;
+                const total = reviews.reduce((sum, item) => sum + (Number(item.rating) || 0), 0);
+                return total / reviews.length;
+            }
+
+            function isCurrentPlaceBookmarked() {
+                if (!mapState.currentPlace) return false;
+                return mapState.data.bookmarks.includes(placeKey(mapState.currentPlace));
+            }
+
+            function setBookmarkButtonState() {
+                if (!mapState.currentPlace) {
+                    els.bookmarkToggleButton.disabled = true;
+                    els.bookmarkToggleButton.textContent = "Добавить в закладки";
+                    return;
+                }
+                els.bookmarkToggleButton.disabled = false;
+                els.bookmarkToggleButton.textContent = isCurrentPlaceBookmarked() ? "Убрать из закладок" : "Добавить в закладки";
+            }
+
+            function updateOpenYandexLink(place) {
+                if (!place || !Array.isArray(place.coords)) {
+                    els.openYandexMapsLink.href = "https://yandex.ru/maps/?ll=32.0453%2C54.7826&z=12&l=map";
+                    return;
+                }
+                const directUri = String(place.yandexUri || "").trim();
+                if (directUri && /^https?:\/\//i.test(directUri)) {
+                    els.openYandexMapsLink.href = directUri;
+                    return;
+                }
+                const lon = encodeURIComponent(String(place.coords[1]));
+                const lat = encodeURIComponent(String(place.coords[0]));
+                const text = encodeURIComponent(place.name || "Место");
+                els.openYandexMapsLink.href = `https://yandex.ru/maps/?ll=${lon}%2C${lat}&pt=${lon},${lat},pm2rdm&text=${text}&z=16&l=map`;
+            }
+
+            function getPlaceYandexMapsUrl(place) {
+                if (!place || !Array.isArray(place.coords)) {
+                    return "https://yandex.ru/maps/?ll=32.0453%2C54.7826&z=12&l=map";
+                }
+                const directUri = String(place.yandexUri || "").trim();
+                if (directUri && /^https?:\/\//i.test(directUri)) {
+                    return directUri;
+                }
+                const lon = encodeURIComponent(String(place.coords[1]));
+                const lat = encodeURIComponent(String(place.coords[0]));
+                const text = encodeURIComponent(place.name || "Место");
+                return `https://yandex.ru/maps/?ll=${lon}%2C${lat}&pt=${lon},${lat},pm2rdm&text=${text}&z=17&l=map`;
+            }
+
+            function renderRatingStars() {
+                els.ratingStars.innerHTML = "";
+                for (let i = 1; i <= 5; i += 1) {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "star-btn" + (i <= mapState.draftRating ? " is-on" : "");
+                    btn.textContent = "★";
+                    btn.setAttribute("aria-label", `Оценка ${i}`);
+                    btn.addEventListener("click", () => {
+                        mapState.draftRating = i;
+                        renderRatingStars();
+                    });
+                    els.ratingStars.appendChild(btn);
+                }
+            }
+
+            function clearSearchResults() {
+                els.searchResults.innerHTML = "";
+                els.searchResults.classList.remove("is-open");
+            }
+
+            function renderSearchResults(items) {
+                els.searchResults.innerHTML = "";
+                if (!items.length) {
+                    clearSearchResults();
+                    showToast("Ничего не найдено");
+                    return;
+                }
+
+                items.forEach((item) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "search-item";
+
+                    const title = document.createElement("strong");
+                    title.textContent = item.name || "Без названия";
+
+                    const subtitle = document.createElement("span");
+                    subtitle.textContent = item.address || "Адрес не найден";
+
+                    btn.appendChild(title);
+                    btn.appendChild(subtitle);
+                    btn.addEventListener("click", () => {
+                        clearSearchResults();
+                        selectPlace(item, { fly: true, zoom: 16 });
+                    });
+                    els.searchResults.appendChild(btn);
+                });
+
+                els.searchResults.classList.add("is-open");
+            }
+
+            function renderReviews() {
+                const reviews = getCurrentPlaceReviews();
+                els.reviewsContainer.innerHTML = "";
+
+                if (!reviews.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "empty-note";
+                    empty.textContent = "Пока нет отзывов для этого места.";
+                    els.reviewsContainer.appendChild(empty);
+                    return;
+                }
+
+                reviews
+                    .slice()
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .forEach((review) => {
+                        const item = document.createElement("article");
+                        item.className = "review-item";
+
+                        const head = document.createElement("div");
+                        head.className = "review-head";
+
+                        const user = document.createElement("strong");
+                        user.textContent = String(review.user || "Пользователь");
+
+                        const info = document.createElement("div");
+                        info.style.display = "flex";
+                        info.style.gap = "8px";
+                        info.style.alignItems = "center";
+
+                        const rating = document.createElement("span");
+                        rating.className = "review-rating";
+                        rating.textContent = toStars(review.rating);
+
+                        const date = document.createElement("span");
+                        let created = review.createdAt;
+                        try {
+                            created = DATE_FORMATTER.format(new Date(review.createdAt));
+                        } catch (_) {}
+                        date.textContent = String(created);
+
+                        info.appendChild(rating);
+                        info.appendChild(date);
+                        head.appendChild(user);
+                        head.appendChild(info);
+
+                        const text = document.createElement("div");
+                        text.className = "review-text";
+                        text.textContent = String(review.text || "");
+
+                        item.appendChild(head);
+                        item.appendChild(text);
+                        els.reviewsContainer.appendChild(item);
+                    });
+            }
+
+            function focusPlaceFromKey(key) {
+                const record = mapState.data.places[key];
+                if (!record) return;
+                const place = normalizePlace(record);
+                if (!place) return;
+                selectPlace(place, { fly: true, zoom: 16 });
+            }
+
+            function removeBookmarkByKey(key) {
+                const idx = mapState.data.bookmarks.indexOf(key);
+                if (idx >= 0) {
+                    mapState.data.bookmarks.splice(idx, 1);
+                    saveData();
+                    syncBookmarkPlacemarks();
+                    renderBookmarkList();
+                    setBookmarkButtonState();
+                    showToast("Удалено из закладок");
+                }
+            }
+
+            function renderBookmarkList() {
+                els.bookmarkList.innerHTML = "";
+                const keys = mapState.data.bookmarks.filter((key) => mapState.data.places[key]);
+
+                if (!keys.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "empty-note";
+                    empty.textContent = "Добавляйте места в закладки, чтобы быстро к ним возвращаться.";
+                    els.bookmarkList.appendChild(empty);
+                    return;
+                }
+
+                keys.forEach((key) => {
+                    const record = mapState.data.places[key];
+                    const item = document.createElement("div");
+                    item.className = "bookmark-item";
+
+                    const text = document.createElement("div");
+                    const title = document.createElement("strong");
+                    title.textContent = String(record.name || "Место");
+                    const address = document.createElement("span");
+                    address.textContent = String(record.address || formatCoords(record.coords));
+                    text.appendChild(title);
+                    text.appendChild(address);
+
+                    const goBtn = document.createElement("button");
+                    goBtn.type = "button";
+                    goBtn.className = "small-btn";
+                    goBtn.textContent = "Открыть";
+                    goBtn.addEventListener("click", () => focusPlaceFromKey(key));
+
+                    const delBtn = document.createElement("button");
+                    delBtn.type = "button";
+                    delBtn.className = "small-btn";
+                    delBtn.textContent = "Удалить";
+                    delBtn.addEventListener("click", () => removeBookmarkByKey(key));
+
+                    item.appendChild(text);
+                    item.appendChild(goBtn);
+                    item.appendChild(delBtn);
+                    els.bookmarkList.appendChild(item);
+                });
+            }
+
+            function toLngLat(coords) {
+                if (!Array.isArray(coords) || coords.length < 2) return null;
+                return [Number(coords[1]), Number(coords[0])];
+            }
+
+            function toLatLng(coords) {
+                if (!Array.isArray(coords) || coords.length < 2) return null;
+                return [Number(coords[1]), Number(coords[0])];
+            }
+
+            function parsePos(value) {
+                const [lngRaw, latRaw] = String(value || "").trim().split(/\s+/);
+                const lat = Number(latRaw);
+                const lng = Number(lngRaw);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+                return [lat, lng];
+            }
+
+            function requestGeocoder(params) {
+                const url = new URL(GEOCODER_ENDPOINT);
+                url.searchParams.set("apikey", YANDEX_MAPS_API_KEY);
+                url.searchParams.set("lang", "ru_RU");
+                url.searchParams.set("format", "json");
+                Object.entries(params || {}).forEach(([key, value]) => {
+                    if (value === undefined || value === null || value === "") return;
+                    url.searchParams.set(key, String(value));
+                });
+                return fetch(url.toString()).then((response) => {
+                    if (!response.ok) throw new Error(`Geocoder ${response.status}`);
+                    return response.json();
+                });
+            }
+
+            function geocoderToPlace(geoObject, fallbackCoords) {
+                if (!geoObject) return null;
+                const meta = geoObject.metaDataProperty && geoObject.metaDataProperty.GeocoderMetaData
+                    ? geoObject.metaDataProperty.GeocoderMetaData
+                    : {};
+                const parsedCoords = parsePos(geoObject.Point && geoObject.Point.pos);
+                const coords = parsedCoords || fallbackCoords || null;
+                if (!coords) return null;
+
+                const pieces = [];
+                const description = String(geoObject.description || "").trim();
+                const textLine = String(meta.text || (meta.Address && meta.Address.formatted) || "").trim();
+                if (description) pieces.push(description);
+                if (textLine) pieces.push(textLine);
+                const address = [...new Set(pieces)].join(", ") || "Адрес не найден";
+
+                return {
+                    name: String(geoObject.name || description || "Место"),
+                    address,
+                    coords,
+                    kind: normalizePlaceKind(meta.kind, "geocoder"),
+                    source: "geocoder",
+                    externalId: geoObject.uri || meta.id || "",
+                    yandexUri: String(geoObject.uri || "").trim()
+                };
+            }
+
+            function createMarkerElement(type) {
+                const el = document.createElement("div");
+                el.className = type === "selected" ? "ks-marker ks-marker--selected" : "ks-marker ks-marker--bookmark";
+                return el;
+            }
+
+            function createBookmarkPlacemark(record, key) {
+                if (!mapState.map || !mapState.mapApi) return;
+                const place = normalizePlace(record);
+                if (!place) return;
+
+                const markerEl = createMarkerElement("bookmark");
+                markerEl.title = record.name || "Закладка";
+                markerEl.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    selectPlace(place, { fly: false });
+                });
+
+                const marker = new mapState.mapApi.YMapMarker(
+                    { coordinates: toLngLat(place.coords), draggable: false },
+                    markerEl
+                );
+
+                mapState.map.addChild(marker);
+                mapState.bookmarkPlacemarks.set(key, marker);
+            }
+
+            function syncBookmarkPlacemarks() {
+                if (!mapState.map) return;
+
+                for (const marker of mapState.bookmarkPlacemarks.values()) {
+                    try {
+                        mapState.map.removeChild(marker);
+                    } catch (_) {}
+                }
+                mapState.bookmarkPlacemarks.clear();
+
+                mapState.data.bookmarks.forEach((key) => {
+                    const record = mapState.data.places[key];
+                    if (!record || !Array.isArray(record.coords)) return;
+                    createBookmarkPlacemark(record, key);
+                });
+            }
+
+            function updatePlacePanel() {
+                if (!mapState.currentPlace) {
+                    els.placeTitle.textContent = "Выберите место на карте";
+                    els.placeAddress.textContent = "Кликните по заведению на карте или воспользуйтесь поиском. Повторный клик откроет объект в Яндекс Картах.";
+                    els.placeCoords.textContent = "Координаты: -";
+                    els.placeSummaryRating.textContent = "Моя оценка: нет";
+                    els.placeKindBadge.textContent = "Тип: -";
+                    updateOpenYandexLink(null);
+                    setBookmarkButtonState();
+                    renderReviews();
+                    return;
+                }
+
+                const place = mapState.currentPlace;
+                const record = ensurePlaceRecord(place);
+                const reviews = Array.isArray(record.reviews) ? record.reviews : [];
+                const average = computeAverageRating(reviews);
+
+                els.placeTitle.textContent = place.name;
+                els.placeAddress.textContent = place.address || "Адрес не определен";
+                els.placeCoords.textContent = `Координаты: ${formatCoords(place.coords)}`;
+                els.placeSummaryRating.textContent = average
+                    ? `Моя оценка: ${average.toFixed(1)} (${reviews.length})`
+                    : "Моя оценка: нет";
+                els.placeKindBadge.textContent = placeKindLabel(record.kind || place.kind || "point");
+
+                updateOpenYandexLink(place);
+                setBookmarkButtonState();
+                renderReviews();
+            }
+
+            function ensureSelectedPlacemark() {
+                if (!mapState.map || !mapState.mapApi) return;
+                if (mapState.selectedPlacemark) return;
+
+                const markerEl = createMarkerElement("selected");
+                markerEl.style.pointerEvents = "none";
+
+                mapState.selectedPlacemark = new mapState.mapApi.YMapMarker(
+                    { coordinates: toLngLat(SMOLENSK_CENTER), draggable: false },
+                    markerEl
+                );
+                mapState.map.addChild(mapState.selectedPlacemark);
+            }
+
+            function setSelectedPlacemarkCoords(coords) {
+                ensureSelectedPlacemark();
+                if (!mapState.selectedPlacemark) return;
+                mapState.selectedPlacemark.update({ coordinates: toLngLat(coords) });
+            }
+
+            function selectPlace(place, options = {}) {
+                const normalized = normalizePlace(place);
+                if (!normalized) return;
+
+                mapState.currentPlace = normalized;
+                ensurePlaceRecord(normalized);
+                setSelectedPlacemarkCoords(normalized.coords);
+                updatePlacePanel();
+                renderBookmarkList();
+                saveData();
+
+                if (mapState.map && options.fly) {
+                    mapState.map.update({
+                        location: {
+                            center: toLngLat(normalized.coords),
+                            zoom: options.zoom || 16,
+                            duration: 250
+                        }
+                    });
+                }
+            }
+
+            async function reverseGeocode(coords) {
+                const lngLat = toLngLat(coords);
+                if (!lngLat) {
+                    return {
+                        name: "Точка на карте",
+                        address: "Адрес не найден",
+                        coords,
+                        kind: "point",
+                        source: "manual"
+                    };
+                }
+
+                const data = await requestGeocoder({
+                    geocode: `${lngLat[0]},${lngLat[1]}`,
+                    results: 1
+                });
+                const first = data
+                    && data.response
+                    && data.response.GeoObjectCollection
+                    && Array.isArray(data.response.GeoObjectCollection.featureMember)
+                    ? data.response.GeoObjectCollection.featureMember[0]
+                    : null;
+                const place = geocoderToPlace(first && first.GeoObject, coords);
+                return place || {
+                    name: "Точка на карте",
+                    address: "Адрес не найден",
+                    coords,
+                    kind: "point",
+                    source: "manual"
+                };
+            }
+
+            async function runSearch(query) {
+                if (!mapState.apiReady) {
+                    showToast("Поиск будет доступен после загрузки API Яндекс.Карт");
+                    return;
+                }
+                const clean = String(query || "").trim();
+                if (!clean) {
+                    clearSearchResults();
+                    return;
+                }
+
+                try {
+                    const bbox = `${SMOLENSK_BOUNDS[0][1]},${SMOLENSK_BOUNDS[0][0]}~${SMOLENSK_BOUNDS[1][1]},${SMOLENSK_BOUNDS[1][0]}`;
+                    const data = await requestGeocoder({
+                        geocode: clean,
+                        results: 8,
+                        bbox,
+                        rspn: 1
+                    });
+                    const found = [];
+                    const members = data
+                        && data.response
+                        && data.response.GeoObjectCollection
+                        && Array.isArray(data.response.GeoObjectCollection.featureMember)
+                        ? data.response.GeoObjectCollection.featureMember
+                        : [];
+
+                    members.forEach((item) => {
+                        const place = geocoderToPlace(item && item.GeoObject, null);
+                        if (place) found.push(place);
+                    });
+                    renderSearchResults(found);
+                } catch (_) {
+                    showToast("Ошибка поиска, попробуйте еще раз");
+                }
+            }
+
+            async function centerOnUserLocation() {
+                if (!mapState.apiReady || !mapState.map) {
+                    showToast("Интерактивная карта пока недоступна");
+                    return;
+                }
+                if (!navigator.geolocation) {
+                    showToast("Геолокация не поддерживается в этом браузере");
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const coords = [position.coords.latitude, position.coords.longitude];
+                    mapState.map.update({
+                        location: {
+                            center: toLngLat(coords),
+                            zoom: 15,
+                            duration: 250
+                        }
+                    });
+                    try {
+                        const place = await reverseGeocode(coords);
+                        selectPlace(place, { fly: false });
+                    } catch (_) {
+                        selectPlace({
+                            name: "Моя позиция",
+                            address: "Текущее местоположение",
+                            coords,
+                            kind: "point",
+                            source: "geolocation"
+                        }, { fly: false });
+                    }
+                }, () => {
+                    showToast("Не удалось определить геопозицию");
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 9000,
+                    maximumAge: 0
+                });
+            }
+
+            function addCurrentPlaceToBookmarks() {
+                if (!mapState.currentPlace) {
+                    showToast("Сначала выберите место");
+                    return;
+                }
+                const key = placeKey(mapState.currentPlace);
+                ensurePlaceRecord(mapState.currentPlace);
+                if (!mapState.data.bookmarks.includes(key)) {
+                    mapState.data.bookmarks.unshift(key);
+                    saveData();
+                    syncBookmarkPlacemarks();
+                    renderBookmarkList();
+                    setBookmarkButtonState();
+                    showToast("Добавлено в закладки");
+                } else {
+                    removeBookmarkByKey(key);
+                }
+            }
+
+            function pickFirstString(values) {
+                for (const value of values) {
+                    const str = String(value || "").trim();
+                    if (str) return str;
+                }
+                return "";
+            }
+
+            function getObjectEntity(object) {
+                if (!object) return null;
+                if (object.entity) return object.entity;
+                return object;
+            }
+
+            function isMapMarkerObject(object) {
+                if (!object || !mapState.mapApi || !mapState.mapApi.YMapMarker) return false;
+                const entity = getObjectEntity(object);
+                try {
+                    return entity instanceof mapState.mapApi.YMapMarker;
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function readNestedString(sources, path) {
+                const keys = String(path || "").split(".");
+                for (const source of sources) {
+                    let value = source;
+                    for (const key of keys) {
+                        if (!value || typeof value !== "object" || !(key in value)) {
+                            value = null;
+                            break;
+                        }
+                        value = value[key];
+                    }
+                    const str = String(value || "").trim();
+                    if (str) return str;
+                }
+                return "";
+            }
+
+            function extractPlaceFromMapObject(object, event) {
+                if (!object || !event || !Array.isArray(event.coordinates)) return null;
+
+                const coords = toLatLng(event.coordinates);
+                if (!coords) return null;
+
+                const entity = getObjectEntity(object);
+                const props = (entity && entity.properties && typeof entity.properties === "object") ? entity.properties : {};
+                const feature = (entity && entity.feature && typeof entity.feature === "object") ? entity.feature : {};
+                const featureProps = (feature.properties && typeof feature.properties === "object") ? feature.properties : {};
+                const meta = (featureProps.CompanyMetaData && typeof featureProps.CompanyMetaData === "object") ? featureProps.CompanyMetaData : {};
+                const sources = [props, featureProps, meta, entity, object];
+
+                const name = pickFirstString([
+                    readNestedString(sources, "name"),
+                    readNestedString(sources, "title"),
+                    readNestedString(sources, "text"),
+                    readNestedString(sources, "company_name"),
+                    readNestedString(sources, "organization_name"),
+                    readNestedString(sources, "CompanyMetaData.name"),
+                    readNestedString(sources, "feature.properties.name")
+                ]);
+                if (!name) return null;
+
+                const typeHints = [
+                    object.type,
+                    readNestedString(sources, "kind"),
+                    readNestedString(sources, "type"),
+                    readNestedString(sources, "class"),
+                    readNestedString(sources, "category"),
+                    readNestedString(sources, "layer"),
+                    readNestedString(sources, "feature_type"),
+                    readNestedString(sources, "CompanyMetaData.Categories")
+                ].map((value) => String(value || "").toLowerCase()).join(" ");
+                const venueSignal = Boolean(
+                    readNestedString(sources, "company_name")
+                    || readNestedString(sources, "organization_name")
+                    || readNestedString(sources, "category")
+                    || readNestedString(sources, "working_hours")
+                    || readNestedString(sources, "phone")
+                    || readNestedString(sources, "site")
+                    || readNestedString(sources, "url")
+                    || readNestedString(sources, "CompanyMetaData.id")
+                );
+                const hotspotSignal = /(hotspot|feature|poi)/.test(String(object.type || (entity && entity.constructor && entity.constructor.name) || "").toLowerCase());
+                const looksLikeVenue = venueSignal || hotspotSignal || /(poi|biz|business|organization|company|shop|restaurant|cafe|hotel|bar|club|bank|pharmacy|mall|cinema)/.test(typeHints);
+                if (!looksLikeVenue) return null;
+
+                const address = pickFirstString([
+                    readNestedString(sources, "address"),
+                    readNestedString(sources, "description"),
+                    readNestedString(sources, "subtitle"),
+                    readNestedString(sources, "full_address"),
+                    readNestedString(sources, "formatted_address"),
+                    readNestedString(sources, "CompanyMetaData.address"),
+                    readNestedString(sources, "text")
+                ]) || "Заведение на карте";
+
+                const externalId = pickFirstString([
+                    readNestedString(sources, "id"),
+                    readNestedString(sources, "object_id"),
+                    readNestedString(sources, "oid"),
+                    readNestedString(sources, "org_id"),
+                    readNestedString(sources, "CompanyMetaData.id"),
+                    readNestedString(sources, "uri")
+                ]);
+                const yandexUri = pickFirstString([
+                    readNestedString(sources, "uri"),
+                    readNestedString(sources, "url")
+                ]);
+
+                return {
+                    name,
+                    address,
+                    coords,
+                    kind: "venue",
+                    source: "hotspot",
+                    externalId,
+                    yandexUri
+                };
+            }
+
+            function bindEvents() {
+                els.searchButton.addEventListener("click", () => runSearch(els.searchInput.value));
+                els.mapStyleSelect.addEventListener("change", () => {
+                    applyMapSkin(els.mapStyleSelect.value);
+                });
+                els.mapFocusToggle.addEventListener("click", () => {
+                    setMapFocusMode(!mapState.mapFocusMode);
+                });
+                els.searchInput.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        runSearch(els.searchInput.value);
+                    } else if (event.key === "Escape") {
+                        clearSearchResults();
+                        if (mapState.mapFocusMode) setMapFocusMode(false);
+                    }
+                });
+                document.addEventListener("click", (event) => {
+                    if (!els.searchResults.contains(event.target) && event.target !== els.searchInput && event.target !== els.searchButton) {
+                        clearSearchResults();
+                    }
+                });
+
+                els.myLocationButton.addEventListener("click", centerOnUserLocation);
+                els.bookmarkToggleButton.addEventListener("click", addCurrentPlaceToBookmarks);
+
+                els.reviewForm.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    if (!mapState.currentPlace) {
+                        showToast("Выберите место для отзыва");
+                        return;
+                    }
+                    const rating = Number(mapState.draftRating);
+                    if (!rating || rating < 1 || rating > 5) {
+                        showToast("Выберите оценку от 1 до 5");
+                        return;
+                    }
+                    const reviewText = String(els.reviewInput.value || "").trim();
+                    if (reviewText.length < 3) {
+                        showToast("Отзыв должен содержать минимум 3 символа");
+                        return;
+                    }
+                    const record = ensurePlaceRecord(mapState.currentPlace);
+                    const nextReview = {
+                        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                        user: mapState.userName,
+                        userId: mapState.userId,
+                        rating,
+                        text: reviewText.slice(0, 500),
+                        createdAt: new Date().toISOString()
+                    };
+                    const existingIndex = record.reviews.findIndex((item) => String(item && item.userId || "") === String(mapState.userId || ""));
+                    if (existingIndex >= 0) {
+                        record.reviews[existingIndex] = { ...record.reviews[existingIndex], ...nextReview };
+                    } else {
+                        record.reviews.push(nextReview);
+                    }
+                    saveData();
+                    syncBookmarkPlacemarks();
+                    mapState.draftRating = 0;
+                    els.reviewInput.value = "";
+                    renderRatingStars();
+                    updatePlacePanel();
+                    renderBookmarkList();
+                    showToast("Отзыв сохранен");
+                });
+            }
+
+            function setupMapInteractions() {
+                if (!mapState.map || !mapState.mapApi) return;
+
+                mapState.clickListener = new mapState.mapApi.YMapListener({
+                    layer: "any",
+                    onClick: async (object, event) => {
+                        if (!event || !Array.isArray(event.coordinates)) return;
+                        if (isMapMarkerObject(object)) {
+                            return;
+                        }
+
+                        const hotspotPlace = extractPlaceFromMapObject(object, event);
+                        if (hotspotPlace) {
+                            const key = placeKey(hotspotPlace);
+                            const now = Date.now();
+                            if (
+                                mapState.lastHotspotClick
+                                && mapState.lastHotspotClick.key === key
+                                && (now - mapState.lastHotspotClick.at) <= HOTSPOT_OPEN_WINDOW_MS
+                            ) {
+                                const url = getPlaceYandexMapsUrl(hotspotPlace);
+                                window.open(url, "_blank", "noopener,noreferrer");
+                                mapState.lastHotspotClick = null;
+                                return;
+                            }
+                            mapState.lastHotspotClick = { key, at: now };
+                            selectPlace(hotspotPlace, { fly: false });
+                            showToast("Повторный клик по заведению откроет его в Яндекс Картах");
+                            return;
+                        }
+                    }
+                });
+
+                mapState.map.addChild(mapState.clickListener);
+            }
+
+            async function attachDefaultControls() {
+                if (!window.ymaps3 || !mapState.map || !mapState.mapApi) return;
+                try {
+                    ymaps3.import.registerCdn("https://cdn.jsdelivr.net/npm/{package}", [
+                        "@yandex/ymaps3-default-ui-theme@latest"
+                    ]);
+                    const { YMapZoomControl } = await ymaps3.import("@yandex/ymaps3-default-ui-theme");
+                    const controls = new mapState.mapApi.YMapControls({ position: "right" });
+                    controls.addChild(new YMapZoomControl({}));
+                    mapState.map.addChild(controls);
+                } catch (_) {}
+            }
+
+            async function initMap() {
+                if (!window.ymaps3) throw new Error("ymaps3 не загружен");
+
+                const {
+                    YMap,
+                    YMapDefaultSchemeLayer,
+                    YMapDefaultFeaturesLayer,
+                    YMapMarker,
+                    YMapListener,
+                    YMapControls
+                } = ymaps3;
+
+                mapState.mapApi = {
+                    YMap,
+                    YMapDefaultSchemeLayer,
+                    YMapDefaultFeaturesLayer,
+                    YMapMarker,
+                    YMapListener,
+                    YMapControls
+                };
+
+                const skin = MAP_SKINS[mapState.skinName] || MAP_SKINS.cinema;
+
+                mapState.map = new YMap(
+                    document.getElementById("map"),
+                    {
+                        location: { center: toLngLat(SMOLENSK_CENTER), zoom: 12 },
+                        mode: "vector",
+                        theme: skin.theme || "dark"
+                    }
+                );
+
+                mapState.schemeLayer = new YMapDefaultSchemeLayer({
+                    customization: skin.customization || []
+                });
+                mapState.featuresLayer = new YMapDefaultFeaturesLayer({});
+
+                mapState.map.addChild(mapState.schemeLayer);
+                mapState.map.addChild(mapState.featuresLayer);
+                mapState.apiReady = true;
+
+                applyMapSkin(mapState.skinName, { persist: false });
+                ensureSelectedPlacemark();
+                setupMapInteractions();
+                syncBookmarkPlacemarks();
+                updatePlacePanel();
+                await attachDefaultControls();
+            }
+
+            function loadYmapsScript() {
+                if (document.getElementById("ymaps3-script")) return;
+                const script = document.createElement("script");
+                script.id = "ymaps3-script";
+                script.src = `https://api-maps.yandex.ru/v3/?apikey=${encodeURIComponent(YANDEX_MAPS_API_KEY)}&lang=ru_RU`;
+                script.async = true;
+                script.defer = true;
+                script.referrerPolicy = "origin";
+                script.onerror = () => {
+                    showApiError("Не удалось загрузить Яндекс Карты v3. Проверьте интернет или API-ключ.");
+                };
+                document.head.appendChild(script);
+            }
+
+            async function checkYmapsV3Access() {
+                try {
+                    const url = new URL("https://api-maps.yandex.ru/v3/config");
+                    url.searchParams.set("lang", "ru_RU");
+                    url.searchParams.set("source", "3.0.modern");
+                    url.searchParams.set("apikey", YANDEX_MAPS_API_KEY);
+
+                    const response = await fetch(url.toString(), {
+                        method: "GET",
+                        mode: "cors",
+                        referrerPolicy: "origin"
+                    });
+
+                    if (!response.ok) {
+                        let details = "";
+                        try {
+                            const payload = await response.json();
+                            details = payload && payload.message ? ` (${payload.message})` : "";
+                        } catch (_) {}
+                        throw new Error(`${response.status}${details}`);
+                    }
+                    return true;
+                } catch (error) {
+                    showApiError(`Нет доступа к JS API v3: ${String(error && error.message ? error.message : error)}.`);
+                    return false;
+                }
+            }
+
+            async function waitForYmaps() {
+                const accessOk = await checkYmapsV3Access();
+                if (!accessOk) return false;
+                loadYmapsScript();
+                const startedAt = Date.now();
+                while (Date.now() - startedAt < API_TIMEOUT_MS) {
+                    if (window.ymaps3 && window.ymaps3.ready) {
+                        await window.ymaps3.ready;
+                        return true;
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 120));
+                }
+                return false;
+            }
+
+            function fallbackMapEmbed() {
+                mapState.apiReady = false;
+                const mapEl = document.getElementById("map");
+                mapEl.innerHTML = "";
+                const iframe = document.createElement("iframe");
+                iframe.src = "https://yandex.ru/map-widget/v1/?ll=32.0453%2C54.7826&z=12";
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.border = "0";
+                iframe.loading = "lazy";
+                iframe.allowFullscreen = true;
+                mapEl.appendChild(iframe);
+            }
+
+            async function bootstrap() {
+                hideApiError();
+                const userInfo = readCurrentUserInfo();
+                mapState.userName = userInfo.name;
+                mapState.userId = userInfo.userId;
+                mapState.storageKey = getStorageKeyForUser(mapState.userId);
+                mapState.skinName = resolveInitialSkin();
+                mapState.draftRating = 5;
+                loadData();
+                applyMapSkin(mapState.skinName, { persist: false });
+                renderRatingStars();
+                renderBookmarkList();
+                bindEvents();
+                const uiPrefs = readUiPrefs();
+                setMapFocusMode(uiPrefs.mapFocusMode, { persist: false });
+                updatePlacePanel();
+
+                const ok = await waitForYmaps();
+                if (!ok) {
+                    showApiError("Интерактивный API Яндекс.Карт не ответил за 15 секунд. Показана карта-виджет без закладок и отзывов.");
+                    fallbackMapEmbed();
+                    return;
+                }
+
+                try {
+                    await initMap();
+                    selectPlace({
+                        name: "Смоленск",
+                        address: "Смоленская область, Россия",
+                        coords: SMOLENSK_CENTER,
+                        kind: "address",
+                        source: "bootstrap"
+                    }, { fly: false });
+                } catch (error) {
+                    showApiError("Ошибка инициализации Яндекс.Карт. Отображен fallback-режим.");
+                    fallbackMapEmbed();
+                    console.error(error);
+                }
+            }
+
+            bootstrap();
+        })();
+    </script>
+</body>
+</html>
