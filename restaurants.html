@@ -4142,13 +4142,20 @@
                     return;
                 }
 
-                const cardRect = card.getBoundingClientRect();
                 const buttonWidth = button.offsetWidth || 52;
                 const buttonHeight = button.offsetHeight || 52;
                 const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+                const cardStyles = window.getComputedStyle(card);
+                const cardRight = Number.parseFloat(cardStyles.right) || 0;
+                const cardBottom = Number.parseFloat(cardStyles.bottom) || 0;
+                const cardWidth = card.offsetWidth || card.getBoundingClientRect().width || 0;
+                const cardHeight = card.offsetHeight || card.getBoundingClientRect().height || 0;
+                const cardLeft = Math.max(12, Math.round(viewportWidth - cardRight - cardWidth));
+                const cardTop = Math.max(12, Math.round(viewportHeight - cardBottom - cardHeight));
                 const gap = viewportWidth <= 720 ? 8 : 10;
-                const top = Math.max(12, Math.round(cardRect.top - buttonHeight - gap));
-                const left = Math.max(12, Math.round(cardRect.right - buttonWidth));
+                const top = Math.max(12, cardTop - buttonHeight - gap);
+                const left = Math.max(12, cardLeft + cardWidth - buttonWidth);
 
                 button.style.top = `${top}px`;
                 button.style.left = `${left}px`;
@@ -4157,8 +4164,20 @@
 
             function updateOwnerActionVisibility() {
                 const entry = getSelectionEntry();
-                els.restaurantDeleteButton.hidden = !(entry && canManageEntry(entry) && state.cardOpen && !state.rankingOpen);
+                const shouldShow = Boolean(entry && canManageEntry(entry) && state.cardOpen && !state.rankingOpen);
+                els.restaurantDeleteButton.hidden = !shouldShow;
                 els.restaurantDeleteButton.classList.remove("is-positioned");
+
+                if (!shouldShow) {
+                    els.restaurantDeleteButton.style.top = "";
+                    els.restaurantDeleteButton.style.left = "";
+                    return;
+                }
+
+                // Keep the button off-screen until the final position is calculated.
+                els.restaurantDeleteButton.style.top = "-9999px";
+                els.restaurantDeleteButton.style.left = "-9999px";
+                syncOwnerActionPosition();
                 requestAnimationFrame(syncOwnerActionPosition);
             }
 
