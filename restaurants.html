@@ -2767,7 +2767,27 @@
                         const x = Math.round((size - drawWidth) / 2);
                         const y = Math.round((size - drawHeight) / 2);
                         ctx.drawImage(image, x, y, drawWidth, drawHeight);
-                        resolve(ctx.getImageData(0, 0, size, size));
+                        const imageData = ctx.getImageData(0, 0, size, size);
+                        const pixels = imageData.data;
+                        for (let index = 0; index < pixels.length; index += 4) {
+                            const alpha = pixels[index + 3];
+                            if (alpha <= 18) {
+                                pixels[index] = 0;
+                                pixels[index + 1] = 0;
+                                pixels[index + 2] = 0;
+                                pixels[index + 3] = 0;
+                                continue;
+                            }
+
+                            const luminance = 0.2126 * pixels[index] + 0.7152 * pixels[index + 1] + 0.0722 * pixels[index + 2];
+                            if (alpha < 188 && luminance > 72) {
+                                const strength = Math.min(1, ((188 - alpha) / 188) * ((luminance - 72) / 120));
+                                pixels[index] = Math.round(pixels[index] * (1 - strength) + 18 * strength);
+                                pixels[index + 1] = Math.round(pixels[index + 1] * (1 - strength) + 16 * strength);
+                                pixels[index + 2] = Math.round(pixels[index + 2] * (1 - strength) + 14 * strength);
+                            }
+                        }
+                        resolve(imageData);
                     };
                     image.onerror = () => reject(new Error(`rdr2_icon_load_failed:${url}`));
                     image.src = url;
@@ -2843,20 +2863,6 @@
                 }).finally(() => {
                     state.rdr2PoiIconPromise = null;
                     if (state.map === activeMap && state.map.isStyleLoaded()) {
-                        ["poi_r1", "poi_r7", "poi_r20", "poi_transit"].forEach((layerId) => {
-                            if (!state.map.getLayer(layerId)) return;
-                            try {
-                                state.map.setLayoutProperty(
-                                    layerId,
-                                    "icon-image",
-                                    layerId === "poi_transit"
-                                        ? getRdr2PoiImageId("stagecoach")
-                                        : buildRdr2PoiIconExpression()
-                                );
-                            } catch (error) {
-                                console.error(error);
-                            }
-                        });
                         ensureMapLayers();
                         refreshMapData();
                         state.map.triggerRepaint();
@@ -5117,44 +5123,11 @@
                         }
 
                         if (/^poi_r(1|7|20)$/.test(id)) {
-                            setLayerVisibility(layer, "visible");
-                            layer.filter = ["all", layer.filter, buildRdr2PoiFilterExpression()];
-                            setLayoutValue(layer, "icon-image", buildRdr2PoiIconExpression());
-                            setLayoutValue(layer, "icon-size", ["interpolate", ["linear"], ["zoom"], 13.6, 0.95, 16.5, 1.16]);
-                            setLayoutValue(layer, "icon-anchor", "center");
-                            setLayoutValue(layer, "icon-padding", 2);
-                            setLayoutValue(layer, "icon-allow-overlap", true);
-                            setLayoutValue(layer, "icon-ignore-placement", true);
-                            setLayoutValue(layer, "text-field", RUSSIAN_LABEL_EXPRESSION);
-                            setLayoutValue(layer, "text-font", WESTERN_BODY_FONT_STACK);
-                            setLayoutValue(layer, "text-size", ["interpolate", ["linear"], ["zoom"], 14, 9.5, 17, 12]);
-                            setLayoutValue(layer, "text-offset", [0, 1.08]);
-                            setLayoutValue(layer, "text-max-width", 10);
-                            setLayoutValue(layer, "text-optional", true);
-                            layer.minzoom = id === "poi_r1" ? 13.4 : id === "poi_r7" ? 14.4 : 15.2;
-                            setPaintValue(layer, "text-color", WESTERN_INK_COLOR);
-                            setPaintValue(layer, "text-halo-color", "rgba(242, 230, 205, 0.98)");
-                            setPaintValue(layer, "text-halo-width", 0.98);
+                            setLayerVisibility(layer, "none");
                         }
 
                         if (id === "poi_transit") {
-                            setLayerVisibility(layer, "visible");
-                            setLayoutValue(layer, "icon-image", getRdr2PoiImageId("stagecoach"));
-                            setLayoutValue(layer, "icon-size", ["interpolate", ["linear"], ["zoom"], 13.4, 0.9, 16.4, 1.12]);
-                            setLayoutValue(layer, "icon-anchor", "center");
-                            setLayoutValue(layer, "icon-padding", 2);
-                            setLayoutValue(layer, "icon-allow-overlap", true);
-                            setLayoutValue(layer, "icon-ignore-placement", true);
-                            setLayoutValue(layer, "text-field", RUSSIAN_LABEL_EXPRESSION);
-                            setLayoutValue(layer, "text-font", WESTERN_BODY_FONT_STACK);
-                            setLayoutValue(layer, "text-size", ["interpolate", ["linear"], ["zoom"], 14, 9.2, 17, 11.5]);
-                            setLayoutValue(layer, "text-offset", [0, 1.06]);
-                            setLayoutValue(layer, "text-max-width", 9);
-                            setLayoutValue(layer, "text-optional", true);
-                            layer.minzoom = 13.4;
-                            setPaintValue(layer, "text-color", WESTERN_INK_COLOR);
-                            setPaintValue(layer, "text-halo-color", "rgba(242, 230, 205, 0.98)");
-                            setPaintValue(layer, "text-halo-width", 0.98);
+                            setLayerVisibility(layer, "none");
                         }
 
                         if (/^highway-name/.test(id)) {
