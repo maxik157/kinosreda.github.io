@@ -3566,6 +3566,24 @@
                 });
             }
 
+            function isEditableElement(element) {
+                if (!element || typeof element !== "object") return false;
+                if (element === els.nameInput || element === els.reviewInput) return true;
+                const tagName = String(element.tagName || "").toUpperCase();
+                if (tagName === "TEXTAREA") return true;
+                if (tagName === "INPUT") {
+                    const type = String(element.type || "").toLowerCase();
+                    return !["range", "button", "submit", "reset", "checkbox", "radio", "file", "hidden"].includes(type);
+                }
+                return Boolean(element.isContentEditable);
+            }
+
+            function shouldFreezeFloatingActionForKeyboard() {
+                const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+                if (viewportWidth > 720) return false;
+                return isEditableElement(document.activeElement);
+            }
+
             function handleNameInput(event) {
                 const value = String(event.target.value || "").trim();
                 if (state.selection && state.selection.editableName) {
@@ -4148,6 +4166,13 @@
                     return;
                 }
 
+                if (shouldFreezeFloatingActionForKeyboard()) {
+                    button.classList.remove("is-positioned");
+                    button.style.top = "";
+                    button.style.left = "";
+                    return;
+                }
+
                 const buttonWidth = button.offsetWidth || 52;
                 const buttonHeight = button.offsetHeight || 52;
                 const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -4175,6 +4200,12 @@
                 els.restaurantDeleteButton.classList.remove("is-positioned");
 
                 if (!shouldShow) {
+                    els.restaurantDeleteButton.style.top = "";
+                    els.restaurantDeleteButton.style.left = "";
+                    return;
+                }
+
+                if (shouldFreezeFloatingActionForKeyboard()) {
                     els.restaurantDeleteButton.style.top = "";
                     els.restaurantDeleteButton.style.left = "";
                     return;
@@ -5977,7 +6008,7 @@
                     });
                 });
 
-                ["pointerdown", "click"].forEach((eventName) => {
+                ["touchstart", "touchmove", "touchend", "pointerdown", "click"].forEach((eventName) => {
                     els.detailCard.addEventListener(eventName, (event) => {
                         event.stopPropagation();
                     });
@@ -6047,16 +6078,25 @@
 
                 els.photoInput.addEventListener("change", handlePhotoInput);
                 els.nameInput.addEventListener("input", handleNameInput);
+                els.nameInput.addEventListener("focus", updateOwnerActionVisibility);
                 els.nameInput.addEventListener("blur", () => {
                     commitInlineNameEdit().catch((error) => {
                         console.error(error);
                     });
+                    requestAnimationFrame(updateOwnerActionVisibility);
                 });
                 els.reviewInput.addEventListener("input", markFormDirty);
+                els.reviewInput.addEventListener("focus", updateOwnerActionVisibility);
+                els.reviewInput.addEventListener("blur", () => {
+                    requestAnimationFrame(updateOwnerActionVisibility);
+                });
                 els.reviewForm.addEventListener("submit", saveReview);
                 els.reviewsList.addEventListener("scroll", closeAllReviewReactionMenus, { passive: true });
 
                 window.addEventListener("resize", () => {
+                    if (shouldFreezeFloatingActionForKeyboard()) {
+                        return;
+                    }
                     syncOwnerActionPosition();
                 }, { passive: true });
 
