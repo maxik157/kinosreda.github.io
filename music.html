@@ -4540,19 +4540,18 @@
           return false;
         }
       })();
-      const isAndroidTv = (() => {
-        if (forceTvLayout) return true;
-        const ua = String(navigator.userAgent || "").toLowerCase();
-        if (!ua.includes("android")) return false;
-        if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
-          return true;
-        }
-        if (ua.includes(" tv") || ua.includes("tv ")) return true;
-        try {
-          const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
-          const isFinePointer = !!(window.matchMedia && window.matchMedia("(pointer:fine)").matches);
-          const longEdge = Math.max(
-            Number((window.screen && window.screen.width) || 0),
+        const isAndroidTv = (() => {
+          if (forceTvLayout) return true;
+          const ua = String(navigator.userAgent || "").toLowerCase();
+          if (!ua.includes("android")) return false;
+          if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
+            return true;
+          }
+          try {
+            const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
+            const isFinePointer = !!(window.matchMedia && window.matchMedia("(pointer:fine)").matches);
+            const longEdge = Math.max(
+              Number((window.screen && window.screen.width) || 0),
             Number((window.screen && window.screen.height) || 0)
           );
           const shortEdge = Math.min(

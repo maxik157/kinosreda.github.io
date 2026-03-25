@@ -5138,6 +5138,7 @@
         const PLANNING_EVENT_PARAM = 'planningEvent';
         let iframeKeyboardOverride = null;
         let iframeKeyboardOverrideTimer = null;
+        let androidServiceViewportStableHeight = 0;
         const PAGE_IDS = {
             calendar: 'calendarSection',
             backlog: 'backlogSection',
@@ -5446,7 +5447,6 @@
                 if (/(android tv|google tv|googletv|smart-tv|smarttv|hbbtv|aft[a-z0-9]+|bravia|mibox|shield|netcast|viera)/i.test(ua)) {
                     return true;
                 }
-                if (ua.includes(' tv') || ua.includes('tv ')) return true;
                 const maxTouchPoints = Number((navigator && navigator.maxTouchPoints) || 0);
                 const isFinePointer = !!(window.matchMedia && window.matchMedia('(pointer:fine)').matches);
                 const longEdge = Math.max(
@@ -5460,6 +5460,13 @@
                 if (!isFinePointer && maxTouchPoints === 0 && longEdge >= 960 && shortEdge >= 540) {
                     return true;
                 }
+            } catch (_) {}
+            return false;
+        }
+        function isAndroidHandheldRuntime() {
+            try {
+                const ua = String((navigator && navigator.userAgent) || '').toLowerCase();
+                return ua.includes('android') && !isAndroidTvRuntime();
             } catch (_) {}
             return false;
         }
@@ -5578,11 +5585,28 @@
                 return false;
             }
         }
+        function shouldFreezeAndroidServiceViewport() {
+            return isAndroidHandheldRuntime()
+                && !isDesktopLayout()
+                && !!(document.body && document.body.classList.contains('page-service-active'));
+        }
         function updateViewportVars() {
             const vv = window.visualViewport;
             const fallback = window.innerHeight;
             const raw = vv && typeof vv.height === 'number' ? vv.height : fallback;
-            const h = raw && raw > 200 ? raw : fallback;
+            const candidate = raw && raw > 200 ? raw : fallback;
+            if (isAndroidHandheldRuntime()) {
+                const keyboardOpen = detectKeyboardOpenFromViewport();
+                if (!keyboardOpen || !androidServiceViewportStableHeight) {
+                    androidServiceViewportStableHeight = Math.max(candidate, fallback);
+                }
+            } else {
+                androidServiceViewportStableHeight = 0;
+            }
+            let h = candidate;
+            if (shouldFreezeAndroidServiceViewport()) {
+                h = androidServiceViewportStableHeight || candidate;
+            }
             document.documentElement.style.setProperty('--vvh', `${h}px`);
             refreshHeaderOffset();
             syncIframeKeyboardClass();
@@ -6578,6 +6602,8 @@
                 btn.setAttribute('aria-current', isActive ? 'page' : 'false');
             });
 
+            updateViewportVars();
+
             if (options.scroll !== false) {
                 scrollContainerToTop(options.behavior || 'smooth');
             }
@@ -6997,6 +7023,10 @@
             applyLogoSettings();
             updateViewportVars();
             window.addEventListener('resize', updateViewportVars);
+            window.addEventListener('orientationchange', () => {
+                androidServiceViewportStableHeight = 0;
+                updateViewportVars();
+            });
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', updateViewportVars);
                 window.visualViewport.addEventListener('scroll', updateViewportVars);
