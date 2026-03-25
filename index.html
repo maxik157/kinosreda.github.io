@@ -5139,6 +5139,9 @@
         let iframeKeyboardOverride = null;
         let iframeKeyboardOverrideTimer = null;
         let androidServiceViewportStableHeight = 0;
+        let activeEmbeddedInputFrame = null;
+        let embeddedInputBlurTimer = null;
+        const embeddedInputBridgeDocs = new WeakSet();
         const PAGE_IDS = {
             calendar: 'calendarSection',
             backlog: 'backlogSection',
@@ -5588,7 +5591,8 @@
         function shouldFreezeAndroidServiceViewport() {
             return isAndroidHandheldRuntime()
                 && !isDesktopLayout()
-                && !!(document.body && document.body.classList.contains('page-service-active'));
+                && !!(document.body && document.body.classList.contains('page-service-active'))
+                && (detectKeyboardOpenFromViewport() || isEmbeddedInputFrameActive());
         }
         function updateViewportVars() {
             const vv = window.visualViewport;
@@ -5621,7 +5625,7 @@
             if (!document.documentElement.classList.contains('ios-safari')) return;
             const open = iframeKeyboardOverride !== null
                 ? iframeKeyboardOverride
-                : detectKeyboardOpenFromViewport();
+                : (detectKeyboardOpenFromViewport() || isEmbeddedInputFrameActive());
             document.documentElement.classList.toggle('iframe-keyboard-open', !!open);
         }
         function setIframeKeyboardOverride(val) {
@@ -5655,6 +5659,100 @@
             if (tag !== 'INPUT') return false;
             const type = String(el.type || 'text').toLowerCase();
             return !['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'file', 'color'].includes(type);
+        }
+
+        function isEmbeddedInputFrameActive(frame = null) {
+            if (!activeEmbeddedInputFrame) return false;
+            return !frame || activeEmbeddedInputFrame === frame;
+        }
+
+        function setEmbeddedInputFrameActive(frame, active) {
+            if (embeddedInputBlurTimer) {
+                clearTimeout(embeddedInputBlurTimer);
+                embeddedInputBlurTimer = null;
+            }
+            if (active) {
+                activeEmbeddedInputFrame = frame || activeEmbeddedInputFrame;
+                if (isAndroidHandheldRuntime()) {
+                    const vv = window.visualViewport;
+                    const candidate = vv && typeof vv.height === 'number' ? vv.height : window.innerHeight;
+                    androidServiceViewportStableHeight = Math.max(
+                        androidServiceViewportStableHeight || 0,
+                        candidate || 0,
+                        window.innerHeight || 0
+                    );
+                }
+            } else if (!frame || activeEmbeddedInputFrame === frame) {
+                activeEmbeddedInputFrame = null;
+            }
+            document.documentElement.classList.toggle('iframe-text-input-active', !!activeEmbeddedInputFrame);
+            syncIframeKeyboardClass();
+        }
+
+        function scheduleEmbeddedInputFrameBlur(frame) {
+            if (!frame) {
+                setEmbeddedInputFrameActive(null, false);
+                return;
+            }
+            if (embeddedInputBlurTimer) {
+                clearTimeout(embeddedInputBlurTimer);
+            }
+            embeddedInputBlurTimer = setTimeout(() => {
+                embeddedInputBlurTimer = null;
+                try {
+                    const activeEl = frame.contentWindow && frame.contentWindow.document
+                        ? frame.contentWindow.document.activeElement
+                        : null;
+                    if (isTextEditingElement(activeEl)) {
+                        setEmbeddedInputFrameActive(frame, true);
+                        return;
+                    }
+                } catch (_) {}
+                setEmbeddedInputFrameActive(frame, false);
+            }, 120);
+        }
+
+        function attachServiceFrameInputBridge(frame) {
+            if (!frame || frame.dataset.inputBridgeBound === '1') return;
+            frame.dataset.inputBridgeBound = '1';
+
+            const bindFrameDocument = () => {
+                let frameWindow = null;
+                let frameDocument = null;
+                try {
+                    frameWindow = frame.contentWindow || null;
+                    frameDocument = frameWindow && frameWindow.document ? frameWindow.document : null;
+                } catch (_) {
+                    frameWindow = null;
+                    frameDocument = null;
+                }
+                if (!frameWindow || !frameDocument || embeddedInputBridgeDocs.has(frameDocument)) return;
+                embeddedInputBridgeDocs.add(frameDocument);
+
+                const markActiveIfEditable = (target = null) => {
+                    const candidate = target || frameDocument.activeElement;
+                    if (isTextEditingElement(candidate)) {
+                        setEmbeddedInputFrameActive(frame, true);
+                    }
+                };
+
+                frameDocument.addEventListener('focusin', (event) => {
+                    markActiveIfEditable(event.target);
+                }, true);
+                frameDocument.addEventListener('focusout', () => {
+                    scheduleEmbeddedInputFrameBlur(frame);
+                }, true);
+                frameDocument.addEventListener('touchstart', (event) => {
+                    markActiveIfEditable(event.target);
+                }, { capture: true, passive: true });
+                frameWindow.addEventListener('pagehide', () => {
+                    setEmbeddedInputFrameActive(frame, false);
+                });
+                markActiveIfEditable();
+            };
+
+            frame.addEventListener('load', bindFrameDocument);
+            bindFrameDocument();
         }
 
         function getTvEventKey(event) {
@@ -6169,6 +6267,7 @@
             const frame = section.querySelector('iframe[data-src]');
             if (frame) {
                 frame.setAttribute('tabindex', '0');
+                attachServiceFrameInputBridge(frame);
             }
             if (section.id === 'svc_gallery' && !isDesktopLayout()) {
                 if (frame) frame.removeAttribute('src');
@@ -6223,6 +6322,9 @@
             if (!section || !section.classList.contains('page-service')) return;
             const frame = section.querySelector('iframe');
             if (!frame) return;
+            if (isEmbeddedInputFrameActive(frame)) {
+                setEmbeddedInputFrameActive(frame, false);
+            }
             if (frame.dataset.unload === '1') {
                 frame.removeAttribute('src');
             }
@@ -6710,6 +6812,7 @@
             const btn = document.getElementById('mobileSidebarToggle');
             if (!menu || !btn) return;
             const isOpen = !!open;
+            if (menu.classList.contains('is-open') === isOpen) return;
             menu.classList.toggle('is-open', isOpen);
             menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
             btn.classList.toggle('is-open', isOpen);
@@ -6790,6 +6893,10 @@
             setSidebarCollapsed(savedCollapsed, false);
 
             window.addEventListener('resize', () => {
+                if (isAndroidHandheldRuntime() && isEmbeddedInputFrameActive()) {
+                    updateViewportVars();
+                    return;
+                }
                 setLayoutMode('sidebar', { persist: false });
                 syncBacklogHeight();
             });
