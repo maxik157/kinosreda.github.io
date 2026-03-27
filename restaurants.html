@@ -165,7 +165,158 @@
             top: 18px;
             left: 18px;
             z-index: 8;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
             pointer-events: none;
+        }
+
+        .city-select {
+            position: relative;
+            pointer-events: auto;
+        }
+
+        .city-select-trigger,
+        .city-option {
+            appearance: none;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            cursor: pointer;
+            transition:
+                transform 180ms ease,
+                border-color 180ms ease,
+                background-color 180ms ease,
+                color 180ms ease,
+                opacity 180ms ease;
+        }
+
+        .city-select-trigger {
+            min-width: 214px;
+            height: 50px;
+            padding: 0 18px;
+            border-radius: 999px;
+            display: grid;
+            grid-template-columns: 10px minmax(0, 1fr) 18px;
+            align-items: center;
+            gap: 12px;
+            color: var(--text);
+        }
+
+        .city-select-trigger:hover,
+        .city-option:hover {
+            transform: translateY(-1px);
+            border-color: var(--line-strong);
+        }
+
+        .city-select-trigger.is-open {
+            border-color: var(--line-strong);
+            background:
+                linear-gradient(180deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0.06)),
+                var(--surface-strong);
+        }
+
+        .city-select-current {
+            min-width: 0;
+            display: block;
+            grid-column: 2;
+            text-align: center;
+            justify-self: center;
+            width: 100%;
+            max-width: 100%;
+            transform: translateX(-4px);
+        }
+
+        .city-select-current strong {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .city-select-chevron {
+            width: 18px;
+            height: 18px;
+            grid-column: 3;
+            justify-self: end;
+            color: var(--accent-strong);
+            transition: transform 220ms ease;
+        }
+
+        .city-select-trigger.is-open .city-select-chevron {
+            transform: rotate(180deg);
+        }
+
+        .city-select-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 0;
+            width: min(248px, calc(100vw - 36px));
+            padding: 8px;
+            border-radius: 22px;
+            display: grid;
+            gap: 6px;
+            opacity: 0;
+            transform: translateY(-8px) scale(0.985);
+            pointer-events: none;
+            transition: opacity 180ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .city-select.is-open .city-select-menu {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .city-option {
+            width: 100%;
+            min-height: 48px;
+            padding: 0 14px;
+            border: 1px solid transparent;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            text-align: left;
+            color: var(--text-soft);
+        }
+
+        .city-option.is-active {
+            border-color: rgba(245, 158, 11, 0.18);
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--text);
+        }
+
+        .city-option-copy {
+            min-width: 0;
+            display: block;
+        }
+
+        .city-option-copy strong {
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .city-option-mark {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.08);
+            opacity: 0;
+            transform: scale(0.72);
+            transition: opacity 180ms ease, transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+        }
+
+        .city-option.is-active .city-option-mark {
+            opacity: 1;
+            transform: scale(1);
+            border-color: rgba(245, 158, 11, 0.74);
+            background: rgba(245, 158, 11, 0.94);
         }
 
         .map-style-pod {
@@ -2184,6 +2335,73 @@
             .topbar {
                 top: 12px;
                 left: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                max-width: calc(100vw - 108px);
+            }
+
+            .ranking-toggle {
+                min-width: 104px;
+                width: 104px;
+                height: 40px;
+                padding: 0 6px 0 12px;
+                gap: 8px;
+                flex: 0 0 auto;
+            }
+
+            .ranking-toggle span {
+                font-size: 0.72rem;
+                min-width: 0;
+            }
+
+            .ranking-toggle b {
+                min-width: 30px;
+                height: 30px;
+                padding: 0 8px;
+                font-size: 0.7rem;
+                flex: 0 0 auto;
+            }
+
+            .city-select {
+                flex: 1 1 auto;
+                min-width: 0;
+                width: auto;
+                max-width: 120px;
+            }
+
+            .city-select-trigger {
+                width: 100%;
+                min-width: 0;
+                height: 40px;
+                padding-left: 12px;
+                padding-right: 12px;
+                grid-template-columns: minmax(0, 1fr) 12px;
+                gap: 6px;
+                border-radius: 16px;
+            }
+
+            .city-select-current {
+                grid-column: 1;
+                justify-self: stretch;
+                text-align: center;
+                transform: translateX(-1px);
+            }
+
+            .city-select-current strong {
+                font-size: 0.68rem;
+                letter-spacing: 0.01em;
+            }
+
+            .city-select-chevron {
+                width: 12px;
+                height: 12px;
+                grid-column: 2;
+            }
+
+            .city-select-menu {
+                width: min(188px, calc(100vw - 24px));
+                border-radius: 18px;
             }
 
             .map-style-pod {
@@ -2350,6 +2568,42 @@
             <span>Рейтинг</span>
             <b id="placesMetric">0</b>
         </button>
+        <div id="citySelect" class="city-select">
+            <button id="citySelectTrigger" class="city-select-trigger glass" type="button" aria-haspopup="listbox" aria-expanded="false">
+                <span class="city-select-current">
+                    <strong id="citySelectValue">Смоленск</strong>
+                </span>
+                <svg class="city-select-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </button>
+            <div id="citySelectMenu" class="city-select-menu glass" role="listbox" aria-label="Выбор города">
+                <button class="city-option is-active" type="button" role="option" aria-selected="true" data-city-btn="smolensk">
+                    <span class="city-option-copy">
+                        <strong>Смоленск</strong>
+                    </span>
+                    <span class="city-option-mark" aria-hidden="true"></span>
+                </button>
+                <button class="city-option" type="button" role="option" aria-selected="false" data-city-btn="saint-petersburg">
+                    <span class="city-option-copy">
+                        <strong>Санкт-Петербург</strong>
+                    </span>
+                    <span class="city-option-mark" aria-hidden="true"></span>
+                </button>
+                <button class="city-option" type="button" role="option" aria-selected="false" data-city-btn="moscow">
+                    <span class="city-option-copy">
+                        <strong>Москва</strong>
+                    </span>
+                    <span class="city-option-mark" aria-hidden="true"></span>
+                </button>
+                <button class="city-option" type="button" role="option" aria-selected="false" data-city-btn="sochi">
+                    <span class="city-option-copy">
+                        <strong>Сочи</strong>
+                    </span>
+                    <span class="city-option-mark" aria-hidden="true"></span>
+                </button>
+            </div>
+        </div>
     </header>
 
     <div class="map-style-pod">
@@ -2489,15 +2743,67 @@
                 measurementId: "G-MGW6GF67H3"
             };
 
-            const DB_ROOT = "restaurants_v1/smolensk";
+            const DB_ROOT_PREFIX = "restaurants_v1";
             const FILTER_KEY = "kinosreda.restaurants.filter.v2";
             const GEOCACHE_KEY = "kinosreda.restaurants.geocache.v2";
             const MAP_THEME_KEY = "kinosreda.restaurants.map-theme.v1";
-            const SMOLENSK_CENTER = [54.7826, 32.0453];
-            const SMOLENSK_BOUNDS = [
-                [31.9, 54.7],
-                [32.2, 54.9]
-            ];
+            const CITY_KEY = "kinosreda.restaurants.city.v1";
+            const CITY_ENTRIES_CACHE_KEY = "kinosreda.restaurants.city-entries-cache.v1";
+            const DEFAULT_CITY_ZOOM = 12.4;
+            const CITY_CONFIGS = Object.freeze({
+                smolensk: {
+                    key: "smolensk",
+                    shortLabel: "См",
+                    label: "Смоленск",
+                    titleLabel: "Смоленска",
+                    center: [54.7826, 32.0453],
+                    bounds: [
+                        [31.9, 54.7],
+                        [32.2, 54.9]
+                    ],
+                    zoom: DEFAULT_CITY_ZOOM,
+                    minZoom: 10.8
+                },
+                "saint-petersburg": {
+                    key: "saint-petersburg",
+                    shortLabel: "СПб",
+                    label: "Санкт-Петербург",
+                    titleLabel: "Санкт-Петербурга",
+                    center: [59.9386, 30.3141],
+                    bounds: [
+                        [29.45, 59.72],
+                        [30.78, 60.18]
+                    ],
+                    zoom: DEFAULT_CITY_ZOOM,
+                    minZoom: 9.8
+                },
+                moscow: {
+                    key: "moscow",
+                    shortLabel: "Мск",
+                    label: "Москва",
+                    titleLabel: "Москвы",
+                    center: [55.7558, 37.6176],
+                    bounds: [
+                        [36.8, 55.3],
+                        [38.25, 56.02]
+                    ],
+                    zoom: DEFAULT_CITY_ZOOM,
+                    minZoom: 9.7
+                },
+                sochi: {
+                    key: "sochi",
+                    shortLabel: "Сочи",
+                    label: "Сочи",
+                    titleLabel: "Сочи",
+                    center: [43.5855, 39.7231],
+                    bounds: [
+                        [39.55, 43.42],
+                        [40.18, 43.79]
+                    ],
+                    zoom: DEFAULT_CITY_ZOOM,
+                    minZoom: 10.1
+                }
+            });
             const NOMINATIM_BASE = "https://nominatim.openstreetmap.org";
             const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
             const POSTIMAGES_PROXY_ENDPOINT = "https://max157-kinosreda.hf.space/upload-image";
@@ -2513,6 +2819,17 @@
                 "restaurants-hit",
                 "restaurants-score-badge",
                 "restaurants-name"
+            ];
+            const PRESERVED_RUNTIME_SOURCE_IDS = [
+                RESTAURANTS_SOURCE_ID,
+                DRAFT_SOURCE_ID
+            ];
+            const PRESERVED_RUNTIME_LAYER_IDS = [
+                "restaurants-hit",
+                "restaurants-score-badge",
+                "restaurants-name",
+                "draft-ring",
+                "draft-point"
             ];
             const RUSSIAN_LABEL_EXPRESSION = [
                 "coalesce",
@@ -2586,10 +2903,11 @@
                 entryMap: new Map(),
                 mapTheme: "current",
                 baseMapStyle: null,
+                mapStylesByTheme: new Map(),
                 selection: null,
                 filter: "top",
                 rankingOpen: false,
-                cardOpen: true,
+                cardOpen: false,
                 ratingEditorOpen: false,
                 draftRating: 8.0,
                 draftPhotos: [],
@@ -2615,11 +2933,35 @@
                 cardAnimationTimer: 0,
                 westernFontsPromise: null,
                 rdr2PoiIconPromise: null,
-                mapStyleApplyToken: 0
+                mapStyleApplyToken: 0,
+                cityKey: "smolensk",
+                cityRef: null,
+                cityListener: null,
+                cityChangeToken: 0,
+                cityLoadToken: 0,
+                citySelectOpen: false,
+                mapSyncTimer: 0,
+                mapSyncFrame: 0,
+                cityCameraSyncTimer: 0,
+                cityMoveEndHandler: null,
+                mapStyleSerial: 0,
+                mapLayersConfiguredKey: "",
+                restaurantsGeoJsonSignature: "",
+                draftGeoJsonSignature: "",
+                mapPointerDownPoint: null,
+                mapPointerMoved: false,
+                mapRecentDragUntil: 0,
+                cityEntriesCache: new Map(),
+                cityPrefetchOps: new Map()
             };
 
             const els = {
                 rankingToggle: document.getElementById("rankingToggle"),
+                citySelect: document.getElementById("citySelect"),
+                citySelectTrigger: document.getElementById("citySelectTrigger"),
+                citySelectMenu: document.getElementById("citySelectMenu"),
+                citySelectValue: document.getElementById("citySelectValue"),
+                cityButtons: Array.from(document.querySelectorAll("[data-city-btn]")),
                 mapStyleToggle: document.querySelector(".map-style-toggle"),
                 mapThemeButtons: Array.from(document.querySelectorAll("[data-map-theme-btn]")),
                 placesMetric: document.getElementById("placesMetric"),
@@ -2661,6 +3003,7 @@
             };
 
             let toastTimer = 0;
+            let cityCachePersistTimer = 0;
 
             function showToast(message) {
                 if (!message) return;
@@ -2684,6 +3027,300 @@
                 try {
                     localStorage.setItem(key, value);
                 } catch (_) {}
+            }
+
+            function readCityEntriesCache() {
+                try {
+                    const raw = safeStorageGet(CITY_ENTRIES_CACHE_KEY);
+                    if (!raw) return new Map();
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== "object") {
+                        return new Map();
+                    }
+                    return new Map(
+                        Object.entries(parsed).filter(([key, value]) => CITY_CONFIGS[key] && value && typeof value === "object")
+                    );
+                } catch (_) {
+                    return new Map();
+                }
+            }
+
+            function persistCityEntriesCacheNow() {
+                const payload = {};
+                state.cityEntriesCache.forEach((value, key) => {
+                    if (!CITY_CONFIGS[key] || !value || typeof value !== "object") return;
+                    payload[key] = value;
+                });
+                safeStorageSet(CITY_ENTRIES_CACHE_KEY, JSON.stringify(payload));
+            }
+
+            function scheduleCityEntriesCachePersist() {
+                if (cityCachePersistTimer) {
+                    clearTimeout(cityCachePersistTimer);
+                }
+                cityCachePersistTimer = setTimeout(() => {
+                    cityCachePersistTimer = 0;
+                    persistCityEntriesCacheNow();
+                }, 140);
+            }
+
+            function normalizeCityKey(value) {
+                const key = String(value || "").trim().toLowerCase();
+                return CITY_CONFIGS[key] ? key : "smolensk";
+            }
+
+            function getCurrentCityConfig() {
+                return CITY_CONFIGS[normalizeCityKey(state.cityKey)] || CITY_CONFIGS.smolensk;
+            }
+
+            function getCurrentCityLabel() {
+                return getCurrentCityConfig().label;
+            }
+
+            function getCurrentCityTitleLabel() {
+                return getCurrentCityConfig().titleLabel;
+            }
+
+            function getCurrentDbRoot() {
+                return `${DB_ROOT_PREFIX}/${getCurrentCityConfig().key}`;
+            }
+
+            function updateDocumentTitle() {
+                document.title = `Рестораны ${getCurrentCityTitleLabel()} — Киносреда`;
+            }
+
+            function syncCityUI() {
+                const cityKey = normalizeCityKey(state.cityKey);
+                const city = CITY_CONFIGS[cityKey] || CITY_CONFIGS.smolensk;
+                els.cityButtons.forEach((button) => {
+                    const active = button.dataset.cityBtn === cityKey;
+                    button.classList.toggle("is-active", active);
+                    button.setAttribute("aria-selected", active ? "true" : "false");
+                });
+                if (els.citySelectValue) {
+                    els.citySelectValue.textContent = city.label;
+                }
+                updateDocumentTitle();
+                if (!state.selection) {
+                    els.placeAddress.textContent = getCurrentCityLabel();
+                }
+            }
+
+            function syncCitySelectOpen(next) {
+                state.citySelectOpen = Boolean(next);
+                if (els.citySelect) {
+                    els.citySelect.classList.toggle("is-open", state.citySelectOpen);
+                }
+                if (els.citySelectTrigger) {
+                    els.citySelectTrigger.classList.toggle("is-open", state.citySelectOpen);
+                    els.citySelectTrigger.setAttribute("aria-expanded", state.citySelectOpen ? "true" : "false");
+                }
+            }
+
+            function syncMapVisualState(options = {}) {
+                if (!state.map) return;
+
+                const run = () => {
+                    if (!state.map) return;
+                    if (options.resize) {
+                        try {
+                            state.map.resize();
+                        } catch (_) {}
+                    }
+                    if (!state.map.isStyleLoaded()) return;
+                    ensureMapLayers();
+                    refreshMapData();
+                    state.map.triggerRepaint();
+                };
+
+                if (state.mapSyncFrame) {
+                    cancelAnimationFrame(state.mapSyncFrame);
+                    state.mapSyncFrame = 0;
+                }
+                if (state.mapSyncTimer) {
+                    clearTimeout(state.mapSyncTimer);
+                    state.mapSyncTimer = 0;
+                }
+
+                if (options.immediate) {
+                    run();
+                    state.mapSyncTimer = setTimeout(run, options.retryDelay != null ? options.retryDelay : 180);
+                    return;
+                }
+
+                state.mapSyncFrame = requestAnimationFrame(() => {
+                    state.mapSyncFrame = 0;
+                    run();
+                });
+                state.mapSyncTimer = setTimeout(() => {
+                    state.mapSyncTimer = 0;
+                    run();
+                }, options.retryDelay != null ? options.retryDelay : 220);
+            }
+
+            function warmCityEntriesCache(targetCityKey) {
+                const cityKey = normalizeCityKey(targetCityKey);
+                if (!state.db || state.cityPrefetchOps.has(cityKey)) {
+                    return;
+                }
+                const request = state.db.ref(`${DB_ROOT_PREFIX}/${cityKey}`).once("value")
+                    .then((snapshot) => {
+                        const value = snapshot.val() || {};
+                        state.cityEntriesCache.set(cityKey, value);
+                        scheduleCityEntriesCachePersist();
+                        state.cityPrefetchOps.delete(cityKey);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        state.cityPrefetchOps.delete(cityKey);
+                    });
+                state.cityPrefetchOps.set(cityKey, request);
+            }
+
+            function warmAllCityEntriesCaches() {
+                Object.keys(CITY_CONFIGS).forEach((cityKey) => {
+                    warmCityEntriesCache(cityKey);
+                });
+            }
+
+            function clearPendingCityCameraSync() {
+                if (state.cityCameraSyncTimer) {
+                    clearTimeout(state.cityCameraSyncTimer);
+                    state.cityCameraSyncTimer = 0;
+                }
+                if (state.map && state.cityMoveEndHandler) {
+                    state.map.off("moveend", state.cityMoveEndHandler);
+                }
+                state.cityMoveEndHandler = null;
+            }
+
+            function scheduleCityCameraSync(duration) {
+                if (!state.map) return;
+                clearPendingCityCameraSync();
+
+                const run = () => {
+                    if (state.cityMoveEndHandler === run) {
+                        state.cityMoveEndHandler = null;
+                    }
+                    if (state.cityCameraSyncTimer) {
+                        clearTimeout(state.cityCameraSyncTimer);
+                        state.cityCameraSyncTimer = 0;
+                    }
+                    syncMapVisualState({ immediate: true, retryDelay: 240, resize: true });
+                };
+
+                state.cityMoveEndHandler = run;
+                state.map.once("moveend", run);
+                state.cityCameraSyncTimer = setTimeout(run, Math.max(320, duration + 180));
+            }
+
+            function focusCurrentCityOnMap(options = {}) {
+                if (!state.map) return;
+                const city = getCurrentCityConfig();
+                const duration = options.duration != null ? options.duration : 760;
+                const camera = {
+                    center: [city.center[1], city.center[0]],
+                    zoom: city.zoom,
+                    essential: true
+                };
+
+                clearPendingCityCameraSync();
+                state.map.stop();
+                state.map.setMinZoom(city.minZoom != null ? city.minZoom : 0);
+
+                if (options.instant) {
+                    state.map.jumpTo(camera);
+                    syncMapVisualState({ immediate: true, retryDelay: 220, resize: true });
+                    return;
+                }
+
+                scheduleCityCameraSync(duration);
+                state.map.easeTo({
+                    ...camera,
+                    duration
+                });
+            }
+
+            function detachCitySubscription() {
+                if (state.cityRef && state.cityListener) {
+                    state.cityRef.off("value", state.cityListener);
+                }
+                state.cityRef = null;
+                state.cityListener = null;
+            }
+
+            function subscribeToCurrentCity() {
+                if (!state.db) return;
+                detachCitySubscription();
+                const currentToken = ++state.cityLoadToken;
+                const cityKey = normalizeCityKey(state.cityKey);
+                const ref = state.db.ref(getCurrentDbRoot());
+                const listener = (snapshot) => {
+                    if (currentToken !== state.cityLoadToken) return;
+                    const value = snapshot.val() || {};
+                    state.cityEntriesCache.set(cityKey, value);
+                    scheduleCityEntriesCachePersist();
+                    applyEntries(value, { forceRender: true });
+                };
+                state.cityRef = ref;
+                state.cityListener = listener;
+                ref.once("value")
+                    .then((snapshot) => {
+                        if (currentToken !== state.cityLoadToken) return;
+                        const value = snapshot.val() || {};
+                        state.cityEntriesCache.set(cityKey, value);
+                        scheduleCityEntriesCachePersist();
+                        applyEntries(value, { forceRender: true });
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+                ref.on("value", listener, (error) => {
+                    if (currentToken !== state.cityLoadToken) return;
+                    console.error(error);
+                    showToast("Нет связи с базой");
+                });
+            }
+
+            function switchCity(nextCityKey, options = {}) {
+                const normalized = normalizeCityKey(nextCityKey);
+                const changed = normalized !== state.cityKey;
+                state.cityKey = normalized;
+                safeStorageSet(CITY_KEY, normalized);
+                syncCityUI();
+                syncCitySelectOpen(false);
+
+                if (!changed) {
+                    if (state.map) {
+                        focusCurrentCityOnMap({ instant: Boolean(options.instant) });
+                    }
+                    return;
+                }
+
+                closeAllReviewReactionMenus();
+                closeDeleteModal();
+                syncRatingEditorOpen(false);
+                state.selection = null;
+                syncCardOpen(false);
+                resetDraftComposer({ forceDirty: false, rating: 8.0 });
+                const cachedEntries = state.cityEntriesCache.get(normalized);
+                if (cachedEntries && typeof cachedEntries === "object") {
+                    applyEntries(cachedEntries, { forceRender: true });
+                } else {
+                    state.entriesRaw = {};
+                    state.entriesSignature = "";
+                    state.entries = [];
+                    state.entryMap = new Map();
+                    renderAll();
+                }
+
+                if (state.map) {
+                    focusCurrentCityOnMap({ instant: Boolean(options.instant) });
+                }
+
+                if (state.db) {
+                    subscribeToCurrentCity();
+                }
             }
 
             function cloneJson(value) {
@@ -2954,7 +3591,7 @@
             }
 
             function formatCoords(coords) {
-                if (!Array.isArray(coords) || coords.length < 2) return "Смоленск";
+                if (!Array.isArray(coords) || coords.length < 2) return getCurrentCityLabel();
                 return `${Number(coords[0]).toFixed(5)}, ${Number(coords[1]).toFixed(5)}`;
             }
 
@@ -2969,6 +3606,12 @@
                     .trim();
                 if (/смоленск/i.test(clean)) {
                     return "Смоленск";
+                }
+                if (/(санкт[\s-]*петербург|питер|спб)/i.test(clean)) {
+                    return "Санкт-Петербург";
+                }
+                if (/москва/i.test(clean)) {
+                    return "Москва";
                 }
                 return clean;
             }
@@ -2987,7 +3630,7 @@
                     address.municipality,
                     address.city_district,
                     address.county
-                ]) || "Смоленск");
+                ]) || getCurrentCityLabel());
                 const street = pickFirst([
                     address.road,
                     address.pedestrian,
@@ -3015,10 +3658,14 @@
                     .split(",")
                     .map((part) => part.trim())
                     .filter(Boolean);
-                const normalizedParts = parts.map((part) => (/смоленск/i.test(part) ? normalizeCityLabel(part) : part));
+                const normalizedParts = parts.map((part) => (
+                    /(смоленск|санкт[\s-]*петербург|питер|спб|москва)/i.test(part)
+                        ? normalizeCityLabel(part)
+                        : part
+                ));
                 if (!parts.length) return "";
                 if (normalizedParts.length <= 3) return normalizedParts.join(", ");
-                const city = normalizeCityLabel(pickFirst(normalizedParts.filter((part) => /смоленск/i.test(part))) || normalizedParts[0]);
+                const city = normalizeCityLabel(pickFirst(normalizedParts.filter((part) => /(смоленск|санкт[\s-]*петербург|питер|спб|москва)/i.test(part))) || normalizedParts[0]);
                 const street = pickFirst(normalizedParts.filter((part) => /(улица|ул\.|проспект|шоссе|переулок|площадь|проезд|набережная|бульвар|дорога|аллея|тупик|тракт|street|road|avenue|boulevard|lane|square)/i.test(part)));
                 const house = pickFirst(normalizedParts.filter((part) => /^\d+[а-яa-z0-9\/-]*$/i.test(part)))
                     || pickFirst(normalizedParts.filter((part) => /\d/.test(part) && part !== city && part !== street));
@@ -3153,7 +3800,7 @@
                     ? compressAddressString(item && item.display_name)
                     : trimHouseFromAddressString(item && item.display_name);
                 if (fromDisplay) return fromDisplay;
-                return Array.isArray(coords) ? formatCoords(coords) : "Смоленск";
+                return Array.isArray(coords) ? formatCoords(coords) : getCurrentCityLabel();
             }
 
             function hasHouseInAddress(value) {
@@ -3334,8 +3981,8 @@
                     id: "",
                     key: `draft_${Number(coords[0]).toFixed(5)}_${Number(coords[1]).toFixed(5)}`,
                     name: "",
-                    address: "Смоленск",
-                    fullAddress: "Смоленск",
+                    address: getCurrentCityLabel(),
+                    fullAddress: getCurrentCityLabel(),
                     coords: coords.slice(),
                     source: "draft",
                     editableName: true,
@@ -3705,14 +4352,20 @@
                 updateOwnerActionVisibility();
             }
 
-            function applyEntries(raw) {
+            function applyEntries(raw, options = {}) {
                 const nextRaw = raw && typeof raw === "object" ? raw : {};
                 const nextSignature = JSON.stringify(nextRaw);
                 if (nextSignature === state.entriesSignature) {
+                    if (options.forceRender) {
+                        renderAll();
+                        syncMapVisualState({ retryDelay: 140 });
+                    }
                     return;
                 }
 
                 const previousKey = state.selection ? state.selection.key : "";
+                state.cityEntriesCache.set(normalizeCityKey(state.cityKey), nextRaw);
+                scheduleCityEntriesCachePersist();
                 state.entriesRaw = nextRaw;
                 state.entriesSignature = nextSignature;
                 state.entries = Object.entries(state.entriesRaw)
@@ -3725,18 +4378,18 @@
                     if (matched) {
                         state.selection = entryToSelection(matched);
                     }
-                } else if (state.entries.length) {
-                    const topEntry = state.entries.slice().sort(compareTop)[0];
-                    if (topEntry) {
-                        state.selection = entryToSelection(topEntry);
-                    }
                 }
 
                 if ((state.selection ? state.selection.key : "") !== previousKey) {
                     hydrateDraftFromSelection();
                 }
 
+                if (!state.selection) {
+                    syncCardOpen(false);
+                }
+
                 renderAll();
+                syncMapVisualState({ retryDelay: 180 });
             }
 
             function syncMetrics() {
@@ -4347,7 +5000,7 @@
                 state.reviewMotionLockUntil = Date.now() + 900;
                 patchReviewReactionsInLocalSnapshot(entry.id, review.userId, state.userId, currentSet);
 
-                const ref = state.db.ref(`${DB_ROOT}/${entry.id}/ratings/${review.userId}/reactions/${state.userId}`);
+                const ref = state.db.ref(`${getCurrentDbRoot()}/${entry.id}/ratings/${review.userId}/reactions/${state.userId}`);
 
                 try {
                     if (Object.keys(currentSet).length) {
@@ -4462,10 +5115,10 @@
 
                 try {
                     if (state.db) {
-                        await state.db.ref(`${DB_ROOT}/${entry.id}`).update({
+                        await state.db.ref(`${getCurrentDbRoot()}/${entry.id}`).update({
                             updatedAt: new Date().toISOString()
                         });
-                        await state.db.ref(`${DB_ROOT}/${entry.id}/ratings/${state.userId}`).remove();
+                        await state.db.ref(`${getCurrentDbRoot()}/${entry.id}/ratings/${state.userId}`).remove();
                     }
 
                     removeReviewFromLocalSnapshot(entry.id, state.userId);
@@ -4491,7 +5144,7 @@
                 try {
                     const now = new Date().toISOString();
                     if (state.db) {
-                        await state.db.ref(`${DB_ROOT}/${entry.id}`).update({
+                        await state.db.ref(`${getCurrentDbRoot()}/${entry.id}`).update({
                             deletedAt: now,
                             deletedBy: state.userId,
                             deletedByName: state.userName,
@@ -4627,8 +5280,8 @@
                     ? (entry ? entry.name : (String(selection.name || "").trim() || "Новая точка"))
                     : "Выберите точку";
                 const address = selection
-                    ? (entry ? entry.address : (selection.address || "Смоленск"))
-                    : "Смоленск";
+                    ? (entry ? entry.address : (selection.address || getCurrentCityLabel()))
+                    : getCurrentCityLabel();
                 const scoreText = getEntryScoreText(entry, "—");
 
                 els.placeTitle.textContent = title;
@@ -5170,9 +5823,9 @@
                 return style;
             }
 
-            function buildMapStyle(baseStyle) {
+            function buildMapStyle(baseStyle, theme = state.mapTheme) {
                 const style = cloneJson(baseStyle);
-                return state.mapTheme === "western"
+                return theme === "western"
                     ? retintWesternMapStyle(style)
                     : retintCurrentMapStyle(style);
             }
@@ -5198,15 +5851,53 @@
                 }
             }
 
-            async function loadMapStyle() {
-                if (state.mapTheme === "western") {
+            async function loadMapStyle(theme = state.mapTheme) {
+                const normalizedTheme = normalizeMapTheme(theme);
+                if (normalizedTheme === "western") {
                     await ensureWesternFontsReady();
+                }
+                const cachedThemeStyle = state.mapStylesByTheme.get(normalizedTheme);
+                if (cachedThemeStyle) {
+                    return cloneJson(cachedThemeStyle);
                 }
                 const baseStyle = await getBaseMapStyle();
                 if (typeof baseStyle === "string") {
                     return baseStyle;
                 }
-                return buildMapStyle(baseStyle);
+                const builtStyle = buildMapStyle(baseStyle, normalizedTheme);
+                state.mapStylesByTheme.set(normalizedTheme, cloneJson(builtStyle));
+                return builtStyle;
+            }
+
+            function preserveRuntimeStyleState(previousStyle, nextStyle) {
+                if (!nextStyle || typeof nextStyle !== "object") {
+                    return nextStyle;
+                }
+                if (!previousStyle || typeof previousStyle !== "object") {
+                    return nextStyle;
+                }
+
+                const style = cloneJson(nextStyle);
+                const previousSources = previousStyle.sources || {};
+                const previousLayers = Array.isArray(previousStyle.layers) ? previousStyle.layers : [];
+
+                style.sources = style.sources || {};
+                PRESERVED_RUNTIME_SOURCE_IDS.forEach((sourceId) => {
+                    if (!style.sources[sourceId] && previousSources[sourceId]) {
+                        style.sources[sourceId] = cloneJson(previousSources[sourceId]);
+                    }
+                });
+
+                style.layers = Array.isArray(style.layers) ? style.layers : [];
+                const layerIds = new Set(style.layers.map((layer) => String(layer && layer.id ? layer.id : "")));
+                PRESERVED_RUNTIME_LAYER_IDS.forEach((layerId) => {
+                    if (layerIds.has(layerId)) return;
+                    const existingLayer = previousLayers.find((layer) => layer && layer.id === layerId);
+                    if (!existingLayer) return;
+                    style.layers.push(cloneJson(existingLayer));
+                });
+
+                return style;
             }
 
             async function applyMapThemeToMap() {
@@ -5215,26 +5906,23 @@
                 const style = await loadMapStyle();
                 if (!state.map || token !== state.mapStyleApplyToken) return;
 
-                state.map.once("style.load", () => {
+                try {
+                    if (typeof style === "string") {
+                        state.map.setStyle(style, { diff: false });
+                    } else {
+                        state.map.setStyle(style, {
+                            diff: true,
+                            transformStyle: preserveRuntimeStyleState
+                        });
+                    }
+                } catch (error) {
+                    console.error(error);
+                    state.map.setStyle(style, { diff: false });
+                }
+                setTimeout(() => {
                     if (!state.map || token !== state.mapStyleApplyToken) return;
-                    ensureMapLayers();
-                    refreshMapData();
-                    state.map.triggerRepaint();
-
-                    requestAnimationFrame(() => {
-                        if (!state.map || token !== state.mapStyleApplyToken || !state.map.isStyleLoaded()) return;
-                        refreshMapData();
-                        state.map.triggerRepaint();
-                    });
-
-                    state.map.once("idle", () => {
-                        if (!state.map || token !== state.mapStyleApplyToken || !state.map.isStyleLoaded()) return;
-                        refreshMapData();
-                        state.map.triggerRepaint();
-                    });
-                });
-
-                state.map.setStyle(style, { diff: false });
+                    syncMapVisualState({ immediate: true, retryDelay: 260, resize: true });
+                }, 80);
             }
 
             function setMapTheme(nextTheme) {
@@ -5259,6 +5947,14 @@
                 ensureScoreBadgeImages();
                 const draftPalette = getDraftMarkerPalette();
                 const westernMode = state.mapTheme === "western";
+                const layerConfigKey = `${state.mapStyleSerial}:${state.mapTheme}`;
+                const needsLayerReconfigure = state.mapLayersConfiguredKey !== layerConfigKey;
+                const scoreBadgeImageExpression = [
+                    "case",
+                    ["==", ["get", "isSelected"], 1],
+                    ["get", "selectedBadgeImageId"],
+                    ["get", "badgeImageId"]
+                ];
 
                 if (!state.map.getSource(RESTAURANTS_SOURCE_ID)) {
                     state.map.addSource(RESTAURANTS_SOURCE_ID, {
@@ -5283,12 +5979,7 @@
                         type: "symbol",
                         source: RESTAURANTS_SOURCE_ID,
                         layout: {
-                            "icon-image": [
-                                "case",
-                                ["==", ["get", "isSelected"], 1],
-                                ["get", "selectedBadgeImageId"],
-                                ["get", "badgeImageId"]
-                            ],
+                            "icon-image": scoreBadgeImageExpression,
                             "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.54, 14, 0.62, 17, 0.7],
                             "icon-allow-overlap": true,
                             "icon-ignore-placement": true
@@ -5318,6 +6009,32 @@
                     });
                 }
 
+                if (needsLayerReconfigure && state.map.getLayer("restaurants-hit")) {
+                    state.map.setPaintProperty("restaurants-hit", "circle-color", "rgba(0, 0, 0, 0)");
+                    state.map.setPaintProperty("restaurants-hit", "circle-radius", ["interpolate", ["linear"], ["zoom"], 11, 26, 17, 34]);
+                }
+
+                if (needsLayerReconfigure && state.map.getLayer("restaurants-score-badge")) {
+                    state.map.setLayoutProperty("restaurants-score-badge", "icon-image", scoreBadgeImageExpression);
+                    state.map.setLayoutProperty("restaurants-score-badge", "icon-size", ["interpolate", ["linear"], ["zoom"], 11, 0.54, 14, 0.62, 17, 0.7]);
+                    state.map.setLayoutProperty("restaurants-score-badge", "icon-allow-overlap", true);
+                    state.map.setLayoutProperty("restaurants-score-badge", "icon-ignore-placement", true);
+                }
+
+                if (needsLayerReconfigure && state.map.getLayer("restaurants-name")) {
+                    state.map.setLayoutProperty("restaurants-name", "text-field", ["get", "name"]);
+                    state.map.setLayoutProperty("restaurants-name", "text-size", ["interpolate", ["linear"], ["zoom"], 14, 11, 17, 13]);
+                    state.map.setLayoutProperty("restaurants-name", "text-anchor", "top");
+                    state.map.setLayoutProperty("restaurants-name", "text-offset", [0, 1.55]);
+                    state.map.setLayoutProperty("restaurants-name", "text-max-width", 12);
+                    state.map.setLayoutProperty("restaurants-name", "text-optional", true);
+                    state.map.setLayoutProperty("restaurants-name", "text-font", westernMode ? WESTERN_BODY_FONT_STACK : ["Noto Sans Bold"]);
+                    state.map.setPaintProperty("restaurants-name", "text-color", westernMode ? "#4f3624" : "#fff3e4");
+                    state.map.setPaintProperty("restaurants-name", "text-halo-color", westernMode ? "rgba(239, 226, 199, 0.96)" : "rgba(7, 9, 12, 0.96)");
+                    state.map.setPaintProperty("restaurants-name", "text-halo-width", westernMode ? 1.4 : 2);
+                    state.map.setPaintProperty("restaurants-name", "text-opacity", ["interpolate", ["linear"], ["zoom"], 14, 0, 14.4, 0.94]);
+                }
+
                 if (westernMode) {
                     ensureRdr2PoiImages();
                     if (!state.map.getLayer(RDR2_POI_LAYER_ID)) {
@@ -5326,11 +6043,11 @@
                             type: "symbol",
                             source: "openmaptiles",
                             "source-layer": "poi",
-                            minzoom: 13.2,
+                            minzoom: 12.1,
                             filter: buildRdr2PoiFilterExpression(),
                             layout: {
                                 "icon-image": buildRdr2PoiIconExpression(),
-                                "icon-size": ["interpolate", ["linear"], ["zoom"], 13.2, 0.72, 16.8, 0.94],
+                                "icon-size": ["interpolate", ["linear"], ["zoom"], 12.1, 0.68, 16.8, 0.94],
                                 "icon-anchor": "center",
                                 "icon-padding": 2,
                                 "icon-allow-overlap": true,
@@ -5340,18 +6057,29 @@
                         }, "restaurants-hit");
                     }
 
+                    if (needsLayerReconfigure && state.map.getLayer(RDR2_POI_LAYER_ID)) {
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-image", buildRdr2PoiIconExpression());
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-size", ["interpolate", ["linear"], ["zoom"], 12.1, 0.68, 16.8, 0.94]);
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-anchor", "center");
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-padding", 2);
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-allow-overlap", true);
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "icon-ignore-placement", true);
+                        state.map.setLayoutProperty(RDR2_POI_LAYER_ID, "symbol-sort-key", ["coalesce", ["get", "rank"], 999]);
+                        state.map.setFilter(RDR2_POI_LAYER_ID, buildRdr2PoiFilterExpression());
+                    }
+
                     if (!state.map.getLayer(RDR2_POI_LABEL_LAYER_ID)) {
                         state.map.addLayer({
                             id: RDR2_POI_LABEL_LAYER_ID,
                             type: "symbol",
                             source: "openmaptiles",
                             "source-layer": "poi",
-                            minzoom: 13.4,
+                            minzoom: 12.35,
                             filter: buildRdr2PoiFilterExpression(),
                             layout: {
                                 "text-field": RUSSIAN_LABEL_EXPRESSION,
                                 "text-font": WESTERN_BODY_FONT_STACK,
-                                "text-size": ["interpolate", ["linear"], ["zoom"], 13.4, 9.2, 17, 11.7],
+                                "text-size": ["interpolate", ["linear"], ["zoom"], 12.35, 8.7, 17, 11.7],
                                 "text-anchor": "top",
                                 "text-offset": [0, 1.34],
                                 "text-max-width": 10,
@@ -5365,6 +6093,22 @@
                                 "text-opacity": ["interpolate", ["linear"], ["zoom"], 13.4, 0, 14, 0.94]
                             }
                         }, "restaurants-hit");
+                    }
+
+                    if (needsLayerReconfigure && state.map.getLayer(RDR2_POI_LABEL_LAYER_ID)) {
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-field", RUSSIAN_LABEL_EXPRESSION);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-font", WESTERN_BODY_FONT_STACK);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-size", ["interpolate", ["linear"], ["zoom"], 12.35, 8.7, 17, 11.7]);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-anchor", "top");
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-offset", [0, 1.34]);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-max-width", 10);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "text-allow-overlap", false);
+                        state.map.setLayoutProperty(RDR2_POI_LABEL_LAYER_ID, "symbol-sort-key", ["coalesce", ["get", "rank"], 999]);
+                        state.map.setPaintProperty(RDR2_POI_LABEL_LAYER_ID, "text-color", WESTERN_INK_COLOR);
+                        state.map.setPaintProperty(RDR2_POI_LABEL_LAYER_ID, "text-halo-color", "rgba(245, 234, 208, 0.98)");
+                        state.map.setPaintProperty(RDR2_POI_LABEL_LAYER_ID, "text-halo-width", 0.92);
+                        state.map.setPaintProperty(RDR2_POI_LABEL_LAYER_ID, "text-opacity", ["interpolate", ["linear"], ["zoom"], 13.4, 0, 14, 0.94]);
+                        state.map.setFilter(RDR2_POI_LABEL_LAYER_ID, buildRdr2PoiFilterExpression());
                     }
                 }
 
@@ -5400,6 +6144,22 @@
                         }
                     });
                 }
+
+                if (needsLayerReconfigure && state.map.getLayer("draft-ring")) {
+                    state.map.setPaintProperty("draft-ring", "circle-color", "rgba(0, 0, 0, 0)");
+                    state.map.setPaintProperty("draft-ring", "circle-radius", ["interpolate", ["linear"], ["zoom"], 11, 12, 16, 15]);
+                    state.map.setPaintProperty("draft-ring", "circle-stroke-color", draftPalette.ring);
+                    state.map.setPaintProperty("draft-ring", "circle-stroke-width", 2);
+                }
+
+                if (needsLayerReconfigure && state.map.getLayer("draft-point")) {
+                    state.map.setPaintProperty("draft-point", "circle-color", draftPalette.fill);
+                    state.map.setPaintProperty("draft-point", "circle-radius", ["interpolate", ["linear"], ["zoom"], 11, 4.5, 16, 6]);
+                    state.map.setPaintProperty("draft-point", "circle-stroke-color", draftPalette.stroke);
+                    state.map.setPaintProperty("draft-point", "circle-stroke-width", 2.4);
+                }
+
+                state.mapLayersConfiguredKey = layerConfigKey;
             }
 
             function refreshMapData() {
@@ -5409,12 +6169,22 @@
 
                 const restaurantsSource = state.map.getSource(RESTAURANTS_SOURCE_ID);
                 if (restaurantsSource) {
-                    restaurantsSource.setData(makeRestaurantsGeoJson());
+                    const restaurantsGeoJson = makeRestaurantsGeoJson();
+                    const restaurantsSignature = JSON.stringify(restaurantsGeoJson);
+                    if (restaurantsSignature !== state.restaurantsGeoJsonSignature) {
+                        state.restaurantsGeoJsonSignature = restaurantsSignature;
+                        restaurantsSource.setData(restaurantsGeoJson);
+                    }
                 }
 
                 const draftSource = state.map.getSource(DRAFT_SOURCE_ID);
                 if (draftSource) {
-                    draftSource.setData(makeDraftGeoJson());
+                    const draftGeoJson = makeDraftGeoJson();
+                    const draftSignature = JSON.stringify(draftGeoJson);
+                    if (draftSignature !== state.draftGeoJsonSignature) {
+                        state.draftGeoJsonSignature = draftSignature;
+                        draftSource.setData(draftGeoJson);
+                    }
                 }
             }
 
@@ -5544,10 +6314,10 @@
                         if (currentEntry && fullAddress && fullAddress !== currentEntry.address && hasHouseInAddress(fullAddress)) {
                             patchEntryMetaInLocalSnapshot(currentEntry.id, { address: fullAddress });
                             if (state.db) {
-                                state.db.ref(`${DB_ROOT}/${currentEntry.id}`).update({
-                                    address: fullAddress,
-                                    updatedAt: new Date().toISOString()
-                                }).catch((error) => {
+                                    state.db.ref(`${getCurrentDbRoot()}/${currentEntry.id}`).update({
+                                        address: fullAddress,
+                                        updatedAt: new Date().toISOString()
+                                    }).catch((error) => {
                                     console.error(error);
                                 });
                             }
@@ -5786,7 +6556,7 @@
 
                 const entryPayload = {
                     name,
-                    address: String(state.selection.fullAddress || state.selection.address || "Смоленск").trim(),
+                    address: String(state.selection.fullAddress || state.selection.address || getCurrentCityLabel()).trim(),
                     coords: state.selection.coords.slice(),
                     source: state.selection.osmType && state.selection.osmId ? "osm" : "custom",
                     osmType: state.selection.osmType || "",
@@ -5836,9 +6606,9 @@
 
                 try {
                     if (state.db) {
-                        await state.db.ref(`${DB_ROOT}/${entryId}`).update(entryPayload);
+                        await state.db.ref(`${getCurrentDbRoot()}/${entryId}`).update(entryPayload);
                         if (!renameOnly) {
-                            await state.db.ref(`${DB_ROOT}/${entryId}/ratings/${state.userId}`).update(reviewPayload);
+                            await state.db.ref(`${getCurrentDbRoot()}/${entryId}/ratings/${state.userId}`).update(reviewPayload);
                         }
                     }
                     state.selection = {
@@ -5892,16 +6662,46 @@
                 return state.entryMap.get(String(feature.properties.id)) || null;
             }
 
+            function rememberMapPointer(point) {
+                if (!point) return;
+                state.mapPointerDownPoint = {
+                    x: Number(point.x) || 0,
+                    y: Number(point.y) || 0
+                };
+                state.mapPointerMoved = false;
+            }
+
+            function trackMapPointerMove(point) {
+                if (!point || !state.mapPointerDownPoint) return;
+                const dx = (Number(point.x) || 0) - state.mapPointerDownPoint.x;
+                const dy = (Number(point.y) || 0) - state.mapPointerDownPoint.y;
+                if ((dx * dx) + (dy * dy) > 144) {
+                    state.mapPointerMoved = true;
+                }
+            }
+
+            function resetMapPointerTracking() {
+                state.mapPointerDownPoint = null;
+                state.mapPointerMoved = false;
+            }
+
             async function initMap() {
                 const style = await loadMapStyle();
+                const city = getCurrentCityConfig();
                 state.map = new maplibregl.Map({
                     container: "map",
                     style,
-                    center: [SMOLENSK_CENTER[1], SMOLENSK_CENTER[0]],
-                    zoom: 12.4,
+                    center: [city.center[1], city.center[0]],
+                    zoom: city.zoom,
+                    minZoom: city.minZoom,
                     attributionControl: false,
                     maxPitch: 0,
-                    maxBounds: SMOLENSK_BOUNDS
+                    renderWorldCopies: true,
+                    fadeDuration: 0,
+                    refreshExpiredTiles: true,
+                    cancelPendingTileRequestsWhileZooming: true,
+                    maxTileCacheZoomLevels: 4,
+                    clickTolerance: 5
                 });
 
                 state.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
@@ -5911,12 +6711,17 @@
                     if (state.map.touchZoomRotate) {
                         state.map.touchZoomRotate.disableRotation();
                     }
+                    focusCurrentCityOnMap({ instant: true });
+                    syncMapVisualState({ immediate: true, retryDelay: 220, resize: true });
                 });
 
-                state.map.on("styledata", () => {
+                state.map.on("style.load", () => {
                     if (!state.map || !state.map.isStyleLoaded()) return;
-                    ensureMapLayers();
-                    refreshMapData();
+                    state.mapStyleSerial += 1;
+                    state.mapLayersConfiguredKey = "";
+                    state.restaurantsGeoJsonSignature = "";
+                    state.draftGeoJsonSignature = "";
+                    syncMapVisualState({ immediate: true, retryDelay: 260, resize: true });
                 });
 
                 state.map.on("styleimagemissing", (event) => {
@@ -5937,11 +6742,48 @@
                 });
 
                 state.map.on("mousemove", (event) => {
+                    trackMapPointerMove(event.point);
                     const hoveredEntry = getClickedEntry(event.point);
                     state.map.getCanvas().style.cursor = hoveredEntry ? "pointer" : "";
                 });
 
+                state.map.on("mousedown", (event) => {
+                    rememberMapPointer(event.point);
+                });
+
+                state.map.on("touchstart", (event) => {
+                    rememberMapPointer(event.point);
+                });
+
+                state.map.on("touchmove", (event) => {
+                    trackMapPointerMove(event.point);
+                });
+
+                state.map.on("movestart", () => {
+                    if (state.mapPointerDownPoint) {
+                        state.mapPointerMoved = true;
+                    }
+                    state.mapRecentDragUntil = Date.now() + 650;
+                });
+
+                state.map.on("dragstart", () => {
+                    state.mapPointerMoved = true;
+                    state.mapRecentDragUntil = Date.now() + 650;
+                });
+
+                state.map.on("dragend", () => {
+                    state.mapRecentDragUntil = Date.now() + 650;
+                    setTimeout(() => {
+                        resetMapPointerTracking();
+                    }, 0);
+                });
+
                 state.map.on("click", (event) => {
+                    const blockedByMove = state.mapPointerMoved;
+                    resetMapPointerTracking();
+                    if (blockedByMove || Date.now() < state.mapRecentDragUntil) {
+                        return;
+                    }
                     syncRankingOpen(false);
                     const entry = getClickedEntry(event.point);
                     if (entry) {
@@ -5970,12 +6812,8 @@
                     }
 
                     state.db = firebase.database();
-                    state.db.ref(DB_ROOT).on("value", (snapshot) => {
-                        applyEntries(snapshot.val() || {});
-                    }, (error) => {
-                        console.error(error);
-                        showToast("Нет связи с базой");
-                    });
+                    subscribeToCurrentCity();
+                    warmAllCityEntriesCaches();
                 } catch (error) {
                     console.error(error);
                     showToast("Firebase недоступен");
@@ -5992,6 +6830,16 @@
                     button.addEventListener("click", () => {
                         const nextTheme = button.dataset.mapThemeBtn || "current";
                         setMapTheme(nextTheme);
+                    });
+                });
+
+                els.citySelectTrigger.addEventListener("click", () => {
+                    syncCitySelectOpen(!state.citySelectOpen);
+                });
+
+                els.cityButtons.forEach((button) => {
+                    button.addEventListener("click", () => {
+                        switchCity(button.dataset.cityBtn || "smolensk");
                     });
                 });
 
@@ -6012,6 +6860,12 @@
                     els.detailCard.addEventListener(eventName, (event) => {
                         event.stopPropagation();
                     });
+                });
+
+                document.addEventListener("click", (event) => {
+                    if (!els.citySelect.contains(event.target)) {
+                        syncCitySelectOpen(false);
+                    }
                 });
 
                 els.detailCard.addEventListener("click", (event) => {
@@ -6126,6 +6980,10 @@
                         closePhotoLightbox();
                         return;
                     }
+                    if (event.key === "Escape" && state.citySelectOpen) {
+                        syncCitySelectOpen(false);
+                        return;
+                    }
                     if (state.lightboxUrl && event.key === "ArrowLeft") {
                         stepPhotoLightbox(-1);
                         return;
@@ -6162,13 +7020,21 @@
                 }
                 state.filter = safeStorageGet(FILTER_KEY) || "top";
                 state.mapTheme = normalizeMapTheme(safeStorageGet(MAP_THEME_KEY) || "current");
+                state.cityKey = normalizeCityKey(safeStorageGet(CITY_KEY) || "smolensk");
+                state.cityEntriesCache = readCityEntriesCache();
                 state.geocache = readGeocache();
                 syncMapThemeUI();
+                syncCityUI();
 
                 bindEvents();
                 syncCardOpen(true);
                 renderDraftRating();
-                renderAll();
+                const cachedEntries = state.cityEntriesCache.get(state.cityKey);
+                if (cachedEntries && typeof cachedEntries === "object") {
+                    applyEntries(cachedEntries, { forceRender: true });
+                } else {
+                    renderAll();
+                }
                 initMap();
                 initFirebase();
             }
