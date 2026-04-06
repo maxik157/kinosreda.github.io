@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Vice City</title>
+  <desc id="desc">Neon Vice City style icon</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a0838"/>
+      <stop offset="55%" stop-color="#091427"/>
+      <stop offset="100%" stop-color="#031018"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffd870"/>
+      <stop offset="100%" stop-color="#ff5ca8"/>
+    </linearGradient>
+    <linearGradient id="vc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7af7ff"/>
+      <stop offset="100%" stop-color="#ff78ba"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <circle cx="90" cy="38" r="26" fill="url(#sun)" opacity="0.95"/>
+  <path d="M0 92h128v36H0z" fill="#02060d"/>
+  <path d="M0 88c18-6 30-9 42-9 19 0 27 7 42 7 14 0 24-3 44-12v18H0z" fill="#071425"/>
+  <path d="M34 98l10-42 10 42h-8l-2-11h-10l-2 11zm8-20h6l-3-15z" fill="#041018"/>
+  <path d="M41 54c3 4 5 8 6 12 4-2 8-3 12-4-5 4-9 7-12 9 5 3 9 6 14 10-6-1-11-3-16-5 0 8-1 15-3 22h-4c-2-7-3-14-3-22-5 2-10 4-16 5 5-4 9-7 14-10-4-2-8-5-12-9 4 1 8 2 12 4 1-4 3-8 6-12z" fill="#090f1c"/>
+  <path d="M22 104h84" stroke="#7af7ff" stroke-width="2.6" stroke-linecap="round" opacity="0.7"/>
+  <g filter="url(#glow)">
+    <path d="M24 83l9-28h11l8 28h-8l-1.8-7h-8.2L32 83zm12.3-13h4.2l-2.1-8.4z" fill="url(#vc)"/>
+    <path d="M54 56h11l7 14 7-14h11L81 83H70z" fill="url(#vc)"/>
+    <path d="M58 91h41" stroke="#ff78ba" stroke-width="5" stroke-linecap="round"/>
+    <path d="M58 101h31" stroke="#7af7ff" stroke-width="4" stroke-linecap="round" opacity="0.95"/>
+  </g>
+</svg>
