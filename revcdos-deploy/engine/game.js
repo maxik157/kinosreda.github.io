@@ -124,7 +124,7 @@ function applySaveKey(raw) {
     usingServerSaves = !!serverSaveUrl;
 }
 
-applySaveKey(params.get("saveKey") || localStorage.getItem("vcsky.saveKey") || "");
+applySaveKey(params.get("saveKey") || "");
 
 if (profileInput) {
     profileInput.value = params.get("profile")
@@ -139,14 +139,14 @@ async function sha256Hex(input) {
 }
 
 async function ensureProfileReady() {
-    if (serverSaveKey) {
-        return true;
-    }
     if (!profileInput) {
-        return false;
+        return !!serverSaveKey;
     }
     const rawProfile = profileInput.value.trim();
     if (!rawProfile) {
+        if (serverSaveKey) {
+            return true;
+        }
         profileInput.focus();
         return false;
     }
