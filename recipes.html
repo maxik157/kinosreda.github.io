@@ -1,0 +1,2823 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="origin">
+    <title>Рецепты — Киносреда</title>
+    <script>
+        (function () {
+            try {
+                const user = localStorage.getItem('currentUser');
+                if (!user) {
+                    location.replace('login.html');
+                    return;
+                }
+                document.documentElement.classList.add('authed');
+                document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
+            } catch (_) {
+                location.replace('login.html');
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="comfortaa.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg: #07090d;
+            --panel: rgba(13, 18, 25, 0.82);
+            --panel-strong: rgba(10, 14, 20, 0.96);
+            --surface: rgba(255, 255, 255, 0.055);
+            --surface-strong: rgba(255, 255, 255, 0.09);
+            --line: rgba(255, 255, 255, 0.12);
+            --line-strong: rgba(255, 255, 255, 0.2);
+            --text: #f7fbff;
+            --muted: rgba(247, 251, 255, 0.68);
+            --faint: rgba(247, 251, 255, 0.42);
+            --accent: #f59e0b;
+            --accent-2: #fbbf24;
+            --accent-3: #b45309;
+            --good: #86efac;
+            --bad: #fca5a5;
+            --shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+            --radius: 22px;
+        }
+
+        html[data-theme="white"] {
+            --bg: #050607;
+            --panel: rgba(16, 18, 22, 0.84);
+            --panel-strong: rgba(7, 9, 12, 0.96);
+            --accent: #ffffff;
+            --accent-2: #f8d878;
+            --accent-3: #d6a13b;
+        }
+
+        * { box-sizing: border-box; }
+        [hidden] { display: none !important; }
+        * {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        *::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
+        }
+        html, body { min-height: 100%; }
+        html:not(.authed) body { visibility: hidden; }
+        body {
+            margin: 0;
+            color: var(--text);
+            font-family: "Comfortaa", cursive;
+            background:
+                radial-gradient(820px 560px at 12% -12%, rgba(245, 158, 11, 0.18), transparent 62%),
+                radial-gradient(680px 500px at 94% 4%, rgba(120, 53, 15, 0.22), transparent 58%),
+                linear-gradient(135deg, #070706 0%, #15100a 48%, #090705 100%);
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+        body.modal-open,
+        body.detail-open { overflow: hidden; }
+        body.mobile-detail-open { overflow: hidden; }
+        button, input, textarea { font: inherit; }
+        button { cursor: pointer; }
+
+        .page {
+            width: min(1500px, 100%);
+            margin: 0 auto;
+            padding: 18px clamp(14px, 2.5vw, 28px) 32px;
+        }
+
+        .toolbar,
+        .recipe-card,
+        .detail-panel,
+        .fullscreen-card {
+            border: 1px solid var(--line);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+                var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 8;
+            border-radius: 18px;
+            padding: 12px;
+            display: grid;
+            grid-template-columns: minmax(220px, 0.68fr) minmax(0, 1.32fr) auto;
+            gap: 14px;
+            align-items: center;
+        }
+        .search {
+            width: 100%;
+            height: 48px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 0 14px;
+            color: var(--text);
+            outline: none;
+            background: rgba(0, 0, 0, 0.22);
+        }
+        .search:focus,
+        .input:focus,
+        .textarea:focus {
+            border-color: rgba(245, 158, 11, 0.62);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+        }
+        .categories {
+            min-width: 0;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 20px 2px 2px;
+            mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+            -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 26px), transparent);
+        }
+        .category-chip {
+            height: 44px;
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0 12px;
+            color: var(--muted);
+            background: var(--surface);
+            transition: transform 180ms ease, background 180ms ease, color 180ms ease, border-color 180ms ease;
+        }
+        .category-chip:hover { transform: translateY(-1px); color: var(--text); border-color: var(--line-strong); }
+        .category-chip.active {
+            color: #06100e;
+            background: linear-gradient(135deg, #f8c14a, #d97706);
+            border-color: transparent;
+            font-weight: 800;
+        }
+        .category-count {
+            min-width: 23px;
+            height: 23px;
+            border-radius: 999px;
+            display: inline-grid;
+            place-items: center;
+            background: rgba(0, 0, 0, 0.18);
+            font-size: 12px;
+        }
+
+        .btn {
+            min-height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 14px;
+            padding: 0 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+            white-space: nowrap;
+        }
+        .btn:hover { transform: translateY(-1px); border-color: var(--line-strong); background: rgba(255, 255, 255, 0.12); }
+        .btn.primary {
+            color: #07100f;
+            border-color: transparent;
+            background: linear-gradient(135deg, #f8c14a, #d97706);
+            font-weight: 800;
+        }
+        .btn.ghost { background: rgba(0, 0, 0, 0.28); }
+        .btn.icon { width: 44px; padding: 0; font-size: 20px; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+        .composer {
+            margin: 14px 0 18px;
+            display: none;
+        }
+        .composer-body {
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+                var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            animation: composerIn 240ms ease both;
+        }
+        .composer.open { display: block; }
+        @keyframes composerIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 0.76fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .form-panel {
+            display: grid;
+            gap: 14px;
+            min-width: 0;
+        }
+        .form-section {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.045);
+        }
+        .form-section-title {
+            margin: 0 0 12px;
+            color: rgba(255, 255, 255, 0.86);
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .fields-2 {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .fields-3 {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 130px 130px;
+            gap: 12px;
+        }
+        .field { display: grid; gap: 7px; min-width: 0; }
+        .field.full { grid-column: 1 / -1; }
+        .label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .input,
+        .textarea {
+            width: 100%;
+            min-height: 46px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 12px 13px;
+            outline: none;
+            color: var(--text);
+            background: rgba(0, 0, 0, 0.24);
+        }
+        .textarea {
+            min-height: 74px;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.5;
+        }
+        .field-hint {
+            color: var(--faint);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .custom-select { position: relative; min-width: 0; }
+        .select-trigger {
+            width: 100%;
+            min-height: 46px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            padding: 0 46px 0 13px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 9px;
+            color: var(--text);
+            text-align: left;
+            background: rgba(0, 0, 0, 0.24);
+            position: relative;
+        }
+        .select-trigger:focus-visible {
+            outline: none;
+            border-color: rgba(245, 158, 11, 0.62);
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+        }
+        .select-value {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .select-chevron {
+            position: absolute;
+            right: 9px;
+            top: 50%;
+            width: 28px;
+            height: 28px;
+            transform: translateY(-50%);
+            display: grid;
+            place-items: center;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.78);
+            background: rgba(255, 255, 255, 0.08);
+            pointer-events: none;
+            transition: color 180ms ease, background 180ms ease;
+        }
+        .select-chevron svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 180ms ease;
+        }
+        .custom-select.open .select-chevron {
+            color: #07100f;
+            background: linear-gradient(135deg, #f8c14a, #d97706);
+        }
+        .custom-select.open .select-chevron svg { transform: rotate(180deg); }
+        .select-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            z-index: 20;
+            max-height: 250px;
+            overflow: auto;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 6px;
+            background: rgba(8, 11, 16, 0.98);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.48);
+            display: none;
+        }
+        .custom-select.open .select-menu { display: grid; gap: 4px; animation: selectIn 150ms ease both; }
+        @keyframes selectIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .select-option {
+            min-height: 40px;
+            border: 0;
+            border-radius: 11px;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--muted);
+            text-align: left;
+            background: transparent;
+        }
+        .select-option:hover,
+        .select-option.active {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.09);
+        }
+
+        .dynamic-list {
+            display: grid;
+            gap: 9px;
+        }
+        .ingredient-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 160px 54px;
+            gap: 8px;
+            align-items: start;
+        }
+        .step-row {
+            display: grid;
+            grid-template-columns: 54px minmax(0, 1fr) 54px;
+            gap: 9px;
+            align-items: start;
+        }
+        .ingredient-row > .input {
+            height: 54px;
+            min-height: 54px;
+        }
+        .step-index {
+            height: 54px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            color: #06100e;
+            background: linear-gradient(135deg, #f8c14a, #d97706);
+            font-weight: 900;
+        }
+        .step-fields { display: grid; gap: 8px; }
+        .remove-row {
+            width: 54px;
+            height: 54px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 13px;
+            color: rgba(252, 165, 165, 0.95);
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .section-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .photo-editor {
+            min-width: 0;
+            min-height: 100%;
+            display: grid;
+            gap: 12px;
+        }
+        .photo-viewport {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            aspect-ratio: 4 / 3;
+            min-height: 280px;
+            border: 1px dashed rgba(255, 255, 255, 0.24);
+            border-radius: 18px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 30% 22%, rgba(245, 158, 11, 0.22), transparent 36%),
+                radial-gradient(circle at 72% 68%, rgba(120, 53, 15, 0.28), transparent 34%),
+                rgba(255, 255, 255, 0.045);
+            user-select: none;
+        }
+        .photo-viewport:not(.has-image) { cursor: pointer; }
+        .photo-viewport.dragover { border-color: rgba(245, 158, 11, 0.84); }
+        .photo-placeholder {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 22px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.74);
+            cursor: pointer;
+        }
+        .photo-file-input {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .photo-placeholder-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 12px;
+            border-radius: 20px;
+            display: grid;
+            place-items: center;
+            color: #07100f;
+            background: linear-gradient(135deg, #f8c14a, #d97706);
+            font-size: 30px;
+            font-weight: 900;
+        }
+        .photo-placeholder strong { display: block; margin-bottom: 8px; }
+        .photo-crop-img {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform-origin: center center;
+            cursor: grab;
+            display: none;
+        }
+        .photo-viewport.has-image {
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        .photo-viewport.has-image .photo-placeholder { display: none; }
+        .photo-viewport.has-image .photo-crop-img { display: block; }
+        .photo-crop-img.dragging { cursor: grabbing; }
+        .photo-remove-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #fff7ed;
+            background: rgba(20, 12, 6, 0.72);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: none;
+            place-items: center;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .photo-remove-btn:hover { background: rgba(127, 29, 29, 0.72); }
+        .photo-viewport.has-image .photo-remove-btn { display: grid; }
+        .crop-controls {
+            display: none;
+        }
+        .photo-viewport.has-image + .crop-controls { display: grid; gap: 9px; }
+        .range-field {
+            display: grid;
+            grid-template-columns: 78px minmax(0, 1fr);
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .range-field input {
+            width: 100%;
+            accent-color: var(--accent-2);
+        }
+        .submit-panel {
+            padding: 16px;
+            background:
+                linear-gradient(135deg, rgba(245, 158, 11, 0.13), rgba(120, 53, 15, 0.1)),
+                rgba(255, 255, 255, 0.035);
+        }
+        .submit-panel .section-actions { margin-top: 0; }
+        .submit-panel .form-status:empty { display: none; }
+
+        .content {
+            margin-top: 24px;
+            position: relative;
+            display: block;
+            height: calc(100vh - 160px);
+            min-height: 520px;
+            overflow: hidden;
+        }
+        .cards-shell {
+            height: 100%;
+            min-width: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 2px;
+            transition: filter 0.34s ease, opacity 0.34s ease;
+            scrollbar-width: none;
+        }
+        .cards-shell::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+        .content.detail-open .cards-shell {
+            pointer-events: none;
+            filter: saturate(0.9) brightness(0.72);
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+            align-items: start;
+            transition: opacity 0.22s ease, transform 0.34s cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+        .cards-grid.switching { opacity: 0; transform: translateY(8px) scale(0.992); }
+        .recipe-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            height: 360px;
+            text-align: left;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            transform: translateY(0) scale(1);
+            animation: cardIn 320ms ease both;
+            transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(14px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .recipe-card:hover {
+            transform: translateY(-3px) scale(1.01);
+            border-color: rgba(244, 190, 80, 0.52);
+            box-shadow: 0 15px 36px rgba(0, 0, 0, 0.3);
+        }
+        .recipe-card.active {
+            border-color: rgba(245, 158, 11, 0.46);
+            transform: translateY(-1px) scale(1.006);
+            box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.3), 0 16px 32px rgba(0, 0, 0, 0.36);
+            background:
+                linear-gradient(180deg, rgba(245, 158, 11, 0.1), rgba(255, 255, 255, 0.025)),
+                var(--panel);
+        }
+        .recipe-card.active:hover { transform: translateY(-3px) scale(1.01); }
+        .recipe-photo,
+        .detail-photo,
+        .fullscreen-photo {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 4 / 3;
+            background:
+                radial-gradient(circle at 24% 20%, rgba(245, 158, 11, 0.28), transparent 35%),
+                radial-gradient(circle at 78% 70%, rgba(245, 158, 11, 0.2), transparent 38%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+        }
+        .recipe-photo { height: auto; }
+        .recipe-img {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform-origin: center center;
+            transition: transform 420ms ease;
+        }
+        .recipe-card:hover .recipe-img { filter: saturate(1.04); }
+        .recipe-photo .recipe-img.card-img {
+            inset: 0;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: none !important;
+        }
+        .photo-fallback {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(62, 39, 18, 0.88), rgba(14, 15, 18, 0.96));
+        }
+        .photo-fallback-mark {
+            position: relative;
+            width: auto;
+            height: auto;
+            border-radius: 0;
+            display: grid;
+            place-items: center;
+            color: inherit;
+            background: transparent;
+            font-size: 46px;
+            font-weight: 900;
+            line-height: 1;
+            box-shadow: none;
+            filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.36));
+        }
+        .photo-fallback-title {
+            position: relative;
+            max-width: 180px;
+            color: rgba(255, 255, 255, 0.58);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+        .recipe-body {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+        .recipe-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 28px;
+            padding: 0 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .recipe-title {
+            margin: 0;
+            font-size: 19px;
+            line-height: 1.25;
+            min-height: 48px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .recipe-desc {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+            min-height: 40px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .detail-content .recipe-desc,
+        .fullscreen-content .recipe-desc {
+            display: block;
+            min-height: 0;
+            overflow: visible;
+        }
+        .author {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            color: var(--faint);
+            font-size: 12px;
+        }
+        .detail-panel {
+            position: absolute;
+            inset: 0;
+            z-index: 20;
+            border-radius: var(--radius);
+            overflow: hidden;
+            min-height: 0;
+            height: 100%;
+            max-height: 100%;
+            display: grid;
+            grid-template-columns: minmax(360px, 44%) minmax(0, 1fr);
+            width: 100%;
+            min-width: 0;
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            transform: translateX(104%) scale(0.985);
+            transform-origin: right center;
+            transition: transform 0.52s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease, visibility 0s linear 0.52s;
+        }
+        .content:not(.detail-open) .detail-panel {
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .content.detail-open .detail-panel {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            transform: translateX(0) scale(1);
+            transition-delay: 0s;
+        }
+        .empty-state { grid-column: 1 / -1; }
+        .detail-empty {
+            min-height: 520px;
+            display: grid;
+            place-items: center;
+            padding: 26px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.5;
+        }
+        .detail-photo {
+            height: 100%;
+            min-height: 0;
+            aspect-ratio: auto;
+        }
+        .detail-photo.no-photo {
+            background:
+                radial-gradient(circle at 50% 34%, rgba(245, 158, 11, 0.16), transparent 34%),
+                linear-gradient(135deg, rgba(62, 39, 18, 0.96), rgba(14, 15, 18, 0.98));
+        }
+        .detail-photo.no-photo .photo-fallback {
+            background: transparent;
+        }
+        .detail-content {
+            min-height: 0;
+            padding: 28px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow: hidden;
+            animation: detailIn 240ms ease both;
+            background:
+                radial-gradient(circle at 82% 18%, rgba(245, 158, 11, 0.08), transparent 30%),
+                linear-gradient(180deg, rgba(17, 18, 22, 0.98), rgba(10, 11, 14, 0.99));
+        }
+        @keyframes detailIn {
+            from { opacity: 0; transform: translateX(18px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .detail-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .detail-top .recipe-meta {
+            flex: 1 1 auto;
+            min-width: 0;
+            flex-wrap: nowrap;
+            gap: 6px;
+        }
+        .detail-top .recipe-meta .pill {
+            flex: 1 1 0;
+            min-width: 0;
+            justify-content: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 8px;
+            font-size: clamp(10px, 0.82vw, 12px);
+        }
+        .detail-content h2 {
+            margin: 0;
+            font-size: clamp(28px, 3vw, 46px);
+            line-height: 1.15;
+        }
+        .fullscreen-content h2 {
+            margin: 0;
+            font-size: 26px;
+            line-height: 1.15;
+        }
+        .detail-fixed {
+            flex: 0 0 auto;
+            display: grid;
+            gap: 16px;
+        }
+        .detail-fixed .author { margin-top: 0; }
+        .detail-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(0, 0.82fr) minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
+            align-items: stretch;
+            gap: 20px;
+            padding-right: 2px;
+        }
+        .mobile-detail-back { display: none; }
+        .detail-close-btn {
+            position: static;
+            width: 34px;
+            height: 34px;
+            min-height: 34px;
+            padding: 0;
+            border-radius: 12px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)),
+                rgba(7, 7, 8, 0.42);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .detail-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+        .owner-menu {
+            position: relative;
+            flex: 0 0 auto;
+        }
+        .owner-menu-trigger {
+            width: 34px;
+            height: 34px;
+            min-height: 34px;
+            padding: 0;
+            border-radius: 13px;
+            display: inline-grid;
+            place-items: center;
+            font-size: 0;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.9);
+            border-color: rgba(255, 255, 255, 0.16);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+                rgba(0, 0, 0, 0.38);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 22px rgba(0, 0, 0, 0.2);
+        }
+        .owner-menu-trigger:hover {
+            color: #fff;
+            border-color: rgba(245, 158, 11, 0.42);
+            background:
+                linear-gradient(180deg, rgba(245, 158, 11, 0.16), rgba(255, 255, 255, 0.05)),
+                rgba(0, 0, 0, 0.42);
+        }
+        .owner-dots {
+            width: 4px;
+            height: 4px;
+            border-radius: 999px;
+            background: currentColor;
+            transform: translateY(0);
+            font-size: 0;
+            line-height: 0;
+            box-shadow: -8px 0 0 currentColor, 8px 0 0 currentColor;
+        }
+        .owner-menu-list {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 25;
+            min-width: 170px;
+            display: none;
+            gap: 5px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 14px;
+            background: rgba(11, 12, 15, 0.98);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.46);
+        }
+        .owner-menu.open .owner-menu-list { display: grid; animation: selectIn 150ms ease both; }
+        .owner-menu-item {
+            min-height: 38px;
+            border: 0;
+            border-radius: 10px;
+            padding: 0 10px;
+            text-align: left;
+            color: var(--text);
+            background: transparent;
+        }
+        .owner-menu-item:hover { background: rgba(255, 255, 255, 0.08); }
+        .owner-menu-item.danger {
+            color: #fecaca;
+        }
+        .owner-menu-item.danger:hover {
+            background: rgba(127, 29, 29, 0.24);
+        }
+        .expand-recipe-btn {
+            width: 34px;
+            height: 34px;
+            min-height: 34px;
+            padding: 0;
+            border-radius: 12px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04)),
+                rgba(0, 0, 0, 0.2);
+        }
+        .expand-recipe-btn svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .photo-expand-btn {
+            position: absolute;
+            left: 14px;
+            bottom: 14px;
+            z-index: 3;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05)),
+                rgba(7, 7, 8, 0.42);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .detail-section h3,
+        .fullscreen-section h3 {
+            margin: 0 0 10px;
+            font-size: 14px;
+            color: var(--accent-2);
+        }
+        .detail-section {
+            min-width: 0;
+            min-height: 0;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+                rgba(255, 255, 255, 0.025);
+        }
+        .detail-list,
+        .steps-list {
+            margin: 0;
+            padding-left: 20px;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.55;
+            font-size: 14px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .detail-list::-webkit-scrollbar,
+        .steps-list::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+        .steps-list li { margin-bottom: 10px; }
+        .step-title { display: block; color: var(--text); font-weight: 800; margin-bottom: 2px; }
+        .empty-state {
+            min-height: 280px;
+            display: grid;
+            place-items: center;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: var(--muted);
+            text-align: center;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .fullscreen-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
+            display: none;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.68);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .fullscreen-overlay.open { display: grid; place-items: center; animation: overlayIn 180ms ease both; }
+        .fullscreen-overlay.closing { animation: overlayOut 180ms ease both; }
+        @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes overlayOut { from { opacity: 1; } to { opacity: 0; } }
+        .fullscreen-card {
+            width: min(1180px, 100%);
+            height: min(760px, calc(100vh - 36px));
+            max-height: calc(100vh - 36px);
+            min-height: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.05fr);
+            background: var(--panel-strong);
+            animation: fullIn 300ms cubic-bezier(.2,.8,.2,1) both;
+        }
+        .fullscreen-card > * { min-height: 0; }
+        .fullscreen-overlay.closing .fullscreen-card { animation: fullOut 180ms ease both; }
+        @keyframes fullIn {
+            from { opacity: 0; transform: translateY(22px) scale(0.965); border-radius: 30px; }
+            to { opacity: 1; transform: translateY(0) scale(1); border-radius: 24px; }
+        }
+        @keyframes fullOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(18px) scale(0.975); }
+        }
+        .fullscreen-photo { min-height: 0; height: 100%; aspect-ratio: auto; }
+        .fullscreen-photo .photo-fallback-mark { width: auto; height: auto; font-size: 58px; border-radius: 0; }
+        .fullscreen-content {
+            overflow: hidden;
+            max-height: 100%;
+            padding: clamp(20px, 3vw, 34px);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            min-height: 0;
+        }
+        .fullscreen-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex: 0 0 auto;
+        }
+        .fullscreen-head > div:first-child { min-width: 0; }
+        .fullscreen-actions {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+        .fullscreen-actions .owner-menu-list {
+            left: auto;
+            right: 0;
+        }
+        .fullscreen-close-btn {
+            width: 34px;
+            min-width: 34px;
+            max-width: 34px;
+            min-height: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            padding: 0 !important;
+            aspect-ratio: 1 / 1;
+            border-radius: 11px;
+            font-size: 17px;
+        }
+        .fullscreen-fixed {
+            flex: 0 0 auto;
+            display: grid;
+            gap: 14px;
+        }
+        .fullscreen-fixed .author { margin-top: 0; }
+        .fullscreen-section {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 16px;
+        }
+        .fullscreen-scroll {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            padding-right: 2px;
+            display: grid;
+            align-content: start;
+            gap: 18px;
+        }
+
+        .form-status {
+            min-height: 20px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .form-status.error { color: var(--bad); }
+        .form-status.success { color: var(--good); }
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            z-index: 80;
+            transform: translateX(-50%) translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 16px;
+            padding: 12px 14px;
+            color: var(--text);
+            background: rgba(7, 9, 13, 0.92);
+            box-shadow: var(--shadow);
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            display: none;
+            place-items: center;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .confirm-overlay.open { display: grid; animation: overlayIn 160ms ease both; }
+        .confirm-modal {
+            width: min(430px, 100%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 22px;
+            padding: 20px;
+            color: var(--text);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+                rgba(10, 12, 16, 0.98);
+            box-shadow: var(--shadow);
+            animation: fullIn 220ms cubic-bezier(.2,.8,.2,1) both;
+        }
+        .confirm-modal h2 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            line-height: 1.2;
+        }
+        .confirm-modal p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .confirm-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .btn.danger {
+            border-color: rgba(252, 165, 165, 0.26);
+            color: #fee2e2;
+            background: rgba(127, 29, 29, 0.46);
+        }
+        .btn.danger:hover { background: rgba(153, 27, 27, 0.58); }
+
+        @media (max-width: 1120px) {
+            .toolbar { grid-template-columns: 1fr; }
+            .toolbar .btn { width: 100%; }
+            .form-grid,
+            .fullscreen-card { grid-template-columns: 1fr; }
+            .content {
+                height: calc(100vh - 150px);
+                min-height: 520px;
+            }
+            .detail-panel {
+                position: absolute;
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+                min-height: 0;
+                max-height: 100%;
+            }
+            .content:not(.detail-open) .detail-panel { display: none; }
+            .detail-empty { min-height: 240px; }
+            .detail-photo {
+                height: clamp(260px, 40dvh, 360px);
+                min-height: 0;
+                max-height: none;
+                aspect-ratio: auto;
+                display: block;
+                background: linear-gradient(135deg, rgba(62, 39, 18, 0.96), rgba(14, 15, 18, 0.98));
+            }
+            .detail-photo .photo-fallback {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                min-height: 100%;
+                background: transparent;
+            }
+            .detail-content { padding: 20px; }
+            .detail-scroll { grid-template-columns: 1fr; }
+            .fullscreen-photo { min-height: 300px; }
+        }
+        @media (max-width: 720px) {
+            .page { padding: 10px 10px 24px; }
+            .content {
+                height: auto;
+                min-height: 0;
+                overflow: visible;
+            }
+            .cards-shell {
+                height: auto;
+                overflow: visible;
+                padding-right: 0;
+            }
+            .fields-2,
+            .fields-3,
+            .ingredient-row,
+            .step-row { grid-template-columns: 1fr; }
+            .step-index { width: 54px; }
+            .ingredient-row .remove-row,
+            .step-row .remove-row {
+                width: 54px;
+                justify-self: end;
+            }
+            .form-panel,
+            .form-section,
+            .photo-editor {
+                min-width: 0;
+            }
+            .photo-viewport {
+                min-height: 220px;
+                width: 100%;
+                max-width: 100%;
+            }
+            .photo-placeholder-icon {
+                width: 58px;
+                height: 58px;
+                border-radius: 17px;
+                font-size: 26px;
+            }
+            .cards-grid { grid-template-columns: 1fr; }
+            .content { display: block; }
+            .detail-panel {
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+                position: fixed;
+                inset: 0;
+                z-index: 50;
+                width: 100%;
+                height: 100dvh;
+                min-height: 0;
+                max-height: none;
+                border-radius: 0;
+                background:
+                    radial-gradient(520px 420px at 88% 0%, rgba(245, 158, 11, 0.1), transparent 58%),
+                    linear-gradient(180deg, #17181c 0%, #111216 100%);
+                overflow-y: auto;
+                overflow-x: hidden;
+                opacity: 0;
+                pointer-events: none;
+                transform: translateX(100%);
+                transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease;
+                scrollbar-width: none;
+            }
+            .content:not(.detail-open) .detail-panel { display: grid; }
+            .detail-panel::-webkit-scrollbar {
+                width: 0;
+                height: 0;
+            }
+            .detail-close-btn { display: none; }
+            body.mobile-detail-open .detail-panel {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateX(0);
+            }
+            .detail-photo {
+                height: clamp(260px, 42dvh, 360px);
+                min-height: 0;
+                max-height: none;
+                aspect-ratio: auto;
+                display: block;
+                background: linear-gradient(135deg, rgba(62, 39, 18, 0.96), rgba(14, 15, 18, 0.98));
+            }
+            .detail-photo .photo-fallback {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                min-height: 100%;
+                background: transparent;
+            }
+            .detail-content {
+                padding: 0 12px 12px;
+                gap: 13px;
+                min-height: 0;
+                overflow: visible;
+                background:
+                    radial-gradient(520px 420px at 88% 0%, rgba(245, 158, 11, 0.08), transparent 58%),
+                    linear-gradient(180deg, #17181c 0%, #111216 100%);
+            }
+            .detail-fixed {
+                padding-top: 12px;
+            }
+            .detail-scroll {
+                overflow: visible;
+                min-height: 0;
+                grid-template-columns: 1fr;
+                grid-template-rows: none;
+            }
+            .detail-section {
+                max-height: none;
+                min-height: auto;
+            }
+            .detail-list,
+            .steps-list {
+                flex: 0 1 auto;
+                overflow: visible;
+            }
+            .mobile-detail-back {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 5;
+                display: grid;
+                width: 34px;
+                min-width: 34px;
+                height: 34px;
+                min-height: 34px;
+                padding: 0;
+                border-radius: 12px;
+                background: rgba(0, 0, 0, 0.48);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .detail-top {
+                align-items: center;
+            }
+            .detail-top .recipe-meta .pill {
+                padding: 0 6px;
+                font-size: 10px;
+            }
+            .fullscreen-overlay { padding: 8px; }
+            .fullscreen-card {
+                height: calc(100dvh - 16px);
+                max-height: calc(100dvh - 16px);
+                border-radius: 18px;
+            }
+            .fullscreen-photo { min-height: 240px; }
+            .confirm-actions { flex-direction: column-reverse; }
+            .confirm-actions .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="toolbar" aria-label="Фильтры">
+            <input id="searchInput" class="search" type="search" placeholder="Найти рецепт">
+            <div id="categoryBar" class="categories" role="tablist" aria-label="Категории рецептов"></div>
+            <button type="button" class="btn primary" id="composerToggleBtn">＋ Добавить рецепт</button>
+        </section>
+
+        <section id="composer" class="composer" aria-label="Добавление рецепта">
+            <form id="recipeForm" class="composer-body" autocomplete="off">
+                <div class="form-grid">
+                    <div class="form-panel">
+                        <div class="form-section">
+                            <h2 class="form-section-title">Основное</h2>
+                            <div class="fields-2">
+                                <label class="field full">
+                                    <span class="label">Название</span>
+                                    <input class="input" id="recipeTitle" name="title" maxlength="90" required placeholder="Например, томатный суп с базиликом">
+                                </label>
+                                <div class="field">
+                                    <span class="label">Категория</span>
+                                    <div id="recipeCategorySelect" class="custom-select" data-select="category"></div>
+                                </div>
+                                <label class="field">
+                                    <span class="label">Время, минут</span>
+                                    <input class="input" id="recipeTime" name="time" type="number" min="1" max="600" required placeholder="35">
+                                </label>
+                                <label class="field">
+                                    <span class="label">Порции</span>
+                                    <input class="input" id="recipePortions" name="portions" type="number" min="1" max="40" required placeholder="4">
+                                </label>
+                                <div class="field">
+                                    <span class="label">Сложность</span>
+                                    <div id="recipeDifficultySelect" class="custom-select" data-select="difficulty"></div>
+                                </div>
+                                <label class="field full">
+                                    <span class="label">Короткое описание</span>
+                                    <textarea class="textarea auto-grow" id="recipeDescription" name="description" maxlength="240" placeholder="Можно оставить пустым" rows="2"></textarea>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h2 class="form-section-title">Ингредиенты</h2>
+                            <div id="ingredientsList" class="dynamic-list"></div>
+                            <div class="section-actions">
+                                <button type="button" class="btn ghost" id="addIngredientBtn">＋ Ингредиент</button>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h2 class="form-section-title">Шаги приготовления</h2>
+                            <div id="stepsList" class="dynamic-list"></div>
+                            <div class="section-actions">
+                                <button type="button" class="btn ghost" id="addStepBtn">＋ Шаг</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <aside class="form-panel">
+                        <div class="form-section photo-editor">
+                            <h2 class="form-section-title">Фото</h2>
+                            <div id="photoViewport" class="photo-viewport">
+                                <label class="photo-placeholder" for="recipePhoto">
+                                    <input id="recipePhoto" class="photo-file-input" type="file" accept="image/*,.heic,.heif">
+                                <div>
+                                    <div class="photo-placeholder-icon">＋</div>
+                                    <strong>Фото необязательно</strong>
+                                </div>
+                            </label>
+                                <img id="photoCropImg" class="photo-crop-img" alt="Предпросмотр фото рецепта">
+                                <button type="button" id="photoRemoveBtn" class="photo-remove-btn" aria-label="Убрать фото">×</button>
+                            </div>
+                            <div class="crop-controls">
+                                <label class="range-field">Размер <input id="photoScale" type="range" min="100" max="240" value="100"></label>
+                            </div>
+                        </div>
+                        <div class="form-section submit-panel">
+                            <div id="formStatus" class="form-status"></div>
+                            <div class="section-actions">
+                                <button type="button" class="btn ghost" id="resetFormBtn">Очистить</button>
+                                <button type="submit" class="btn primary" id="submitRecipeBtn">Опубликовать</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </form>
+        </section>
+
+        <section id="contentSection" class="content">
+            <div class="cards-shell">
+                <div id="cardsGrid" class="cards-grid"></div>
+                <div id="emptyState" class="empty-state" hidden></div>
+            </div>
+            <aside id="detailPanel" class="detail-panel" aria-live="polite"></aside>
+        </section>
+    </main>
+
+    <div id="fullscreenOverlay" class="fullscreen-overlay" aria-hidden="true">
+        <article id="fullscreenCard" class="fullscreen-card" role="dialog" aria-modal="true" aria-label="Рецепт полностью"></article>
+    </div>
+    <div id="confirmOverlay" class="confirm-overlay" aria-hidden="true">
+        <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <h2 id="confirmTitle">Удалить рецепт?</h2>
+            <p id="confirmText">Это действие нельзя отменить. Рецепт исчезнет из общего списка.</p>
+            <div class="confirm-actions">
+                <button type="button" class="btn ghost" id="cancelDeleteBtn">Отмена</button>
+                <button type="button" class="btn danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast" role="status"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+            authDomain: "kinosreda-ce8ef.firebaseapp.com",
+            databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "kinosreda-ce8ef",
+            storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+            messagingSenderId: "889337905300",
+            appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+            measurementId: "G-MGW6GF67H3"
+        };
+
+        const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
+        const POSTIMAGES_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/upload-image';
+        const LOCAL_RECIPES_KEY = 'kinosredaRecipesLocal';
+        const MAX_UPLOAD_DIMENSION = 1600;
+        const MAX_PHOTO_BYTES = 1200 * 1024;
+        const categories = [
+            { id: 'all', label: 'Все', icon: '✦' },
+            { id: 'salads', label: 'Салаты', icon: '🥗' },
+            { id: 'soups', label: 'Супы', icon: '🍲' },
+            { id: 'meat', label: 'Мясо', icon: '🥩' },
+            { id: 'fish', label: 'Рыба', icon: '🐟' },
+            { id: 'pasta', label: 'Паста', icon: '🍝' },
+            { id: 'breakfast', label: 'Завтраки', icon: '🍳' },
+            { id: 'snacks', label: 'Закуски', icon: '🥨' },
+            { id: 'baking', label: 'Выпечка', icon: '🥐' },
+            { id: 'desserts', label: 'Десерты', icon: '🍰' },
+            { id: 'drinks', label: 'Напитки', icon: '🍹' },
+            { id: 'vegan', label: 'Вегетарианское', icon: '🌿' },
+            { id: 'other', label: 'Другое', icon: '🍽️' }
+        ];
+        const difficulties = [
+            { id: 'Просто', label: 'Просто', icon: '1' },
+            { id: 'Средне', label: 'Средне', icon: '2' },
+            { id: 'Сложно', label: 'Сложно', icon: '3' },
+            { id: 'Очень сложно', label: 'Очень сложно', icon: '4' }
+        ];
+        const defaultPhotoFit = { scale: 1, x: 0, y: 0 };
+        const state = {
+            db: null,
+            currentUser: null,
+            recipes: [],
+            activeCategory: 'all',
+            search: '',
+            selectedId: '',
+            detailOpen: false,
+            detailCloseTimer: null,
+            composerOpen: false,
+            categoryValue: 'salads',
+            difficultyValue: 'Просто',
+            photoFile: null,
+            photoPreview: '',
+            photoFit: { ...defaultPhotoFit },
+            photoDrag: null,
+            editingRecipeId: '',
+            fullscreenRecipeId: '',
+            pendingDeleteRecipeId: '',
+            isSubmitting: false
+        };
+
+        const els = {};
+
+        function initElements() {
+            [
+                'categoryBar', 'cardsGrid', 'emptyState', 'detailPanel', 'contentSection', 'searchInput',
+                'composer', 'composerToggleBtn', 'recipeForm',
+                'recipeCategorySelect', 'recipeDifficultySelect', 'recipeTitle',
+                'recipeTime', 'recipePortions', 'recipeDescription',
+                'ingredientsList', 'addIngredientBtn', 'stepsList', 'addStepBtn',
+                'recipePhoto', 'photoViewport', 'photoCropImg', 'photoRemoveBtn',
+                'photoScale', 'formStatus', 'resetFormBtn',
+                'submitRecipeBtn', 'fullscreenOverlay', 'fullscreenCard',
+                'confirmOverlay', 'confirmDeleteBtn', 'cancelDeleteBtn', 'confirmText',
+                'toast'
+            ].forEach((id) => { els[id] = document.getElementById(id); });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[ch]));
+        }
+
+        function safeNumber(value, fallback = 0) {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : fallback;
+        }
+
+        function isImageLikeFile(file) {
+            if (!(file instanceof Blob)) return false;
+            const type = String(file.type || '');
+            const name = String(file.name || '');
+            return /^image\//i.test(type) || /\.(avif|gif|heic|heif|jpe?g|png|webp)$/i.test(name);
+        }
+
+        function safePhotoFileName(file) {
+            const originalName = String(file?.name || '').trim();
+            if (/\.[a-z0-9]{2,5}$/i.test(originalName)) return originalName;
+            const typeExt = String(file?.type || '').split('/')[1] || 'jpg';
+            const ext = typeExt === 'jpeg' ? 'jpg' : typeExt.replace(/[^a-z0-9]/gi, '') || 'jpg';
+            return `recipe-photo.${ext}`;
+        }
+
+        function isIosLike() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        }
+
+        function categoryMeta(id) {
+            return categories.find((item) => item.id === id) || categories[categories.length - 1];
+        }
+
+        function normalizeIngredient(item) {
+            if (typeof item === 'string') {
+                const parts = item.split('—');
+                return {
+                    name: (parts[0] || item).trim(),
+                    amount: parts.slice(1).join('—').trim()
+                };
+            }
+            return {
+                name: String(item?.name || '').trim(),
+                amount: String(item?.amount || item?.quantity || '').trim()
+            };
+        }
+
+        function normalizeStep(item, index) {
+            if (typeof item === 'string') return { title: '', text: item.trim() };
+            return {
+                title: String(item?.title || '').trim(),
+                text: String(item?.text || item?.description || '').trim()
+            };
+        }
+
+        function recipeIngredients(recipe) {
+            return (Array.isArray(recipe?.ingredients) ? recipe.ingredients : []).map(normalizeIngredient).filter((item) => item.name);
+        }
+
+        function recipeSteps(recipe) {
+            return (Array.isArray(recipe?.steps) ? recipe.steps : []).map(normalizeStep).filter((item) => item.text);
+        }
+
+        function getCurrentUser() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (_) {
+                return {};
+            }
+        }
+
+        function normalizeUserKey(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function currentUserKey() {
+            const user = state.currentUser || {};
+            return normalizeUserKey(user.username || user.login || user.user || user.name);
+        }
+
+        function recipeAuthorKey(recipe) {
+            return normalizeUserKey(recipe?.authorId || recipe?.authorUsername || recipe?.authorName);
+        }
+
+        function canManageRecipe(recipe) {
+            const userKey = currentUserKey();
+            return Boolean(recipe && userKey && recipeAuthorKey(recipe) === userKey);
+        }
+
+        function getDisplayRecipes() {
+            const realRecipes = state.recipes.slice().sort((a, b) => safeNumber(b.createdAt) - safeNumber(a.createdAt));
+            return realRecipes;
+        }
+
+        function filteredRecipes() {
+            const query = state.search.trim().toLowerCase();
+            return getDisplayRecipes().filter((recipe) => {
+                const categoryOk = state.activeCategory === 'all' || recipe.category === state.activeCategory;
+                if (!categoryOk) return false;
+                if (!query) return true;
+                const haystack = [
+                    recipe.title, recipe.description, recipe.authorName,
+                    categoryMeta(recipe.category).label,
+                    ...recipeIngredients(recipe).flatMap((item) => [item.name, item.amount]),
+                    ...recipeSteps(recipe).flatMap((item) => [item.title, item.text])
+                ].join(' ').toLowerCase();
+                return haystack.includes(query);
+            });
+        }
+
+        function imageTransformStyle(fit = defaultPhotoFit, hoverScale = 1) {
+            const scale = Math.max(1, safeNumber(fit.scale, 1)) * hoverScale;
+            const x = safeNumber(fit.x, 0);
+            const y = safeNumber(fit.y, 0);
+            return `translate(-50%, -50%) translate(${x}%, ${y}%) scale(${scale})`;
+        }
+
+        function imageTransformCss(fit = defaultPhotoFit, hoverScale = 1) {
+            return `transform:${imageTransformStyle(fit, hoverScale)};`;
+        }
+
+        function photoBlock(recipe, extraClass = '') {
+            const url = String(recipe?.imageUrl || '').trim();
+            const fit = recipe?.photoFit || defaultPhotoFit;
+            if (/^https?:\/\//i.test(url) || /^data:image\//i.test(url)) {
+                return `<img class="recipe-img ${extraClass}" src="${escapeHtml(url)}" alt="${escapeHtml(recipe.title || 'Рецепт')}" loading="lazy" decoding="async" style="${imageTransformCss(fit)}" onerror="this.remove()">`;
+            }
+            return `<div class="photo-fallback"><div class="photo-fallback-mark">${escapeHtml(categoryMeta(recipe?.category).icon || '🍽️')}</div><div class="photo-fallback-title">Без фото</div></div>`;
+        }
+
+        function ownerMenuBlock(recipe) {
+            if (!canManageRecipe(recipe)) return '';
+            return `
+                <div class="owner-menu" data-owner-menu>
+                    <button type="button" class="btn ghost owner-menu-trigger" data-owner-menu-trigger aria-label="Действия с рецептом" aria-expanded="false"><span class="owner-dots" aria-hidden="true">•••</span></button>
+                    <div class="owner-menu-list">
+                        <button type="button" class="owner-menu-item" data-edit-recipe="${escapeHtml(recipe.id)}">Редактировать</button>
+                        <button type="button" class="owner-menu-item danger" data-delete-recipe="${escapeHtml(recipe.id)}">Удалить</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCategories() {
+            const allRecipes = getDisplayRecipes();
+            els.categoryBar.innerHTML = categories.map((cat) => {
+                const count = cat.id === 'all' ? allRecipes.length : allRecipes.filter((r) => r.category === cat.id).length;
+                return `
+                    <button type="button" class="category-chip ${state.activeCategory === cat.id ? 'active' : ''}" data-category="${cat.id}" role="tab" aria-selected="${state.activeCategory === cat.id}">
+                        <span>${cat.icon}</span>
+                        <span>${escapeHtml(cat.label)}</span>
+                        <span class="category-count">${count}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function syncDetailPanelState() {
+            const isOpen = Boolean(state.detailOpen && state.selectedId);
+            els.contentSection?.classList.toggle('detail-open', isOpen);
+            document.body.classList.toggle('detail-open', isOpen);
+        }
+
+        function updateContentLayoutVars() {
+            if (!els.contentSection) return;
+            els.contentSection.style.removeProperty('--content-columns');
+            els.contentSection.style.removeProperty('--detail-column');
+        }
+
+        function syncActiveRecipeCard() {
+            els.cardsGrid.querySelectorAll('.recipe-card').forEach((card) => {
+                card.classList.toggle('active', Boolean(state.detailOpen && card.dataset.recipeId === state.selectedId));
+            });
+        }
+
+        function openDetailPanel(recipeId) {
+            if (state.detailCloseTimer) {
+                clearTimeout(state.detailCloseTimer);
+                state.detailCloseTimer = null;
+            }
+            state.selectedId = recipeId;
+            state.detailOpen = true;
+            renderDetail(getRecipeById(recipeId));
+            syncDetailPanelState();
+            syncActiveRecipeCard();
+        }
+
+        function closeDetailPanel() {
+            if (state.detailCloseTimer) {
+                clearTimeout(state.detailCloseTimer);
+                state.detailCloseTimer = null;
+            }
+            const wasOpen = Boolean(state.detailOpen && state.selectedId);
+            state.detailOpen = false;
+            syncDetailPanelState();
+            syncActiveRecipeCard();
+            const cleanup = () => {
+                state.selectedId = '';
+                renderDetail(null);
+                state.detailCloseTimer = null;
+            };
+            if (wasOpen) {
+                state.detailCloseTimer = setTimeout(cleanup, 520);
+            } else {
+                cleanup();
+            }
+        }
+
+        function renderCards() {
+            const list = filteredRecipes();
+            els.cardsGrid.innerHTML = list.map((recipe, index) => {
+                const cat = categoryMeta(recipe.category);
+                const desc = String(recipe.description || '').trim() || 'Описание не добавлено.';
+                return `
+                    <button type="button" class="recipe-card ${state.detailOpen && state.selectedId === recipe.id ? 'active' : ''}" data-recipe-id="${escapeHtml(recipe.id)}" style="animation-delay:${Math.min(index * 28, 220)}ms">
+                        <div class="recipe-photo">${photoBlock(recipe, 'card-img')}</div>
+                        <div class="recipe-body">
+                            <div class="recipe-meta">
+                                <span class="pill">${cat.icon} ${escapeHtml(cat.label)}</span>
+                                <span class="pill">⏱ ${safeNumber(recipe.time)} мин</span>
+                            </div>
+                            <h2 class="recipe-title" title="${escapeHtml(recipe.title)}">${escapeHtml(recipe.title)}</h2>
+                            <p class="recipe-desc" title="${escapeHtml(desc)}">${escapeHtml(desc)}</p>
+                            <div class="author">
+                                <span>${escapeHtml(recipe.authorName || 'Автор')}</span>
+                                <span>${escapeHtml(recipe.difficulty || 'Просто')}</span>
+                            </div>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+            els.emptyState.hidden = true;
+            if (!list.length) {
+                state.selectedId = '';
+                state.detailOpen = false;
+                renderDetail(null);
+                syncDetailPanelState();
+                return;
+            }
+            if (state.selectedId && !list.some((recipe) => recipe.id === state.selectedId)) {
+                state.selectedId = '';
+                state.detailOpen = false;
+            }
+            const selectedRecipe = state.detailOpen && state.selectedId ? list.find((recipe) => recipe.id === state.selectedId) : null;
+            renderDetail(selectedRecipe || null);
+            syncDetailPanelState();
+            updateContentLayoutVars();
+            syncActiveRecipeCard();
+        }
+
+        function renderDetail(recipe) {
+            if (!recipe) {
+                els.detailPanel.innerHTML = '<div class="detail-empty">Выберите рецепт из списка, чтобы открыть ингредиенты и шаги приготовления.</div>';
+                return;
+            }
+            const cat = categoryMeta(recipe.category);
+            const ingredients = recipeIngredients(recipe).map((item) => `<li>${escapeHtml(item.name)}${item.amount ? ` — ${escapeHtml(item.amount)}` : ''}</li>`).join('');
+            const steps = recipeSteps(recipe).map((item) => `<li>${escapeHtml(item.text)}</li>`).join('');
+            const desc = String(recipe.description || '').trim() || 'Автор не добавил короткое описание.';
+            const hasPhoto = /^https?:\/\//i.test(String(recipe.imageUrl || '').trim()) || /^data:image\//i.test(String(recipe.imageUrl || '').trim());
+            els.detailPanel.innerHTML = `
+                <div class="detail-photo ${hasPhoto ? '' : 'no-photo'}">
+                    ${photoBlock(recipe)}
+                    <button type="button" class="btn ghost mobile-detail-back" data-close-mobile-detail aria-label="Назад">←</button>
+                </div>
+                <div class="detail-content">
+                    <div class="detail-fixed">
+                        <div class="detail-top">
+                            <div class="recipe-meta">
+                                <span class="pill">${cat.icon} ${escapeHtml(cat.label)}</span>
+                                <span class="pill">⏱ ${safeNumber(recipe.time)} мин</span>
+                                <span class="pill">🍽 ${safeNumber(recipe.portions)} порц.</span>
+                                <span class="pill">${escapeHtml(recipe.difficulty || 'Просто')}</span>
+                            </div>
+                            <div class="detail-actions">
+                                ${ownerMenuBlock(recipe)}
+                                <button type="button" class="btn ghost detail-close-btn" data-close-detail aria-label="Закрыть рецепт">×</button>
+                            </div>
+                        </div>
+                        <h2>${escapeHtml(recipe.title)}</h2>
+                        <p class="recipe-desc">${escapeHtml(desc)}</p>
+                        <div class="author">
+                            <span>Добавил: ${escapeHtml(recipe.authorName || 'Автор')}</span>
+                            <span>${formatDate(recipe.createdAt)}</span>
+                        </div>
+                    </div>
+                    <div class="detail-scroll">
+                        <div class="detail-section">
+                            <h3>Ингредиенты</h3>
+                            <ul class="detail-list">${ingredients}</ul>
+                        </div>
+                        <div class="detail-section">
+                            <h3>Приготовление</h3>
+                            <ol class="steps-list">${steps}</ol>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAll() {
+            renderCategories();
+            renderCards();
+        }
+
+        function formatDate(ts) {
+            const date = new Date(safeNumber(ts, Date.now()));
+            return date.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' });
+        }
+
+        function showToast(message) {
+            els.toast.textContent = message;
+            els.toast.classList.add('show');
+            clearTimeout(showToast.timer);
+            showToast.timer = setTimeout(() => els.toast.classList.remove('show'), 2600);
+        }
+
+        function setCategory(category) {
+            if (!categories.some((item) => item.id === category)) return;
+            state.activeCategory = category;
+            els.cardsGrid.classList.add('switching');
+            setTimeout(() => {
+                renderCategories();
+                renderCards();
+                requestAnimationFrame(() => els.cardsGrid.classList.remove('switching'));
+            }, 130);
+        }
+
+        function setFormStatus(message, type = '') {
+            els.formStatus.textContent = message || '';
+            els.formStatus.className = `form-status ${type}`.trim();
+        }
+
+        function renderCustomSelect(root, options, value, onChange) {
+            const selected = options.find((item) => item.id === value) || options[0];
+            root.innerHTML = `
+                <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false">
+                    <span>${selected.icon}</span>
+                    <span class="select-value">${escapeHtml(selected.label)}</span>
+                    <span class="select-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"></path></svg></span>
+                </button>
+                <div class="select-menu" role="listbox">
+                    ${options.map((item) => `
+                        <button type="button" class="select-option ${item.id === selected.id ? 'active' : ''}" data-value="${escapeHtml(item.id)}" role="option" aria-selected="${item.id === selected.id}">
+                            <span>${item.icon}</span>
+                            <span>${escapeHtml(item.label)}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            root.querySelector('.select-trigger').addEventListener('click', (event) => {
+                event.stopPropagation();
+                closeCustomSelects(root);
+                const isOpen = root.classList.toggle('open');
+                root.querySelector('.select-trigger').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+            root.querySelectorAll('.select-option').forEach((btn) => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    onChange(btn.dataset.value);
+                    root.classList.remove('open');
+                    root.querySelector('.select-trigger').setAttribute('aria-expanded', 'false');
+                });
+            });
+        }
+
+        function renderSelects() {
+            renderCustomSelect(
+                els.recipeCategorySelect,
+                categories.filter((cat) => cat.id !== 'all'),
+                state.categoryValue,
+                (value) => {
+                    state.categoryValue = value;
+                    renderSelects();
+                }
+            );
+            renderCustomSelect(els.recipeDifficultySelect, difficulties, state.difficultyValue, (value) => {
+                state.difficultyValue = value;
+                renderSelects();
+            });
+        }
+
+        function closeCustomSelects(except = null) {
+            document.querySelectorAll('.custom-select.open').forEach((select) => {
+                if (select === except) return;
+                select.classList.remove('open');
+                select.querySelector('.select-trigger')?.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function closeOwnerMenus(except = null) {
+            document.querySelectorAll('.owner-menu.open').forEach((menu) => {
+                if (menu === except) return;
+                menu.classList.remove('open');
+                menu.querySelector('[data-owner-menu-trigger]')?.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        function toggleOwnerMenu(trigger) {
+            const menu = trigger?.closest('[data-owner-menu]');
+            if (!menu) return;
+            const opening = !menu.classList.contains('open');
+            closeOwnerMenus(menu);
+            menu.classList.toggle('open', opening);
+            trigger.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        }
+
+        function addIngredientRow(values = {}) {
+            const row = document.createElement('div');
+            row.className = 'ingredient-row';
+            row.innerHTML = `
+                <input class="input ingredient-name" placeholder="Ингредиент" value="${escapeHtml(values.name || '')}" required>
+                <input class="input ingredient-amount" placeholder="Вес / кол-во" value="${escapeHtml(values.amount || '')}">
+                <button type="button" class="remove-row" aria-label="Удалить ингредиент">×</button>
+            `;
+            row.querySelector('.remove-row').addEventListener('click', () => {
+                if (els.ingredientsList.children.length <= 1) {
+                    row.querySelector('.ingredient-name').value = '';
+                    row.querySelector('.ingredient-amount').value = '';
+                    return;
+                }
+                row.remove();
+            });
+            els.ingredientsList.appendChild(row);
+        }
+
+        function addStepRow(values = {}) {
+            const row = document.createElement('div');
+            row.className = 'step-row';
+            row.innerHTML = `
+                <div class="step-index"></div>
+                <div class="step-fields">
+                    <textarea class="textarea auto-grow step-text-input" placeholder="Что нужно сделать" required rows="2">${escapeHtml(values.text || '')}</textarea>
+                </div>
+                <button type="button" class="remove-row" aria-label="Удалить шаг">×</button>
+            `;
+            row.querySelector('.remove-row').addEventListener('click', () => {
+                if (els.stepsList.children.length <= 1) {
+                    row.querySelector('.step-text-input').value = '';
+                    autoGrowTextarea(row.querySelector('.step-text-input'));
+                    return;
+                }
+                row.remove();
+                updateStepIndexes();
+            });
+            els.stepsList.appendChild(row);
+            bindAutoGrow(row.querySelector('.step-text-input'));
+            updateStepIndexes();
+        }
+
+        function updateStepIndexes() {
+            Array.from(els.stepsList.children).forEach((row, index) => {
+                row.querySelector('.step-index').textContent = String(index + 1);
+            });
+        }
+
+        function autoGrowTextarea(textarea) {
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.max(textarea.scrollHeight, 46)}px`;
+        }
+
+        function bindAutoGrow(textarea) {
+            if (!textarea || textarea.dataset.autogrowBound === '1') return;
+            textarea.dataset.autogrowBound = '1';
+            textarea.addEventListener('input', () => autoGrowTextarea(textarea));
+            requestAnimationFrame(() => autoGrowTextarea(textarea));
+        }
+
+        function getIngredientsFromForm() {
+            return Array.from(els.ingredientsList.querySelectorAll('.ingredient-row'))
+                .map((row) => ({
+                    name: row.querySelector('.ingredient-name').value.trim(),
+                    amount: row.querySelector('.ingredient-amount').value.trim()
+                }))
+                .filter((item) => item.name);
+        }
+
+        function getStepsFromForm() {
+            return Array.from(els.stepsList.querySelectorAll('.step-row'))
+                .map((row, index) => ({
+                    title: '',
+                    text: row.querySelector('.step-text-input').value.trim()
+                }))
+                .filter((item) => item.text);
+        }
+
+        function updatePhotoPreview() {
+            if (state.photoPreview) {
+                els.photoCropImg.src = state.photoPreview;
+                els.photoViewport.classList.add('has-image');
+            } else {
+                els.photoCropImg.removeAttribute('src');
+                els.photoViewport.classList.remove('has-image');
+            }
+            const scale = Math.round(safeNumber(state.photoFit.scale, 1) * 100);
+            els.photoScale.value = String(scale);
+            els.photoCropImg.style.transform = imageTransformStyle(state.photoFit);
+        }
+
+        function handlePhotoFile(file) {
+            if (!file) return;
+            if (!isImageLikeFile(file)) {
+                setFormStatus('Выберите файл изображения.', 'error');
+                return;
+            }
+            state.photoFile = file;
+            state.photoFit = { ...defaultPhotoFit };
+            const reader = new FileReader();
+            reader.onload = () => {
+                state.photoPreview = String(reader.result || '');
+                updatePhotoPreview();
+                setFormStatus('');
+            };
+            reader.onerror = () => {
+                state.photoPreview = '';
+                updatePhotoPreview();
+                setFormStatus('Фото выбрано, но предпросмотр недоступен. Можно сохранить рецепт.', '');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updatePhotoFitFromControls() {
+            state.photoFit = {
+                scale: safeNumber(els.photoScale.value, 100) / 100,
+                x: safeNumber(state.photoFit.x, 0),
+                y: safeNumber(state.photoFit.y, 0)
+            };
+            updatePhotoPreview();
+        }
+
+        function collectDraft() {
+            return {
+                title: els.recipeTitle.value.trim(),
+                category: state.categoryValue || 'other',
+                time: safeNumber(els.recipeTime.value),
+                portions: safeNumber(els.recipePortions.value),
+                difficulty: state.difficultyValue || 'Просто',
+                description: els.recipeDescription.value.trim(),
+                ingredients: getIngredientsFromForm(),
+                steps: getStepsFromForm(),
+                imageUrl: state.photoPreview,
+                photoFit: { ...state.photoFit }
+            };
+        }
+
+        function validateForm() {
+            if (!els.recipeTitle.checkValidity()) {
+                els.recipeTitle.reportValidity();
+                return false;
+            }
+            if (!els.recipeTime.checkValidity()) {
+                els.recipeTime.reportValidity();
+                return false;
+            }
+            if (!els.recipePortions.checkValidity()) {
+                els.recipePortions.reportValidity();
+                return false;
+            }
+            if (!getIngredientsFromForm().length) {
+                setFormStatus('Добавьте хотя бы один ингредиент.', 'error');
+                return false;
+            }
+            if (!getStepsFromForm().some((step) => step.text)) {
+                setFormStatus('Добавьте хотя бы один шаг с описанием.', 'error');
+                return false;
+            }
+            setFormStatus('');
+            return true;
+        }
+
+        function resetForm() {
+            els.recipeForm.reset();
+            state.editingRecipeId = '';
+            state.categoryValue = state.activeCategory !== 'all' ? state.activeCategory : 'salads';
+            state.difficultyValue = 'Просто';
+            state.photoFile = null;
+            state.photoPreview = '';
+            state.photoFit = { ...defaultPhotoFit };
+            els.ingredientsList.replaceChildren();
+            els.stepsList.replaceChildren();
+            addIngredientRow();
+            addStepRow();
+            renderSelects();
+            updatePhotoPreview();
+            bindAutoGrow(els.recipeDescription);
+            autoGrowTextarea(els.recipeDescription);
+            els.submitRecipeBtn.textContent = 'Опубликовать';
+            setFormStatus('');
+        }
+
+        function openComposer({ focus = false, scroll = false } = {}) {
+            state.composerOpen = true;
+            els.composer.classList.add('open');
+            els.composerToggleBtn.textContent = 'Свернуть форму';
+            requestAnimationFrame(() => {
+                if (scroll) {
+                    const toolbarHeight = document.querySelector('.toolbar')?.getBoundingClientRect().height || 0;
+                    const offset = window.matchMedia('(max-width: 720px)').matches ? toolbarHeight + 14 : 8;
+                    const top = Math.max(0, els.composer.getBoundingClientRect().top + window.pageYOffset - offset);
+                    window.scrollTo({ top, behavior: 'smooth' });
+                    setTimeout(() => window.scrollTo({ top, behavior: 'auto' }), 260);
+                }
+                if (focus) {
+                    const delay = scroll ? 300 : 0;
+                    setTimeout(() => els.recipeTitle.focus({ preventScroll: true }), delay);
+                }
+            });
+        }
+
+        function closeComposer() {
+            state.composerOpen = false;
+            els.composer.classList.remove('open');
+            els.composerToggleBtn.textContent = '＋ Добавить рецепт';
+        }
+
+        function loadRecipeIntoForm(recipe) {
+            if (!recipe || !canManageRecipe(recipe)) return;
+            state.editingRecipeId = recipe.id;
+            els.recipeTitle.value = recipe.title || '';
+            state.categoryValue = recipe.category || 'other';
+            els.recipeTime.value = recipe.time || '';
+            els.recipePortions.value = recipe.portions || '';
+            state.difficultyValue = recipe.difficulty || 'Просто';
+            els.recipeDescription.value = recipe.description || '';
+            els.ingredientsList.replaceChildren();
+            const ingredients = recipeIngredients(recipe);
+            (ingredients.length ? ingredients : [{}]).forEach((item) => addIngredientRow(item));
+            els.stepsList.replaceChildren();
+            const steps = recipeSteps(recipe);
+            (steps.length ? steps : [{}]).forEach((item) => addStepRow(item));
+            state.photoFile = null;
+            state.photoPreview = String(recipe.imageUrl || '');
+            state.photoFit = { ...(recipe.photoFit || defaultPhotoFit) };
+            els.recipePhoto.value = '';
+            renderSelects();
+            updatePhotoPreview();
+            bindAutoGrow(els.recipeDescription);
+            autoGrowTextarea(els.recipeDescription);
+            els.submitRecipeBtn.textContent = 'Сохранить';
+            setFormStatus('');
+            openComposer({ focus: true, scroll: true });
+        }
+
+        function getPostimagesProxyEndpoint() {
+            if (typeof window.POSTIMAGES_PROXY_ENDPOINT === 'string' && window.POSTIMAGES_PROXY_ENDPOINT.trim()) {
+                return window.POSTIMAGES_PROXY_ENDPOINT.trim();
+            }
+            return POSTIMAGES_PROXY_ENDPOINT;
+        }
+
+        function loadImageFromFile(file) {
+            return new Promise((resolve, reject) => {
+                const objectUrl = URL.createObjectURL(file);
+                const image = new Image();
+                image.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve(image);
+                };
+                image.onerror = (error) => {
+                    URL.revokeObjectURL(objectUrl);
+                    reject(error);
+                };
+                image.src = objectUrl;
+            }).catch(() => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = reject;
+                    image.src = String(reader.result || '');
+                };
+                reader.onerror = () => reject(reader.error || new Error('photo_read_failed'));
+                reader.readAsDataURL(file);
+            }));
+        }
+
+        async function preparePhotoBlob(file) {
+            if (!(file instanceof Blob)) throw new Error('photo_invalid');
+            if (!isImageLikeFile(file)) throw new Error('photo_type_invalid');
+            let image;
+            try {
+                image = await loadImageFromFile(file);
+            } catch (_) {
+                return file;
+            }
+            const width = image.naturalWidth || image.width || 0;
+            const height = image.naturalHeight || image.height || 0;
+            if (!width || !height) return file;
+            const scale = Math.min(1, MAX_UPLOAD_DIMENSION / Math.max(width, height));
+            const shouldResize = scale < 0.999;
+            const fileType = String(file.type || '');
+            const fileName = String(file.name || '');
+            const shouldTranscode = /heic|heif/i.test(fileType) || /\.(heic|heif)$/i.test(fileName);
+            const shouldCompress = file.size > MAX_PHOTO_BYTES || fileType === 'image/png' || shouldTranscode || isIosLike();
+            if (!shouldResize && !shouldCompress) return file;
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return file;
+            ctx.fillStyle = '#14100a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+            return new Promise((resolve, reject) => {
+                if (typeof canvas.toBlob !== 'function') {
+                    try {
+                        resolve(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.84)));
+                    } catch (error) {
+                        reject(error);
+                    }
+                    return;
+                }
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        resolve(blob);
+                        return;
+                    }
+                    try {
+                        resolve(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.84)));
+                    } catch (error) {
+                        reject(error);
+                    }
+                }, 'image/jpeg', 0.84);
+            });
+        }
+
+        function dataUrlToBlob(dataUrl) {
+            const parts = String(dataUrl || '').split(',');
+            const meta = parts[0] || '';
+            const base64 = parts[1] || '';
+            const mime = meta.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+            return new Blob([bytes], { type: mime });
+        }
+
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result || ''));
+                reader.onerror = () => reject(reader.error || new Error('photo_read_failed'));
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function uploadToPostimages(file, fileName = 'recipe-photo.jpg') {
+            if (!file) return '';
+            const formData = new FormData();
+            formData.append('key', POSTIMAGES_API_KEY);
+            formData.append('image', file, fileName);
+            const response = await fetch(getPostimagesProxyEndpoint(), { method: 'POST', body: formData });
+            if (!response.ok) throw new Error('postimages_failed');
+            const rawText = await response.text();
+            let payload = null;
+            try { payload = JSON.parse(rawText); } catch (_) {}
+            const link =
+                payload?.url ||
+                payload?.data?.[0]?.link ||
+                payload?.data?.[0]?.short_link ||
+                payload?.data?.[0]?.url ||
+                payload?.data?.[0]?.image_url ||
+                payload?.data?.url ||
+                payload?.data?.link ||
+                payload?.data?.display_url ||
+                payload?.data?.image?.url ||
+                payload?.data?.image?.display_url ||
+                payload?.result?.url ||
+                payload?.result?.link ||
+                payload?.image?.url ||
+                payload?.direct_url ||
+                payload?.image_url ||
+                (typeof rawText === 'string' ? rawText.match(/https?:\/\/[^\s"']+/)?.[0] : '');
+            if (!link) throw new Error('postimages_no_url');
+            return link;
+        }
+
+        function loadLocalRecipes() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(LOCAL_RECIPES_KEY) || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (_) {
+                return [];
+            }
+        }
+
+        function mergeRecipes(primary, fallback) {
+            const map = new Map();
+            [...(fallback || []), ...(primary || [])].forEach((recipe) => {
+                if (!recipe || !recipe.id) return;
+                map.set(recipe.id, recipe);
+            });
+            return Array.from(map.values());
+        }
+
+        function saveLocalRecipe(recipe) {
+            const existing = loadLocalRecipes().filter((item) => item.id !== recipe.id);
+            const next = [recipe, ...existing].slice(0, 120);
+            localStorage.setItem(LOCAL_RECIPES_KEY, JSON.stringify(next));
+        }
+
+        function removeLocalRecipe(recipeId) {
+            localStorage.setItem(LOCAL_RECIPES_KEY, JSON.stringify(loadLocalRecipes().filter((item) => item.id !== recipeId)));
+        }
+
+        async function submitRecipe(event) {
+            event.preventDefault();
+            if (state.isSubmitting) return;
+            if (!validateForm()) return;
+            const isEditing = Boolean(state.editingRecipeId);
+            const existingRecipe = isEditing ? getRecipeById(state.editingRecipeId) : null;
+            if (isEditing && !canManageRecipe(existingRecipe)) {
+                setFormStatus('Редактировать может только автор рецепта.', 'error');
+                return;
+            }
+            const draft = collectDraft();
+            if (!draft.title || !draft.time || !draft.portions || !draft.ingredients.length || !draft.steps.some((step) => step.text)) {
+                setFormStatus('Заполните название, время, порции, ингредиенты и хотя бы один шаг.', 'error');
+                return;
+            }
+            state.isSubmitting = true;
+            els.submitRecipeBtn.disabled = true;
+            setFormStatus(isEditing ? 'Сохраняю рецепт...' : 'Публикую рецепт...');
+            try {
+                let imageUrl = draft.imageUrl || '';
+                let imageUploadFailed = false;
+                if (state.photoFile) {
+                    let preparedPhoto = state.photoFile;
+                    try {
+                        preparedPhoto = await preparePhotoBlob(state.photoFile);
+                        const uploadName = preparedPhoto === state.photoFile ? safePhotoFileName(state.photoFile) : 'recipe-photo.jpg';
+                        if (isIosLike() && preparedPhoto !== state.photoFile) {
+                            imageUrl = await blobToDataUrl(preparedPhoto);
+                            imageUploadFailed = true;
+                        } else {
+                            imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
+                        }
+                    } catch (uploadError) {
+                        imageUploadFailed = true;
+                        try {
+                            if (preparedPhoto !== state.photoFile) {
+                                imageUrl = await blobToDataUrl(preparedPhoto);
+                            } else if (state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES * 6) {
+                                imageUrl = state.photoPreview;
+                            } else if (preparedPhoto.size <= MAX_PHOTO_BYTES) {
+                                imageUrl = await blobToDataUrl(preparedPhoto);
+                            } else {
+                                imageUrl = '';
+                            }
+                        } catch (_) {
+                            imageUrl = state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES * 6 ? state.photoPreview : '';
+                        }
+                        console.warn('[recipes] image upload fallback used', uploadError);
+                    }
+                }
+                const now = Date.now();
+                const currentUser = state.currentUser || {};
+                const authorId = existingRecipe?.authorId || existingRecipe?.authorUsername || currentUserKey() || `local-user-${now}`;
+                const recipe = {
+                    ...draft,
+                    imageUrl,
+                    authorId,
+                    authorName: existingRecipe?.authorName || currentUser.name || currentUser.username || 'Участник',
+                    authorUsername: existingRecipe?.authorUsername || currentUser.username || authorId || '',
+                    authorAvatarUrl: existingRecipe?.authorAvatarUrl || currentUser.avatarUrl || '',
+                    createdAt: isEditing ? (existingRecipe.createdAt || existingRecipe.createdAtClient || now) : (firebase.database?.ServerValue?.TIMESTAMP || now),
+                    createdAtClient: isEditing ? (existingRecipe.createdAtClient || existingRecipe.createdAt || now) : now,
+                    updatedAt: firebase.database?.ServerValue?.TIMESTAMP || now
+                };
+                let savedId = state.editingRecipeId;
+                if (state.db) {
+                    if (isEditing) {
+                        await state.db.ref(`recipes/${state.editingRecipeId}`).update(recipe);
+                    } else {
+                        const recipeRef = state.db.ref('recipes').push();
+                        savedId = recipeRef.key;
+                        await recipeRef.set(recipe);
+                    }
+                } else {
+                    savedId = savedId || `local-${now}`;
+                    const localRecipe = {
+                        ...recipe,
+                        id: savedId,
+                        createdAt: isEditing ? (recipe.createdAt || now) : now,
+                        updatedAt: now
+                    };
+                    saveLocalRecipe(localRecipe);
+                    state.recipes = [localRecipe, ...state.recipes.filter((item) => item.id !== savedId)];
+                    renderAll();
+                }
+                state.activeCategory = 'all';
+                state.selectedId = savedId || state.selectedId;
+                state.detailOpen = true;
+                closeComposer();
+                resetForm();
+                renderAll();
+                showToast(imageUploadFailed ? 'Рецепт сохранен, фото может появиться без загрузки' : (isEditing ? 'Рецепт сохранен' : 'Рецепт опубликован'));
+            } catch (err) {
+                console.warn('[recipes] submit failed', err);
+                setFormStatus('Не удалось сохранить рецепт. Проверьте соединение и попробуйте еще раз.', 'error');
+            } finally {
+                state.isSubmitting = false;
+                els.submitRecipeBtn.disabled = false;
+            }
+        }
+
+        function getRecipeById(id) {
+            return getDisplayRecipes().find((recipe) => recipe.id === id) || null;
+        }
+
+        function openMobileDetail() {
+            document.body.classList.add('mobile-detail-open');
+            if (els.detailPanel) els.detailPanel.scrollTop = 0;
+        }
+
+        function closeMobileDetail() {
+            document.body.classList.remove('mobile-detail-open');
+        }
+
+        function isMobileDetailMode() {
+            return window.matchMedia('(max-width: 720px)').matches;
+        }
+
+        function requestDeleteRecipe(recipeId) {
+            const recipe = getRecipeById(recipeId);
+            if (!recipe || !canManageRecipe(recipe)) return;
+            state.pendingDeleteRecipeId = recipeId;
+            els.confirmText.textContent = `Рецепт «${recipe.title || 'без названия'}» исчезнет из общего списка. Это действие нельзя отменить.`;
+            els.confirmOverlay.classList.add('open');
+            els.confirmOverlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            els.cancelDeleteBtn.focus();
+        }
+
+        function closeDeleteConfirm() {
+            state.pendingDeleteRecipeId = '';
+            els.confirmOverlay.classList.remove('open');
+            els.confirmOverlay.setAttribute('aria-hidden', 'true');
+            if (!els.fullscreenOverlay.classList.contains('open')) document.body.classList.remove('modal-open');
+        }
+
+        async function confirmDeleteRecipe() {
+            const recipeId = state.pendingDeleteRecipeId;
+            if (!recipeId) return;
+            await deleteRecipe(recipeId);
+        }
+
+        async function deleteRecipe(recipeId) {
+            const recipe = getRecipeById(recipeId);
+            if (!recipe || !canManageRecipe(recipe)) return;
+            try {
+                if (state.db && !String(recipeId).startsWith('local-')) {
+                    await state.db.ref(`recipes/${recipeId}`).remove();
+                }
+                removeLocalRecipe(recipeId);
+                state.recipes = state.recipes.filter((item) => item.id !== recipeId);
+                if (state.selectedId === recipeId) {
+                    state.selectedId = '';
+                    state.detailOpen = false;
+                }
+                closeDeleteConfirm();
+                closeMobileDetail();
+                closeFullscreen();
+                renderAll();
+                showToast('Рецепт удален');
+            } catch (err) {
+                console.warn('[recipes] delete failed', err);
+                showToast('Не удалось удалить рецепт');
+            }
+        }
+
+        function openFullscreen(recipeId) {
+            const recipe = getRecipeById(recipeId);
+            if (!recipe) return;
+            state.fullscreenRecipeId = recipe.id;
+            const cat = categoryMeta(recipe.category);
+            const ingredients = recipeIngredients(recipe).map((item) => `<li>${escapeHtml(item.name)}${item.amount ? ` — ${escapeHtml(item.amount)}` : ''}</li>`).join('');
+            const steps = recipeSteps(recipe).map((item) => `<li>${escapeHtml(item.text)}</li>`).join('');
+            const desc = String(recipe.description || '').trim() || 'Автор не добавил короткое описание.';
+            els.fullscreenCard.innerHTML = `
+                <div class="fullscreen-photo">${photoBlock(recipe)}</div>
+                <div class="fullscreen-content">
+                    <div class="fullscreen-head">
+                        <div>
+                            <div class="recipe-meta">
+                                <span class="pill">${cat.icon} ${escapeHtml(cat.label)}</span>
+                                <span class="pill">⏱ ${safeNumber(recipe.time)} мин</span>
+                                <span class="pill">🍽 ${safeNumber(recipe.portions)} порц.</span>
+                                <span class="pill">${escapeHtml(recipe.difficulty || 'Просто')}</span>
+                            </div>
+                            <h2 style="margin-top:14px;">${escapeHtml(recipe.title)}</h2>
+                        </div>
+                        <div class="fullscreen-actions">
+                            ${ownerMenuBlock(recipe)}
+                            <button type="button" class="btn icon fullscreen-close-btn" id="closeFullscreenBtn" aria-label="Закрыть">×</button>
+                        </div>
+                    </div>
+                    <div class="fullscreen-fixed">
+                        <p class="recipe-desc">${escapeHtml(desc)}</p>
+                        <div class="author">
+                            <span>Добавил: ${escapeHtml(recipe.authorName || 'Автор')}</span>
+                            <span>${formatDate(recipe.createdAt)}</span>
+                        </div>
+                    </div>
+                    <div class="fullscreen-scroll">
+                        <div class="fullscreen-section">
+                            <h3>Ингредиенты</h3>
+                            <ul class="detail-list">${ingredients}</ul>
+                        </div>
+                        <div class="fullscreen-section">
+                            <h3>Приготовление</h3>
+                            <ol class="steps-list">${steps}</ol>
+                        </div>
+                    </div>
+                </div>
+            `;
+            els.fullscreenOverlay.classList.remove('closing');
+            els.fullscreenOverlay.classList.add('open');
+            els.fullscreenOverlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('modal-open');
+            document.getElementById('closeFullscreenBtn')?.addEventListener('click', closeFullscreen);
+        }
+
+        function closeFullscreen() {
+            if (!els.fullscreenOverlay.classList.contains('open')) return;
+            els.fullscreenOverlay.classList.add('closing');
+            setTimeout(() => {
+                els.fullscreenOverlay.classList.remove('open', 'closing');
+                els.fullscreenOverlay.setAttribute('aria-hidden', 'true');
+                els.fullscreenCard.replaceChildren();
+                document.body.classList.remove('modal-open');
+            }, 190);
+        }
+
+        function initFirebase() {
+            try {
+                if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                    firebase.database.INTERNAL.forceLongPolling();
+                }
+                if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                state.db = firebase.database();
+                state.db.ref('recipes').orderByChild('createdAt').on('value', (snapshot) => {
+                    const value = snapshot.val() || {};
+                    const remoteRecipes = Object.entries(value).map(([id, recipe]) => ({
+                        id,
+                        ...recipe,
+                        createdAt: recipe.createdAt || recipe.createdAtClient || 0
+                    }));
+                    state.recipes = mergeRecipes(remoteRecipes, loadLocalRecipes());
+                    renderAll();
+                }, (err) => {
+                    console.warn('[recipes] firebase read failed', err);
+                    state.db = null;
+                    state.recipes = loadLocalRecipes();
+                    renderAll();
+                });
+            } catch (err) {
+                console.warn('[recipes] firebase init failed', err);
+                state.db = null;
+                state.recipes = loadLocalRecipes();
+                renderAll();
+            }
+        }
+
+        function bindPhotoEditor() {
+            els.photoViewport.addEventListener('click', (event) => {
+                if (event.target.closest('.photo-placeholder')) return;
+                if (state.photoPreview || event.target === els.photoRemoveBtn) return;
+                els.recipePhoto.click();
+            });
+            const handlePhotoInput = () => handlePhotoFile(els.recipePhoto.files?.[0]);
+            els.recipePhoto.addEventListener('click', () => {
+                els.recipePhoto.value = '';
+            });
+            els.recipePhoto.addEventListener('change', handlePhotoInput);
+            els.recipePhoto.addEventListener('input', handlePhotoInput);
+            els.photoRemoveBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                state.photoFile = null;
+                state.photoPreview = '';
+                state.photoFit = { ...defaultPhotoFit };
+                els.recipePhoto.value = '';
+                updatePhotoPreview();
+            });
+            ['dragenter', 'dragover'].forEach((type) => {
+                els.photoViewport.addEventListener(type, (event) => {
+                    event.preventDefault();
+                    els.photoViewport.classList.add('dragover');
+                });
+            });
+            ['dragleave', 'drop'].forEach((type) => {
+                els.photoViewport.addEventListener(type, (event) => {
+                    event.preventDefault();
+                    els.photoViewport.classList.remove('dragover');
+                });
+            });
+            els.photoViewport.addEventListener('drop', (event) => handlePhotoFile(event.dataTransfer?.files?.[0]));
+            els.photoScale.addEventListener('input', updatePhotoFitFromControls);
+            els.photoCropImg.addEventListener('pointerdown', (event) => {
+                if (!state.photoPreview) return;
+                event.preventDefault();
+                els.photoCropImg.setPointerCapture(event.pointerId);
+                els.photoCropImg.classList.add('dragging');
+                state.photoDrag = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    x: state.photoFit.x,
+                    y: state.photoFit.y
+                };
+            });
+            els.photoCropImg.addEventListener('pointermove', (event) => {
+                if (!state.photoDrag) return;
+                const rect = els.photoViewport.getBoundingClientRect();
+                const dx = ((event.clientX - state.photoDrag.startX) / Math.max(1, rect.width)) * 100;
+                const dy = ((event.clientY - state.photoDrag.startY) / Math.max(1, rect.height)) * 100;
+                state.photoFit.x = Math.max(-45, Math.min(45, state.photoDrag.x + dx));
+                state.photoFit.y = Math.max(-45, Math.min(45, state.photoDrag.y + dy));
+                updatePhotoPreview();
+            });
+            els.photoCropImg.addEventListener('pointerup', () => {
+                state.photoDrag = null;
+                els.photoCropImg.classList.remove('dragging');
+            });
+            els.photoCropImg.addEventListener('pointercancel', () => {
+                state.photoDrag = null;
+                els.photoCropImg.classList.remove('dragging');
+            });
+        }
+
+        function bindEvents() {
+            els.categoryBar.addEventListener('click', (event) => {
+                const btn = event.target.closest('[data-category]');
+                if (btn) setCategory(btn.dataset.category);
+            });
+            els.cardsGrid.addEventListener('click', (event) => {
+                const card = event.target.closest('[data-recipe-id]');
+                if (!card) return;
+                openDetailPanel(card.dataset.recipeId);
+                if (isMobileDetailMode()) openMobileDetail();
+            });
+            els.detailPanel.addEventListener('click', (event) => {
+                if (event.target.closest('[data-close-detail]')) {
+                    closeDetailPanel();
+                    return;
+                }
+                if (event.target.closest('[data-close-mobile-detail]')) {
+                    closeDetailPanel();
+                    closeMobileDetail();
+                    return;
+                }
+                const ownerMenuTrigger = event.target.closest('[data-owner-menu-trigger]');
+                if (ownerMenuTrigger) {
+                    event.stopPropagation();
+                    toggleOwnerMenu(ownerMenuTrigger);
+                    return;
+                }
+                const editBtn = event.target.closest('[data-edit-recipe]');
+                if (editBtn) {
+                    closeOwnerMenus();
+                    const recipe = getRecipeById(editBtn.dataset.editRecipe);
+                    closeDetailPanel();
+                    closeMobileDetail();
+                    loadRecipeIntoForm(recipe);
+                    return;
+                }
+                const deleteBtn = event.target.closest('[data-delete-recipe]');
+                if (deleteBtn) {
+                    closeOwnerMenus();
+                    requestDeleteRecipe(deleteBtn.dataset.deleteRecipe);
+                    return;
+                }
+                const btn = event.target.closest('[data-fullscreen-recipe]');
+                if (btn) openFullscreen(btn.dataset.fullscreenRecipe);
+            });
+            els.searchInput.addEventListener('input', () => {
+                state.search = els.searchInput.value;
+                renderCards();
+            });
+            els.composerToggleBtn.addEventListener('click', () => {
+                if (state.composerOpen) {
+                    closeComposer();
+                } else {
+                    if (state.editingRecipeId) resetForm();
+                    openComposer({ focus: true });
+                }
+            });
+            els.addIngredientBtn.addEventListener('click', () => addIngredientRow());
+            els.addStepBtn.addEventListener('click', () => addStepRow());
+            els.resetFormBtn.addEventListener('click', resetForm);
+            els.recipeForm.addEventListener('submit', submitRecipe);
+            els.fullscreenCard.addEventListener('click', (event) => {
+                const ownerMenuTrigger = event.target.closest('[data-owner-menu-trigger]');
+                if (ownerMenuTrigger) {
+                    event.stopPropagation();
+                    toggleOwnerMenu(ownerMenuTrigger);
+                    return;
+                }
+                const editBtn = event.target.closest('[data-edit-recipe]');
+                if (editBtn) {
+                    closeOwnerMenus();
+                    const recipe = getRecipeById(editBtn.dataset.editRecipe);
+                    closeFullscreen();
+                    loadRecipeIntoForm(recipe);
+                    return;
+                }
+                const deleteBtn = event.target.closest('[data-delete-recipe]');
+                if (deleteBtn) {
+                    closeOwnerMenus();
+                    requestDeleteRecipe(deleteBtn.dataset.deleteRecipe);
+                }
+            });
+            els.fullscreenOverlay.addEventListener('click', (event) => {
+                if (event.target === els.fullscreenOverlay) closeFullscreen();
+            });
+            els.confirmDeleteBtn.addEventListener('click', confirmDeleteRecipe);
+            els.cancelDeleteBtn.addEventListener('click', closeDeleteConfirm);
+            els.confirmOverlay.addEventListener('click', (event) => {
+                if (event.target === els.confirmOverlay) closeDeleteConfirm();
+            });
+            document.addEventListener('click', () => {
+                closeCustomSelects();
+                closeOwnerMenus();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeCustomSelects();
+                    closeOwnerMenus();
+                    if (els.confirmOverlay.classList.contains('open')) {
+                        closeDeleteConfirm();
+                        return;
+                    }
+                    closeFullscreen();
+                    closeMobileDetail();
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (!isMobileDetailMode()) closeMobileDetail();
+                updateContentLayoutVars();
+            });
+            bindPhotoEditor();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initElements();
+            state.currentUser = getCurrentUser();
+            resetForm();
+            bindEvents();
+            initFirebase();
+            renderAll();
+        });
+    </script>
+</body>
+</html>
