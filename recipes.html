@@ -458,6 +458,7 @@
         .photo-file-input {
             position: absolute;
             inset: 0;
+            z-index: 3;
             width: 100%;
             height: 100%;
             opacity: 0;
@@ -1511,6 +1512,7 @@
             { id: 'fish', label: 'Рыба', icon: '🐟' },
             { id: 'pasta', label: 'Паста', icon: '🍝' },
             { id: 'breakfast', label: 'Завтраки', icon: '🍳' },
+            { id: 'snacks', label: 'Закуски', icon: '🥨' },
             { id: 'baking', label: 'Выпечка', icon: '🥐' },
             { id: 'desserts', label: 'Десерты', icon: '🍰' },
             { id: 'drinks', label: 'Напитки', icon: '🍹' },
@@ -1587,6 +1589,10 @@
             const typeExt = String(file?.type || '').split('/')[1] || 'jpg';
             const ext = typeExt === 'jpeg' ? 'jpg' : typeExt.replace(/[^a-z0-9]/gi, '') || 'jpg';
             return `recipe-photo.${ext}`;
+        }
+
+        function isIosLike() {
+            return /iPad|iPhone|iPod/.test(navigator.userAgent || '') || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         }
 
         function categoryMeta(id) {
@@ -2225,7 +2231,17 @@
                     reject(error);
                 };
                 image.src = objectUrl;
-            });
+            }).catch(() => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = reject;
+                    image.src = String(reader.result || '');
+                };
+                reader.onerror = () => reject(reader.error || new Error('photo_read_failed'));
+                reader.readAsDataURL(file);
+            }));
         }
 
         async function preparePhotoBlob(file) {
@@ -2245,7 +2261,7 @@
             const fileType = String(file.type || '');
             const fileName = String(file.name || '');
             const shouldTranscode = /heic|heif/i.test(fileType) || /\.(heic|heif)$/i.test(fileName);
-            const shouldCompress = file.size > MAX_PHOTO_BYTES || fileType === 'image/png' || shouldTranscode;
+            const shouldCompress = file.size > MAX_PHOTO_BYTES || fileType === 'image/png' || shouldTranscode || isIosLike();
             if (!shouldResize && !shouldCompress) return file;
             const canvas = document.createElement('canvas');
             canvas.width = Math.max(1, Math.round(width * scale));
@@ -2256,14 +2272,37 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
             return new Promise((resolve, reject) => {
+                if (typeof canvas.toBlob !== 'function') {
+                    try {
+                        resolve(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.84)));
+                    } catch (error) {
+                        reject(error);
+                    }
+                    return;
+                }
                 canvas.toBlob((blob) => {
                     if (blob) {
                         resolve(blob);
                         return;
                     }
-                    reject(new Error('photo_compress_failed'));
-                }, 'image/jpeg', 0.88);
+                    try {
+                        resolve(dataUrlToBlob(canvas.toDataURL('image/jpeg', 0.84)));
+                    } catch (error) {
+                        reject(error);
+                    }
+                }, 'image/jpeg', 0.84);
             });
+        }
+
+        function dataUrlToBlob(dataUrl) {
+            const parts = String(dataUrl || '').split(',');
+            const meta = parts[0] || '';
+            const base64 = parts[1] || '';
+            const mime = meta.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+            return new Blob([bytes], { type: mime });
         }
 
         function blobToDataUrl(blob) {
@@ -2360,14 +2399,18 @@
                     try {
                         preparedPhoto = await preparePhotoBlob(state.photoFile);
                         const uploadName = preparedPhoto === state.photoFile ? safePhotoFileName(state.photoFile) : 'recipe-photo.jpg';
-                        imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
+                        if (isIosLike() && preparedPhoto !== state.photoFile) {
+                            imageUrl = await blobToDataUrl(preparedPhoto);
+                            imageUploadFailed = true;
+                        } else {
+                            imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
+                        }
                     } catch (uploadError) {
                         imageUploadFailed = true;
                         try {
                             if (preparedPhoto !== state.photoFile) {
-                                imageUrl = await uploadToPostimages(state.photoFile, safePhotoFileName(state.photoFile));
-                                imageUploadFailed = false;
-                            } else if (state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES) {
+                                imageUrl = await blobToDataUrl(preparedPhoto);
+                            } else if (state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES * 6) {
                                 imageUrl = state.photoPreview;
                             } else if (preparedPhoto.size <= MAX_PHOTO_BYTES) {
                                 imageUrl = await blobToDataUrl(preparedPhoto);
@@ -2375,7 +2418,7 @@
                                 imageUrl = '';
                             }
                         } catch (_) {
-                            imageUrl = state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES ? state.photoPreview : '';
+                            imageUrl = state.photoPreview && state.photoPreview.length <= MAX_PHOTO_BYTES * 6 ? state.photoPreview : '';
                         }
                         console.warn('[recipes] image upload fallback used', uploadError);
                     }
@@ -2596,6 +2639,9 @@
                 els.recipePhoto.click();
             });
             const handlePhotoInput = () => handlePhotoFile(els.recipePhoto.files?.[0]);
+            els.recipePhoto.addEventListener('click', () => {
+                els.recipePhoto.value = '';
+            });
             els.recipePhoto.addEventListener('change', handlePhotoInput);
             els.recipePhoto.addEventListener('input', handlePhotoInput);
             els.photoRemoveBtn.addEventListener('click', (event) => {
