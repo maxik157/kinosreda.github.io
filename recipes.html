@@ -391,8 +391,7 @@
             gap: 9px;
             align-items: start;
         }
-        .ingredient-row > .input,
-        .step-title-input {
+        .ingredient-row > .input {
             height: 54px;
             min-height: 54px;
         }
@@ -454,6 +453,15 @@
             padding: 22px;
             text-align: center;
             color: rgba(255, 255, 255, 0.74);
+            cursor: pointer;
+        }
+        .photo-file-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
         .photo-placeholder-icon {
             width: 72px;
@@ -1427,14 +1435,14 @@
                     <aside class="form-panel">
                         <div class="form-section photo-editor">
                             <h2 class="form-section-title">Фото</h2>
-                            <input id="recipePhoto" type="file" accept="image/*" hidden>
                             <div id="photoViewport" class="photo-viewport">
-                                <div class="photo-placeholder">
+                                <label class="photo-placeholder" for="recipePhoto">
+                                    <input id="recipePhoto" class="photo-file-input" type="file" accept="image/*,.heic,.heif">
                                 <div>
                                     <div class="photo-placeholder-icon">＋</div>
                                     <strong>Фото необязательно</strong>
                                 </div>
-                            </div>
+                            </label>
                                 <img id="photoCropImg" class="photo-crop-img" alt="Предпросмотр фото рецепта">
                                 <button type="button" id="photoRemoveBtn" class="photo-remove-btn" aria-label="Убрать фото">×</button>
                             </div>
@@ -1512,7 +1520,8 @@
         const difficulties = [
             { id: 'Просто', label: 'Просто', icon: '1' },
             { id: 'Средне', label: 'Средне', icon: '2' },
-            { id: 'Сложно', label: 'Сложно', icon: '3' }
+            { id: 'Сложно', label: 'Сложно', icon: '3' },
+            { id: 'Очень сложно', label: 'Очень сложно', icon: '4' }
         ];
         const defaultPhotoFit = { scale: 1, x: 0, y: 0 };
         const state = {
@@ -1599,9 +1608,9 @@
         }
 
         function normalizeStep(item, index) {
-            if (typeof item === 'string') return { title: `Шаг ${index + 1}`, text: item.trim() };
+            if (typeof item === 'string') return { title: '', text: item.trim() };
             return {
-                title: String(item?.title || `Шаг ${index + 1}`).trim(),
+                title: String(item?.title || '').trim(),
                 text: String(item?.text || item?.description || '').trim()
             };
         }
@@ -1611,7 +1620,7 @@
         }
 
         function recipeSteps(recipe) {
-            return (Array.isArray(recipe?.steps) ? recipe.steps : []).map(normalizeStep).filter((item) => item.text || item.title);
+            return (Array.isArray(recipe?.steps) ? recipe.steps : []).map(normalizeStep).filter((item) => item.text);
         }
 
         function getCurrentUser() {
@@ -1809,7 +1818,7 @@
             }
             const cat = categoryMeta(recipe.category);
             const ingredients = recipeIngredients(recipe).map((item) => `<li>${escapeHtml(item.name)}${item.amount ? ` — ${escapeHtml(item.amount)}` : ''}</li>`).join('');
-            const steps = recipeSteps(recipe).map((item) => `<li><span class="step-title">${escapeHtml(item.title)}</span>${escapeHtml(item.text)}</li>`).join('');
+            const steps = recipeSteps(recipe).map((item) => `<li>${escapeHtml(item.text)}</li>`).join('');
             const desc = String(recipe.description || '').trim() || 'Автор не добавил короткое описание.';
             const hasPhoto = /^https?:\/\//i.test(String(recipe.imageUrl || '').trim()) || /^data:image\//i.test(String(recipe.imageUrl || '').trim());
             els.detailPanel.innerHTML = `
@@ -1984,14 +1993,12 @@
             row.innerHTML = `
                 <div class="step-index"></div>
                 <div class="step-fields">
-                    <input class="input step-title-input" placeholder="Название шага" value="${escapeHtml(values.title || '')}" required>
                     <textarea class="textarea auto-grow step-text-input" placeholder="Что нужно сделать" required rows="2">${escapeHtml(values.text || '')}</textarea>
                 </div>
                 <button type="button" class="remove-row" aria-label="Удалить шаг">×</button>
             `;
             row.querySelector('.remove-row').addEventListener('click', () => {
                 if (els.stepsList.children.length <= 1) {
-                    row.querySelector('.step-title-input').value = '';
                     row.querySelector('.step-text-input').value = '';
                     autoGrowTextarea(row.querySelector('.step-text-input'));
                     return;
@@ -2035,10 +2042,10 @@
         function getStepsFromForm() {
             return Array.from(els.stepsList.querySelectorAll('.step-row'))
                 .map((row, index) => ({
-                    title: row.querySelector('.step-title-input').value.trim() || `Шаг ${index + 1}`,
+                    title: '',
                     text: row.querySelector('.step-text-input').value.trim()
                 }))
-                .filter((item) => item.title || item.text);
+                .filter((item) => item.text);
         }
 
         function updatePhotoPreview() {
@@ -2136,7 +2143,7 @@
             els.ingredientsList.replaceChildren();
             els.stepsList.replaceChildren();
             addIngredientRow();
-            addStepRow({ title: 'Подготовка' });
+            addStepRow();
             renderSelects();
             updatePhotoPreview();
             bindAutoGrow(els.recipeDescription);
@@ -2184,7 +2191,7 @@
             (ingredients.length ? ingredients : [{}]).forEach((item) => addIngredientRow(item));
             els.stepsList.replaceChildren();
             const steps = recipeSteps(recipe);
-            (steps.length ? steps : [{ title: 'Подготовка' }]).forEach((item) => addStepRow(item));
+            (steps.length ? steps : [{}]).forEach((item) => addStepRow(item));
             state.photoFile = null;
             state.photoPreview = String(recipe.imageUrl || '');
             state.photoFit = { ...(recipe.photoFit || defaultPhotoFit) };
@@ -2235,7 +2242,10 @@
             if (!width || !height) return file;
             const scale = Math.min(1, MAX_UPLOAD_DIMENSION / Math.max(width, height));
             const shouldResize = scale < 0.999;
-            const shouldCompress = file.size > MAX_PHOTO_BYTES || file.type === 'image/png';
+            const fileType = String(file.type || '');
+            const fileName = String(file.name || '');
+            const shouldTranscode = /heic|heif/i.test(fileType) || /\.(heic|heif)$/i.test(fileName);
+            const shouldCompress = file.size > MAX_PHOTO_BYTES || fileType === 'image/png' || shouldTranscode;
             if (!shouldResize && !shouldCompress) return file;
             const canvas = document.createElement('canvas');
             canvas.width = Math.max(1, Math.round(width * scale));
@@ -2349,7 +2359,8 @@
                     let preparedPhoto = state.photoFile;
                     try {
                         preparedPhoto = await preparePhotoBlob(state.photoFile);
-                        imageUrl = await uploadToPostimages(preparedPhoto, safePhotoFileName(state.photoFile));
+                        const uploadName = preparedPhoto === state.photoFile ? safePhotoFileName(state.photoFile) : 'recipe-photo.jpg';
+                        imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
                     } catch (uploadError) {
                         imageUploadFailed = true;
                         try {
@@ -2491,7 +2502,7 @@
             state.fullscreenRecipeId = recipe.id;
             const cat = categoryMeta(recipe.category);
             const ingredients = recipeIngredients(recipe).map((item) => `<li>${escapeHtml(item.name)}${item.amount ? ` — ${escapeHtml(item.amount)}` : ''}</li>`).join('');
-            const steps = recipeSteps(recipe).map((item) => `<li><span class="step-title">${escapeHtml(item.title)}</span>${escapeHtml(item.text)}</li>`).join('');
+            const steps = recipeSteps(recipe).map((item) => `<li>${escapeHtml(item.text)}</li>`).join('');
             const desc = String(recipe.description || '').trim() || 'Автор не добавил короткое описание.';
             els.fullscreenCard.innerHTML = `
                 <div class="fullscreen-photo">${photoBlock(recipe)}</div>
@@ -2580,10 +2591,13 @@
 
         function bindPhotoEditor() {
             els.photoViewport.addEventListener('click', (event) => {
+                if (event.target.closest('.photo-placeholder')) return;
                 if (state.photoPreview || event.target === els.photoRemoveBtn) return;
                 els.recipePhoto.click();
             });
-            els.recipePhoto.addEventListener('change', () => handlePhotoFile(els.recipePhoto.files?.[0]));
+            const handlePhotoInput = () => handlePhotoFile(els.recipePhoto.files?.[0]);
+            els.recipePhoto.addEventListener('change', handlePhotoInput);
+            els.recipePhoto.addEventListener('input', handlePhotoInput);
             els.photoRemoveBtn.addEventListener('click', (event) => {
                 event.stopPropagation();
                 state.photoFile = null;
