@@ -2206,6 +2206,19 @@
             return repaired;
         }
 
+        function recipeFromPartialAiSource(source) {
+            return {
+                title: extractAiStringField(source, 'title'),
+                category: extractAiStringField(source, 'category'),
+                time: extractAiNumberField(source, 'time', 35),
+                portions: extractAiNumberField(source, 'portions', 4),
+                difficulty: extractAiStringField(source, 'difficulty'),
+                description: extractAiDescription(source),
+                ingredients: parseAiIngredients(extractAiArrayPartialSource(source, 'ingredients')),
+                steps: expandAiSteps(parseAiSteps(extractAiArrayPartialSource(source, 'steps')))
+            };
+        }
+
         function normalizeAiRecipe(raw) {
             const title = cleanAiText(raw?.title).slice(0, 90);
             const categoryId = String(raw?.category || '').trim();
@@ -2233,13 +2246,22 @@
         function validateAiRecipe(recipe) {
             const ingredients = Array.isArray(recipe?.ingredients) ? recipe.ingredients.filter((item) => item.name) : [];
             const steps = Array.isArray(recipe?.steps) ? recipe.steps.filter((item) => item.text && item.text.length > 10) : [];
-            return Boolean(recipe?.title && ingredients.length && steps.length >= 3);
+            const hasFallbackIngredient = ingredients.length === 1 && ingredients[0].name === 'Ингредиенты по вкусу';
+            const hasFallbackStep = steps.length === 1 && steps[0].text === 'Подготовьте ингредиенты и приготовьте блюдо до готовности.';
+            return Boolean(recipe?.title && recipe.title !== 'Рецепт от AI' && ingredients.length && !hasFallbackIngredient && steps.length >= 3 && !hasFallbackStep);
         }
 
         function parseAiRecipeContent(content) {
-            const recipe = normalizeAiRecipe(extractJsonObject(content));
-            if (!validateAiRecipe(recipe)) throw new Error('ai_recipe_invalid');
-            return recipe;
+            try {
+                const recipe = normalizeAiRecipe(extractJsonObject(content));
+                if (!validateAiRecipe(recipe)) throw new Error('ai_recipe_invalid');
+                return recipe;
+            } catch (error) {
+                const rawPartialRecipe = recipeFromPartialAiSource(content);
+                const partialRecipe = normalizeAiRecipe(rawPartialRecipe);
+                if (validateAiRecipe(partialRecipe)) return partialRecipe;
+                throw error;
+            }
         }
 
         function readOpenRouterDelta(payload) {
@@ -2279,7 +2301,9 @@
                     } catch (_) {}
                 }
             }
-            rawText += decoder.decode();
+            const tail = decoder.decode();
+            rawText += tail;
+            buffer += tail;
             if (buffer.trim().startsWith('data:')) {
                 const data = buffer.trim().slice(5).trim();
                 if (data && data !== '[DONE]') {
@@ -2299,57 +2323,43 @@
             return content;
         }
 
-        async function requestAiRecipe(userText, { onChunk, onRetry } = {}) {
-            let lastError = null;
-            for (let attempt = 0; attempt < 2; attempt += 1) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 90000);
-                try {
-                    const retryHint = attempt
-                        ? '\n\nПредыдущий ответ был поврежден или неполный. Верни только один валидный JSON-объект по схеме, без markdown, без комментариев, без оборванных строк.'
-                        : '';
-                    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                        method: 'POST',
-                        signal: controller.signal,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                            'HTTP-Referer': location.href
-                        },
-                        body: JSON.stringify({
-                            model: OPENROUTER_MODEL,
-                            messages: [
-                                { role: 'system', content: aiSystemPrompt() },
-                                { role: 'user', content: `${userText}${retryHint}` }
-                            ],
-                            temperature: attempt ? 0.35 : 0.5,
-                            max_tokens: 12000,
-                            stream: true,
-                            response_format: { type: 'json_object' }
-                        })
-                    });
-                    if (!response.ok) {
-                        const errorText = await response.text().catch(() => '');
-                        const error = new Error(`openrouter_${response.status}`);
-                        error.status = response.status;
-                        error.details = errorText;
-                        throw error;
-                    }
-                    const content = await readStreamedAiContent(response, attempt === 0 ? onChunk : undefined);
-                    if (!String(content).trim()) throw new Error('ai_empty_response');
-                    return parseAiRecipeContent(content);
-                } catch (error) {
-                    lastError = error;
-                    if (attempt === 0 && error?.status !== 429) {
-                        onRetry?.(error);
-                        continue;
-                    }
-                    throw lastError;
-                } finally {
-                    clearTimeout(timeoutId);
+        async function requestAiRecipe(userText, { onChunk } = {}) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 120000);
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'HTTP-Referer': location.href
+                    },
+                    body: JSON.stringify({
+                        model: OPENROUTER_MODEL,
+                        messages: [
+                            { role: 'system', content: aiSystemPrompt() },
+                            { role: 'user', content: userText }
+                        ],
+                        temperature: 0.35,
+                        max_tokens: 16000,
+                        stream: true,
+                        response_format: { type: 'json_object' }
+                    })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text().catch(() => '');
+                    const error = new Error(`openrouter_${response.status}`);
+                    error.status = response.status;
+                    error.details = errorText;
+                    throw error;
                 }
+                const content = await readStreamedAiContent(response, onChunk);
+                if (!String(content).trim()) throw new Error('ai_empty_response');
+                return parseAiRecipeContent(content);
+            } finally {
+                clearTimeout(timeoutId);
             }
-            throw lastError || new Error('ai_recipe_failed');
         }
 
         function fillFormFromAiRecipe(recipe) {
@@ -2382,6 +2392,61 @@
             bindAutoGrow(els.recipeDescription);
             autoGrowTextarea(els.recipeDescription);
             els.stepsList.querySelectorAll('.step-text-input').forEach((textarea) => autoGrowTextarea(textarea));
+            setAiGenerateStatus('Готово, проверьте поля', 'success');
+        }
+
+        function wait(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        async function fillFormFromAiRecipeProgressively(recipe) {
+            if (!recipe) return;
+            setAiGenerateStatus('Заполняю название...');
+            setFieldValueAnimated(els.recipeTitle, recipe.title || '', 90);
+            await wait(220);
+
+            setAiGenerateStatus('Заполняю параметры...');
+            state.categoryValue = recipe.category || 'other';
+            els.recipeTime.value = recipe.time || '';
+            els.recipePortions.value = recipe.portions || '';
+            state.difficultyValue = recipe.difficulty || 'Просто';
+            renderSelects();
+            await wait(180);
+
+            setAiGenerateStatus('Заполняю описание...');
+            setFieldValueAnimated(els.recipeDescription, recipe.description || '', 240);
+            bindAutoGrow(els.recipeDescription);
+            autoGrowTextarea(els.recipeDescription);
+            await wait(220);
+
+            setAiGenerateStatus('Добавляю ингредиенты...');
+            els.ingredientsList.replaceChildren();
+            const ingredients = recipe.ingredients?.length ? recipe.ingredients : [{ name: '', amount: '' }];
+            for (const item of ingredients) {
+                addIngredientRow({ name: '', amount: '' });
+                const row = els.ingredientsList.lastElementChild;
+                setFieldValueAnimated(row.querySelector('.ingredient-name'), item.name);
+                setFieldValueAnimated(row.querySelector('.ingredient-amount'), item.amount);
+                await wait(90);
+            }
+
+            setAiGenerateStatus('Добавляю шаги...');
+            els.stepsList.replaceChildren();
+            const steps = recipe.steps?.length ? recipe.steps : [{ title: '', text: '' }];
+            for (const item of steps) {
+                addStepRow({ text: '' });
+                const row = els.stepsList.lastElementChild;
+                setFieldValueAnimated(row.querySelector('.step-text-input'), item.text);
+                updateStepIndexes();
+                await wait(90);
+            }
+            els.stepsList.querySelectorAll('.step-text-input').forEach((textarea) => autoGrowTextarea(textarea));
+
+            state.photoFile = null;
+            state.photoPreview = '';
+            state.photoFit = { ...defaultPhotoFit };
+            els.recipePhoto.value = '';
+            updatePhotoPreview();
             setAiGenerateStatus('Готово, проверьте поля', 'success');
         }
 
@@ -2510,13 +2575,9 @@
             try {
                 let lastPartialAt = 0;
                 const recipe = await requestAiRecipe(prompt, {
-                    onRetry: () => {
-                        clearFormForAiGeneration();
-                        setAiGenerateStatus('Повторяю запрос...');
-                    },
                     onChunk: (text) => {
                         const now = Date.now();
-                        if (now - lastPartialAt < 80) return;
+                        if (now - lastPartialAt < 90) return;
                         lastPartialAt = now;
                         applyPartialAiRecipeText(text);
                         setAiGenerateStatus('Заполняю поля...');
