@@ -124,9 +124,10 @@
             background: #000;
             overflow-x: hidden;
             overscroll-behavior: none;
+            min-height: 100%;
         }
-        html { overflow-y: hidden; }
-        body { overflow-y: auto; }
+        html { height: 100%; overflow-y: auto; }
+        body { min-height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         body {
             font-family: 'Comfortaa', cursive;
             color: #fff;
@@ -418,7 +419,7 @@
     </style>
 </head>
 <body class="bg-dark min-h-screen planning-booting">
-    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8">
+    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8" style="min-height:100dvh;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));">
         <section class="planning-shell p-0">
             <div class="planning-head">
                 <div>
@@ -432,7 +433,7 @@
                     </button>
                 </div>
             </div>
-            <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4"></div>
+            <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pb-4"></div>
             <div id="emptyState" class="text-gray-400 text-sm mt-4 hidden">Пока нет мероприятий. Добавьте первое событие справа сверху.</div>
         </section>
     </main>
@@ -506,7 +507,7 @@
 
         function maybeCommitInitialPlanningRender() {
             if (initialPlanningRenderCommitted) return;
-            if (initialEventsSnapshotReady && initialUsersSnapshotReady) {
+            if (initialEventsSnapshotReady) {
                 commitInitialPlanningRender();
             }
         }
@@ -525,9 +526,6 @@
         }
 
         function initFirebase() {
-            if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
-                firebase.database.INTERNAL.forceLongPolling();
-            }
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
@@ -612,15 +610,18 @@
                     ? Array.from(new Set(event.participantsCustom.map((name) => String(name || '').trim()).filter(Boolean)))
                     : [];
                 const customOnly = customParticipants.filter((name) => !usersList.includes(name));
-                const participantsCount = explicitParticipants.length
-                    ? explicitParticipants.length
-                    : (usersList.length + customOnly.length);
+                let participantsLabel = 'Участников: —';
+                if (explicitParticipants.length) {
+                    participantsLabel = `Участников: ${explicitParticipants.length}`;
+                } else if (usersList.length || customOnly.length) {
+                    participantsLabel = `Участников: ${usersList.length + customOnly.length}`;
+                }
                 const dateLabel = formatEventDate(event.date);
                 card.innerHTML = `
                     <div class="event-summary">
                         <div class="event-title">${escapeHtml(event.name || 'Без названия')}</div>
                         ${dateLabel ? `<div class="event-meta">Дата: ${escapeHtml(dateLabel)}</div>` : ''}
-                        <div class="event-meta">Участников: ${participantsCount}</div>
+                        <div class="event-meta">${participantsLabel}</div>
                     </div>
                     <div class="event-actions">
                         <button type="button" class="event-action" data-edit-event="${event.id}" title="Редактировать">✎</button>

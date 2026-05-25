@@ -4744,6 +4744,7 @@
         let planningEventsList = [];
         let planningUsersList = [];
         let planningDataParticipantsByEvent = {};
+        let planningEventsSnapshotRefreshTimer = null;
         let lastBeerRatingHash = '';
         let lastEventsHash = '';
         let lastBacklogHash = '';
@@ -4953,6 +4954,15 @@
             return merged.sort((a, b) => collator.compare(a, b));
         }
 
+        function schedulePlanningEventsSnapshotRefresh(delay = 80) {
+            if (!useFirebase || !db) return;
+            if (planningEventsSnapshotRefreshTimer) return;
+            planningEventsSnapshotRefreshTimer = setTimeout(() => {
+                planningEventsSnapshotRefreshTimer = null;
+                db.ref('planning/events').once('value').then(applyPlanningEventsSnapshot).catch(() => {});
+            }, Math.max(0, Number(delay) || 0));
+        }
+
         function getPlanningParticipantsCount(event) {
             if (!event || typeof event !== 'object') return 0;
             let explicit = [];
@@ -5146,6 +5156,7 @@
         const CALL_ROOM_PARAM = 'callRoom';
         const CALL_SHORT_PARAM = 'call';
         const PLANNING_EVENT_PARAM = 'planningEvent';
+        const PLANNING_NOTES_PARAM = 'planningNotes';
         let iframeKeyboardOverride = null;
         let iframeKeyboardOverrideTimer = null;
         let androidServiceViewportStableHeight = 0;
@@ -5560,6 +5571,77 @@
             } catch (_) {}
             return null;
         }
+        function getPlanningNotesOpenFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const raw = String(params.get(PLANNING_NOTES_PARAM) || '').trim().toLowerCase();
+                return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'open';
+            } catch (_) {}
+            return false;
+        }
+        function buildPlanningServiceSrc(eventId = null, notesOpen = false) {
+            const params = new URLSearchParams();
+            if (eventId) params.set('id', eventId);
+            if (notesOpen) params.set('notes', '1');
+            const query = params.toString();
+            return query ? `planning-event.html?${query}` : 'planning.html';
+        }
+        function normalizeComparableUrl(rawUrl) {
+            const value = String(rawUrl || '').trim();
+            if (!value) return '';
+            try {
+                return new URL(value, window.location.href).toString();
+            } catch (_) {
+                return value;
+            }
+        }
+        function getFrameLiveUrl(frame) {
+            if (!frame) return '';
+            try {
+                const href = frame.contentWindow && frame.contentWindow.location
+                    ? frame.contentWindow.location.href
+                    : '';
+                return normalizeComparableUrl(href);
+            } catch (_) {
+                return '';
+            }
+        }
+        function getPlanningServiceRouteState(rawUrl) {
+            const fallback = {
+                page: '',
+                eventId: null,
+                notesOpen: false
+            };
+            const value = String(rawUrl || '').trim();
+            if (!value) return fallback;
+            try {
+                const url = new URL(value, window.location.href);
+                const page = String(url.pathname.split('/').pop() || '').trim();
+                const rawEventId = url.searchParams.get('id');
+                const rawNotes = String(url.searchParams.get('notes') || '').trim().toLowerCase();
+                return {
+                    page,
+                    eventId: rawEventId ? String(rawEventId) : null,
+                    notesOpen: rawNotes === '1' || rawNotes === 'true' || rawNotes === 'yes' || rawNotes === 'open'
+                };
+            } catch (_) {
+                return fallback;
+            }
+        }
+        function syncPlanningServiceFrameRoute(frame, eventId, notesOpen) {
+            if (!frame || !eventId) return false;
+            try {
+                if (!frame.contentWindow || frame.contentWindow === window) return false;
+                frame.contentWindow.postMessage({
+                    type: 'planning:route-sync',
+                    eventId: String(eventId),
+                    notesOpen: !!notesOpen
+                }, window.location.origin);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
         function updatePageUrl(page, options = {}) {
             const resolved = PAGE_IDS[page] ? page : 'calendar';
             try {
@@ -5572,6 +5654,9 @@
                 const planningEventId = resolved === 'svc_planning'
                     ? (options.planningEventId !== undefined ? options.planningEventId : getPlanningEventIdFromUrl())
                     : null;
+                const planningNotesOpen = resolved === 'svc_planning'
+                    ? (options.planningNotesOpen !== undefined ? !!options.planningNotesOpen : getPlanningNotesOpenFromUrl())
+                    : false;
                 const callRoomSlug = resolved === 'svc_call'
                     ? normalizeCallRoomSlug(options.callRoomSlug !== undefined ? options.callRoomSlug : getCallRoomSlugFromUrl())
                     : '';
@@ -5579,6 +5664,11 @@
                     url.searchParams.set(PLANNING_EVENT_PARAM, planningEventId);
                 } else {
                     url.searchParams.delete(PLANNING_EVENT_PARAM);
+                }
+                if (resolved === 'svc_planning' && planningEventId && planningNotesOpen) {
+                    url.searchParams.set(PLANNING_NOTES_PARAM, '1');
+                } else {
+                    url.searchParams.delete(PLANNING_NOTES_PARAM);
                 }
                 if (resolved === 'svc_call' && callRoomSlug) {
                     url.searchParams.set(CALL_SHORT_PARAM, callRoomSlug);
@@ -6301,10 +6391,25 @@
             if (!frame) return;
             if (section.id === 'svc_planning') {
                 const eventId = getPlanningEventIdFromUrl();
+                const notesOpen = !!eventId && getPlanningNotesOpenFromUrl();
                 const desired = eventId
-                    ? `planning-event.html?id=${encodeURIComponent(eventId)}`
-                    : frame.getAttribute('data-src');
-                if (desired && frame.getAttribute('src') !== desired) {
+                    ? buildPlanningServiceSrc(eventId, notesOpen)
+                    : 'planning.html';
+                if (desired) {
+                    frame.setAttribute('data-src', desired);
+                }
+                const desiredComparable = normalizeComparableUrl(desired);
+                const srcComparable = normalizeComparableUrl(frame.getAttribute('src'));
+                const liveComparable = getFrameLiveUrl(frame);
+                const liveRoute = getPlanningServiceRouteState(liveComparable);
+                const sameLiveEvent = !!(eventId
+                    && liveRoute.page === 'planning-event.html'
+                    && String(liveRoute.eventId || '') === String(eventId));
+                if (sameLiveEvent) {
+                    syncPlanningServiceFrameRoute(frame, eventId, notesOpen);
+                    return;
+                }
+                if (desired && desiredComparable !== srcComparable && desiredComparable !== liveComparable) {
                     frame.setAttribute('src', desired);
                 }
                 return;
@@ -6690,7 +6795,12 @@
             activeLayoutPage = resolved;
             localStorage.setItem(PAGE_LS_KEY, resolved);
             if (options.updateUrl !== false) {
-                updatePageUrl(resolved, { push: !!options.push, planningEventId: options.planningEventId });
+                updatePageUrl(resolved, {
+                    push: !!options.push,
+                    callRoomSlug: options.callRoomSlug,
+                    planningEventId: options.planningEventId,
+                    planningNotesOpen: options.planningNotesOpen
+                });
             }
 
             const useSidebar = document.body.classList.contains('layout-sidebar');
@@ -6811,7 +6921,9 @@
                 const desired = buildCallServiceSrc(normalizedSlug);
                 if (frame) {
                     frame.setAttribute('data-src', desired);
-                    frame.setAttribute('src', desired);
+                    if (frame.getAttribute('src') !== desired) {
+                        frame.setAttribute('src', desired);
+                    }
                 }
                 ensureServiceFrame(section);
             }
@@ -7265,9 +7377,25 @@
                 if (data.type === 'planning:route') {
                     const currentPage = getPageFromUrl() || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
                     const currentPlanningId = getPlanningEventIdFromUrl();
+                    const currentPlanningNotesOpen = getPlanningNotesOpenFromUrl();
                     if (data.view === 'event' && data.eventId) {
-                        if (currentPage === 'svc_planning' && currentPlanningId === data.eventId) return;
-                        setActivePage('svc_planning', { scroll: false, push: true, planningEventId: data.eventId });
+                        const nextNotesOpen = !!data.notesOpen;
+                        if (currentPage === 'svc_planning' && currentPlanningId === data.eventId) {
+                            if (currentPlanningNotesOpen !== nextNotesOpen) {
+                                updatePageUrl('svc_planning', {
+                                    push: false,
+                                    planningEventId: data.eventId,
+                                    planningNotesOpen: nextNotesOpen
+                                });
+                            }
+                            return;
+                        }
+                        setActivePage('svc_planning', {
+                            scroll: false,
+                            push: true,
+                            planningEventId: data.eventId,
+                            planningNotesOpen: nextNotesOpen
+                        });
                     } else if (data.view === 'list') {
                         if (currentPage === 'svc_planning' && !currentPlanningId) return;
                         setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
@@ -8257,11 +8385,6 @@
         // Firebase Methods
         function initFirebase(config) {
             try {
-                try {
-                    if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
-                        firebase.database.INTERNAL.forceLongPolling();
-                    }
-                } catch (_) {}
                 if (!firebase.apps.length) {
                     firebase.initializeApp(config);
                 }
@@ -8377,28 +8500,31 @@
                     const nextSig = nextList.join('\u001f');
                     if (prevSig === nextSig) return;
                     planningUsersList = nextList;
-                    if (useFirebase && db) {
-                        db.ref('planning/events').once('value').then(applyPlanningEventsSnapshot).catch(() => {});
-                    }
+                    schedulePlanningEventsSnapshotRefresh(0);
                 };
                 db.ref('users').on('value', applyPlanningUsersSnapshot);
 
-                const applyPlanningDataSnapshot = (snapshot) => {
-                    const raw = snapshot.val() || {};
-                    const nextByEvent = {};
-                    Object.entries(raw).forEach(([id, payload]) => {
-                        const list = extractPlanningParticipantsFromDataEntry(payload);
-                        if (list.length) nextByEvent[String(id)] = list;
-                    });
+                const applyPlanningDataEntrySnapshot = (snapshot, options = {}) => {
+                    const eventKey = snapshot && snapshot.key ? String(snapshot.key) : '';
+                    if (!eventKey) return;
+                    const nextByEvent = { ...(planningDataParticipantsByEvent || {}) };
+                    if (options.remove === true) {
+                        delete nextByEvent[eventKey];
+                    } else {
+                        const list = extractPlanningParticipantsFromDataEntry(snapshot.val() || {});
+                        if (list.length) nextByEvent[eventKey] = list;
+                        else delete nextByEvent[eventKey];
+                    }
                     const prevSig = JSON.stringify(planningDataParticipantsByEvent || {});
                     const nextSig = JSON.stringify(nextByEvent || {});
                     if (prevSig === nextSig) return;
                     planningDataParticipantsByEvent = nextByEvent;
-                    if (useFirebase && db) {
-                        db.ref('planning/events').once('value').then(applyPlanningEventsSnapshot).catch(() => {});
-                    }
+                    schedulePlanningEventsSnapshotRefresh();
                 };
-                db.ref('planning/data').on('value', applyPlanningDataSnapshot);
+                const planningDataRef = db.ref('planning/data');
+                planningDataRef.on('child_added', (snapshot) => applyPlanningDataEntrySnapshot(snapshot));
+                planningDataRef.on('child_changed', (snapshot) => applyPlanningDataEntrySnapshot(snapshot));
+                planningDataRef.on('child_removed', (snapshot) => applyPlanningDataEntrySnapshot(snapshot, { remove: true }));
 
                 // Start chat subscription immediately (for unread badge), even if chat panel was never opened
                 try { ensureChatSubscription(); } catch(_) {}
