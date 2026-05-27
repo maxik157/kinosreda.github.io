@@ -2608,6 +2608,11 @@
             background: rgba(255,255,255,0.08);
             color: #fff7ed;
         }
+        .beer-backlog-lane-cost {
+            border-color: rgba(245,158,11,0.18);
+            background: rgba(245,158,11,0.12);
+            color: #fff7ed;
+        }
         .beer-backlog-lane-body {
             gap: 8px;
             padding: 8px;
@@ -9782,6 +9787,8 @@
                         const statusMeta = BEER_BACKLOG_STATUS_META[status];
                         const laneCards = cards.filter((card) => card.status === status);
                         const laneQty = laneCards.reduce((sum, card) => sum + (Number(card.stageQty) || 0), 0);
+                        const laneCost = laneCards.reduce((sum, card) => sum + (Number(card.stageCost) || 0), 0);
+                        const laneCostLabel = laneCost > 0 ? formatMoneyValue(laneCost) : '—';
                         return `
                             <section class="beer-backlog-lane" data-status="${escapeHtml(status)}" data-beer-drop-status="${escapeHtml(status)}">
                                 <div class="beer-backlog-lane-head">
@@ -9790,6 +9797,7 @@
                                         <div class="beer-backlog-lane-caps">
                                             <span class="beer-backlog-lane-pill">${escapeHtml(`${laneCards.length} поз.`)}</span>
                                             <span class="beer-backlog-lane-count">${escapeHtml(`${laneQty} шт`)}</span>
+                                            <span class="beer-backlog-lane-pill beer-backlog-lane-cost">${escapeHtml(laneCostLabel)}</span>
                                         </div>
                                     </div>
                                 </div>
