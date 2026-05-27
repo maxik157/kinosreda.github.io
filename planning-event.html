@@ -1436,6 +1436,11 @@
             flex: 0 0 auto;
             min-width: 0;
         }
+        .section-backlog-slot {
+            display: inline-flex;
+            align-items: center;
+            flex: 0 0 auto;
+        }
         .section-actions-buttons {
             display: inline-flex;
             align-items: center;
@@ -1471,6 +1476,7 @@
             min-width: 112px;
             max-width: 168px;
             padding: 5px 10px;
+            min-height: 34px;
             border-radius: 10px;
             border: 1px solid rgba(245,158,11,0.45);
             background: #2e1705 !important;
@@ -1478,6 +1484,10 @@
             font-size: 0.72rem;
             font-weight: 700;
             line-height: 1.2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1575,6 +1585,1187 @@
         .section-menu button:hover {
             background: rgba(245,158,11,0.12);
             color: var(--accent-200);
+        }
+        .beer-backlog-launch {
+            --beer-launch-glow: rgba(245,158,11,0.34);
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            justify-content: center;
+            box-sizing: border-box;
+            min-height: 34px;
+            height: 34px;
+            padding: 0 12px 0 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(245,158,11,0.36);
+            background:
+                linear-gradient(135deg, rgba(245,158,11,0.20), rgba(15,23,42,0.74) 58%, rgba(8,15,28,0.9)),
+                rgba(8,8,8,0.7);
+            color: #fff7ed;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.22), 0 0 0 1px rgba(245,158,11,0.10) inset;
+            overflow: hidden;
+            isolation: isolate;
+            transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+        }
+        .beer-backlog-launch::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, transparent 18%, rgba(255,255,255,0.12) 42%, transparent 66%);
+            opacity: 0;
+            transform: translateX(-120%);
+            transition: opacity 0.24s ease, transform 0.56s ease;
+            pointer-events: none;
+        }
+        .beer-backlog-launch:hover {
+            border-color: rgba(251,191,36,0.68);
+            box-shadow: 0 16px 34px rgba(0,0,0,0.28), 0 0 30px var(--beer-launch-glow);
+            transform: translateY(-1px);
+        }
+        .beer-backlog-launch:hover::before {
+            opacity: 1;
+            transform: translateX(120%);
+        }
+        .beer-backlog-launch:active {
+            transform: translateY(0);
+        }
+        .beer-backlog-launch-icon {
+            position: relative;
+            z-index: 1;
+            width: 24px;
+            height: 24px;
+            flex: 0 0 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            filter: drop-shadow(0 0 14px rgba(251,191,36,0.28));
+        }
+        .beer-backlog-launch-icon svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        .beer-backlog-launch-label {
+            position: relative;
+            z-index: 1;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .modal.beer-backlog-modal {
+            align-items: stretch !important;
+            justify-content: stretch !important;
+            padding: 0 !important;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 12% 8%, rgba(245,158,11,0.16), transparent 24%),
+                radial-gradient(circle at 88% 14%, rgba(56,189,248,0.10), transparent 20%),
+                linear-gradient(180deg, rgba(2,6,23,0.98), rgba(2,6,23,0.96)) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 96;
+        }
+        .beer-backlog-modal.active .beer-backlog-card {
+            animation: beerBacklogModalIn 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes beerBacklogModalIn {
+            0% {
+                opacity: 0;
+                transform: translateY(24px) scale(0.985);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .beer-backlog-card {
+            position: relative;
+            width: 100vw !important;
+            max-width: none !important;
+            height: 100dvh !important;
+            max-height: none !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            border-radius: 0 !important;
+            border: 0 !important;
+            background:
+                radial-gradient(circle at 14% 0%, rgba(245,158,11,0.08), transparent 24%),
+                radial-gradient(circle at 100% 0%, rgba(56,189,248,0.08), transparent 22%),
+                linear-gradient(180deg, rgba(8,12,23,0.99), rgba(2,6,23,1)) !important;
+            box-shadow: none !important;
+        }
+        .beer-backlog-card::before,
+        .beer-backlog-card::after {
+            content: '';
+            position: absolute;
+            inset: auto;
+            pointer-events: none;
+            filter: blur(72px);
+            opacity: 0.22;
+        }
+        .beer-backlog-card::before {
+            top: -120px;
+            right: -60px;
+            width: 360px;
+            height: 280px;
+            background: rgba(245,158,11,0.22);
+        }
+        .beer-backlog-card::after {
+            bottom: -140px;
+            left: -40px;
+            width: 380px;
+            height: 260px;
+            background: rgba(56,189,248,0.16);
+        }
+        .beer-backlog-shell {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100dvh;
+            min-height: 100dvh;
+            overflow: hidden;
+        }
+        .beer-backlog-shell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.015), transparent 14%),
+                linear-gradient(135deg, rgba(245,158,11,0.04), transparent 30%),
+                linear-gradient(315deg, rgba(34,197,94,0.04), transparent 26%);
+            pointer-events: none;
+        }
+        .beer-backlog-head {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: max(14px, env(safe-area-inset-top, 0px) + 10px) max(14px, env(safe-area-inset-right, 0px) + 10px) 10px max(18px, env(safe-area-inset-left, 0px) + 12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(180deg, rgba(2,6,23,0.88), rgba(2,6,23,0.72));
+        }
+        .beer-backlog-title-wrap {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .beer-backlog-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(245,158,11,0.24);
+            background: rgba(245,158,11,0.10);
+            color: #fde68a;
+            font-size: 0.64rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .beer-backlog-kicker::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #facc15, #f59e0b);
+            box-shadow: 0 0 12px rgba(245,158,11,0.6);
+        }
+        .beer-backlog-title {
+            margin: 0;
+            color: #fff7ed;
+            font-size: clamp(1.35rem, 1rem + 1.15vw, 2rem);
+            line-height: 1.04;
+            letter-spacing: -0.035em;
+            font-weight: 800;
+        }
+        .beer-backlog-subtitle {
+            max-width: none;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            line-height: 1.35;
+        }
+        .beer-backlog-head-actions {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex: 0 0 auto;
+            align-self: flex-start;
+            z-index: 3;
+        }
+        .beer-backlog-close {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(2,6,23,0.78);
+            color: #e5e7eb;
+            font-size: 1.25rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+        .beer-backlog-close:hover {
+            transform: translateY(-1px);
+            background: rgba(248,113,113,0.12);
+            border-color: rgba(248,113,113,0.24);
+            color: #fecaca;
+        }
+        .beer-backlog-meta-grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(118px, max-content));
+            gap: 8px;
+            padding: 10px 18px 10px;
+            align-items: stretch;
+        }
+        .beer-backlog-stat {
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(180deg, rgba(15,23,42,0.70), rgba(2,6,23,0.52));
+            padding: 9px 12px 10px;
+            box-shadow: none;
+        }
+        .beer-backlog-stat::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 2px;
+            background: var(--beer-stat-accent, rgba(245,158,11,0.8));
+        }
+        .beer-backlog-stat-label {
+            font-size: 0.62rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .beer-backlog-stat-value {
+            margin-top: 4px;
+            color: #fff;
+            font-size: 0.98rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .beer-backlog-toolbar {
+            position: relative;
+            z-index: 6;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 0 18px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(180deg, rgba(2,6,23,0.70), rgba(2,6,23,0.42));
+            overflow: visible;
+        }
+        .beer-backlog-view-tabs,
+        .beer-backlog-control-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .beer-backlog-tab,
+        .beer-backlog-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 34px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #cbd5e1;
+            font-size: 0.74rem;
+            font-weight: 700;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+        .beer-backlog-tab:hover,
+        .beer-backlog-toggle:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245,158,11,0.26);
+            color: #fff7ed;
+        }
+        .beer-backlog-tab.active,
+        .beer-backlog-toggle.active {
+            border-color: rgba(245,158,11,0.38);
+            background: rgba(245,158,11,0.16);
+            color: #fff7ed;
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.12) inset;
+        }
+        .beer-backlog-field,
+        .beer-backlog-select {
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #f8fafc;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .beer-backlog-field {
+            min-width: min(240px, 42vw);
+            padding: 0 12px;
+        }
+        .beer-backlog-select {
+            min-width: 210px;
+            padding: 0 34px 0 12px;
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.72) 50%),
+                linear-gradient(135deg, rgba(255,255,255,0.72) 50%, transparent 50%);
+            background-position:
+                calc(100% - 16px) 14px,
+                calc(100% - 11px) 14px;
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+        }
+        .beer-backlog-field::placeholder {
+            color: #64748b;
+        }
+        .beer-backlog-field:focus,
+        .beer-backlog-select:focus {
+            border-color: rgba(245,158,11,0.42);
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.16) inset;
+            background: rgba(255,255,255,0.06);
+        }
+        .beer-backlog-stage {
+            position: relative;
+            z-index: 0;
+            flex: 1 1 auto;
+            min-height: 0;
+            padding: 14px 18px max(18px, env(safe-area-inset-bottom, 0px) + 12px);
+            overflow: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        .beer-backlog-stage.dragging {
+            cursor: grabbing;
+        }
+        .beer-backlog-board,
+        .beer-backlog-owner-board,
+        .beer-backlog-list {
+            display: grid;
+            gap: 12px;
+        }
+        .beer-backlog-board {
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(320px, 1fr);
+            min-width: 100%;
+            align-items: start;
+        }
+        .beer-backlog-owner-board {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            align-items: start;
+        }
+        .beer-backlog-lane,
+        .beer-backlog-owner-lane,
+        .beer-backlog-list-group {
+            position: relative;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: linear-gradient(180deg, rgba(15,23,42,0.72), rgba(2,6,23,0.54));
+            box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+            overflow: hidden;
+        }
+        .beer-backlog-lane::before,
+        .beer-backlog-owner-lane::before,
+        .beer-backlog-list-group::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 3px;
+            background: var(--lane-accent, rgba(245,158,11,0.75));
+        }
+        .beer-backlog-lane-head,
+        .beer-backlog-owner-head,
+        .beer-backlog-list-head {
+            padding: 12px 13px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .beer-backlog-lane-title-row,
+        .beer-backlog-owner-title-row,
+        .beer-backlog-list-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .beer-backlog-lane-title,
+        .beer-backlog-owner-title,
+        .beer-backlog-list-title {
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .beer-backlog-lane-count,
+        .beer-backlog-owner-count,
+        .beer-backlog-list-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 24px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .beer-backlog-lane-meta,
+        .beer-backlog-owner-meta,
+        .beer-backlog-list-meta {
+            margin-top: 6px;
+            color: #94a3b8;
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+        .beer-backlog-lane-body,
+        .beer-backlog-owner-body,
+        .beer-backlog-list-body {
+            display: grid;
+            gap: 10px;
+            padding: 10px;
+        }
+        .beer-backlog-lane.drop-target {
+            border-color: rgba(251,191,36,0.34);
+            box-shadow: 0 18px 38px rgba(0,0,0,0.24), 0 0 0 1px rgba(251,191,36,0.16) inset;
+        }
+        .beer-backlog-card-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 11px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                linear-gradient(180deg, rgba(17,24,39,0.96), rgba(2,6,23,0.88)),
+                rgba(2,6,23,0.88);
+            box-shadow: 0 10px 22px rgba(0,0,0,0.14);
+            transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+            overflow: hidden;
+        }
+        .beer-backlog-card-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(245,158,11,0.22);
+            box-shadow: 0 18px 36px rgba(0,0,0,0.24), 0 0 0 1px rgba(245,158,11,0.08) inset;
+        }
+        .beer-backlog-card-item.dragging {
+            opacity: 0.48;
+            transform: scale(0.985);
+        }
+        .beer-backlog-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .beer-backlog-card-title-wrap {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .beer-backlog-card-title {
+            color: #f8fafc;
+            font-size: 0.89rem;
+            font-weight: 800;
+            line-height: 1.18;
+            letter-spacing: -0.02em;
+            word-break: break-word;
+        }
+        .beer-backlog-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            width: fit-content;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .beer-backlog-status-pill::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 999px;
+            background: var(--status-accent, rgba(245,158,11,0.72));
+            box-shadow: 0 0 14px var(--status-accent, rgba(245,158,11,0.72));
+        }
+        .beer-backlog-card-spark {
+            flex: 0 0 30px;
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(251,191,36,0.20), rgba(34,197,94,0.12));
+            border: 1px solid rgba(255,255,255,0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fde68a;
+            font-size: 0.88rem;
+        }
+        .beer-backlog-card-owner-row,
+        .beer-backlog-card-detail-row,
+        .beer-backlog-card-meta-row,
+        .beer-backlog-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .beer-backlog-chip,
+        .beer-backlog-detail-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 24px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #dbeafe;
+            font-size: 0.68rem;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .beer-backlog-chip.mine {
+            border-color: rgba(245,158,11,0.28);
+            background: rgba(245,158,11,0.12);
+            color: #fff7ed;
+        }
+        .beer-backlog-detail-chip {
+            color: #cbd5e1;
+        }
+        .beer-backlog-card-meta {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+        }
+        .beer-backlog-card-meta-box {
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
+            padding: 7px 8px;
+        }
+        .beer-backlog-card-meta-label {
+            color: #64748b;
+            font-size: 0.58rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .beer-backlog-card-meta-value {
+            margin-top: 3px;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .beer-backlog-readiness {
+            display: grid;
+            gap: 5px;
+        }
+        .beer-backlog-readiness-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: #cbd5e1;
+            font-size: 0.68rem;
+        }
+        .beer-backlog-readiness-bar {
+            position: relative;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            overflow: hidden;
+        }
+        .beer-backlog-readiness-bar > span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 0;
+            border-radius: inherit;
+            background: linear-gradient(90deg, rgba(251,191,36,0.88), rgba(34,197,94,0.82));
+            box-shadow: 0 0 18px rgba(34,197,94,0.22);
+            transition: width 0.26s ease;
+        }
+        .beer-backlog-missing {
+            color: #fca5a5;
+            font-size: 0.67rem;
+            line-height: 1.35;
+        }
+        .beer-backlog-card-actions {
+            justify-content: space-between;
+            align-items: center;
+        }
+        .beer-backlog-action-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .beer-backlog-action {
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 0.67rem;
+            font-weight: 700;
+            transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+        .beer-backlog-action:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245,158,11,0.22);
+            color: #fff7ed;
+        }
+        .beer-backlog-action.primary {
+            border-color: rgba(245,158,11,0.28);
+            background: rgba(245,158,11,0.14);
+            color: #fff7ed;
+        }
+        .beer-backlog-action.done {
+            border-color: rgba(34,197,94,0.28);
+            background: rgba(34,197,94,0.14);
+            color: #dcfce7;
+        }
+        .beer-backlog-action.secondary {
+            color: #cbd5e1;
+        }
+        .beer-backlog-action[disabled] {
+            opacity: 0.44;
+            cursor: default;
+            transform: none;
+        }
+        .beer-backlog-updated {
+            color: #64748b;
+            font-size: 0.64rem;
+        }
+        .beer-backlog-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-height: min(64dvh, 580px);
+            border-radius: 22px;
+            border: 1px dashed rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.03);
+            color: #cbd5e1;
+            text-align: center;
+            padding: 24px;
+        }
+        .beer-backlog-empty-title {
+            color: #fff7ed;
+            font-size: 1.18rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .beer-backlog-empty-text {
+            max-width: 520px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+        .beer-backlog-empty-mark {
+            width: 72px;
+            height: 72px;
+            border-radius: 22px;
+            border: 1px solid rgba(245,158,11,0.16);
+            background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(56,189,248,0.10));
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fde68a;
+            font-size: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.22);
+        }
+        .beer-backlog-status-queue { --status-accent: rgba(148,163,184,0.72); }
+        .beer-backlog-status-stock { --status-accent: rgba(245,158,11,0.76); }
+        .beer-backlog-status-table { --status-accent: rgba(56,189,248,0.78); }
+        .beer-backlog-status-done { --status-accent: rgba(34,197,94,0.82); }
+        .beer-backlog-lane[data-status="queue"] { --lane-accent: rgba(148,163,184,0.72); }
+        .beer-backlog-lane[data-status="stock"] { --lane-accent: rgba(245,158,11,0.82); }
+        .beer-backlog-lane[data-status="table"] { --lane-accent: rgba(56,189,248,0.82); }
+        .beer-backlog-lane[data-status="done"] { --lane-accent: rgba(34,197,94,0.82); }
+        @media (max-width: 860px) {
+            .beer-backlog-card {
+                width: 100vw !important;
+                height: 100dvh !important;
+            }
+            .beer-backlog-shell {
+                height: 100dvh;
+                min-height: 100dvh;
+            }
+            .beer-backlog-head,
+            .beer-backlog-meta-grid,
+            .beer-backlog-toolbar,
+            .beer-backlog-stage {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .beer-backlog-head {
+                padding-top: max(12px, env(safe-area-inset-top, 0px) + 8px);
+            }
+            .beer-backlog-stage {
+                padding-bottom: max(14px, env(safe-area-inset-bottom, 0px) + 10px);
+            }
+            .beer-backlog-board,
+            .beer-backlog-owner-board {
+                grid-auto-columns: minmax(82vw, 82vw);
+                grid-template-columns: none;
+            }
+            .beer-backlog-card-meta {
+                grid-template-columns: 1fr;
+            }
+            .beer-backlog-field {
+                min-width: 0;
+                width: min(100%, 300px);
+            }
+            .beer-backlog-select {
+                min-width: min(100%, 210px);
+            }
+        }
+        @media (max-width: 640px) {
+            .beer-backlog-head {
+                align-items: flex-start;
+            }
+            .beer-backlog-view-tabs,
+            .beer-backlog-control-row {
+                width: 100%;
+            }
+            .beer-backlog-control-row {
+                gap: 8px;
+            }
+            .beer-backlog-field,
+            .beer-backlog-select {
+                width: 100%;
+            }
+            .beer-backlog-lane-body,
+            .beer-backlog-owner-body,
+            .beer-backlog-list-body {
+                padding: 12px;
+            }
+            .beer-backlog-card-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .beer-backlog-action-group {
+                width: 100%;
+            }
+            .beer-backlog-action {
+                flex: 1 1 0;
+                justify-content: center;
+            }
+            .section-actions-buttons > .beer-backlog-launch {
+                min-width: 0;
+                padding-right: 10px;
+            }
+            .beer-backlog-meta-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .beer-backlog-subtitle {
+                display: none;
+            }
+        }
+        .beer-backlog-head {
+            align-items: flex-start;
+            padding-bottom: 12px;
+        }
+        .beer-backlog-head-main {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .beer-backlog-title-wrap {
+            gap: 0;
+            flex: 0 0 auto;
+        }
+        .beer-backlog-title {
+            font-size: clamp(1.28rem, 0.96rem + 1.05vw, 1.8rem);
+        }
+        .beer-backlog-meta-grid {
+            flex: 1 1 auto;
+            justify-content: flex-end;
+            align-content: center;
+            grid-template-columns: repeat(5, minmax(82px, max-content));
+            padding: 0;
+        }
+        .beer-backlog-stat {
+            min-width: 82px;
+            padding: 7px 10px 8px;
+            border-radius: 12px;
+        }
+        .beer-backlog-stat-label {
+            font-size: 0.56rem;
+        }
+        .beer-backlog-stat-value {
+            margin-top: 2px;
+            font-size: 0.88rem;
+        }
+        .beer-backlog-toolbar {
+            justify-content: flex-start;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            overflow: visible;
+        }
+        .beer-backlog-control-row {
+            width: 100%;
+            gap: 8px;
+            align-items: center;
+        }
+        .beer-backlog-field {
+            flex: 1 1 280px;
+            min-width: 220px;
+            height: 36px;
+        }
+        .beer-backlog-toggle {
+            min-height: 36px;
+            padding: 0 12px;
+            font-size: 0.71rem;
+        }
+        .beer-backlog-sort-shell {
+            position: relative;
+            flex: 0 0 auto;
+            z-index: 24;
+            isolation: isolate;
+        }
+        .beer-backlog-sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 36px;
+            padding: 0 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #11182a;
+            color: #f8fafc;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.22);
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+        }
+        .beer-backlog-sort-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(245,158,11,0.26);
+            background: #161f33;
+        }
+        .beer-backlog-sort-cap {
+            color: #94a3b8;
+            font-size: 0.58rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .beer-backlog-sort-label {
+            font-size: 0.74rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .beer-backlog-sort-caret {
+            width: 9px;
+            height: 9px;
+            border-right: 1.5px solid rgba(255,255,255,0.72);
+            border-bottom: 1.5px solid rgba(255,255,255,0.72);
+            transform: rotate(45deg) translateY(-1px);
+            transition: transform 0.2s ease;
+        }
+        .beer-backlog-sort-shell.open .beer-backlog-sort-caret {
+            transform: rotate(225deg) translateY(-1px);
+        }
+        .beer-backlog-sort-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            z-index: 40;
+            display: grid;
+            gap: 4px;
+            min-width: 220px;
+            padding: 8px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #08111f;
+            background-image: none !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            box-shadow: 0 24px 50px rgba(0,0,0,0.34);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-6px) scale(0.98);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        .beer-backlog-sort-shell.open .beer-backlog-sort-menu {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+        .beer-backlog-sort-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 34px;
+            padding: 0 11px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #cbd5e1;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        }
+        .beer-backlog-sort-option:hover {
+            background: rgba(245,158,11,0.12);
+            color: #fff7ed;
+            border-color: rgba(245,158,11,0.16);
+        }
+        .beer-backlog-sort-option.active {
+            background: rgba(245,158,11,0.16);
+            color: #fff7ed;
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.18) inset;
+        }
+        .beer-backlog-stage {
+            padding-top: 10px;
+        }
+        .beer-backlog-board {
+            grid-auto-columns: minmax(292px, 1fr);
+            gap: 10px;
+        }
+        .beer-backlog-lane {
+            border-radius: 16px;
+        }
+        .beer-backlog-lane-head {
+            padding: 10px 12px 8px;
+        }
+        .beer-backlog-lane-title {
+            font-size: 0.88rem;
+        }
+        .beer-backlog-lane-title-row {
+            align-items: center;
+        }
+        .beer-backlog-lane-caps {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .beer-backlog-lane-pill,
+        .beer-backlog-lane-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 24px;
+            padding: 0 9px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 0.66rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .beer-backlog-lane-count {
+            border-color: rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.08);
+            color: #fff7ed;
+        }
+        .beer-backlog-lane-body {
+            gap: 8px;
+            padding: 8px;
+        }
+        .beer-backlog-lane-empty {
+            padding: 12px 10px;
+            border-radius: 12px;
+            border: 1px dashed rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            color: #64748b;
+            font-size: 0.72rem;
+            text-align: center;
+        }
+        .beer-backlog-card-item {
+            gap: 8px;
+            padding: 9px 10px;
+            border-radius: 13px;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: pan-x pan-y;
+            will-change: transform;
+        }
+        .beer-backlog-card-top {
+            gap: 8px;
+            align-items: flex-start;
+        }
+        .beer-backlog-card-title {
+            font-size: 0.82rem;
+            line-height: 1.22;
+        }
+        .beer-backlog-card-meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .beer-backlog-inline-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 22px;
+            padding: 0 8px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #cbd5e1;
+            font-size: 0.62rem;
+            font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
+        }
+        .beer-backlog-inline-badge.strong {
+            border-color: rgba(245,158,11,0.2);
+            background: rgba(245,158,11,0.14);
+            color: #fff7ed;
+        }
+        .beer-backlog-card-owner-row,
+        .beer-backlog-card-detail-row {
+            gap: 6px;
+        }
+        .beer-backlog-chip,
+        .beer-backlog-detail-chip {
+            min-height: 22px;
+            padding: 0 8px;
+            font-size: 0.62rem;
+        }
+        .beer-backlog-card-item.dragging {
+            opacity: 0.22;
+            transform: scale(0.985);
+            cursor: grabbing;
+            transition: none;
+            touch-action: none;
+        }
+        .beer-backlog-drag-ghost {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 180;
+            width: min(340px, calc(100vw - 24px));
+            pointer-events: none;
+            opacity: 0.96;
+            transform: translate3d(0, 0, 0) rotate(1.2deg);
+            box-shadow: 0 26px 60px rgba(0,0,0,0.38);
+            transition: none !important;
+            will-change: transform;
+            backface-visibility: hidden;
+            contain: layout style paint;
+        }
+        .beer-backlog-lane.can-drop {
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset;
+        }
+        .beer-backlog-lane.drop-target {
+            border-color: rgba(251,191,36,0.34);
+            box-shadow: 0 18px 38px rgba(0,0,0,0.24), 0 0 0 1px rgba(251,191,36,0.16) inset;
+        }
+        .beer-backlog-empty {
+            min-height: min(58dvh, 500px);
+        }
+        @media (max-width: 1100px) {
+            .beer-backlog-head {
+                align-items: flex-start;
+            }
+            .beer-backlog-head-main {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .beer-backlog-meta-grid {
+                width: 100%;
+                justify-content: flex-start;
+                grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+            }
+        }
+        @media (max-width: 860px) {
+            .beer-backlog-head,
+            .beer-backlog-toolbar,
+            .beer-backlog-stage {
+                padding-left: 12px;
+                padding-right: 12px;
+            }
+            .beer-backlog-meta-grid {
+                display: none;
+            }
+            .beer-backlog-head-main {
+                align-items: flex-start;
+            }
+            .beer-backlog-board {
+                grid-auto-columns: minmax(86vw, 86vw);
+            }
+            .beer-backlog-control-row {
+                gap: 8px;
+            }
+            .beer-backlog-field,
+            .beer-backlog-sort-shell {
+                width: 100%;
+            }
+            .beer-backlog-sort-btn {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .beer-backlog-sort-menu {
+                left: 0;
+                right: 0;
+                min-width: 0;
+            }
+        }
+        @media (max-width: 640px) {
+            .beer-backlog-head {
+                align-items: flex-start;
+            }
+            .beer-backlog-field,
+            .beer-backlog-sort-shell,
+            .beer-backlog-toggle {
+                width: 100%;
+            }
+            .beer-backlog-toggle {
+                justify-content: center;
+            }
+            .beer-backlog-board {
+                grid-auto-columns: minmax(88vw, 88vw);
+            }
+            .beer-backlog-head-actions {
+                margin-left: auto;
+            }
+            .beer-backlog-close {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
         }
         .expense-toggle {
             display: inline-flex;
@@ -3873,6 +5064,39 @@
         </div>
     </div>
 
+    <div class="modal beer-backlog-modal" id="beerBacklogModal" role="dialog" aria-modal="true" aria-labelledby="beerBacklogTitle">
+        <div class="modal-card beer-backlog-card">
+            <div class="beer-backlog-shell">
+                <div class="beer-backlog-head">
+                    <div class="beer-backlog-head-main">
+                        <div class="beer-backlog-title-wrap">
+                            <h3 id="beerBacklogTitle" class="beer-backlog-title">Пивной бэклог</h3>
+                        </div>
+                        <div id="beerBacklogStats" class="beer-backlog-meta-grid"></div>
+                    </div>
+                    <div class="beer-backlog-head-actions">
+                        <button type="button" id="closeBeerBacklogBtn" class="beer-backlog-close" aria-label="Закрыть бэклог" title="Закрыть">×</button>
+                    </div>
+                </div>
+                <div class="beer-backlog-toolbar">
+                    <div class="beer-backlog-control-row">
+                        <input id="beerBacklogSearchInput" class="beer-backlog-field" type="search" placeholder="Поиск по пиву, владельцам и полям..." autocomplete="off" />
+                        <div id="beerBacklogSortShell" class="beer-backlog-sort-shell">
+                            <button type="button" id="beerBacklogSortBtn" class="beer-backlog-sort-btn" aria-haspopup="true" aria-expanded="false" aria-label="Сортировка карточек">
+                                <span class="beer-backlog-sort-cap">Сортировка</span>
+                                <span id="beerBacklogSortLabel" class="beer-backlog-sort-label">По потоку</span>
+                                <span class="beer-backlog-sort-caret" aria-hidden="true"></span>
+                            </button>
+                            <div id="beerBacklogSortMenu" class="beer-backlog-sort-menu" role="menu" aria-label="Варианты сортировки"></div>
+                        </div>
+                        <button type="button" id="beerBacklogMineToggle" class="beer-backlog-toggle">Только мои</button>
+                    </div>
+                </div>
+                <div id="beerBacklogStage" class="beer-backlog-stage"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="ownerMenuPortal" class="owner-menu menu-portal hidden"></div>
     <div id="beerMenuPortal" class="beer-menu menu-portal hidden"></div>
     <div id="participantMenuPortal" class="participant-menu menu-portal hidden"></div>
@@ -4128,6 +5352,47 @@
             { value: 'cost', label: 'Стоимость' },
             { value: 'owners', label: 'Пользователи' }
         ];
+        const BEER_BACKLOG_STATUS_META = {
+            stock: {
+                label: 'В запасе',
+                description: 'Резерв перед подачей.',
+                icon: '🍺',
+                summaryAccent: 'rgba(245,158,11,0.88)'
+            },
+            table: {
+                label: 'В работе',
+                description: 'Текущее WIP команды.',
+                icon: '✦',
+                summaryAccent: 'rgba(56,189,248,0.88)'
+            },
+            done: {
+                label: 'Выпито',
+                description: 'Все, что уже допито.',
+                icon: '✓',
+                summaryAccent: 'rgba(34,197,94,0.88)'
+            }
+        };
+        const BEER_BACKLOG_STATUS_ORDER = ['stock', 'table', 'done'];
+        const BEER_BACKLOG_SORTS = [
+            { value: 'flow', label: 'По потоку' },
+            { value: 'name', label: 'По названию' },
+            { value: 'qty', label: 'По количеству' },
+            { value: 'cost', label: 'По стоимости' },
+            { value: 'owner', label: 'По владельцу' }
+        ];
+        const BEER_BACKLOG_TOUCH_DRAG_DELAY_MS = 240;
+        const BEER_BACKLOG_TOUCH_DRAG_MOVE_TOLERANCE = 10;
+        const beerBacklogUiState = {
+            openSectionId: '',
+            sort: 'flow',
+            query: '',
+            onlyMine: false
+        };
+        let beerBacklogRenderRaf = null;
+        let beerBacklogDragState = null;
+        let beerBacklogTouchIntent = null;
+        let beerBacklogDragAutoScrollRaf = null;
+        let beerBacklogDragMoveRaf = null;
         const collabClientId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
         const collabRemoteCursors = new Map();
         const collabRemotePeers = new Map();
@@ -4197,6 +5462,7 @@
         const NOTES_CACHE_LS_PREFIX = 'planningNotesCache:';
         const PLANNING_VIEW_SESSION_PREFIX = 'planningEventView:';
         const NOTES_ROUTE_PARAM = 'notes';
+        const BEER_BACKLOG_ROUTE_PARAM = 'backlog';
         const NOTES_EDITOR_LANGUAGE_CODE = 'ru-RU';
         const NOTES_EDITOR_PLACEHOLDER = '# План\n\n- Что купить\n- Что подтвердить\n- Кто за что отвечает';
         const NOTES_EDITOR_LANGUAGE_PACK = {
@@ -4643,6 +5909,51 @@
             }
         }
 
+        function readBeerBacklogRouteState() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                return {
+                    sectionId: String(params.get(BEER_BACKLOG_ROUTE_PARAM) || '').trim()
+                };
+            } catch (_) {
+                return { sectionId: '' };
+            }
+        }
+
+        function restoreBeerBacklogRouteIfNeeded() {
+            const routeSectionId = String(readBeerBacklogRouteState().sectionId || '').trim();
+            const modal = document.getElementById('beerBacklogModal');
+            const modalOpen = !!(modal && modal.classList.contains('active'));
+            const routeSection = routeSectionId ? getBeerSectionById(routeSectionId) : null;
+
+            if (!routeSectionId) return;
+            if (!eventData || !Array.isArray(eventData.sections)) return;
+
+            if (routeSection) {
+                if (!modalOpen || beerBacklogUiState.openSectionId !== routeSection.id) {
+                    openBeerBacklog(routeSection.id, {
+                        updateUrl: false,
+                        notifyParent: false,
+                        focusSearch: false
+                    });
+                }
+                return;
+            }
+
+            if (modalOpen || beerBacklogUiState.openSectionId) {
+                closeBeerBacklog({
+                    updateUrl: true,
+                    notifyParent: false
+                });
+                return;
+            }
+
+            syncBeerBacklogRouteState('', {
+                updateUrl: true,
+                notifyParent: false
+            });
+        }
+
         function shouldSyncNotesUrlLocally() {
             try {
                 return !!(window.parent && window.parent !== window);
@@ -4674,6 +5985,35 @@
             }
             if (options.notifyParent !== false && eventId) {
                 notifyParentPlanningRoute('event', eventId, { notesOpen: nextOpen });
+            }
+        }
+
+        function syncBeerBacklogRouteState(sectionId, options = {}) {
+            const nextSectionId = String(sectionId || '').trim();
+            if (options.updateUrl === true || shouldSyncNotesUrlLocally()) {
+                try {
+                    const url = new URL(window.location.href);
+                    if (nextSectionId) url.searchParams.set(BEER_BACKLOG_ROUTE_PARAM, nextSectionId);
+                    else url.searchParams.delete(BEER_BACKLOG_ROUTE_PARAM);
+                    const next = `${url.pathname}${url.search}${url.hash}`;
+                    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                    if (next !== current) {
+                        window.history.replaceState(
+                            {
+                                ...(window.history.state || {}),
+                                beerBacklogOpen: nextSectionId
+                            },
+                            '',
+                            next
+                        );
+                    }
+                } catch (_) {}
+            }
+            if (options.notifyParent !== false && eventId) {
+                notifyParentPlanningRoute('event', eventId, {
+                    notesOpen: !!notesModalOpen,
+                    backlogSectionId: nextSectionId
+                });
             }
         }
 
@@ -5257,6 +6597,7 @@
                     const rows = rowEntries.map(([rowKey, row], rowIndex) => {
                         const cells = row.cells || {};
                         const normalizedCells = { ...cells };
+                        const normalizedBeerBacklog = normalizeBeerBacklogState(row.beerBacklog);
                         columns.forEach(col => {
                             if (col.type === 'owners' && normalizedCells[col.id] && !Array.isArray(normalizedCells[col.id])) {
                                 normalizedCells[col.id] = String(normalizedCells[col.id]).split(',').map(v => v.trim()).filter(Boolean);
@@ -5275,7 +6616,15 @@
                         return {
                             id: rowId,
                             cells: normalizedCells,
-                            closed: !!row.closed,
+                            closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
+                                normalizedBeerBacklog.status === 'done'
+                                || (
+                                    normalizedBeerBacklog.counts
+                                    && !normalizedBeerBacklog.counts.stock
+                                    && !normalizedBeerBacklog.counts.table
+                                    && normalizedBeerBacklog.counts.done > 0
+                                )
+                            )),
                             shared: typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(sec.name),
                             participants: Array.isArray(row.participants)
                                 ? row.participants.map(v => String(v).trim()).filter(Boolean)
@@ -5284,7 +6633,8 @@
                                 const source = row.participantCoefficients || row.allocations || null;
                                 const normalized = normalizeParticipantCoefficients(source);
                                 return Object.keys(normalized).length ? normalized : undefined;
-                            })()
+                            })(),
+                            beerBacklog: normalizedBeerBacklog
                         };
                     });
                     return {
@@ -6083,6 +7433,340 @@
                 }
             });
             return result;
+        }
+
+        function getBeerBacklogIconMarkup() {
+            return `
+                <span class="beer-backlog-launch-icon" aria-hidden="true">
+                    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8.15 9.7H17.4C18.37 9.7 19.15 10.48 19.15 11.45V17.7C19.15 20.4 16.96 22.6 14.25 22.6H11.3C8.6 22.6 6.4 20.4 6.4 17.7V11.45C6.4 10.48 7.19 9.7 8.15 9.7Z" fill="rgba(250,204,21,0.94)" stroke="rgba(251,191,36,0.96)" stroke-width="1.15"/>
+                        <path d="M18.7 11.1H20.2C21.84 11.1 23.15 12.44 23.15 14.07C23.15 15.71 21.84 17.05 20.2 17.05H18.7" stroke="rgba(255,247,220,0.96)" stroke-width="1.2" stroke-linecap="round"/>
+                        <path d="M8.3 9.95C7.27 9.95 6.44 9.11 6.44 8.08C6.44 7.08 7.2 6.28 8.17 6.21C8.58 5.24 9.55 4.58 10.67 4.58C11.41 4.58 12.08 4.87 12.58 5.36C13.25 4.56 14.25 4.08 15.36 4.08C17.18 4.08 18.71 5.37 19.08 7.08C19.31 7 19.55 6.96 19.8 6.96C21.04 6.96 22.05 7.97 22.05 9.21C22.05 9.47 22.01 9.72 21.92 9.95H8.3Z" fill="rgba(255,251,240,0.98)" stroke="rgba(255,244,214,0.96)" stroke-width="0.95" stroke-linejoin="round"/>
+                        <path d="M9.7 12.1V17.5" stroke="rgba(255,250,230,0.34)" stroke-width="1.05" stroke-linecap="round"/>
+                        <path d="M12.5 12.1V19.25" stroke="rgba(255,250,230,0.22)" stroke-width="0.95" stroke-linecap="round"/>
+                    </svg>
+                </span>
+            `;
+        }
+
+        function isBeerSectionName(name) {
+            return String(name || '').trim().toLowerCase().includes('пиво');
+        }
+
+        function isBeerSection(section) {
+            return !!(section && isBeerSectionName(section.name));
+        }
+
+        function normalizeBeerBacklogStatus(value) {
+            const safe = String(value || '').trim().toLowerCase();
+            return BEER_BACKLOG_STATUS_ORDER.includes(safe) ? safe : '';
+        }
+
+        function normalizeBeerBacklogCountMap(value) {
+            if (!value || typeof value !== 'object') return undefined;
+            let hasValue = false;
+            const out = {};
+            BEER_BACKLOG_STATUS_ORDER.forEach((status) => {
+                const raw = Number(value[status]);
+                const normalized = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+                out[status] = normalized;
+                if (normalized > 0) hasValue = true;
+            });
+            return hasValue ? out : undefined;
+        }
+
+        function normalizeBeerBacklogState(value) {
+            if (!value || typeof value !== 'object') return undefined;
+            const counts = normalizeBeerBacklogCountMap(value.counts);
+            const lastOpenCounts = normalizeBeerBacklogCountMap(value.lastOpenCounts);
+            const status = normalizeBeerBacklogStatus(value.status);
+            const updatedAt = Number(value.updatedAt);
+            const updatedBy = String(value.updatedBy || '').trim();
+            const out = {};
+            if (counts) out.counts = counts;
+            if (lastOpenCounts) out.lastOpenCounts = lastOpenCounts;
+            if (!counts && status) out.status = status;
+            if (Number.isFinite(updatedAt) && updatedAt > 0) out.updatedAt = updatedAt;
+            if (updatedBy) out.updatedBy = updatedBy;
+            return Object.keys(out).length ? out : undefined;
+        }
+
+        function hasBeerRowContent(section, row) {
+            if (!section || !row || !row.cells) return false;
+            if (row.closed) return true;
+            if (row.beerBacklog && typeof row.beerBacklog === 'object') return true;
+            return (section.columns || []).some((col) => {
+                if (!col) return false;
+                const raw = row.cells[col.id];
+                if (Array.isArray(raw)) return raw.some((item) => String(item || '').trim());
+                return String(raw == null ? '' : raw).trim() !== '';
+            });
+        }
+
+        function getBeerSectionOwnerColumns(section) {
+            return Array.isArray(section && section.columns)
+                ? section.columns.filter((col) => col && col.type === 'owners')
+                : [];
+        }
+
+        function getBeerRowOwners(section, row) {
+            const ownerColumns = getBeerSectionOwnerColumns(section);
+            return uniqueList(ownerColumns.flatMap((col) => normalizeOwnerList(row && row.cells ? row.cells[col.id] : [])));
+        }
+
+        function getBeerRowQty(section, row) {
+            if (!section || !row || !row.cells) return 0;
+            const qtyColumn = (section.columns || []).find((col) => col && (col.id === 'qty' || col.type === 'number'));
+            if (!qtyColumn) return 0;
+            const raw = sanitizeNumericInput(row.cells[qtyColumn.id], { allowDecimal: false }).value;
+            const num = Number.parseInt(raw, 10);
+            return Number.isFinite(num) && num > 0 ? num : 0;
+        }
+
+        function getBeerRowCost(section, row) {
+            if (!section || !row || !row.cells) return 0;
+            const costColumn = (section.columns || []).find((col) => col && col.type === 'cost');
+            if (!costColumn) return 0;
+            return parseCostValue(row.cells[costColumn.id]);
+        }
+
+        function getBeerRowName(section, row) {
+            if (!section || !row) return '';
+            const label = getRowLabel(section, row);
+            return label === 'Без названия' ? '' : label;
+        }
+
+        function getBeerRowMissingFields(section, row) {
+            const missing = [];
+            if (!getBeerRowName(section, row)) missing.push('название');
+            if (!getBeerRowQty(section, row)) missing.push('количество');
+            if (!getBeerRowOwners(section, row).length) missing.push('владелец');
+            if (!(getBeerRowCost(section, row) > 0)) missing.push('цена');
+            return missing;
+        }
+
+        function isBeerRowReady(section, row) {
+            return getBeerRowMissingFields(section, row).length === 0;
+        }
+
+        function getBeerRowFormatLabel(section, row) {
+            const isShared = typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(section && section.name);
+            return isShared ? 'Общее' : 'Личное';
+        }
+
+        function sumBeerBacklogCounts(counts) {
+            return BEER_BACKLOG_STATUS_ORDER.reduce((sum, status) => sum + (Number(counts && counts[status]) || 0), 0);
+        }
+
+        function reconcileBeerBacklogCounts(rawCounts, totalQty, fallbackStatus = 'stock') {
+            const total = Math.max(0, Math.floor(Number(totalQty) || 0));
+            const safeFallback = normalizeBeerBacklogStatus(fallbackStatus) || 'stock';
+            const empty = { stock: 0, table: 0, done: 0 };
+            if (!total) return empty;
+
+            const source = normalizeBeerBacklogCountMap(rawCounts) || empty;
+            const next = { stock: 0, table: 0, done: 0 };
+            let remaining = total;
+
+            ['done', 'table', 'stock'].forEach((status) => {
+                const value = Math.max(0, Math.floor(Number(source[status]) || 0));
+                const take = Math.min(value, remaining);
+                next[status] = take;
+                remaining -= take;
+            });
+
+            if (remaining > 0) {
+                next[safeFallback] += remaining;
+            }
+            return next;
+        }
+
+        function getBeerRowStageState(section, row) {
+            const totalQty = getBeerRowQty(section, row);
+            const ready = isBeerRowReady(section, row);
+            const meta = normalizeBeerBacklogState(row && row.beerBacklog) || {};
+
+            if (!ready || totalQty <= 0) {
+                return {
+                    ready,
+                    totalQty,
+                    counts: { stock: 0, table: 0, done: 0 },
+                    meta
+                };
+            }
+
+            let counts = normalizeBeerBacklogCountMap(meta.counts);
+            if (row && row.closed) {
+                counts = { stock: 0, table: 0, done: totalQty };
+            } else if (!counts) {
+                const fallbackStatus = meta.status === 'done'
+                    ? 'done'
+                    : meta.status === 'table'
+                        ? 'table'
+                        : 'stock';
+                counts = {
+                    stock: fallbackStatus === 'stock' ? totalQty : 0,
+                    table: fallbackStatus === 'table' ? totalQty : 0,
+                    done: fallbackStatus === 'done' ? totalQty : 0
+                };
+            }
+
+            return {
+                ready,
+                totalQty,
+                counts: reconcileBeerBacklogCounts(counts, totalQty, 'stock'),
+                meta
+            };
+        }
+
+        function getBeerRowCustomDetails(section, row) {
+            if (!section || !row || !row.cells) return [];
+            const systemIds = new Set(['item', 'qty', 'cost']);
+            const out = [];
+            (section.columns || []).forEach((col) => {
+                if (!col || col.type === 'owners' || systemIds.has(col.id)) return;
+                const raw = row.cells[col.id];
+                const value = String(raw == null ? '' : raw).trim();
+                if (!value) return;
+                out.push({
+                    label: col.name || 'Поле',
+                    value
+                });
+                });
+            return out.slice(0, 4);
+        }
+
+        function buildBeerBacklogCards(section) {
+            if (!section || !Array.isArray(section.rows)) return [];
+            return section.rows.flatMap((row) => {
+                if (!hasBeerRowContent(section, row) || !isBeerRowReady(section, row)) return [];
+                    const name = getBeerRowName(section, row) || 'Без названия';
+                    const owners = getBeerRowOwners(section, row);
+                    const totalQty = getBeerRowQty(section, row);
+                    const cost = getBeerRowCost(section, row);
+                    const stageState = getBeerRowStageState(section, row);
+                    const meta = stageState.meta || {};
+                    const details = getBeerRowCustomDetails(section, row);
+                    const participants = Array.isArray(row.participants) ? row.participants.slice() : [];
+                    const formatLabel = getBeerRowFormatLabel(section, row);
+                    const searchText = [
+                        name,
+                        owners.join(' '),
+                        details.map((detail) => `${detail.label} ${detail.value}`).join(' '),
+                        participants.join(' '),
+                        formatLabel
+                    ].join(' ').toLowerCase();
+
+                    return BEER_BACKLOG_STATUS_ORDER.flatMap((status) => {
+                        const stageQty = Number(stageState.counts[status]) || 0;
+                        if (!stageQty) return [];
+                        const stageCost = totalQty > 0 && cost > 0 ? (cost / totalQty) * stageQty : 0;
+                        return [{
+                            rowId: row.id,
+                            name,
+                            owners,
+                            totalQty,
+                            stageQty,
+                            cost,
+                            stageCost,
+                            stageCostLabel: stageCost > 0 ? formatMoneyValue(stageCost) : '—',
+                            totalCostLabel: cost > 0 ? formatMoneyValue(cost) : '—',
+                            status,
+                            details,
+                            participants,
+                            formatLabel,
+                            shared: typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(section.name),
+                            updatedBy: meta.updatedBy || '',
+                            updatedAt: meta.updatedAt || 0,
+                            searchText: `${searchText} ${status}`.toLowerCase()
+                        }];
+                    });
+                });
+        }
+
+        function getBeerBacklogSummary(section) {
+            if (!section || !Array.isArray(section.rows)) {
+                return {
+                    total: 0,
+                    owners: 0,
+                    totalQty: 0,
+                    totalCost: 0,
+                    statusCounts: { stock: 0, table: 0, done: 0 },
+                    active: 0,
+                    activeUnits: 0
+                };
+            }
+
+            const readyRows = section.rows.filter((row) => hasBeerRowContent(section, row) && isBeerRowReady(section, row));
+            const owners = uniqueList(readyRows.flatMap((row) => getBeerRowOwners(section, row)));
+            const statusCounts = { stock: 0, table: 0, done: 0 };
+            let totalQty = 0;
+            let totalCost = 0;
+            let active = 0;
+
+            readyRows.forEach((row) => {
+                const qty = getBeerRowQty(section, row);
+                const cost = getBeerRowCost(section, row);
+                const stageState = getBeerRowStageState(section, row);
+                totalQty += qty;
+                totalCost += cost > 0 ? cost : 0;
+                BEER_BACKLOG_STATUS_ORDER.forEach((status) => {
+                    statusCounts[status] += Number(stageState.counts[status]) || 0;
+                });
+                if ((stageState.counts.stock || 0) + (stageState.counts.table || 0) > 0) {
+                    active += 1;
+                }
+            });
+
+            return {
+                total: readyRows.length,
+                owners: owners.length,
+                totalQty,
+                totalCost,
+                statusCounts,
+                active,
+                activeUnits: (statusCounts.stock || 0) + (statusCounts.table || 0)
+            };
+        }
+
+        function sortBeerBacklogCards(cards, mode = 'flow') {
+            const list = Array.isArray(cards) ? cards.slice() : [];
+            const statusOrder = new Map(BEER_BACKLOG_STATUS_ORDER.map((status, index) => [status, index]));
+            const getOwnerKey = (card) => String((card.owners && card.owners[0]) || 'яяяя').trim();
+            const compareName = (left, right) => collator.compare(left.name || '', right.name || '');
+
+            return list.sort((left, right) => {
+                if (mode === 'name') return compareName(left, right);
+                if (mode === 'qty') {
+                    if (right.stageQty !== left.stageQty) return right.stageQty - left.stageQty;
+                    if (right.totalQty !== left.totalQty) return right.totalQty - left.totalQty;
+                    return compareName(left, right);
+                }
+                if (mode === 'cost') {
+                    if (Math.abs(right.stageCost - left.stageCost) > 0.001) return right.stageCost - left.stageCost;
+                    return compareName(left, right);
+                }
+                if (mode === 'owner') {
+                    const ownerCompare = collator.compare(getOwnerKey(left), getOwnerKey(right));
+                    if (ownerCompare !== 0) return ownerCompare;
+                    return compareName(left, right);
+                }
+
+                const statusCompare = (statusOrder.get(left.status) || 0) - (statusOrder.get(right.status) || 0);
+                if (statusCompare !== 0) return statusCompare;
+                if (left.status === 'table' && right.stageQty !== left.stageQty) {
+                    return right.stageQty - left.stageQty;
+                }
+                if (left.status === 'done') {
+                    if ((right.updatedAt || 0) !== (left.updatedAt || 0)) {
+                        return (right.updatedAt || 0) - (left.updatedAt || 0);
+                    }
+                }
+                if (right.stageQty !== left.stageQty) return right.stageQty - left.stageQty;
+                const ownerCompare = collator.compare(getOwnerKey(left), getOwnerKey(right));
+                if (ownerCompare !== 0) return ownerCompare;
+                return compareName(left, right);
+            });
         }
 
         function getListSignature(list, options = {}) {
@@ -7527,6 +9211,10 @@
                 renderTick += 1;
                 scheduleStickyUpdate();
             }
+            if (isBeerSection(section)) {
+                updateRenderedBeerBacklogTriggers(section);
+                scheduleBeerBacklogRender();
+            }
             lastSectionsRenderSignature = getSectionsRenderSignature();
             return true;
         }
@@ -7600,6 +9288,7 @@
                     if (!populateSectionTableBody(table, section, { allParticipants })) {
                         throw new Error('section-body-rebuild-failed');
                     }
+                    if (isBeerSection(section)) updateRenderedBeerBacklogTriggers(section);
                     return;
                 }
 
@@ -7666,6 +9355,7 @@
                         throw new Error('cost-actions-sync-failed');
                     }
                 });
+                if (isBeerSection(section)) updateRenderedBeerBacklogTriggers(section);
             });
 
             empty.classList.toggle('hidden', !!nextData.sections.length);
@@ -7674,6 +9364,7 @@
             if (active) restoreActiveField(active);
             renderTick += 1;
             scheduleStickyUpdate();
+            scheduleBeerBacklogRender();
             return true;
         }
 
@@ -7802,12 +9493,22 @@
                 card.style.width = `${cardWidthPx}px`;
                 card.style.minWidth = `${minSectionWidth}px`;
                 if (sectionSize && sectionSize.height) card.style.height = `${sectionSize.height}px`;
+                const beerBacklogSummary = isBeerSection(section) ? getBeerBacklogSummary(section) : null;
+                const beerBacklogTrigger = isBeerSection(section)
+                    ? `
+                        <button type="button" class="beer-backlog-launch" data-beer-backlog-open="${section.id}" title="${escapeHtml(getBeerBacklogLaunchTitle(section, beerBacklogSummary))}" aria-label="${escapeHtml(getBeerBacklogLaunchTitle(section, beerBacklogSummary))}">
+                            ${getBeerBacklogIconMarkup()}
+                            <span class="beer-backlog-launch-label">Бэклог</span>
+                        </button>
+                    `
+                    : '';
 
                 const header = document.createElement('div');
                 header.className = 'section-head';
                 header.innerHTML = `
                     <div class="section-title section-drag-handle" data-section-drag="${section.id}">${section.name}</div>
                     <div class="section-actions">
+                        ${beerBacklogTrigger ? `<div class="section-backlog-slot">${beerBacklogTrigger}</div>` : ''}
                         <div class="section-actions-buttons">
                             <button type="button" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition" data-add-column="${section.id}">
                                 + Добавить столбец
@@ -7924,6 +9625,553 @@
             updateQuickStats();
             renderTick += 1;
             updateStickyHeaders();
+            scheduleBeerBacklogRender();
+            restoreBeerBacklogRouteIfNeeded();
+        }
+
+        function getBeerSectionById(sectionId) {
+            if (!eventData || !Array.isArray(eventData.sections)) return null;
+            const section = eventData.sections.find((item) => item && item.id === sectionId);
+            return isBeerSection(section) ? section : null;
+        }
+
+        function getBeerBacklogLaunchTitle(section, summary) {
+            const sectionName = section && section.name ? section.name : 'Пиво';
+            return `Открыть пивной бэклог «${sectionName}»: ${summary.activeUnits || 0} в потоке, ${summary.statusCounts ? summary.statusCounts.done || 0 : 0} выпито`;
+        }
+
+        function updateRenderedBeerBacklogTriggers(section) {
+            if (!section || !isBeerSection(section)) return;
+            const summary = getBeerBacklogSummary(section);
+            document.querySelectorAll('[data-beer-backlog-open]').forEach((button) => {
+                if (!(button instanceof HTMLElement) || button.dataset.beerBacklogOpen !== section.id) return;
+                button.title = getBeerBacklogLaunchTitle(section, summary);
+                button.setAttribute('aria-label', getBeerBacklogLaunchTitle(section, summary));
+            });
+        }
+
+        function getBeerBacklogSortMeta(value) {
+            return BEER_BACKLOG_SORTS.find((item) => item.value === value) || BEER_BACKLOG_SORTS[0];
+        }
+
+        function setBeerBacklogSortMenuOpen(isOpen) {
+            const shell = document.getElementById('beerBacklogSortShell');
+            const btn = document.getElementById('beerBacklogSortBtn');
+            if (shell) shell.classList.toggle('open', !!isOpen);
+            if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+
+        function getBeerBacklogFilteredCards(section) {
+            let cards = sortBeerBacklogCards(buildBeerBacklogCards(section), beerBacklogUiState.sort);
+            const query = String(beerBacklogUiState.query || '').trim().toLowerCase();
+            if (beerBacklogUiState.onlyMine && currentUserName) {
+                cards = cards.filter((card) => card.owners.includes(currentUserName));
+            }
+            if (query) {
+                cards = cards.filter((card) => card.searchText.includes(query));
+            }
+            return cards;
+        }
+
+        function renderBeerBacklogStats(section, summary) {
+            const statsEl = document.getElementById('beerBacklogStats');
+            if (!statsEl) return;
+            const cards = [
+                { label: 'Позиций', value: summary.total || 0, accent: 'rgba(148,163,184,0.84)' },
+                { label: 'Штук', value: summary.totalQty || 0, accent: 'rgba(251,191,36,0.84)' },
+                { label: 'В запасе', value: summary.statusCounts.stock || 0, accent: 'rgba(245,158,11,0.84)' },
+                { label: 'В работе', value: summary.statusCounts.table || 0, accent: 'rgba(56,189,248,0.84)' },
+                { label: 'Выпито', value: summary.statusCounts.done || 0, accent: 'rgba(34,197,94,0.84)' }
+            ];
+            statsEl.innerHTML = cards.map((item) => `
+                <div class="beer-backlog-stat" style="--beer-stat-accent:${item.accent};">
+                    <div class="beer-backlog-stat-label">${escapeHtml(item.label)}</div>
+                    <div class="beer-backlog-stat-value">${escapeHtml(String(item.value))}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderBeerBacklogControls() {
+            const sortLabel = document.getElementById('beerBacklogSortLabel');
+            if (sortLabel) {
+                sortLabel.textContent = getBeerBacklogSortMeta(beerBacklogUiState.sort).label;
+            }
+            const sortMenu = document.getElementById('beerBacklogSortMenu');
+            if (sortMenu) {
+                sortMenu.innerHTML = BEER_BACKLOG_SORTS.map((item) => `
+                    <button
+                        type="button"
+                        class="beer-backlog-sort-option ${beerBacklogUiState.sort === item.value ? 'active' : ''}"
+                        data-beer-backlog-sort="${escapeHtml(item.value)}"
+                        role="menuitemradio"
+                        aria-checked="${beerBacklogUiState.sort === item.value ? 'true' : 'false'}"
+                    >
+                        <span>${escapeHtml(item.label)}</span>
+                    </button>
+                `).join('');
+            }
+            const mineToggle = document.getElementById('beerBacklogMineToggle');
+            if (mineToggle) {
+                mineToggle.classList.toggle('active', !!beerBacklogUiState.onlyMine);
+                mineToggle.textContent = beerBacklogUiState.onlyMine ? 'Показываю мои' : 'Только мои';
+            }
+            const searchInput = document.getElementById('beerBacklogSearchInput');
+            if (searchInput && searchInput.value !== beerBacklogUiState.query) {
+                searchInput.value = beerBacklogUiState.query;
+            }
+        }
+
+        function getBeerBacklogShiftTarget(status, direction) {
+            const currentIndex = BEER_BACKLOG_STATUS_ORDER.indexOf(status);
+            if (currentIndex < 0) return '';
+            return BEER_BACKLOG_STATUS_ORDER[currentIndex + direction] || '';
+        }
+
+        function getBeerBacklogDropTargets(status) {
+            const normalizedStatus = normalizeBeerBacklogStatus(status);
+            if (!normalizedStatus) return [];
+            return BEER_BACKLOG_STATUS_ORDER.filter((candidate) => candidate !== normalizedStatus);
+        }
+
+        function renderBeerBacklogCard(section, card) {
+            const ownersHtml = card.owners.length
+                ? card.owners.map((name) => `
+                    <span class="beer-backlog-chip ${currentUserName && name === currentUserName ? 'mine' : ''}">${escapeHtml(name)}</span>
+                `).join('')
+                : `<span class="beer-backlog-chip">Без владельца</span>`;
+            const detailHtml = card.details.slice(0, 2).map((detail) => `
+                <span class="beer-backlog-detail-chip">${escapeHtml(detail.label)}: ${escapeHtml(detail.value)}</span>
+            `).join('');
+            return `
+                <article
+                    class="beer-backlog-card-item beer-backlog-status-${escapeHtml(card.status)}"
+                    data-beer-card-row="${escapeHtml(card.rowId)}"
+                    data-beer-card-status="${escapeHtml(card.status)}"
+                    title="Перетащите карточку в нужную колонку, чтобы переместить 1 шт"
+                >
+                    <div class="beer-backlog-card-top">
+                        <div class="beer-backlog-card-title-wrap">
+                            <div class="beer-backlog-card-title">${escapeHtml(card.name)}</div>
+                            <div class="beer-backlog-card-meta-strip">
+                                <span class="beer-backlog-inline-badge strong">${escapeHtml(`${card.stageQty}/${card.totalQty} шт`)}</span>
+                                <span class="beer-backlog-inline-badge">${escapeHtml(card.stageCostLabel)}</span>
+                                <span class="beer-backlog-inline-badge">${escapeHtml(card.formatLabel)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="beer-backlog-card-owner-row">${ownersHtml}</div>
+                    ${detailHtml ? `<div class="beer-backlog-card-detail-row">${detailHtml}</div>` : ''}
+                </article>
+            `;
+        }
+
+        function renderBeerBacklogKanban(section, cards) {
+            return `
+                <div class="beer-backlog-board">
+                    ${BEER_BACKLOG_STATUS_ORDER.map((status) => {
+                        const statusMeta = BEER_BACKLOG_STATUS_META[status];
+                        const laneCards = cards.filter((card) => card.status === status);
+                        const laneQty = laneCards.reduce((sum, card) => sum + (Number(card.stageQty) || 0), 0);
+                        return `
+                            <section class="beer-backlog-lane" data-status="${escapeHtml(status)}" data-beer-drop-status="${escapeHtml(status)}">
+                                <div class="beer-backlog-lane-head">
+                                    <div class="beer-backlog-lane-title-row">
+                                        <div class="beer-backlog-lane-title">${escapeHtml(statusMeta.label)}</div>
+                                        <div class="beer-backlog-lane-caps">
+                                            <span class="beer-backlog-lane-pill">${escapeHtml(`${laneCards.length} поз.`)}</span>
+                                            <span class="beer-backlog-lane-count">${escapeHtml(`${laneQty} шт`)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="beer-backlog-lane-body">
+                                    ${laneCards.length
+                                        ? laneCards.map((card) => renderBeerBacklogCard(section, card)).join('')
+                                        : `<div class="beer-backlog-lane-empty">Пока пусто</div>`}
+                                </div>
+                            </section>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderBeerBacklogEmptyState(section, reason = 'empty') {
+            const title = reason === 'filtered'
+                ? 'Ничего не нашлось под текущие фильтры'
+                : `В разделе «${section.name}» пока нет готовых карточек`;
+            const text = reason === 'filtered'
+                ? 'Попробуйте сбросить поиск или фильтры. Позиции не пропали, они просто скрыты условиями отбора.'
+                : 'Показываются только полностью оформленные позиции: название, количество, владельцы и стоимость.';
+            const stage = document.getElementById('beerBacklogStage');
+            if (!stage) return;
+            stage.innerHTML = `
+                <div class="beer-backlog-empty">
+                    <div class="beer-backlog-empty-mark">✦</div>
+                    <div class="beer-backlog-empty-title">${escapeHtml(title)}</div>
+                    <div class="beer-backlog-empty-text">${escapeHtml(text)}</div>
+                </div>
+            `;
+        }
+
+        function renderBeerBacklog() {
+            const modal = document.getElementById('beerBacklogModal');
+            if (!modal || !modal.classList.contains('active')) return;
+            if (beerBacklogTouchIntent && (!beerBacklogTouchIntent.card || !beerBacklogTouchIntent.card.isConnected)) {
+                clearBeerBacklogTouchIntent();
+            }
+            if (beerBacklogDragState && (!beerBacklogDragState.card || !beerBacklogDragState.card.isConnected)) {
+                cancelBeerBacklogDrag({ skipShift: true });
+            }
+            const section = getBeerSectionById(beerBacklogUiState.openSectionId);
+            if (!section) {
+                closeBeerBacklog();
+                return;
+            }
+            const title = document.getElementById('beerBacklogTitle');
+            if (title) title.textContent = 'Пивной бэклог';
+            renderBeerBacklogControls();
+            const allCards = buildBeerBacklogCards(section);
+            const summary = getBeerBacklogSummary(section);
+            renderBeerBacklogStats(section, summary);
+
+            const filteredCards = getBeerBacklogFilteredCards(section);
+            if (!allCards.length) {
+                renderBeerBacklogEmptyState(section, 'empty');
+                return;
+            }
+            if (!filteredCards.length) {
+                renderBeerBacklogEmptyState(section, 'filtered');
+                return;
+            }
+
+            const stage = document.getElementById('beerBacklogStage');
+            if (!stage) return;
+            stage.innerHTML = renderBeerBacklogKanban(section, filteredCards);
+        }
+
+        function scheduleBeerBacklogRender() {
+            if (beerBacklogRenderRaf) return;
+            beerBacklogRenderRaf = requestAnimationFrame(() => {
+                beerBacklogRenderRaf = null;
+                renderBeerBacklog();
+            });
+        }
+
+        function openBeerBacklog(sectionId, options = {}) {
+            const section = getBeerSectionById(sectionId);
+            if (!section) return;
+            cancelBeerBacklogDrag({ skipShift: true });
+            beerBacklogUiState.openSectionId = section.id;
+            const modal = document.getElementById('beerBacklogModal');
+            if (!modal) return;
+            modal.classList.add('active');
+            setBeerBacklogSortMenuOpen(false);
+            updateModalScrollLock();
+            syncBeerBacklogRouteState(section.id, {
+                updateUrl: options.updateUrl !== false,
+                notifyParent: options.notifyParent !== false
+            });
+            renderBeerBacklog();
+            if (options.focusSearch === true) {
+                requestAnimationFrame(() => {
+                    const input = document.getElementById('beerBacklogSearchInput');
+                    if (input) input.focus({ preventScroll: true });
+                });
+            }
+        }
+
+        function closeBeerBacklog(options = {}) {
+            cancelBeerBacklogDrag({ skipShift: true });
+            const modal = document.getElementById('beerBacklogModal');
+            if (modal) modal.classList.remove('active');
+            beerBacklogUiState.openSectionId = '';
+            setBeerBacklogSortMenuOpen(false);
+            updateModalScrollLock();
+            syncBeerBacklogRouteState('', {
+                updateUrl: options.updateUrl !== false,
+                notifyParent: options.notifyParent !== false
+            });
+        }
+
+        function getBeerBacklogCountsSignature(counts) {
+            return BEER_BACKLOG_STATUS_ORDER.map((status) => String((counts && counts[status]) || 0)).join('|');
+        }
+
+        function setBeerRowStageCounts(sectionId, rowId, nextCounts, options = {}) {
+            const section = getBeerSectionById(sectionId);
+            if (!section) return false;
+            const row = Array.isArray(section.rows) ? section.rows.find((item) => item && item.id === rowId) : null;
+            if (!row) return false;
+            if (!isBeerRowReady(section, row)) return false;
+
+            const stageState = getBeerRowStageState(section, row);
+            const totalQty = stageState.totalQty;
+            if (!totalQty) return false;
+
+            const normalizedCounts = reconcileBeerBacklogCounts(nextCounts, totalQty, 'stock');
+            if (getBeerBacklogCountsSignature(stageState.counts) === getBeerBacklogCountsSignature(normalizedCounts)) {
+                return false;
+            }
+
+            const meta = normalizeBeerBacklogState(row.beerBacklog) || {};
+            meta.counts = normalizedCounts;
+            if ((normalizedCounts.done || 0) < totalQty) {
+                meta.lastOpenCounts = normalizedCounts;
+            } else if (options.lastOpenCounts) {
+                meta.lastOpenCounts = reconcileBeerBacklogCounts(options.lastOpenCounts, totalQty, 'stock');
+            } else if ((stageState.counts.done || 0) < totalQty) {
+                meta.lastOpenCounts = stageState.counts;
+            } else {
+                delete meta.lastOpenCounts;
+            }
+            delete meta.status;
+            meta.updatedBy = currentUserName || meta.updatedBy || 'Участник';
+            meta.updatedAt = Date.now();
+            row.closed = totalQty > 0 && (normalizedCounts.done || 0) >= totalQty;
+            row.beerBacklog = normalizeBeerBacklogState(meta) || {
+                counts: normalizedCounts,
+                updatedBy: meta.updatedBy,
+                updatedAt: meta.updatedAt
+            };
+
+            saveEventData();
+            if (!refreshRenderedSection(sectionId)) {
+                renderSections();
+            }
+            updateRenderedBeerBacklogTriggers(section);
+            scheduleBeerBacklogRender();
+            if (options.emit !== false) {
+                emitCollabAction(options.actionText || `Обновил карточку «${getRowLabel(section, row)}» в пивном бэклоге`);
+            }
+            return true;
+        }
+
+        function shiftBeerRowStageUnit(sectionId, rowId, sourceStatus, direction) {
+            const targetStatus = getBeerBacklogShiftTarget(sourceStatus, Number(direction));
+            return shiftBeerRowStageUnitTo(sectionId, rowId, sourceStatus, targetStatus);
+        }
+
+        function shiftBeerRowStageUnitTo(sectionId, rowId, sourceStatus, targetStatus) {
+            const section = getBeerSectionById(sectionId);
+            if (!section) return false;
+            const row = Array.isArray(section.rows) ? section.rows.find((item) => item && item.id === rowId) : null;
+            if (!row) return false;
+
+            const normalizedStatus = normalizeBeerBacklogStatus(sourceStatus);
+            const normalizedTargetStatus = normalizeBeerBacklogStatus(targetStatus);
+            if (!normalizedStatus || !normalizedTargetStatus || normalizedStatus === normalizedTargetStatus) return false;
+
+            const stageState = getBeerRowStageState(section, row);
+            if (!stageState.ready || (stageState.counts[normalizedStatus] || 0) < 1) return false;
+
+            const nextCounts = { ...stageState.counts };
+            nextCounts[normalizedStatus] -= 1;
+            nextCounts[normalizedTargetStatus] += 1;
+            const targetLabel = (BEER_BACKLOG_STATUS_META[normalizedTargetStatus] || {}).label || normalizedTargetStatus;
+            return setBeerRowStageCounts(sectionId, rowId, nextCounts, {
+                actionText: `Переместил 1 шт «${getRowLabel(section, row)}» в «${targetLabel}»`
+            });
+        }
+
+        function clearBeerBacklogDropTargets(state = beerBacklogDragState) {
+            if (state && Array.isArray(state.allowedLaneElements)) {
+                state.allowedLaneElements.forEach((lane) => {
+                    if (!(lane instanceof HTMLElement)) return;
+                    lane.classList.remove('can-drop');
+                    lane.classList.remove('drop-target');
+                });
+                return;
+            }
+            document.querySelectorAll('.beer-backlog-lane.can-drop').forEach((lane) => lane.classList.remove('can-drop'));
+            document.querySelectorAll('.beer-backlog-lane.drop-target').forEach((lane) => lane.classList.remove('drop-target'));
+        }
+
+        function clearBeerBacklogTouchIntent() {
+            if (!beerBacklogTouchIntent) return;
+            if (beerBacklogTouchIntent.timer) {
+                clearTimeout(beerBacklogTouchIntent.timer);
+            }
+            beerBacklogTouchIntent = null;
+        }
+
+        function stopBeerBacklogDragAutoScroll() {
+            if (beerBacklogDragAutoScrollRaf) {
+                cancelAnimationFrame(beerBacklogDragAutoScrollRaf);
+                beerBacklogDragAutoScrollRaf = null;
+            }
+            if (beerBacklogDragState) {
+                beerBacklogDragState.scrollDx = 0;
+                beerBacklogDragState.scrollDy = 0;
+            }
+        }
+
+        function flushBeerBacklogDragFrame() {
+            if (!beerBacklogDragState) return;
+            positionBeerBacklogDragGhost(beerBacklogDragState);
+            updateBeerBacklogDragHover(beerBacklogDragState);
+            updateBeerBacklogDragAutoScroll(beerBacklogDragState);
+        }
+
+        function scheduleBeerBacklogDragFrame() {
+            if (beerBacklogDragMoveRaf) return;
+            beerBacklogDragMoveRaf = requestAnimationFrame(() => {
+                beerBacklogDragMoveRaf = null;
+                flushBeerBacklogDragFrame();
+            });
+        }
+
+        function positionBeerBacklogDragGhost(state) {
+            if (!state || !state.ghost) return;
+            const x = Math.round((state.lastClientX || 0) - (state.offsetX || 0));
+            const y = Math.round((state.lastClientY || 0) - (state.offsetY || 0));
+            state.ghost.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(1.2deg)`;
+        }
+
+        function updateBeerBacklogDragHover(state) {
+            if (!state) return;
+            if (state.activeLaneElement) {
+                state.activeLaneElement.classList.remove('drop-target');
+                state.activeLaneElement = null;
+            }
+            const target = document.elementFromPoint(state.lastClientX || 0, state.lastClientY || 0);
+            const lane = target ? target.closest('[data-beer-drop-status]') : null;
+            const status = normalizeBeerBacklogStatus(lane && lane.dataset ? lane.dataset.beerDropStatus : '');
+            if (lane && status && state.allowedStatuses.includes(status)) {
+                lane.classList.add('drop-target');
+                state.activeDropStatus = status;
+                state.activeLaneElement = lane;
+            } else {
+                state.activeDropStatus = '';
+            }
+        }
+
+        function tickBeerBacklogDragAutoScroll() {
+            if (!beerBacklogDragState) {
+                beerBacklogDragAutoScrollRaf = null;
+                return;
+            }
+            const stage = document.getElementById('beerBacklogStage');
+            if (stage && (beerBacklogDragState.scrollDx || beerBacklogDragState.scrollDy)) {
+                stage.scrollLeft += beerBacklogDragState.scrollDx || 0;
+                stage.scrollTop += beerBacklogDragState.scrollDy || 0;
+                updateBeerBacklogDragHover(beerBacklogDragState);
+            }
+            if (beerBacklogDragState && (beerBacklogDragState.scrollDx || beerBacklogDragState.scrollDy)) {
+                beerBacklogDragAutoScrollRaf = requestAnimationFrame(tickBeerBacklogDragAutoScroll);
+            } else {
+                beerBacklogDragAutoScrollRaf = null;
+            }
+        }
+
+        function updateBeerBacklogDragAutoScroll(state) {
+            if (!state) return;
+            const stage = document.getElementById('beerBacklogStage');
+            if (!stage) return;
+            const rect = stage.getBoundingClientRect();
+            const isTouchDrag = state.inputMode === 'touch';
+            const edgeX = isTouchDrag ? 132 : 76;
+            const edgeY = isTouchDrag ? 92 : 76;
+            const maxDx = isTouchDrag ? 32 : 18;
+            const maxDy = isTouchDrag ? 10 : 16;
+            let dx = 0;
+            let dy = 0;
+            if (state.lastClientX < rect.left + edgeX) {
+                dx = -Math.round(maxDx * (1 - Math.max(0, state.lastClientX - rect.left) / edgeX));
+            } else if (state.lastClientX > rect.right - edgeX) {
+                dx = Math.round(maxDx * (1 - Math.max(0, rect.right - state.lastClientX) / edgeX));
+            }
+            if (state.lastClientY < rect.top + edgeY) {
+                dy = -Math.round(maxDy * (1 - Math.max(0, state.lastClientY - rect.top) / edgeY));
+            } else if (state.lastClientY > rect.bottom - edgeY) {
+                dy = Math.round(maxDy * (1 - Math.max(0, rect.bottom - state.lastClientY) / edgeY));
+            }
+            if (isTouchDrag) {
+                const horizontalIntent = Math.abs((state.lastClientX || 0) - (state.startClientX || 0)) >= Math.abs((state.lastClientY || 0) - (state.startClientY || 0));
+                if (horizontalIntent) {
+                    dy = 0;
+                    if (dx > 0) dx = Math.max(dx, 14);
+                    if (dx < 0) dx = Math.min(dx, -14);
+                }
+            }
+            state.scrollDx = dx;
+            state.scrollDy = dy;
+            if ((dx || dy) && !beerBacklogDragAutoScrollRaf) {
+                beerBacklogDragAutoScrollRaf = requestAnimationFrame(tickBeerBacklogDragAutoScroll);
+            }
+            if (!dx && !dy) stopBeerBacklogDragAutoScroll();
+        }
+
+        function cancelBeerBacklogDrag(options = {}) {
+            clearBeerBacklogTouchIntent();
+            const state = beerBacklogDragState;
+            if (!state) return;
+            if (beerBacklogDragMoveRaf) {
+                cancelAnimationFrame(beerBacklogDragMoveRaf);
+                beerBacklogDragMoveRaf = null;
+            }
+            stopBeerBacklogDragAutoScroll();
+            clearBeerBacklogDropTargets(state);
+            if (state.card) state.card.classList.remove('dragging');
+            if (state.card && state.card.releasePointerCapture && Number.isFinite(state.pointerId)) {
+                try { state.card.releasePointerCapture(state.pointerId); } catch (_) {}
+            }
+            if (state.ghost && state.ghost.parentNode) state.ghost.parentNode.removeChild(state.ghost);
+            const stage = document.getElementById('beerBacklogStage');
+            if (stage) stage.classList.remove('dragging');
+            if (!options.skipShift && state.activeDropStatus && beerBacklogUiState.openSectionId) {
+                shiftBeerRowStageUnitTo(beerBacklogUiState.openSectionId, state.rowId, state.sourceStatus, state.activeDropStatus);
+            }
+            beerBacklogDragState = null;
+        }
+
+        function startBeerBacklogDrag(card, pointerEvent) {
+            if (!card || !beerBacklogUiState.openSectionId) return false;
+            const sourceStatus = normalizeBeerBacklogStatus(card.dataset.beerCardStatus || '');
+            if (!sourceStatus) return false;
+            const allowedStatuses = getBeerBacklogDropTargets(sourceStatus);
+            if (!allowedStatuses.length) return false;
+
+            cancelBeerBacklogDrag({ skipShift: true });
+
+            const rect = card.getBoundingClientRect();
+            const ghost = card.cloneNode(true);
+            ghost.classList.remove('dragging');
+            ghost.classList.add('beer-backlog-drag-ghost');
+            ghost.style.width = `${Math.round(rect.width)}px`;
+            document.body.appendChild(ghost);
+            const allowedLaneElements = allowedStatuses
+                .map((status) => document.querySelector(`.beer-backlog-lane[data-beer-drop-status="${cssEscapeSafe(status)}"]`))
+                .filter((lane) => lane instanceof HTMLElement);
+
+            beerBacklogDragState = {
+                pointerId: Number.isFinite(pointerEvent.pointerId) ? pointerEvent.pointerId : null,
+                inputMode: pointerEvent.inputMode || (pointerEvent.pointerType === 'touch' ? 'touch' : 'pointer'),
+                rowId: card.dataset.beerCardRow || '',
+                sourceStatus,
+                allowedStatuses,
+                allowedLaneElements,
+                activeDropStatus: '',
+                activeLaneElement: null,
+                card,
+                ghost,
+                startClientX: pointerEvent.clientX,
+                startClientY: pointerEvent.clientY,
+                offsetX: Math.max(20, Math.min(rect.width - 20, pointerEvent.clientX - rect.left)),
+                offsetY: Math.max(20, Math.min(rect.height - 20, pointerEvent.clientY - rect.top)),
+                lastClientX: pointerEvent.clientX,
+                lastClientY: pointerEvent.clientY,
+                scrollDx: 0,
+                scrollDy: 0
+            };
+            card.classList.add('dragging');
+            allowedLaneElements.forEach((lane) => lane.classList.add('can-drop'));
+            const stage = document.getElementById('beerBacklogStage');
+            if (stage) stage.classList.add('dragging');
+            flushBeerBacklogDragFrame();
+            if (card.setPointerCapture && Number.isFinite(pointerEvent.pointerId)) {
+                try { card.setPointerCapture(pointerEvent.pointerId); } catch (_) {}
+            }
+            return true;
         }
 
         function getStickyTopOffset() {
@@ -8248,6 +10496,35 @@
             if (!section) return;
             const row = section.rows.find(r => r.id === rowId);
             if (!row) return;
+            if (isBeerSection(section)) {
+                if (!isBeerRowReady(section, row) || !getBeerRowQty(section, row)) {
+                    row.closed = !row.closed;
+                    saveEventData();
+                    if (!refreshRenderedSection(sectionId)) {
+                        renderSections();
+                    }
+                    emitCollabAction(`${row.closed ? 'Закрыл' : 'Открыл'} «${getRowLabel(section, row)}»`);
+                    return;
+                }
+                const stageState = getBeerRowStageState(section, row);
+                if (row.closed || (stageState.counts.done || 0) >= stageState.totalQty) {
+                    const meta = normalizeBeerBacklogState(row.beerBacklog) || {};
+                    const restoreCounts = normalizeBeerBacklogCountMap(meta.lastOpenCounts) || { stock: stageState.totalQty, table: 0, done: 0 };
+                    setBeerRowStageCounts(sectionId, rowId, restoreCounts, {
+                        actionText: `Вернул «${getRowLabel(section, row)}» в активный бэклог`
+                    });
+                } else {
+                    setBeerRowStageCounts(sectionId, rowId, {
+                        stock: 0,
+                        table: 0,
+                        done: stageState.totalQty
+                    }, {
+                        lastOpenCounts: stageState.counts,
+                        actionText: `Пометил «${getRowLabel(section, row)}» как выпитое`
+                    });
+                }
+                return;
+            }
             row.closed = !row.closed;
             saveEventData();
             if (!refreshRenderedSection(sectionId)) {
@@ -10377,21 +12654,61 @@
                 if (!data || data.type !== 'planning:route-sync') return;
                 if (!eventId || String(data.eventId || '') !== String(eventId)) return;
                 const nextOpen = !!data.notesOpen;
+                const nextBacklogSectionId = String(data.backlogSectionId || '').trim();
                 if (nextOpen === !!notesModalOpen) {
                     syncNotesRouteState(nextOpen, {
                         updateUrl: true,
                         notifyParent: false
                     });
-                    return;
-                }
-                if (nextOpen) {
+                } else if (nextOpen) {
                     openNotesModal({
+                        updateUrl: true,
+                        notifyParent: false
+                    });
+                } else {
+                    closeNotesModal({
+                        updateUrl: true,
+                        notifyParent: false
+                    });
+                }
+
+                if (!eventData || !Array.isArray(eventData.sections)) {
+                    syncBeerBacklogRouteState(nextBacklogSectionId, {
                         updateUrl: true,
                         notifyParent: false
                     });
                     return;
                 }
-                closeNotesModal({
+
+                const backlogSection = nextBacklogSectionId ? getBeerSectionById(nextBacklogSectionId) : null;
+                const backlogModal = document.getElementById('beerBacklogModal');
+                const backlogOpen = !!(backlogModal && backlogModal.classList.contains('active'));
+
+                if (backlogSection) {
+                    if (!backlogOpen || beerBacklogUiState.openSectionId !== backlogSection.id) {
+                        openBeerBacklog(backlogSection.id, {
+                            updateUrl: true,
+                            notifyParent: false,
+                            focusSearch: false
+                        });
+                        return;
+                    }
+                    syncBeerBacklogRouteState(backlogSection.id, {
+                        updateUrl: true,
+                        notifyParent: false
+                    });
+                    return;
+                }
+
+                if (backlogOpen || beerBacklogUiState.openSectionId) {
+                    closeBeerBacklog({
+                        updateUrl: true,
+                        notifyParent: false
+                    });
+                    return;
+                }
+
+                syncBeerBacklogRouteState('', {
                     updateUrl: true,
                     notifyParent: false
                 });
@@ -14277,7 +16594,8 @@
                         type: 'planning:route',
                         view,
                         eventId: eventId || null,
-                        notesOpen: !!extras.notesOpen
+                        notesOpen: !!extras.notesOpen,
+                        backlogSectionId: String(extras.backlogSectionId || '').trim() || null
                     }, window.location.origin);
                 }
             } catch (_) {}
@@ -14347,7 +16665,10 @@
                 notesDocSignature = stableSerialize(notesDocState);
                 notesCommittedContent = notesDocState.content;
             }
-            notifyParentPlanningRoute('event', eventId, readNotesRouteState());
+            notifyParentPlanningRoute('event', eventId, {
+                notesOpen: readNotesRouteState().open,
+                backlogSectionId: readBeerBacklogRouteState().sectionId
+            });
             ensureInitialRenderFallback();
             if (eventDataCacheLoaded) {
                 requestAnimationFrame(() => {
@@ -15146,6 +17467,13 @@
                     return;
                 }
 
+                const beerBacklogBtn = e.target.closest('[data-beer-backlog-open]');
+                if (beerBacklogBtn) {
+                    closeSectionActionMenus();
+                    openBeerBacklog(beerBacklogBtn.dataset.beerBacklogOpen);
+                    return;
+                }
+
                 const ownerFilterBtn = e.target.closest('[data-owner-filter]');
                 if (ownerFilterBtn) {
                     const sectionId = ownerFilterBtn.dataset.ownerFilter;
@@ -15270,6 +17598,11 @@
             if (stickyPortal) {
                 stickyPortal.addEventListener('click', (e) => {
                     if (Date.now() - lastColDragAt < 200) return;
+                    const beerBacklogBtn = e.target.closest('[data-beer-backlog-open]');
+                    if (beerBacklogBtn) {
+                        openBeerBacklog(beerBacklogBtn.dataset.beerBacklogOpen);
+                        return;
+                    }
                     const sortBtn = e.target.closest('[data-sort-col]');
                     if (sortBtn) {
                         const sectionId = sortBtn.dataset.sectionId;
@@ -15499,6 +17832,125 @@
                 }
                 hideBeerMenu();
                 emitCollabAction(`Выбрал пиво: ${beerOpt.dataset.beerValue || '—'}`);
+            });
+
+            document.getElementById('closeBeerBacklogBtn').addEventListener('click', closeBeerBacklog);
+            document.getElementById('beerBacklogModal').addEventListener('click', (e) => {
+                if (e.target.id === 'beerBacklogModal') {
+                    closeBeerBacklog();
+                    return;
+                }
+                const sortBtn = e.target.closest('#beerBacklogSortBtn');
+                if (sortBtn) {
+                    const shell = document.getElementById('beerBacklogSortShell');
+                    setBeerBacklogSortMenuOpen(!(shell && shell.classList.contains('open')));
+                    return;
+                }
+                const sortOption = e.target.closest('[data-beer-backlog-sort]');
+                if (sortOption) {
+                    beerBacklogUiState.sort = sortOption.dataset.beerBacklogSort || 'flow';
+                    setBeerBacklogSortMenuOpen(false);
+                    renderBeerBacklog();
+                    return;
+                }
+                if (!e.target.closest('#beerBacklogSortShell')) {
+                    setBeerBacklogSortMenuOpen(false);
+                }
+            });
+            document.getElementById('beerBacklogSearchInput').addEventListener('input', (e) => {
+                beerBacklogUiState.query = e.target.value || '';
+                renderBeerBacklog();
+            });
+            document.getElementById('beerBacklogMineToggle').addEventListener('click', () => {
+                beerBacklogUiState.onlyMine = !beerBacklogUiState.onlyMine;
+                renderBeerBacklog();
+            });
+            document.getElementById('beerBacklogStage').addEventListener('pointerdown', (e) => {
+                const card = e.target.closest('[data-beer-card-row]');
+                if (!card || !beerBacklogUiState.openSectionId) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                if (e.pointerType === 'touch') {
+                    clearBeerBacklogTouchIntent();
+                    beerBacklogTouchIntent = {
+                        pointerId: e.pointerId,
+                        card,
+                        startClientX: e.clientX,
+                        startClientY: e.clientY,
+                        lastClientX: e.clientX,
+                        lastClientY: e.clientY,
+                        timer: window.setTimeout(() => {
+                            const intent = beerBacklogTouchIntent;
+                            if (!intent || intent.pointerId !== e.pointerId || !intent.card || !intent.card.isConnected) return;
+                            clearBeerBacklogTouchIntent();
+                            startBeerBacklogDrag(intent.card, {
+                                clientX: intent.lastClientX,
+                                clientY: intent.lastClientY,
+                                pointerId: e.pointerId,
+                                pointerType: 'touch',
+                                inputMode: 'touch'
+                            });
+                        }, BEER_BACKLOG_TOUCH_DRAG_DELAY_MS)
+                    };
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                startBeerBacklogDrag(card, e);
+            });
+            document.addEventListener('pointermove', (e) => {
+                if (beerBacklogTouchIntent && e.pointerId === beerBacklogTouchIntent.pointerId) {
+                    beerBacklogTouchIntent.lastClientX = e.clientX;
+                    beerBacklogTouchIntent.lastClientY = e.clientY;
+                    if (!beerBacklogDragState) {
+                        const dx = e.clientX - beerBacklogTouchIntent.startClientX;
+                        const dy = e.clientY - beerBacklogTouchIntent.startClientY;
+                        if (Math.hypot(dx, dy) > BEER_BACKLOG_TOUCH_DRAG_MOVE_TOLERANCE) {
+                            clearBeerBacklogTouchIntent();
+                        }
+                    }
+                }
+                if (!beerBacklogDragState) return;
+                if (beerBacklogDragState.pointerId !== null && e.pointerId !== beerBacklogDragState.pointerId) return;
+                beerBacklogDragState.lastClientX = e.clientX;
+                beerBacklogDragState.lastClientY = e.clientY;
+                scheduleBeerBacklogDragFrame();
+                e.preventDefault();
+            });
+            document.addEventListener('pointerup', (e) => {
+                if (beerBacklogTouchIntent && e.pointerId === beerBacklogTouchIntent.pointerId) {
+                    clearBeerBacklogTouchIntent();
+                }
+                if (!beerBacklogDragState) return;
+                if (beerBacklogDragState.pointerId !== null && e.pointerId !== beerBacklogDragState.pointerId) return;
+                beerBacklogDragState.lastClientX = e.clientX;
+                beerBacklogDragState.lastClientY = e.clientY;
+                if (beerBacklogDragMoveRaf) {
+                    cancelAnimationFrame(beerBacklogDragMoveRaf);
+                    beerBacklogDragMoveRaf = null;
+                }
+                flushBeerBacklogDragFrame();
+                cancelBeerBacklogDrag();
+            });
+            document.addEventListener('pointercancel', (e) => {
+                if (beerBacklogTouchIntent && e.pointerId === beerBacklogTouchIntent.pointerId) {
+                    clearBeerBacklogTouchIntent();
+                }
+                if (!beerBacklogDragState) return;
+                if (beerBacklogDragState.pointerId !== null && e.pointerId !== beerBacklogDragState.pointerId) return;
+                cancelBeerBacklogDrag({ skipShift: true });
+            });
+            document.addEventListener('keydown', (e) => {
+                const modal = document.getElementById('beerBacklogModal');
+                if (!modal || !modal.classList.contains('active')) return;
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    const sortShell = document.getElementById('beerBacklogSortShell');
+                    if (sortShell && sortShell.classList.contains('open')) {
+                        setBeerBacklogSortMenuOpen(false);
+                        return;
+                    }
+                    closeBeerBacklog();
+                }
             });
 
             renderColumnTypeMenu();
