@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>VCMI Runtime</title>
+  <script src="../coi-serviceworker.js"></script>
+  <style>
+    :root {
+      --bg: #020305;
+      --line: rgba(245, 158, 11, 0.28);
+      --text: #fff8ea;
+      --text-dim: #dbc69e;
+      --accent: #f59e0b;
+      --warn: #fca5a5;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.14), transparent 30%),
+        #020305;
+      color: var(--text);
+      font-family: "Comfortaa", system-ui, sans-serif;
+    }
+
+    body.runtime-started {
+      background: #000;
+    }
+
+    #canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .hud {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 30;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+
+    .panel {
+      max-width: min(100%, 580px);
+      border: 1px solid var(--line);
+      background: rgba(6, 7, 9, 0.82);
+      color: var(--text-dim);
+      border-radius: 14px;
+      padding: 10px 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      pointer-events: auto;
+    }
+
+    .status-title {
+      margin: 0 0 6px;
+      color: #fcd34d;
+      font: 700 15px/1.2 Georgia, serif;
+      letter-spacing: 0.03em;
+    }
+
+    .status-text {
+      font-size: 12px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.16), transparent 30%),
+        rgba(3, 4, 6, 0.92);
+    }
+
+    .overlay-card {
+      width: min(100%, 520px);
+      border: 1px solid var(--line);
+      background: rgba(8, 7, 5, 0.88);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 24px 54px rgba(0, 0, 0, 0.42);
+    }
+
+    .overlay-badge {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 14px;
+      display: grid;
+      place-items: center;
+      border-radius: 22px;
+      border: 1px solid rgba(245, 158, 11, 0.36);
+      background: rgba(245, 158, 11, 0.08);
+      color: #fcd34d;
+      font: 700 32px/1 Georgia, serif;
+    }
+
+    .overlay-title {
+      margin: 0 0 8px;
+      font: 700 24px/1.15 Georgia, serif;
+      color: #fcd34d;
+    }
+
+    .overlay-text {
+      margin: 0;
+      color: var(--text-dim);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .hud,
+    .overlay {
+      display: none !important;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="hud">
+    <div class="panel">
+      <div class="status-title">Heroes III</div>
+      <div id="statusText" class="status-text">Подготовка окружения...</div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="overlay">
+    <div class="overlay-card">
+      <div class="overlay-badge">III</div>
+      <h1 class="overlay-title">Запуск HoMM3 через VCMI</h1>
+      <p id="overlayText" class="overlay-text">
+        Проверяем локальную библиотеку и готовим сохранения.
+      </p>
+    </div>
+  </div>
+
+    <script type="module">
+    import { VCMI_OPFS_ROOT, clearDirectories, listFiles, readFile, repairMetadata, writeFile } from "./opfs.js";
+      import { decodeBundle, encodeBundle } from "./storage-bundle.js";
+
+    const LIBRARY_PREFIXES = ["Data", "Maps", "Mp3"];
+    const REQUIRED_LIBRARY_FILES = ["Data/H3bitmap.lod", "Data/H3sprite.lod", "Data/Heroes3.snd"];
+    const SAVE_PREFIX = "Saves";
+    const VERSION = "20260528-13";
+    const params = new URLSearchParams(location.search);
+    const DEFAULT_API_BASE = "https://realtime.xn--80ahcljthqi.xn--p1ai";
+    const API_BASE_STORAGE_KEY = "kinosreda.homm3.apiBase";
+
+    const els = {
+      canvas: document.getElementById("canvas"),
+      statusPanel: document.querySelector(".hud .panel"),
+      statusText: document.getElementById("statusText"),
+      overlayText: document.getElementById("overlayText"),
+      loadingOverlay: document.getElementById("loadingOverlay")
+    };
+
+    const state = {
+      profile: resolveProfile(),
+      storageKey: "",
+      apiBase: resolveApiBase(),
+      saveCache: new Map(),
+      pendingSaveSync: false,
+      isExiting: false,
+      runtimeLog: []
+    };
+    window.__homm3RuntimeState = state;
+
+    function normalizeApiBase(value) {
+      return String(value || "").trim().replace(/\/+$/, "");
+    }
+
+    function resolveApiBase() {
+      const explicit = normalizeApiBase(params.get("apiBase"));
+      if (explicit) {
+        localStorage.setItem(API_BASE_STORAGE_KEY, explicit);
+        return explicit;
+      }
+      const stored = normalizeApiBase(localStorage.getItem(API_BASE_STORAGE_KEY));
+      return stored || DEFAULT_API_BASE;
+    }
+
+    function resolveProfile() {
+      const paramProfile = String(params.get("profile") || "").trim();
+      if (paramProfile) {
+        return paramProfile;
+      }
+      try {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser") || "null");
+        const value = currentUser && (currentUser.name || currentUser.username);
+        if (value) {
+          return String(value).trim();
+        }
+      } catch (_) {}
+      return String(localStorage.getItem("kinosreda.homm3.profile") || "").trim();
+    }
+
+    function normalizePath(value) {
+      return String(value || "")
+        .replaceAll("\\", "/")
+        .replace(/\/+/g, "/")
+        .replace(/^\/+/, "")
+        .trim();
+    }
+
+    function setStatus(text, mode = "") {
+      els.statusPanel.classList.remove("hidden");
+      els.statusText.textContent = text;
+      els.overlayText.textContent = text;
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "homm3-runtime-status", text, mode }, "*");
+      }
+    }
+
+    function minimizeStatusPanel() {
+      els.statusPanel.classList.add("hidden");
+    }
+
+    function formatErrorDetails(error) {
+      if (!error) {
+        return "Неизвестная ошибка";
+      }
+      if (typeof error === "string") {
+        return error;
+      }
+      const stringValue = (() => {
+        try {
+          return String(error);
+        } catch (_) {
+          return "";
+        }
+      })();
+      const parts = [];
+      if (error.constructor && error.constructor.name && error.constructor.name !== "Object") {
+        parts.push(error.constructor.name);
+      }
+      if (error.name) {
+        parts.push(error.name);
+      }
+      if (error.message) {
+        parts.push(error.message);
+      }
+      if (stringValue && stringValue !== "[object Object]" && !parts.includes(stringValue)) {
+        parts.push(stringValue);
+      }
+      const summary = parts.join(": ").trim();
+      if (error.stack) {
+        const stack = String(error.stack).split("\n").slice(0, 6).join("\n");
+        return summary && !stack.startsWith(summary) ? `${summary}\n${stack}` : stack;
+      }
+      try {
+        const ownProps = Object.getOwnPropertyNames(error);
+        if (ownProps.length) {
+          const mapped = Object.fromEntries(ownProps.map((key) => [key, error[key]]));
+          return summary ? `${summary}\n${JSON.stringify(mapped)}` : JSON.stringify(mapped);
+        }
+      } catch (_) {}
+      return summary || "Не удалось прочитать объект ошибки";
+    }
+
+    function reportRuntimeFailure(prefix, error) {
+      const details = formatErrorDetails(error);
+      const lastLog = state.runtimeLog.slice(-3).join("\n");
+      const payload = lastLog ? `${details}\n${lastLog}` : details;
+      console.error(prefix, error);
+      setStatus(`${prefix}: ${payload}`, "warn");
+      return payload;
+    }
+
+    function appendRuntimeLog(channel, message) {
+      const line = `[${channel}] ${String(message || "").trim()}`;
+      if (!line || line === `[${channel}]`) {
+        return;
+      }
+      state.runtimeLog.push(line);
+      state.runtimeLog = state.runtimeLog.slice(-40);
+      console[channel === "stderr" ? "error" : "log"](line);
+    }
+
+    function notifySaveCommitted() {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "homm3-save-committed" }, "*");
+      }
+    }
+
+    function notifyRuntimeExit(text, mode = "") {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "homm3-runtime-exit", text, mode }, "*");
+        return true;
+      }
+      return false;
+    }
+
+    function notifyRuntimeReady() {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "homm3-runtime-ready" }, "*");
+      }
+    }
+
+    async function sha256Hex(input) {
+      const bytes = new TextEncoder().encode(input);
+      const digest = await crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function ensureSaveKey() {
+      const explicit = String(params.get("saveKey") || "").trim().toLowerCase();
+      if (/^[a-f0-9]{24,64}$/.test(explicit)) {
+        state.storageKey = explicit;
+        return;
+      }
+      if (!state.profile) {
+        throw new Error("Не удалось определить профиль для сейвов.");
+      }
+      state.storageKey = await sha256Hex(`homm3:${state.profile.toLowerCase()}`);
+    }
+
+    function storageUrl(kind) {
+      if (!state.apiBase) {
+        return "";
+      }
+      return `${state.apiBase}/homm3/storage/${kind}/${state.storageKey}.bin?v=${encodeURIComponent(VERSION)}`;
+    }
+
+    function bundleUrl(fileName) {
+      return new URL(`./bundle/${fileName}?v=${encodeURIComponent(VERSION)}`, window.location.href).toString();
+    }
+
+    function pendingSaveSyncKey() {
+      return `kinosreda.homm3.pendingSaveSync.${state.storageKey}`;
+    }
+
+    function setPendingSaveSync(value) {
+      state.pendingSaveSync = !!value;
+      if (state.pendingSaveSync) {
+        localStorage.setItem(pendingSaveSyncKey(), "1");
+      } else {
+        localStorage.removeItem(pendingSaveSyncKey());
+      }
+    }
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(new Error("timeout")), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    async function fetchSaveBundle(kind) {
+      const url = storageUrl(kind);
+      if (!url) {
+        return null;
+      }
+      const response = await fetchWithTimeout(url, {
+        method: "GET",
+        cache: "no-store",
+        credentials: "omit"
+      }, 8000);
+      if (response.status === 204 || response.status === 404) {
+        return null;
+      }
+      if (!response.ok) {
+        throw new Error(`Не удалось получить ${kind}: ${response.status}`);
+      }
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      return bytes.byteLength ? decodeBundle(bytes) : [];
+    }
+
+    async function putBundle(kind, entries) {
+      const url = storageUrl(kind);
+      if (!url) {
+        throw new Error("Сервер синхронизации сейвов не настроен.");
+      }
+      const payload = encodeBundle(entries);
+      const response = await fetchWithTimeout(url, {
+        method: "PUT",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: payload
+      }, 12000);
+      if (!response.ok) {
+        throw new Error(`Не удалось записать ${kind}: ${response.status}`);
+      }
+    }
+
+    async function writeEntries(entries) {
+      for (const entry of entries) {
+        await writeFile(VCMI_OPFS_ROOT, entry.path, entry.bytes);
+      }
+    }
+
+    function isLibraryFile(path) {
+      return LIBRARY_PREFIXES.some((prefix) => normalizePath(path).startsWith(`${prefix}/`));
+    }
+
+    function isAutosave(path) {
+      const lower = normalizePath(path).toLowerCase();
+      return lower.includes("/autosave/");
+    }
+
+    function isSyncableSave(path) {
+      const lower = normalizePath(path).toLowerCase();
+      return lower.endsWith(".vsgm1") && !isAutosave(path);
+    }
+
+    function libraryReadyFromFiles(files) {
+      const libraryFiles = files.filter((entry) => isLibraryFile(entry.path));
+      const fileSet = new Set(libraryFiles.map((entry) => normalizePath(entry.path).toLowerCase()));
+      const requiredPresent = REQUIRED_LIBRARY_FILES.every((file) => fileSet.has(file.toLowerCase()));
+      const prefixesPresent = LIBRARY_PREFIXES.every((prefix) =>
+        libraryFiles.some((entry) => normalizePath(entry.path).startsWith(`${prefix}/`))
+      );
+      return requiredPresent && prefixesPresent;
+    }
+
+    async function ensureLibraryReady() {
+      const localFiles = await listFiles(VCMI_OPFS_ROOT);
+      if (libraryReadyFromFiles(localFiles)) {
+        return;
+      }
+      throw new Error("Файлы Heroes III не найдены локально. Вернитесь на страницу HoMM3 и дождитесь автозагрузки.");
+    }
+
+    async function listLocalSaveEntries() {
+      const files = await listFiles(VCMI_OPFS_ROOT, { prefix: SAVE_PREFIX });
+      const entries = [];
+      for (const file of files) {
+        if (!isSyncableSave(file.path)) {
+          continue;
+        }
+        entries.push({
+          path: normalizePath(file.path),
+          bytes: await readFile(VCMI_OPFS_ROOT, file.path)
+        });
+      }
+      return entries.sort((left, right) => left.path.localeCompare(right.path, "ru"));
+    }
+
+    function entriesToMap(entries) {
+      return new Map(entries.map((entry) => [normalizePath(entry.path), entry.bytes]));
+    }
+
+    function normalizeEntries(entries) {
+      return entries
+        .map((entry) => ({
+          path: normalizePath(entry.path),
+          bytes: entry.bytes instanceof Uint8Array ? entry.bytes : new Uint8Array(entry.bytes || [])
+        }))
+        .sort((left, right) => left.path.localeCompare(right.path, "ru"));
+    }
+
+    function mergeSaveEntries(remoteEntries, localEntries, preferLocal) {
+      const merged = new Map();
+      for (const entry of normalizeEntries(remoteEntries)) {
+        merged.set(entry.path, { path: entry.path, bytes: entry.bytes });
+      }
+      for (const entry of normalizeEntries(localEntries)) {
+        if (preferLocal || !merged.has(entry.path)) {
+          merged.set(entry.path, { path: entry.path, bytes: entry.bytes });
+        }
+      }
+      return Array.from(merged.values()).sort((left, right) => left.path.localeCompare(right.path, "ru"));
+    }
+
+    async function replaceLocalSaves(entries) {
+      await clearDirectories(VCMI_OPFS_ROOT, [SAVE_PREFIX]);
+      if (entries.length) {
+        await writeEntries(entries);
+      }
+    }
+
+    async function tryUploadSaveEntries(entries, options = {}) {
+      const normalized = normalizeEntries(entries);
+      state.saveCache = entriesToMap(normalized);
+      try {
+        await putBundle("saves", normalized);
+        setPendingSaveSync(false);
+        if (options.successText) {
+          setStatus(options.successText, "ok");
+        }
+        notifySaveCommitted();
+        return true;
+      } catch (error) {
+        console.error(error);
+        setPendingSaveSync(true);
+        if (options.errorText) {
+          setStatus(options.errorText, "warn");
+        }
+        return false;
+      }
+    }
+
+    async function restoreSavesForProfile() {
+      const previousKey = String(localStorage.getItem("kinosreda.homm3.activeSaveKey") || "").trim();
+      if (previousKey && previousKey !== state.storageKey) {
+        await clearDirectories(VCMI_OPFS_ROOT, [SAVE_PREFIX]);
+      }
+      localStorage.setItem("kinosreda.homm3.activeSaveKey", state.storageKey);
+      state.pendingSaveSync = String(localStorage.getItem(pendingSaveSyncKey()) || "").trim() === "1";
+
+      const localEntries = await listLocalSaveEntries();
+      state.saveCache = entriesToMap(localEntries);
+
+      try {
+        setStatus("Проверяем сохранения профиля...");
+        const remoteEntries = await fetchSaveBundle("saves");
+        const preferLocal = state.pendingSaveSync;
+        const mergedEntries = mergeSaveEntries(remoteEntries || [], localEntries, preferLocal);
+
+        if (remoteEntries !== null) {
+          await replaceLocalSaves(mergedEntries);
+          state.saveCache = entriesToMap(mergedEntries);
+        }
+
+        if (preferLocal && mergedEntries.length) {
+          const synced = await tryUploadSaveEntries(mergedEntries, {
+            successText: "Локальные сохранения снова на сервере.",
+            errorText: "Сервер сейвов недоступен. Продолжаем с локальными файлами."
+          });
+          if (synced) {
+            return;
+          }
+          return;
+        }
+
+        if (!remoteEntries && localEntries.length) {
+          const seeded = await tryUploadSaveEntries(localEntries, {
+            errorText: "Сервер сейвов недоступен. Продолжаем с локальными файлами."
+          });
+          if (seeded) {
+            setStatus("Локальные сохранения синхронизированы.", "ok");
+            return;
+          }
+          return;
+        }
+
+        setPendingSaveSync(false);
+        if (mergedEntries.length) {
+          setStatus("Сохранения профиля готовы.");
+        } else {
+          setStatus("Сохранений пока нет. Можно начинать новую игру.");
+        }
+      } catch (error) {
+        console.error(error);
+        if (localEntries.length) {
+          setPendingSaveSync(true);
+          setStatus("Сервер сейвов недоступен. Продолжаем с локальными файлами.", "warn");
+          return;
+        }
+        setStatus("Сервер сейвов недоступен. Продолжаем без облачной копии.", "warn");
+      }
+    }
+
+    function ensureFsDir(FS, absolutePath) {
+      const normalized = normalizePath(absolutePath);
+      const parts = normalized.split("/");
+      let current = "";
+      for (const part of parts) {
+        current += `/${part}`;
+        try {
+          FS.mkdir(current);
+        } catch (_) {}
+      }
+    }
+
+    function hideOverlay() {
+      document.body.classList.add("runtime-started");
+      els.loadingOverlay.classList.add("hidden");
+      notifyRuntimeReady();
+    }
+
+    async function loadScript(src) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Не удалось загрузить ${src}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    async function uploadCurrentSaves() {
+      const entries = await listLocalSaveEntries();
+      return tryUploadSaveEntries(entries, {});
+    }
+
+    async function exitRuntime(text = "Возвращаемся к странице HoMM3...") {
+      if (state.isExiting) {
+        return;
+      }
+      state.isExiting = true;
+      try {
+        await uploadCurrentSaves();
+      } catch (error) {
+        console.error(error);
+      }
+
+      if (notifyRuntimeExit(text, "ok")) {
+        return;
+      }
+      window.location.href = `../homm3.html?v=${encodeURIComponent(VERSION)}`;
+    }
+
+    async function bootRuntime() {
+      if (!window.crossOriginIsolated) {
+        throw new Error("Страница HoMM3 ещё не перешла в изолированный режим браузера. Обновите вкладку и запустите игру снова.");
+      }
+      await repairMetadata(VCMI_OPFS_ROOT);
+      await ensureSaveKey();
+      await ensureLibraryReady();
+      await restoreSavesForProfile();
+
+      const module = {
+        canvas: els.canvas,
+        websocket: {
+          url: "wss://cloud.dos.zone:8443/vcmi-wss"
+        },
+        print(message) {
+          appendRuntimeLog("stdout", message);
+        },
+        printErr(message) {
+          appendRuntimeLog("stderr", message);
+        },
+        locateFile(path) {
+          if (path.endsWith(".wasm")) {
+            return bundleUrl("vcmiclient.wasm");
+          }
+          if (path.endsWith(".data")) {
+            return bundleUrl("vcmiclient.data");
+          }
+          return bundleUrl(path);
+        },
+        quitGame() {
+          exitRuntime("Игра закрыта").catch(() => {});
+        },
+        async onRuntimeInitialized() {
+          try {
+            const FS = module.FS;
+            const OPFS = module.OPFS;
+
+            setStatus("Готовим каталоги runtime...");
+            ensureFsDir(FS, "/home/web_user/.cache/vcmi");
+            ensureFsDir(FS, VCMI_OPFS_ROOT);
+            ensureFsDir(FS, "/home/web_user/.config/vcmi");
+
+            setStatus("Монтируем локальное хранилище игры...");
+            FS.mount(OPFS, {
+              autoPersist: false,
+              root: VCMI_OPFS_ROOT
+            }, VCMI_OPFS_ROOT);
+
+            setStatus("Монтируем конфиг VCMI...");
+            FS.mount(OPFS, {
+              autoPersist: true,
+              root: "/home/web_user/.config/vcmi"
+            }, "/home/web_user/.config/vcmi");
+
+            setStatus("Синхронизируем OPFS с runtime...");
+            await new Promise((resolve) => {
+              FS.syncfs(true, (error) => {
+                if (error) {
+                  console.error(error);
+                }
+                resolve();
+              });
+            });
+
+            const resize = () => {
+              const dpi = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+              const width = Math.max(1, Math.round((els.canvas.clientWidth || window.innerWidth) * dpi));
+              const height = Math.max(1, Math.round((els.canvas.clientHeight || window.innerHeight) * dpi));
+              module.getWidth = () => width;
+              module.getHeight = () => height;
+              if (typeof module._vcmiOnCanvasResize === "function") {
+                module._vcmiOnCanvasResize();
+              }
+            };
+
+            new ResizeObserver(resize).observe(els.canvas);
+            resize();
+            hideOverlay();
+            setStatus("Запускаем игровой runtime...", "ok");
+            window.setTimeout(() => {
+              if (state.isExiting) {
+                return;
+              }
+              setStatus("Игра запущена", "ok");
+              minimizeStatusPanel();
+            }, 2200);
+            appendRuntimeLog("stdout", "callMain -> --disable-video");
+            const exitCode = module.callMain(["--disable-video"]);
+            appendRuntimeLog("stdout", `callMain <- ${String(exitCode)}`);
+          } catch (error) {
+            reportRuntimeFailure("Ошибка запуска runtime", error);
+          }
+        },
+        async fsUpdate(filePtr, bufferPtr, length) {
+          try {
+            if (length <= 0) {
+              return;
+            }
+            const absolutePath = module.UTF8ToString(filePtr);
+            const relativePath = normalizePath(absolutePath.replace(`${VCMI_OPFS_ROOT}/`, ""));
+            if (!isSyncableSave(relativePath)) {
+              return;
+            }
+
+            const bytes = module.HEAPU8.slice(bufferPtr, bufferPtr + length);
+            state.saveCache.set(relativePath, bytes.slice(0));
+            const synced = await tryUploadSaveEntries(Array.from(state.saveCache.entries()).map(([path, fileBytes]) => ({
+              path,
+              bytes: fileBytes
+            })), {
+              successText: `Сохранение синхронизировано: ${relativePath}`,
+              errorText: `Сохранение осталось локально: ${relativePath}`
+            });
+            if (!synced) {
+              setStatus(`Сохранение осталось локально: ${relativePath}`, "warn");
+            }
+          } catch (error) {
+            console.error(error);
+            setPendingSaveSync(true);
+            setStatus(error.message || "Ошибка синхронизации сейва", "warn");
+          } finally {
+            try { module._free(filePtr); } catch (_) {}
+            try { module._free(bufferPtr); } catch (_) {}
+          }
+        },
+        onAbort(reason) {
+          reportRuntimeFailure("Runtime остановлен", reason || "unknown");
+        }
+      };
+
+      window.Module = module;
+      setStatus("Загружаем web-bundle VCMI...");
+      await loadScript(bundleUrl("vcmiclient.data.js"));
+      const runtimeModule = await import(bundleUrl("vcmiclient.js"));
+      const DOSVCMI = runtimeModule && runtimeModule.default ? runtimeModule.default : runtimeModule;
+      if (typeof DOSVCMI !== "function") {
+        throw new Error("VCMI bundle не экспортировал runtime-функцию.");
+      }
+      DOSVCMI(window.Module);
+    }
+
+    window.addEventListener("beforeunload", () => {
+      if (state.isExiting) {
+        return;
+      }
+      uploadCurrentSaves().catch(() => {});
+    });
+
+    window.addEventListener("error", (event) => {
+      reportRuntimeFailure("Ошибка runtime", event.error || event.message || "unknown");
+    });
+
+    window.addEventListener("unhandledrejection", (event) => {
+      reportRuntimeFailure("Необработанное обещание runtime", event.reason || "unknown");
+    });
+
+    bootRuntime().catch((error) => {
+      reportRuntimeFailure("Не удалось инициализировать runtime", error);
+    });
+  </script>
+</body>
+</html>
