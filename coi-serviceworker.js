@@ -96,9 +96,7 @@ if (typeof window === "undefined") {
     const coepDegrading = reloadedBySelf === "coepdegrade";
 
     const shouldUseCoi = () => {
-      const host = String(window.location.hostname || "").trim().toLowerCase();
-      const isLoopback = host === "127.0.0.1" || host === "localhost" || host === "::1";
-      return isLoopback && isHomm3IsolatedRoute(window.location.href);
+      return isHomm3IsolatedRoute(window.location.href);
     };
 
     const coi = {
