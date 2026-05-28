@@ -35,6 +35,7 @@
             } catch (_) {}
         })();
     </script>
+    <script src="coi-serviceworker.js"></script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
@@ -3998,6 +3999,11 @@
                 <iframe title="Vice City" data-src="https://realtime.xn--80ahcljthqi.xn--p1ai/vice-city/engine/index.html?v=20260406-2" loading="lazy" scrolling="no" allow="autoplay; clipboard-write; fullscreen; gamepad" allowfullscreen></iframe>
             </div>
         </div>
+        <div id="svc_homm3" data-page="svc_homm3" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="HoMM3" data-src="homm3.html?v=20260528-13" loading="lazy" scrolling="no" allow="autoplay; clipboard-write; fullscreen; gamepad" allowfullscreen></iframe>
+            </div>
+        </div>
         <div id="svc_snacks" data-page="svc_snacks" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
                 <iframe title="Перекусы" data-src="snacks.html" loading="lazy" scrolling="yes"></iframe>
@@ -5178,6 +5184,7 @@
             svc_video: 'svc_video',
             svc_music: 'svc_music',
             svc_vice_city: 'svc_vice_city',
+            svc_homm3: 'svc_homm3',
             svc_snacks: 'svc_snacks',
             svc_restaurants: 'svc_restaurants',
             svc_recipes: 'svc_recipes',
@@ -5189,6 +5196,7 @@
         const VIDEO_SERVICE_VERSION = '20260221-10';
         const MUSIC_SERVICE_VERSION = '20260221-5';
         const VICE_CITY_SERVICE_VERSION = '20260406-2';
+        const HOMM3_SERVICE_VERSION = '20260528-13';
         const SIDEBAR_MINI_PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg>';
         const SIDEBAR_MINI_PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"></path></svg>';
         let activeLayoutPage = 'calendar';
@@ -5540,6 +5548,10 @@
                 params.set('profile', profileName);
             }
             return `${SIDEBAR_REALTIME_BASE}/vice-city/engine/index.html?${params.toString()}`;
+        }
+        function buildHomm3ServiceSrc() {
+            const base = `homm3.html?v=${encodeURIComponent(HOMM3_SERVICE_VERSION)}`;
+            return withForceTvParam(base);
         }
         function normalizeCallRoomSlug(value) {
             const normalized = String(value || '')
@@ -6444,6 +6456,16 @@
                 }
                 return;
             }
+            if (section.id === 'svc_homm3') {
+                const desired = buildHomm3ServiceSrc();
+                if (desired) {
+                    frame.setAttribute('data-src', desired);
+                    if (frame.getAttribute('src') !== desired) {
+                        frame.setAttribute('src', desired);
+                    }
+                }
+                return;
+            }
             if (section.id === 'svc_call') {
                 const desired = buildCallServiceSrc(getCallRoomSlugFromUrl());
                 if (desired) {
@@ -6813,6 +6835,7 @@
             const hideChatOnPage = resolved === 'svc_board'
                 || resolved === 'svc_music'
                 || resolved === 'svc_vice_city'
+                || resolved === 'svc_homm3'
                 || resolved === 'svc_video'
                 || resolved === 'svc_beer_space'
                 || resolved === 'svc_planning'
@@ -7508,6 +7531,7 @@
                 { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },
                 { href: buildMusicServiceSrc(), icon: '🎧', label: 'Музыка', page: 'svc_music' },
                 { href: buildViceCityServiceSrc(), icon: VICE_CITY_ICON_HTML, label: 'Vice City', page: 'svc_vice_city' },
+                { href: buildHomm3ServiceSrc(), icon: '⚔️', label: 'HoMM3', page: 'svc_homm3' },
                 { href: 'snacks.html', icon: '🥨', label: 'Перекусы', page: 'svc_snacks' },
                 { href: 'restaurants.html', icon: '🍽️', label: 'Рестораны', page: 'svc_restaurants' },
                 { href: 'recipes.html', icon: '📖', label: 'Рецепты', page: 'svc_recipes' },
@@ -8443,7 +8467,7 @@
                 };
                 db.ref('birthdayWishlists').on('value', applyBirthdaySnapshot);
 
-                const applyPlanningEventsSnapshot = (snapshot) => {
+                function applyPlanningEventsSnapshot(snapshot) {
                     const raw = snapshot.val() || {};
                     let items = [];
                     if (Array.isArray(raw)) {
@@ -8486,7 +8510,7 @@
 
                     renderCalendar();
                     if (selectedDate) renderPanelContent();
-                };
+                }
                 db.ref('planning/events').on('value', applyPlanningEventsSnapshot);
 
                 const applyPlanningUsersSnapshot = (snapshot) => {
