@@ -7038,8 +7038,49 @@
             pendingCellValueSaveTimers.set(key, timerId);
         }
 
+        function commitRenderedInputValuesToEventData() {
+            if (!eventData || !Array.isArray(eventData.sections)) return false;
+            const container = document.getElementById('sectionsContainer');
+            if (!container) return false;
+
+            let changed = false;
+            const inputs = container.querySelectorAll('input[data-section-id][data-row-id][data-col-id]');
+            inputs.forEach((input) => {
+                const { sectionId, rowId, colId } = input.dataset || {};
+                if (!sectionId || !rowId || !colId) return;
+                const section = eventData.sections.find((sec) => sec && sec.id === sectionId);
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                const row = section.rows.find((item) => item && item.id === rowId);
+                const column = section.columns.find((col) => col && col.id === colId);
+                if (!row || !row.cells || !column) return;
+
+                let next = input.value;
+                if (column.type === 'number') {
+                    next = sanitizeNumericInput(next, { allowDecimal: false }).value;
+                } else if (column.type === 'cost') {
+                    next = sanitizeNumericInput(next, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }).value;
+                }
+
+                const current = row.cells[colId];
+                const currentText = current === 0 ? '0' : String(current || '');
+                if (currentText === next) return;
+
+                row.cells[colId] = next;
+                dirtyCellKeys.add(`${sectionId}\u001f${rowId}\u001f${colId}`);
+                changed = true;
+            });
+
+            if (changed) {
+                markEventDataChanged();
+                scheduleExpenseSummaryRefresh();
+                scheduleQuickStatsRefresh();
+            }
+            return changed;
+        }
+
         function saveEventData() {
             if (!eventId || !db || !eventData) return;
+            commitRenderedInputValuesToEventData();
             clearTimeout(saveTimer);
             eventDataDirty = true;
             markEventDataChanged();
