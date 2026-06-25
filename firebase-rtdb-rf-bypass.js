@@ -5,11 +5,28 @@
 
   var TARGET_NS = 'kinosreda-ce8ef-default-rtdb';
   var CANONICAL_RTDB_HOST = 'kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app';
-  var BYPASS_VERSION = '2026-03-03-fix-planning-ws-constants';
+  var BYPASS_VERSION = '2026-06-26-block-live-server-reload';
   var RTDB_SUFFIX = '.firebasedatabase.app';
   var FIREBASEIO_SUFFIX = '.firebaseio.com';
   var RTDB_PROXY_PATH = '/firebase-rtdb';
   var proxyBaseCandidates = [];
+  var transportMode = String(window.KINOSREDA_RTDB_TRANSPORT_MODE || '').trim().toLowerCase();
+  var preferLongPolling = transportMode === 'long-polling' || transportMode === 'longpolling';
+  var preferWebSockets = !preferLongPolling;
+
+  function isLocalDevHost(hostname) {
+    var host = String(hostname || '').trim().toLowerCase();
+    return host === '127.0.0.1' || host === 'localhost' || host === '::1';
+  }
+
+  function shouldUseSameOriginProxyForCurrentOrigin() {
+    if (!window.location || !window.location.origin) return false;
+    var currentHost = String(window.location.hostname || '').toLowerCase();
+    if (currentHost.indexOf('realtime.') === 0) return true;
+    if (!isLocalDevHost(currentHost)) return false;
+    var currentPort = String(window.location.port || '').trim();
+    return currentPort === '8090' || currentPort === '8091';
+  }
 
   function addProxyBase(value) {
     var raw = String(value || '').trim();
@@ -22,11 +39,8 @@
   }
 
   addProxyBase(window.KINOSREDA_RTDB_PROXY_BASE);
-  if (window.location && window.location.origin) {
-    var currentHost = String(window.location.hostname || '').toLowerCase();
-    if (currentHost.indexOf('realtime.') === 0) {
-      addProxyBase(String(window.location.origin || '') + RTDB_PROXY_PATH);
-    }
+  if (window.location && window.location.origin && shouldUseSameOriginProxyForCurrentOrigin()) {
+    addProxyBase(String(window.location.origin || '') + RTDB_PROXY_PATH);
   }
   addProxyBase('https://realtime.киносреда.рф/firebase-rtdb');
   addProxyBase('https://realtime.xn--80ahcljthqi.xn--p1ai/firebase-rtdb');
@@ -191,16 +205,166 @@
 
     var NativeWebSocket = targetWin.WebSocket;
 
+    function isLikelyLiveReloadSocket(urlLike) {
+      try {
+        var urlObj = new URL(String(urlLike || ''), targetWin.location.href);
+        if (!isLocalDevHost(urlObj.hostname)) return false;
+        if (urlObj.host !== targetWin.location.host) return false;
+        var pathname = String(urlObj.pathname || '').toLowerCase();
+        if (/\/livereload(?:\/|$)/i.test(pathname)) return true;
+        return /\/ws$/i.test(pathname) && !String(urlObj.search || '').trim();
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function createInertLiveReloadSocket(targetUrl) {
+      var listeners = new Map();
+      var socket = {
+        url: String(targetUrl || ''),
+        readyState: 3,
+        bufferedAmount: 0,
+        extensions: '',
+        protocol: '',
+        binaryType: 'blob',
+        onopen: null,
+        onmessage: null,
+        onerror: null,
+        onclose: null,
+        send: function send() {},
+        close: function close() {},
+        addEventListener: function addEventListener(type, listener) {
+          if (typeof listener !== 'function') return;
+          var bucket = listeners.get(type);
+          if (!bucket) {
+            bucket = new Set();
+            listeners.set(type, bucket);
+          }
+          bucket.add(listener);
+        },
+        removeEventListener: function removeEventListener(type, listener) {
+          var bucket = listeners.get(type);
+          if (!bucket) return;
+          bucket.delete(listener);
+        },
+        dispatchEvent: function dispatchEvent() {
+          return true;
+        }
+      };
+      try {
+        socket.CONNECTING = NativeWebSocket.CONNECTING;
+        socket.OPEN = NativeWebSocket.OPEN;
+        socket.CLOSING = NativeWebSocket.CLOSING;
+        socket.CLOSED = NativeWebSocket.CLOSED;
+      } catch (_) {}
+      try {
+        setTimeout(function () {
+          if (typeof socket.onclose === 'function') {
+            socket.onclose.call(socket, { type: 'close', target: socket });
+          }
+          var closeListeners = listeners.get('close');
+          if (closeListeners) {
+            closeListeners.forEach(function (listener) {
+              try { listener.call(socket, { type: 'close', target: socket }); } catch (_) {}
+            });
+          }
+        }, 0);
+      } catch (_) {}
+      return socket;
+    }
+
+    function shouldSuppressLiveReloadMessage(urlLike, event) {
+      if (!isLikelyLiveReloadSocket(urlLike)) return false;
+      var rawData = event && Object.prototype.hasOwnProperty.call(event, 'data') ? event.data : '';
+      var text = String(rawData || '').trim().toLowerCase();
+      if (text === 'reload' || text === 'refreshcss') return true;
+      if (!text || (text.charAt(0) !== '{' && text.charAt(0) !== '[')) return false;
+      try {
+        var parsed = JSON.parse(text);
+        var command = String(
+          (parsed && (parsed.command || parsed.type || parsed.action || parsed.event)) || ''
+        ).trim().toLowerCase();
+        return command === 'reload' || command === 'refreshcss';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function attachLiveReloadMessageGuard(socket, socketUrl) {
+      if (!socket || socket.__KINOSREDA_RTDB_LR_GUARDED__) return socket;
+      if (!isLikelyLiveReloadSocket(socketUrl)) return socket;
+
+      socket.__KINOSREDA_RTDB_LR_GUARDED__ = true;
+      socket.__KINOSREDA_RTDB_LR_URL__ = String(socketUrl || '');
+      socket.__KINOSREDA_RTDB_LR_ONMESSAGE__ = null;
+      socket.__KINOSREDA_RTDB_LR_LISTENERS__ = new Map();
+
+      var nativeAddEventListener = socket.addEventListener ? socket.addEventListener.bind(socket) : null;
+      var nativeRemoveEventListener = socket.removeEventListener ? socket.removeEventListener.bind(socket) : null;
+
+      if (nativeAddEventListener) {
+        nativeAddEventListener('message', function guardedMessageBridge(event) {
+          if (shouldSuppressLiveReloadMessage(socket.__KINOSREDA_RTDB_LR_URL__, event)) return;
+          if (typeof socket.__KINOSREDA_RTDB_LR_ONMESSAGE__ === 'function') {
+            socket.__KINOSREDA_RTDB_LR_ONMESSAGE__.call(socket, event);
+          }
+        });
+
+        socket.addEventListener = function patchedAddEventListener(type, listener, options) {
+          if (type === 'message' && typeof listener === 'function') {
+            var wrapped = function guardedMessageListener(event) {
+              if (shouldSuppressLiveReloadMessage(socket.__KINOSREDA_RTDB_LR_URL__, event)) return;
+              listener.call(socket, event);
+            };
+            socket.__KINOSREDA_RTDB_LR_LISTENERS__.set(listener, wrapped);
+            return nativeAddEventListener(type, wrapped, options);
+          }
+          return nativeAddEventListener(type, listener, options);
+        };
+
+        socket.removeEventListener = function patchedRemoveEventListener(type, listener, options) {
+          if (type === 'message' && typeof listener === 'function') {
+            var wrapped = socket.__KINOSREDA_RTDB_LR_LISTENERS__.get(listener);
+            if (wrapped) {
+              socket.__KINOSREDA_RTDB_LR_LISTENERS__.delete(listener);
+              return nativeRemoveEventListener ? nativeRemoveEventListener(type, wrapped, options) : undefined;
+            }
+          }
+          return nativeRemoveEventListener ? nativeRemoveEventListener(type, listener, options) : undefined;
+        };
+      }
+
+      try {
+        Object.defineProperty(socket, 'onmessage', {
+          configurable: true,
+          enumerable: true,
+          get: function getOnMessage() {
+            return socket.__KINOSREDA_RTDB_LR_ONMESSAGE__;
+          },
+          set: function setOnMessage(listener) {
+            socket.__KINOSREDA_RTDB_LR_ONMESSAGE__ = typeof listener === 'function' ? listener : null;
+          }
+        });
+      } catch (_) {}
+
+      return socket;
+    }
+
     function PatchedWebSocket(url, protocols) {
       var finalUrl = url;
+      if (isLikelyLiveReloadSocket(url)) {
+        return createInertLiveReloadSocket(url);
+      }
       try {
         var rewritten = rewriteUrl(url);
         if (rewritten) {
           finalUrl = rewritten.replace(/^https:/i, 'wss:').replace(/^http:/i, 'ws:');
         }
       } catch (_) {}
-      if (protocols === undefined) return new NativeWebSocket(finalUrl);
-      return new NativeWebSocket(finalUrl, protocols);
+      var socket = protocols === undefined
+        ? new NativeWebSocket(finalUrl)
+        : new NativeWebSocket(finalUrl, protocols);
+      return attachLiveReloadMessageGuard(socket, finalUrl);
     }
 
     PatchedWebSocket.prototype = NativeWebSocket.prototype;
@@ -410,20 +574,33 @@
     })();
   }
 
-  function applyLongPollingPatch() {
+  function applyFirebaseTransportPatch() {
     try {
       if (!window.firebase || !firebase.database || !firebase.database.INTERNAL) return false;
       var internal = firebase.database.INTERNAL;
       var nativeForceLongPolling = typeof internal.forceLongPolling === 'function'
         ? internal.forceLongPolling.bind(internal)
         : null;
-      if (!nativeForceLongPolling) return false;
+      var nativeForceWebSockets = typeof internal.forceWebSockets === 'function'
+        ? internal.forceWebSockets.bind(internal)
+        : null;
 
-      nativeForceLongPolling();
+      if (preferLongPolling) {
+        if (!nativeForceLongPolling) return false;
+        nativeForceLongPolling();
+        if (typeof internal.forceWebSockets === 'function') {
+          internal.forceWebSockets = function forceWebSocketsPatched() {
+            nativeForceLongPolling();
+          };
+        }
+        return true;
+      }
 
-      if (typeof internal.forceWebSockets === 'function') {
-        internal.forceWebSockets = function forceWebSocketsPatched() {
-          nativeForceLongPolling();
+      if (!nativeForceWebSockets) return false;
+      nativeForceWebSockets();
+      if (typeof internal.forceLongPolling === 'function') {
+        internal.forceLongPolling = function forceLongPollingPatched() {
+          nativeForceWebSockets();
         };
       }
       return true;
@@ -432,12 +609,12 @@
     }
   }
 
-  function scheduleLongPollingPatch(timeoutMs) {
+  function scheduleFirebaseTransportPatch(timeoutMs) {
     var startedAt = Date.now();
     var maxDuration = Math.max(5000, Number(timeoutMs) || 20000);
 
     (function tick() {
-      if (applyLongPollingPatch()) return;
+      if (applyFirebaseTransportPatch()) return;
       if ((Date.now() - startedAt) >= maxDuration) return;
       try {
         setTimeout(tick, 300);
@@ -452,7 +629,7 @@
       var nativeInitializeApp = firebase.initializeApp.bind(firebase);
       firebase.initializeApp = function patchedInitializeApp() {
         var app = nativeInitializeApp.apply(firebase, arguments);
-        scheduleLongPollingPatch(60000);
+        scheduleFirebaseTransportPatch(60000);
         return app;
       };
       firebase.__KINOSREDA_RTDB_INIT_HOOKED__ = true;
@@ -466,7 +643,7 @@
 
       var nativeDatabase = firebase.database.bind(firebase);
       firebase.database = function patchedDatabase() {
-        scheduleLongPollingPatch(30000);
+        scheduleFirebaseTransportPatch(30000);
         return nativeDatabase.apply(firebase, arguments);
       };
 
@@ -483,7 +660,7 @@
   }
 
   function bootstrapFirebaseTransportGuards() {
-    scheduleLongPollingPatch(60000);
+    scheduleFirebaseTransportPatch(60000);
     hookFirebaseInitializeApp();
     patchFirebaseDatabaseAccessor();
 
@@ -493,7 +670,7 @@
       retries += 1;
       hookFirebaseInitializeApp();
       patchFirebaseDatabaseAccessor();
-      scheduleLongPollingPatch(20000);
+      scheduleFirebaseTransportPatch(20000);
       if (retries >= maxRetries) return;
       try {
         setTimeout(retryHooks, 500);
@@ -510,6 +687,7 @@
     activeProxyBase: activeProxyBase,
     targetHost: CANONICAL_RTDB_HOST,
     targetNs: TARGET_NS,
+    transportMode: preferLongPolling ? 'long-polling' : (preferWebSockets ? 'websocket' : 'auto'),
     rewriteUrl: rewriteUrl,
     setProxyBase: function setProxyBase(nextBase) {
       var parsed = toUrl(nextBase);
