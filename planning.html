@@ -25,6 +25,85 @@
             try { document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer'; } catch(_) {}
         })();
     </script>
+    <script>
+        (function protectPlanningFromLiveServerReload() {
+            function shouldDisablePlanningLiveReload() {
+                try {
+                    const host = String(window.location.hostname || '').trim().toLowerCase();
+                    if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return false;
+                    const path = String(window.location.pathname || '').trim().toLowerCase();
+                    return path.endsWith('/planning.html') || path.endsWith('/planning-event.html');
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (!shouldDisablePlanningLiveReload() || typeof window.WebSocket !== 'function') return;
+
+            const NativeWebSocket = window.WebSocket;
+            const isLiveServerSocket = (urlLike) => {
+                try {
+                    const url = new URL(String(urlLike || ''), window.location.href);
+                    return url.host === window.location.host && /\/ws$/i.test(url.pathname);
+                } catch (_) {
+                    return false;
+                }
+            };
+            const shouldSuppressMessage = (urlLike, event) => {
+                if (!isLiveServerSocket(urlLike)) return false;
+                const data = String(event && event.data || '');
+                return data === 'reload' || data === 'refreshcss';
+            };
+
+            class PlanningSafeWebSocket extends NativeWebSocket {
+                constructor(url, protocols) {
+                    super(url, protocols);
+                    this.__planningSafeUrl = String(url || '');
+                    this.__planningSafeOnMessage = null;
+                    this.__planningSafeListeners = new Map();
+                    super.addEventListener('message', (event) => {
+                        if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                        if (typeof this.__planningSafeOnMessage === 'function') {
+                            this.__planningSafeOnMessage.call(this, event);
+                        }
+                    });
+                }
+
+                get onmessage() {
+                    return this.__planningSafeOnMessage;
+                }
+
+                set onmessage(listener) {
+                    this.__planningSafeOnMessage = typeof listener === 'function' ? listener : null;
+                }
+
+                addEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = (event) => {
+                            if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                            listener.call(this, event);
+                        };
+                        this.__planningSafeListeners.set(listener, wrapped);
+                        return super.addEventListener(type, wrapped, options);
+                    }
+                    return super.addEventListener(type, listener, options);
+                }
+
+                removeEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = this.__planningSafeListeners.get(listener);
+                        if (wrapped) {
+                            this.__planningSafeListeners.delete(listener);
+                            return super.removeEventListener(type, wrapped, options);
+                        }
+                    }
+                    return super.removeEventListener(type, listener, options);
+                }
+            }
+
+            window.WebSocket = PlanningSafeWebSocket;
+        })();
+    </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
@@ -52,7 +131,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <!-- Logo font: load selected font from Google Fonts (per-user) -->

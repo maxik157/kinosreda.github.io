@@ -25,6 +25,85 @@
             try { document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer'; } catch(_) {}
         })();
     </script>
+    <script>
+        (function protectPlanningFromLiveServerReload() {
+            function shouldDisablePlanningLiveReload() {
+                try {
+                    const host = String(window.location.hostname || '').trim().toLowerCase();
+                    if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return false;
+                    const path = String(window.location.pathname || '').trim().toLowerCase();
+                    return path.endsWith('/planning.html') || path.endsWith('/planning-event.html');
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (!shouldDisablePlanningLiveReload() || typeof window.WebSocket !== 'function') return;
+
+            const NativeWebSocket = window.WebSocket;
+            const isLiveServerSocket = (urlLike) => {
+                try {
+                    const url = new URL(String(urlLike || ''), window.location.href);
+                    return url.host === window.location.host && /\/ws$/i.test(url.pathname);
+                } catch (_) {
+                    return false;
+                }
+            };
+            const shouldSuppressMessage = (urlLike, event) => {
+                if (!isLiveServerSocket(urlLike)) return false;
+                const data = String(event && event.data || '');
+                return data === 'reload' || data === 'refreshcss';
+            };
+
+            class PlanningSafeWebSocket extends NativeWebSocket {
+                constructor(url, protocols) {
+                    super(url, protocols);
+                    this.__planningSafeUrl = String(url || '');
+                    this.__planningSafeOnMessage = null;
+                    this.__planningSafeListeners = new Map();
+                    super.addEventListener('message', (event) => {
+                        if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                        if (typeof this.__planningSafeOnMessage === 'function') {
+                            this.__planningSafeOnMessage.call(this, event);
+                        }
+                    });
+                }
+
+                get onmessage() {
+                    return this.__planningSafeOnMessage;
+                }
+
+                set onmessage(listener) {
+                    this.__planningSafeOnMessage = typeof listener === 'function' ? listener : null;
+                }
+
+                addEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = (event) => {
+                            if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                            listener.call(this, event);
+                        };
+                        this.__planningSafeListeners.set(listener, wrapped);
+                        return super.addEventListener(type, wrapped, options);
+                    }
+                    return super.addEventListener(type, listener, options);
+                }
+
+                removeEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = this.__planningSafeListeners.get(listener);
+                        if (wrapped) {
+                            this.__planningSafeListeners.delete(listener);
+                            return super.removeEventListener(type, wrapped, options);
+                        }
+                    }
+                    return super.removeEventListener(type, listener, options);
+                }
+            }
+
+            window.WebSocket = PlanningSafeWebSocket;
+        })();
+    </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
@@ -58,16 +137,20 @@
                 if (typeof window.KINOSREDA_RTDB_TRANSPORT_MODE === 'string' && window.KINOSREDA_RTDB_TRANSPORT_MODE.trim()) {
                     return;
                 }
-                // Для страницы события держим тот же консервативный RTDB-транспорт,
-                // что и в проде: не берем режим из localStorage, чтобы старые override'ы
-                // не уводили страницу обратно в менее стабильный auto/websocket path.
-                window.KINOSREDA_RTDB_TRANSPORT_MODE = 'long-polling';
+                const host = String((window.location && window.location.hostname) || '').trim().toLowerCase();
+                const isLocalHost = host === '127.0.0.1'
+                    || host === 'localhost'
+                    || host === '::1'
+                    || host === '[::1]';
+                // На локальной отладке даем RTDB выбрать websocket path для живой синхронизации.
+                // На остальных хостах сохраняем консервативный транспорт, чтобы не ломать прод.
+                window.KINOSREDA_RTDB_TRANSPORT_MODE = isLocalHost ? 'auto' : 'long-polling';
             } catch (_) {
                 window.KINOSREDA_RTDB_TRANSPORT_MODE = 'long-polling';
             }
         })();
     </script>
-    <script src="./firebase-rtdb-rf-bypass.js?v=20260524a"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
@@ -843,6 +926,121 @@
             padding-left: 6px;
             padding-right: 6px;
             text-align: center;
+        }
+        .row-action-controls {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: 100%;
+        }
+        .row-drag-handle {
+            width: 24px;
+            min-width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 7px;
+            border: 1px solid rgba(148,163,184,0.24);
+            background: rgba(255,255,255,0.03);
+            color: #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 24px;
+            cursor: grab;
+            transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .row-drag-handle:hover {
+            border-color: rgba(245,158,11,0.36);
+            background: rgba(245,158,11,0.1);
+            color: var(--accent-200);
+        }
+        .row-drag-handle:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+        .row-drag-handle:disabled,
+        .row-drag-handle.is-disabled {
+            cursor: not-allowed;
+            opacity: 0.48;
+            border-color: rgba(148,163,184,0.18);
+            background: rgba(255,255,255,0.02);
+            color: rgba(203,213,225,0.78);
+            transform: none;
+        }
+        .row-drag-handle:disabled:hover,
+        .row-drag-handle.is-disabled:hover,
+        .row-drag-handle:disabled:active,
+        .row-drag-handle.is-disabled:active {
+            border-color: rgba(148,163,184,0.18);
+            background: rgba(255,255,255,0.02);
+            color: rgba(203,213,225,0.78);
+            transform: none;
+        }
+        .row-drag-handle-inline {
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+        .row-drag-handle-dots {
+            position: relative;
+            width: 10px;
+            height: 14px;
+            opacity: 0.92;
+        }
+        .row-drag-handle-dots::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 2px 2px, currentColor 0 1.35px, transparent 1.5px),
+                radial-gradient(circle at 8px 2px, currentColor 0 1.35px, transparent 1.5px),
+                radial-gradient(circle at 2px 7px, currentColor 0 1.35px, transparent 1.5px),
+                radial-gradient(circle at 8px 7px, currentColor 0 1.35px, transparent 1.5px),
+                radial-gradient(circle at 2px 12px, currentColor 0 1.35px, transparent 1.5px),
+                radial-gradient(circle at 8px 12px, currentColor 0 1.35px, transparent 1.5px);
+        }
+        .sheet tbody tr.row-dragging td {
+            opacity: 0.42;
+        }
+        .sheet tbody tr.row-drop-before td {
+            box-shadow: inset 0 3px 0 rgba(245,158,11,0.8);
+        }
+        .sheet tbody tr.row-drop-after td {
+            box-shadow: inset 0 -3px 0 rgba(245,158,11,0.8);
+        }
+        .row-drag-ghost {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 12050;
+            min-width: 180px;
+            max-width: min(360px, calc(100vw - 24px));
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(245,158,11,0.34);
+            background: rgba(12,12,12,0.94);
+            color: #fff7ed;
+            box-shadow: 0 18px 38px rgba(0,0,0,0.42), 0 0 0 1px rgba(245,158,11,0.14) inset;
+            pointer-events: none;
+            transform: translate(-9999px, -9999px);
+            will-change: transform;
+        }
+        .row-drag-ghost-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .row-drag-ghost-meta {
+            margin-top: 4px;
+            font-size: 0.66rem;
+            color: #fcd34d;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
         .sheet tbody tr:nth-child(even) td {
             background: rgba(255,255,255,0.02);
@@ -4679,6 +4877,19 @@
                 padding-left: 4px;
                 padding-right: 4px;
             }
+            .row-action-controls {
+                gap: 0;
+            }
+            .row-drag-handle {
+                width: 28px;
+                min-width: 28px;
+                height: 28px;
+                border-radius: 9px;
+                flex-basis: 28px;
+            }
+            .row-drag-handle-inline {
+                margin-right: 5px;
+            }
             .icon-btn,
             .row-delete-btn {
                 width: 22px;
@@ -5236,6 +5447,7 @@
         };
 
         const COST_COLUMN_MIN_WIDTH = 188;
+        const ROW_ACTION_COL_WIDTH = 52;
         const COST_INPUT_MAX_CHARS = 7;
         const EVENT_DATA_SAVE_DEBOUNCE_MS = 28;
         const EVENT_DATA_CELL_SAVE_DEBOUNCE_MS = 18;
@@ -5302,6 +5514,7 @@
         let colDragState = null;
         let colResizeState = null;
         let lastColDragAt = 0;
+        let rowDragState = null;
         let sectionDragState = null;
         let sectionResizeState = null;
         let sectionAutoScrollRaf = null;
@@ -5472,7 +5685,7 @@
         const NOTES_REMOTE_APPLY_INTERACTION_MS = 1800;
         const NOTES_CACHE_WRITE_DEBOUNCE_MS = 140;
         const NOTES_UI_STATE_SYNC_DEBOUNCE_MS = 120;
-        const SECTIONS_REMOTE_APPLY_INTERACTION_MS = 1200;
+        const SECTIONS_REMOTE_APPLY_INTERACTION_MS = 160;
         const NOTES_UI_SESSION_PREFIX = 'planningNotesUi:';
         const NOTES_CACHE_LS_PREFIX = 'planningNotesCache:';
         const PLANNING_VIEW_SESSION_PREFIX = 'planningEventView:';
@@ -5861,6 +6074,46 @@
             queuedRemoteEventDataSnapshot = null;
         }
 
+        function getEventDataStructureSignature(data) {
+            const normalized = cloneEventDataSnapshot(data);
+            if (Array.isArray(normalized.sections)) {
+                normalized.sections.forEach((section) => {
+                    if (!Array.isArray(section && section.rows)) return;
+                    section.rows.forEach((row) => {
+                        if (!row) return;
+                        row.cells = {};
+                    });
+                });
+            }
+            return stableSerialize(normalized);
+        }
+
+        function buildRemoteEventDataSnapshotForLocalDrafts(snapshotData) {
+            if (!snapshotData || !snapshotData.data || !eventData) return snapshotData;
+            const preferLocalCellKeys = new Set([
+                ...Array.from(dirtyCellKeys),
+                ...Array.from(pendingCellValueLocks.keys())
+            ]);
+            const mergedData = mergeEventDataForCommit(snapshotData.data, eventData, {
+                preferLocalCellKeys
+            });
+            applyPendingCellValueLocks(mergedData);
+            return {
+                data: mergedData,
+                signature: stableSerialize(mergedData)
+            };
+        }
+
+        function canApplyRemoteSnapshotDuringLocalDrafts(snapshotData) {
+            if (!snapshotData || !snapshotData.data || !eventData) return false;
+            if (!dirtyCellKeys.size && !pendingCellValueLocks.size) return false;
+            try {
+                return getEventDataStructureSignature(snapshotData.data) === getEventDataStructureSignature(eventData);
+            } catch (_) {
+                return false;
+            }
+        }
+
         function applyResolvedEventDataSnapshot(snapshotData, options = {}) {
             if (!snapshotData) return;
             const previousData = eventData;
@@ -5901,11 +6154,16 @@
         }
 
         function flushQueuedRemoteEventDataSnapshot() {
-            if (!queuedRemoteEventDataSnapshot || eventDataDirty || saveTimer || pendingCellValueSaveTimers.size) return;
+            if (!queuedRemoteEventDataSnapshot) return;
             const queued = queuedRemoteEventDataSnapshot;
+            const hasLocalDrafts = !!(eventDataDirty || saveTimer);
+            if (hasLocalDrafts && !canApplyRemoteSnapshotDuringLocalDrafts(queued)) return;
             queuedRemoteEventDataSnapshot = null;
-            if (!queued || queued.signature === eventDataSignature) return;
-            applyResolvedEventDataSnapshot(queued);
+            const resolved = hasLocalDrafts
+                ? buildRemoteEventDataSnapshotForLocalDrafts(queued)
+                : queued;
+            if (!resolved || resolved.signature === eventDataSignature) return;
+            applyResolvedEventDataSnapshot(resolved);
         }
 
         function isTruthyRouteFlag(value) {
@@ -6508,11 +6766,21 @@
                     return;
                 }
 
-                if (eventDataDirty || saveTimer || pendingCellValueSaveTimers.size) {
-                    queueRemoteEventDataSnapshot({
-                        data: nextData,
-                        signature: nextSig
-                    });
+                const resolvedSnapshot = {
+                    data: nextData,
+                    signature: nextSig
+                };
+
+                if (eventDataDirty || saveTimer) {
+                    if (canApplyRemoteSnapshotDuringLocalDrafts(resolvedSnapshot)) {
+                        const mergedSnapshot = buildRemoteEventDataSnapshotForLocalDrafts(resolvedSnapshot);
+                        initialDataSnapshotReady = true;
+                        if (!mergedSnapshot || mergedSnapshot.signature === eventDataSignature) return;
+                        applyResolvedEventDataSnapshot(mergedSnapshot);
+                        return;
+                    }
+                    queueRemoteEventDataSnapshot(resolvedSnapshot);
+                    initialDataSnapshotReady = true;
                     return;
                 }
 
@@ -6520,14 +6788,8 @@
                     initialDataSnapshotReady = true;
                     return;
                 }
-                if (initialRenderCommitted && (
-                    document.visibilityState === 'hidden'
-                    || !planningWindowFocused
-                )) {
-                    queueRemoteEventDataSnapshot({
-                        data: nextData,
-                        signature: nextSig
-                    });
+                if (initialRenderCommitted && document.visibilityState === 'hidden') {
+                    queueRemoteEventDataSnapshot(resolvedSnapshot);
                     initialDataSnapshotReady = true;
                     return;
                 }
@@ -6536,10 +6798,7 @@
                     return;
                 }
 
-                applyResolvedEventDataSnapshot({
-                    data: nextData,
-                    signature: nextSig
-                });
+                applyResolvedEventDataSnapshot(resolvedSnapshot);
                 };
             }
             if (!planningDataRealtimeBound) {
@@ -6631,6 +6890,7 @@
                         return {
                             id: rowId,
                             cells: normalizedCells,
+                            position: normalizeRowPositionValue(row.position ?? row.sortOrder ?? row.order, rowIndex),
                             closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
                                 normalizedBeerBacklog.status === 'done'
                                 || (
@@ -6652,6 +6912,13 @@
                             beerBacklog: normalizedBeerBacklog
                         };
                     });
+                    rows.sort((left, right) => {
+                        const leftPos = normalizeRowPositionValue(left && left.position, 0);
+                        const rightPos = normalizeRowPositionValue(right && right.position, 0);
+                        if (leftPos !== rightPos) return leftPos - rightPos;
+                        return collatorEn.compare(String(left && left.id || ''), String(right && right.id || ''));
+                    });
+                    reindexSectionRows({ rows });
                     return {
                         id: sectionId,
                         name: sec.name || 'Раздел',
@@ -7030,6 +7297,9 @@
         function queueCellValueSave(sectionId, rowId, colId) {
             if (!eventId || !db || !eventData || !sectionId || !rowId || !colId) return;
             const key = `${sectionId}\u001f${rowId}\u001f${colId}`;
+            pendingCellValueLocks.set(key, {
+                value: getCellValueByLocation(eventData, sectionId, rowId, colId)
+            });
             const existingTimer = pendingCellValueSaveTimers.get(key);
             if (existingTimer) clearTimeout(existingTimer);
             const timerId = setTimeout(() => {
@@ -7104,6 +7374,7 @@
             return {
                 id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
                 cells,
+                position: 0,
                 shared: typeof shared === 'boolean' ? shared : true
             };
         }
@@ -7133,13 +7404,65 @@
             return 2;
         }
 
+        function normalizeRowPositionValue(value, fallbackIndex = 0) {
+            const numeric = Math.floor(Number(value));
+            if (Number.isFinite(numeric) && numeric > 0) return numeric;
+            return Math.max(1, Math.floor(Number(fallbackIndex) || 0) + 1);
+        }
+
+        function reindexSectionRows(section) {
+            if (!section || !Array.isArray(section.rows)) return false;
+            let changed = false;
+            section.rows.forEach((row, index) => {
+                const nextPosition = index + 1;
+                if ((Number(row && row.position) || 0) !== nextPosition) {
+                    row.position = nextPosition;
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+
+        function getManualRows(section) {
+            if (!section || !Array.isArray(section.rows)) return [];
+            return section.rows.slice().sort((left, right) => {
+                const leftPos = normalizeRowPositionValue(left && left.position, 0);
+                const rightPos = normalizeRowPositionValue(right && right.position, 0);
+                if (leftPos !== rightPos) return leftPos - rightPos;
+                return collatorEn.compare(String(left && left.id || ''), String(right && right.id || ''));
+            });
+        }
+
+        function hasSectionActiveSort(sectionId) {
+            const state = sectionId && sortState ? sortState[sectionId] : null;
+            return !!(state && state.colId);
+        }
+
+        function hasSectionActiveOwnerFilter(sectionId) {
+            return !!(sectionId && ownerFilterState && ownerFilterState[sectionId]);
+        }
+
+        function isRowReorderEnabled(sectionId) {
+            return !!sectionId && !hasSectionActiveOwnerFilter(sectionId);
+        }
+
+        function getRowReorderDisabledHint(sectionId) {
+            if (!sectionId) return 'Перетаскивание строк сейчас недоступно';
+            if (hasSectionActiveOwnerFilter(sectionId)) {
+                return 'Перетаскивание строк отключено, пока включен фильтр «Мои»';
+            }
+            return 'Перетащить строку';
+        }
+
         function getSortedRows(section) {
             const state = sortState[section.id];
-            if (!state) return section.rows.slice();
+            const baseRows = getManualRows(section);
+            if (!state) return baseRows;
             const col = section.columns.find(c => c.id === state.colId);
-            if (!col) return section.rows.slice();
+            if (!col) return baseRows;
             const dir = state.dir === 'desc' ? -1 : 1;
-            return section.rows.slice().sort((a, b) => {
+            return baseRows.slice().sort((a, b) => {
+                const manualDiff = normalizeRowPositionValue(a && a.position, 0) - normalizeRowPositionValue(b && b.position, 0);
                 const aval = getCellText(a, col).trim();
                 const bval = getCellText(b, col).trim();
                 if (col.type === 'number' || col.type === 'cost') {
@@ -7147,19 +7470,22 @@
                     const bn = parseFloat(bval.replace(',', '.'));
                     const aValid = !Number.isNaN(an);
                     const bValid = !Number.isNaN(bn);
-                    if (!aValid && !bValid) return 0;
+                    if (!aValid && !bValid) return manualDiff;
                     if (!aValid) return 1;
                     if (!bValid) return -1;
-                    return dir * (an - bn);
+                    const diff = dir * (an - bn);
+                    if (diff !== 0) return diff;
+                    return manualDiff;
                 }
-                if (!aval && !bval) return 0;
+                if (!aval && !bval) return manualDiff;
                 if (!aval) return 1;
                 if (!bval) return -1;
                 const ga = getTextGroup(aval);
                 const gb = getTextGroup(bval);
                 if (ga !== gb) return dir * (ga - gb);
                 const cmp = ga === 0 ? collatorEn.compare(aval, bval) : collator.compare(aval, bval);
-                return dir * cmp;
+                if (cmp !== 0) return dir * cmp;
+                return manualDiff;
             });
         }
 
@@ -7172,6 +7498,33 @@
                 const list = Array.isArray(raw) ? raw : (raw ? String(raw).split(',').map(v => v.trim()).filter(Boolean) : []);
                 return list.includes(currentUserName);
             });
+        }
+
+        function getRenderedRowsForSection(section) {
+            return filterRowsByOwner(section, getSortedRows(section));
+        }
+
+        function getRowsForManualReorder(section) {
+            if (!section) return [];
+            if (hasSectionActiveSort(section.id)) {
+                return getSortedRows(section);
+            }
+            return getManualRows(section);
+        }
+
+        function shouldRefreshSectionOnCellValueChange(sectionId, colId) {
+            if (!eventData || !sectionId || !colId) return false;
+            const section = eventData.sections.find((item) => item && item.id === sectionId);
+            if (!section) return false;
+            const state = sortState && sortState[sectionId];
+            if (state && state.colId === colId) return true;
+            if (hasSectionActiveOwnerFilter(sectionId)) {
+                const ownerCol = Array.isArray(section.columns)
+                    ? section.columns.find((col) => col && col.type === 'owners')
+                    : null;
+                if (ownerCol && ownerCol.id === colId) return true;
+            }
+            return false;
         }
 
         function formatOwnerLabel(list) {
@@ -8922,7 +9275,7 @@
             return widths;
         }
 
-        function getDisplayColumnWidths(section, cardWidthPx, actionColWidth = 52) {
+        function getDisplayColumnWidths(section, cardWidthPx, actionColWidth = ROW_ACTION_COL_WIDTH) {
             const columns = Array.isArray(section.columns) ? section.columns : [];
             const output = {};
             if (!columns.length) return output;
@@ -9033,7 +9386,7 @@
             return true;
         }
 
-        function getRenderedSectionDisplayWidths(section, table, actionColWidth = 52) {
+        function getRenderedSectionDisplayWidths(section, table, actionColWidth = ROW_ACTION_COL_WIDTH) {
             const card = table ? table.closest('.card[data-section-id]') : null;
             const cardWidthPx = card
                 ? Math.round(card.getBoundingClientRect().width || parseFloat(card.style.width) || 0)
@@ -9074,7 +9427,7 @@
             const columns = Array.isArray(section.columns) ? section.columns : [];
             const displayWidths = options.displayWidths || {};
             const allParticipants = Array.isArray(options.allParticipants) ? options.allParticipants : [];
-            const actionColWidth = Number(options.actionColWidth) || 52;
+            const actionColWidth = Number(options.actionColWidth) || ROW_ACTION_COL_WIDTH;
             const shareToggleColId = options.shareToggleColId || ((columns.find((col) => col && col.type === 'cost') || {}).id);
 
             const tr = document.createElement('tr');
@@ -9181,6 +9534,23 @@
                 }
 
                 if (colIndex === 0) {
+                    const reorderEnabled = isRowReorderEnabled(section.id);
+                    const hasActiveSort = hasSectionActiveSort(section.id);
+                    const dragTitle = reorderEnabled
+                        ? (hasActiveSort
+                            ? `Перетащить строку «${getRowLabel(section, rowData)}» и перейти к ручному порядку`
+                            : `Перетащить строку «${getRowLabel(section, rowData)}»`)
+                        : getRowReorderDisabledHint(section.id);
+                    const dragBtn = document.createElement('button');
+                    dragBtn.type = 'button';
+                    dragBtn.className = 'row-drag-handle row-drag-handle-inline';
+                    if (!reorderEnabled) dragBtn.classList.add('is-disabled');
+                    dragBtn.dataset.rowDragHandle = section.id;
+                    dragBtn.dataset.rowId = rowData.id;
+                    dragBtn.title = dragTitle;
+                    dragBtn.setAttribute('aria-label', dragBtn.title);
+                    dragBtn.disabled = !reorderEnabled;
+                    dragBtn.innerHTML = '<span aria-hidden="true" class="row-drag-handle-dots"></span>';
                     const toggle = document.createElement('button');
                     toggle.type = 'button';
                     toggle.className = `row-toggle ${rowData.closed ? 'active' : ''}`;
@@ -9190,6 +9560,7 @@
                     toggle.textContent = rowData.closed ? '✓' : '';
                     const cellWrap = document.createElement('div');
                     cellWrap.className = 'item-cell';
+                    cellWrap.appendChild(dragBtn);
                     cellWrap.appendChild(toggle);
                     if (cellContent) cellWrap.appendChild(cellContent);
                     td.appendChild(cellWrap);
@@ -9205,13 +9576,18 @@
             tdAction.style.width = `${actionColWidth}px`;
             tdAction.style.minWidth = `${actionColWidth}px`;
             tdAction.style.maxWidth = `${actionColWidth}px`;
+
+            const actionWrap = document.createElement('div');
+            actionWrap.className = 'row-action-controls';
+
             const delBtn = document.createElement('button');
             delBtn.className = 'icon-btn row-delete-btn';
             delBtn.title = 'Удалить строку';
             delBtn.textContent = '🗑️';
             delBtn.dataset.deleteRow = section.id;
             delBtn.dataset.rowId = rowData.id;
-            tdAction.appendChild(delBtn);
+            actionWrap.appendChild(delBtn);
+            tdAction.appendChild(actionWrap);
             tr.appendChild(tdAction);
 
             return tr;
@@ -9220,11 +9596,11 @@
         function populateSectionTableBody(table, section, options = {}) {
             if (!table || !section) return false;
             const columns = Array.isArray(section.columns) ? section.columns : [];
-            const actionColWidth = Number(options.actionColWidth) || 52;
+            const actionColWidth = Number(options.actionColWidth) || ROW_ACTION_COL_WIDTH;
             const displayWidths = options.displayWidths || getRenderedSectionDisplayWidths(section, table, actionColWidth);
             const allParticipants = Array.isArray(options.allParticipants) ? options.allParticipants : collectParticipants();
             const shareToggleColId = (columns.find((col) => col && col.type === 'cost') || {}).id;
-            const rows = filterRowsByOwner(section, getSortedRows(section));
+            const rows = getRenderedRowsForSection(section);
             const tbody = document.createElement('tbody');
 
             if (!rows.length) {
@@ -9337,7 +9713,7 @@
                 const table = container.querySelector(`table.sheet[data-section-id="${sectionId}"]`);
                 if (!table) throw new Error('missing-section-table');
                 const renderedRows = Array.from(table.querySelectorAll('tbody tr[data-row-id]'));
-                const nextRows = Array.isArray(section.rows) ? section.rows : [];
+                const nextRows = getRenderedRowsForSection(section);
                 const shouldRebuildBody = renderedRows.length !== nextRows.length
                     || renderedRows.some((renderedRow, rowIndex) => String(renderedRow.dataset.rowId || '') !== String(nextRows[rowIndex] && nextRows[rowIndex].id || ''));
                 if (shouldRebuildBody) {
@@ -9593,7 +9969,7 @@
                 table.className = 'sheet';
                 table.dataset.sectionId = section.id;
 
-                const actionColWidth = 52;
+                const actionColWidth = ROW_ACTION_COL_WIDTH;
                 const displayWidths = getDisplayColumnWidths(section, cardWidthPx, actionColWidth);
 
                 const thead = document.createElement('thead');
@@ -10526,20 +10902,77 @@
             row.cells[colId] = next;
             dirtyCellKeys.add(`${sectionId}\u001f${rowId}\u001f${colId}`);
             markEventDataChanged();
-            if (eventDataDirty || saveTimer) {
-                scheduleExpenseSummaryRefresh();
-                scheduleQuickStatsRefresh();
+            queueCellValueSave(sectionId, rowId, colId);
+            if (shouldRefreshSectionOnCellValueChange(sectionId, colId)) {
+                if (!refreshRenderedSection(sectionId)) {
+                    renderSections();
+                }
                 return;
             }
-            queueCellValueSave(sectionId, rowId, colId);
             scheduleExpenseSummaryRefresh();
             scheduleQuickStatsRefresh();
+        }
+
+        function moveRowToIndex(sectionId, rowId, nextIndex, options = {}) {
+            const section = eventData && eventData.sections
+                ? eventData.sections.find((sec) => sec.id === sectionId)
+                : null;
+            if (!section || !Array.isArray(section.rows) || !section.rows.length) return false;
+            section.rows = getRowsForManualReorder(section);
+            const currentIndex = section.rows.findIndex((row) => row && row.id === rowId);
+            if (currentIndex === -1) return false;
+            const boundedIndex = Math.max(0, Math.min(section.rows.length - 1, Math.floor(Number(nextIndex) || 0)));
+            const hadActiveSort = !!(sortState && sortState[sectionId]);
+            if (currentIndex === boundedIndex) {
+                reindexSectionRows(section);
+                return false;
+            }
+            const [row] = section.rows.splice(currentIndex, 1);
+            section.rows.splice(boundedIndex, 0, row);
+            reindexSectionRows(section);
+            if (ownerFilterState && ownerFilterState[sectionId]) {
+                delete ownerFilterState[sectionId];
+            }
+            if (sortState && sortState[sectionId]) {
+                delete sortState[sectionId];
+                saveSortStateForEvent();
+            }
+            saveEventData();
+            if (!refreshRenderedSection(sectionId)) {
+                renderSections();
+            }
+            if (options.emitAction !== false) {
+                emitCollabAction(
+                    options.actionLabel
+                    || (hadActiveSort
+                        ? `Переставил строку «${getRowLabel(section, row)}» и вернулся к ручному порядку`
+                        : `Переставил строку «${getRowLabel(section, row)}»`)
+                );
+            }
+            return true;
+        }
+
+        function moveRow(sectionId, rowId, targetRowId, after = false, options = {}) {
+            const section = eventData && eventData.sections
+                ? eventData.sections.find((sec) => sec.id === sectionId)
+                : null;
+            if (!section || !Array.isArray(section.rows) || !section.rows.length) return false;
+            section.rows = getRowsForManualReorder(section);
+            const currentIndex = section.rows.findIndex((row) => row && row.id === rowId);
+            const targetIndex = section.rows.findIndex((row) => row && row.id === targetRowId);
+            if (currentIndex === -1 || targetIndex === -1) return false;
+            let nextIndex = after ? targetIndex + 1 : targetIndex;
+            if (currentIndex < nextIndex) nextIndex -= 1;
+            return moveRowToIndex(sectionId, rowId, nextIndex, options);
         }
 
         function addRow(sectionId) {
             const section = eventData.sections.find(sec => sec.id === sectionId);
             if (!section) return;
-            section.rows.push(createRow(section.columns, getDefaultShareForSection(section.name)));
+            const row = createRow(section.columns, getDefaultShareForSection(section.name));
+            row.position = section.rows.length + 1;
+            section.rows.push(row);
+            reindexSectionRows(section);
             saveEventData();
             if (!refreshRenderedSection(sectionId)) {
                 renderSections();
@@ -10553,6 +10986,7 @@
             const row = section.rows.find(r => r.id === rowId);
             const rowName = row ? getRowLabel(section, row) : 'строка';
             section.rows = section.rows.filter(r => r.id !== rowId);
+            reindexSectionRows(section);
             saveEventData();
             if (!refreshRenderedSection(sectionId)) {
                 renderSections();
@@ -16359,6 +16793,92 @@
             animateReorder(table, prev);
         }
 
+        function clearRowDropPreview(sectionId = '') {
+            const scope = sectionId
+                ? document.querySelector(`table.sheet[data-section-id="${cssEscapeSafe(sectionId)}"] tbody`)
+                : document;
+            if (!scope) return;
+            scope.querySelectorAll('.row-drop-before, .row-drop-after').forEach((row) => {
+                row.classList.remove('row-drop-before', 'row-drop-after');
+            });
+        }
+
+        function ensureRowDragGhost() {
+            let ghost = document.getElementById('rowDragGhost');
+            if (ghost) return ghost;
+            ghost = document.createElement('div');
+            ghost.id = 'rowDragGhost';
+            ghost.className = 'row-drag-ghost';
+            ghost.innerHTML = `
+                <div class="row-drag-ghost-title"></div>
+                <div class="row-drag-ghost-meta"></div>
+            `;
+            document.body.appendChild(ghost);
+            return ghost;
+        }
+
+        function updateRowDragGhostPosition(clientX, clientY) {
+            if (!rowDragState || !rowDragState.ghost) return;
+            const x = Math.round(clientX + 16);
+            const y = Math.round(clientY + 14);
+            rowDragState.ghost.style.transform = `translate(${x}px, ${y}px)`;
+        }
+
+        function hideRowDragGhost() {
+            const ghost = document.getElementById('rowDragGhost');
+            if (!ghost) return;
+            ghost.style.transform = 'translate(-9999px, -9999px)';
+        }
+
+        function updateRowAutoScroll(state, clientY) {
+            if (!state || !state.scrollWrap) return;
+            const rect = state.scrollWrap.getBoundingClientRect();
+            const edge = 54;
+            const maxSpeed = 14;
+            let delta = 0;
+            if (clientY < rect.top + edge) {
+                const depth = Math.min(edge, Math.max(0, (rect.top + edge) - clientY));
+                delta = -Math.max(2, Math.round((depth / edge) * maxSpeed));
+            } else if (clientY > rect.bottom - edge) {
+                const depth = Math.min(edge, Math.max(0, clientY - (rect.bottom - edge)));
+                delta = Math.max(2, Math.round((depth / edge) * maxSpeed));
+            }
+            if (delta) {
+                state.scrollWrap.scrollTop += delta;
+            }
+        }
+
+        function getRowDropTarget(table, clientY, draggedRowId) {
+            if (!table || !draggedRowId) return null;
+            const rows = Array.from(table.querySelectorAll('tbody tr[data-row-id]'))
+                .filter((row) => String(row.dataset.rowId || '') !== String(draggedRowId || ''));
+            if (!rows.length) return null;
+
+            for (const row of rows) {
+                const rect = row.getBoundingClientRect();
+                const mid = rect.top + (rect.height / 2);
+                if (clientY <= mid) {
+                    return { rowId: row.dataset.rowId, after: false };
+                }
+                if (clientY <= rect.bottom) {
+                    return { rowId: row.dataset.rowId, after: true };
+                }
+            }
+            const last = rows[rows.length - 1];
+            return last ? { rowId: last.dataset.rowId, after: true } : null;
+        }
+
+        function previewMoveRow(sectionId, rowId, targetRowId, after) {
+            const table = document.querySelector(`table.sheet[data-section-id="${cssEscapeSafe(sectionId)}"]`);
+            if (!table || !rowId || !targetRowId || rowId === targetRowId) return;
+            const tbody = table.tBodies && table.tBodies.length ? table.tBodies[0] : table.querySelector('tbody');
+            if (!tbody) return;
+            const toTr = tbody.querySelector(`tr[data-row-id="${cssEscapeSafe(targetRowId)}"]`);
+            if (!toTr) return;
+            clearRowDropPreview(sectionId);
+            toTr.classList.add(after ? 'row-drop-after' : 'row-drop-before');
+        }
+
         function updateSectionAutoScroll(pointerY) {
             const edge = 80;
             const maxSpeed = 18;
@@ -17080,7 +17600,6 @@
                 publishPlanningDiag('visibilitychange', { state: document.visibilityState || 'visible' });
                 notesVisibilitySuspended = false;
                 if (document.visibilityState === 'hidden') {
-                    suspendPlanningRealtimeSubscriptions();
                     flushCachedPlanningEventState();
                     flushCachedNotesDocumentWrite();
                     syncNotesUiState({ immediate: true });
@@ -17090,7 +17609,6 @@
                     }
                     return;
                 }
-                resumePlanningRealtimeSubscriptions();
                 if (document.visibilityState === 'visible' && notesModalOpen && !notesEditorInstance && notesEditorSuspendedForBackground) {
                     hydrateOpenNotesEditor({
                         focusEditor: notesPendingFocusRestore,
@@ -17125,7 +17643,6 @@
             window.addEventListener('blur', () => {
                 publishPlanningDiag('window-blur');
                 planningWindowFocused = false;
-                suspendPlanningRealtimeSubscriptions();
                 notesVisibilitySuspended = false;
                 if (notesModalOpen) {
                     markNotesInteraction();
@@ -17135,12 +17652,8 @@
             });
             window.addEventListener('focus', () => {
                 publishPlanningDiag('window-focus');
-                const wasBlurred = !planningWindowFocused;
                 planningWindowFocused = true;
                 notesVisibilitySuspended = false;
-                if (wasBlurred) {
-                    resumePlanningRealtimeSubscriptions();
-                }
                 if (notesModalOpen) {
                     markNotesInteraction();
                     if (!notesEditorInstance && notesEditorSuspendedForBackground) {
@@ -17151,7 +17664,7 @@
                     }
                 }
                 syncPlanningViewState();
-                if (wasBlurred && document.visibilityState === 'visible') {
+                if (document.visibilityState === 'visible') {
                     flushQueuedRemoteEventDataSnapshot();
                     flushQueuedNotesRemoteDoc(true);
                 }
@@ -17160,7 +17673,6 @@
                 publishPlanningDiag('pagehide', {
                     persisted: !!(event && event.persisted)
                 });
-                suspendPlanningRealtimeSubscriptions();
                 flushCachedPlanningEventState();
                 flushCachedNotesDocumentWrite();
                 syncNotesUiState({ immediate: true });
@@ -17176,7 +17688,6 @@
                 publishPlanningDiag('pageshow', {
                     persisted: !!(event && event.persisted)
                 });
-                resumePlanningRealtimeSubscriptions();
                 if (!event || !event.persisted) return;
                 if (document.visibilityState === 'visible') {
                     flushQueuedRemoteEventDataSnapshot();
@@ -17373,6 +17884,102 @@
                 document.querySelectorAll('.col-drag-over').forEach(t => t.classList.remove('col-drag-over'));
                 if (colDragState.preview) renderSections({ forceDomRefresh: true });
                 colDragState = null;
+            });
+
+            document.getElementById('sectionsContainer').addEventListener('pointerdown', (e) => {
+                const handle = e.target.closest('[data-row-drag-handle]');
+                if (!handle) return;
+                const sectionId = String(handle.dataset.rowDragHandle || '').trim();
+                const rowId = String(handle.dataset.rowId || '').trim();
+                if (!sectionId || !rowId || !isRowReorderEnabled(sectionId)) return;
+                const origin = handle.closest('tr[data-row-id]');
+                const table = handle.closest('table.sheet');
+                const scrollWrap = handle.closest('.table-scroll');
+                if (!origin || !table || !scrollWrap) return;
+                e.preventDefault();
+                rowDragState = {
+                    sectionId,
+                    rowId,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    pointerId: e.pointerId,
+                    origin,
+                    handle,
+                    table,
+                    scrollWrap,
+                    dragging: false,
+                    preview: null,
+                    ghost: null
+                };
+                try {
+                    handle.setPointerCapture(e.pointerId);
+                } catch (_) {}
+            });
+
+            document.addEventListener('pointermove', (e) => {
+                if (!rowDragState || rowDragState.pointerId !== e.pointerId) return;
+                if (!rowDragState.dragging) {
+                    const dx = Math.abs(e.clientX - rowDragState.startX);
+                    const dy = Math.abs(e.clientY - rowDragState.startY);
+                    if (dx < 4 && dy < 4) return;
+                    rowDragState.dragging = true;
+                    rowDragState.origin.classList.add('row-dragging');
+                    rowDragState.ghost = ensureRowDragGhost();
+                    const section = eventData && eventData.sections
+                        ? eventData.sections.find((item) => item.id === rowDragState.sectionId)
+                        : null;
+                    const row = section && Array.isArray(section.rows)
+                        ? section.rows.find((item) => item.id === rowDragState.rowId)
+                        : null;
+                    const titleNode = rowDragState.ghost.querySelector('.row-drag-ghost-title');
+                    const metaNode = rowDragState.ghost.querySelector('.row-drag-ghost-meta');
+                    if (titleNode) titleNode.textContent = getRowLabel(section, row);
+                    if (metaNode) metaNode.textContent = section && section.name ? section.name : 'Раздел';
+                }
+                e.preventDefault();
+                updateRowAutoScroll(rowDragState, e.clientY);
+                updateRowDragGhostPosition(e.clientX, e.clientY);
+                const target = getRowDropTarget(rowDragState.table, e.clientY, rowDragState.rowId);
+                if (!target) {
+                    clearRowDropPreview(rowDragState.sectionId);
+                    rowDragState.preview = null;
+                    return;
+                }
+                if (!rowDragState.preview
+                    || rowDragState.preview.rowId !== target.rowId
+                    || rowDragState.preview.after !== target.after) {
+                    previewMoveRow(rowDragState.sectionId, rowDragState.rowId, target.rowId, target.after);
+                    rowDragState.preview = target;
+                }
+            });
+
+            document.addEventListener('pointerup', (e) => {
+                if (!rowDragState || rowDragState.pointerId !== e.pointerId) return;
+                if (rowDragState.dragging && rowDragState.preview) {
+                    const moved = moveRow(rowDragState.sectionId, rowDragState.rowId, rowDragState.preview.rowId, rowDragState.preview.after, {
+                        actionLabel: 'Переставил строку'
+                    });
+                    if (!moved) {
+                        renderSections({ forceDomRefresh: true });
+                    }
+                } else if (rowDragState.dragging) {
+                    renderSections({ forceDomRefresh: true });
+                }
+                clearRowDropPreview(rowDragState.sectionId);
+                if (rowDragState.origin) rowDragState.origin.classList.remove('row-dragging');
+                hideRowDragGhost();
+                rowDragState = null;
+            });
+
+            document.addEventListener('pointercancel', (e) => {
+                if (!rowDragState || rowDragState.pointerId !== e.pointerId) return;
+                clearRowDropPreview(rowDragState.sectionId);
+                if (rowDragState.dragging) {
+                    renderSections({ forceDomRefresh: true });
+                }
+                if (rowDragState.origin) rowDragState.origin.classList.remove('row-dragging');
+                hideRowDragGhost();
+                rowDragState = null;
             });
 
             document.addEventListener('pointermove', (e) => {

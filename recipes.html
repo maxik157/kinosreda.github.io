@@ -22,7 +22,7 @@
     </script>
     <link rel="stylesheet" href="comfortaa.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
@@ -1444,6 +1444,9 @@
             .fullscreen-photo { min-height: 240px; }
             .confirm-actions { flex-direction: column-reverse; }
             .confirm-actions .btn { width: 100%; }
+            .title-label-row {
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -2382,13 +2385,7 @@
             }
             updateStepIndexes();
 
-            state.photoFile = null;
-            state.photoPreview = '';
-            state.photoFit = { ...defaultPhotoFit };
-            els.recipePhoto.value = '';
-
             renderSelects();
-            updatePhotoPreview();
             bindAutoGrow(els.recipeDescription);
             autoGrowTextarea(els.recipeDescription);
             els.stepsList.querySelectorAll('.step-text-input').forEach((textarea) => autoGrowTextarea(textarea));
@@ -2442,11 +2439,6 @@
             }
             els.stepsList.querySelectorAll('.step-text-input').forEach((textarea) => autoGrowTextarea(textarea));
 
-            state.photoFile = null;
-            state.photoPreview = '';
-            state.photoFit = { ...defaultPhotoFit };
-            els.recipePhoto.value = '';
-            updatePhotoPreview();
             setAiGenerateStatus('Готово, проверьте поля', 'success');
         }
 

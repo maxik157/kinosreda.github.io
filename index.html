@@ -35,7 +35,134 @@
             } catch (_) {}
         })();
     </script>
-    <script src="coi-serviceworker.js?v=20260528-14"></script>
+    <script>
+        (function () {
+            const COI_SCRIPT_SRC = 'coi-serviceworker.js?v=20260528-14';
+
+            function shouldLoadCoiScript() {
+                try {
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get('page') === 'svc_homm3';
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function ensureCoiServiceWorkerScript() {
+                if (document.querySelector(`script[data-coi-loader="1"][src="${COI_SCRIPT_SRC}"]`)) {
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = COI_SCRIPT_SRC;
+                script.dataset.coiLoader = '1';
+                document.head.appendChild(script);
+            }
+
+            function cleanupCoiServiceWorker() {
+                if (!('serviceWorker' in navigator)) return;
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.getRegistration().then((registration) => {
+                        const scriptUrl = registration && registration.active
+                            ? String(registration.active.scriptURL || '')
+                            : '';
+                        if (!registration || !/coi-serviceworker\.js/i.test(scriptUrl)) {
+                            return;
+                        }
+                        registration.unregister().catch(() => {});
+                    }).catch(() => {});
+                }, { once: true });
+            }
+
+            window.__ensureCoiServiceWorkerScript = ensureCoiServiceWorkerScript;
+
+            if (shouldLoadCoiScript()) {
+                ensureCoiServiceWorkerScript();
+            } else {
+                cleanupCoiServiceWorker();
+            }
+        })();
+    </script>
+    <script>
+        (function protectPlanningFromLiveServerReload() {
+            function shouldDisablePlanningLiveReload() {
+                try {
+                    const host = String(window.location.hostname || '').trim().toLowerCase();
+                    if (!['127.0.0.1', 'localhost', '::1'].includes(host)) return false;
+                    const path = String(window.location.pathname || '').trim().toLowerCase();
+                    if (path.endsWith('/planning.html') || path.endsWith('/planning-event.html')) return true;
+                    const params = new URLSearchParams(window.location.search);
+                    return params.get('page') === 'svc_planning' || params.has('planningEvent');
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            if (!shouldDisablePlanningLiveReload() || typeof window.WebSocket !== 'function') return;
+
+            const NativeWebSocket = window.WebSocket;
+            const isLiveServerSocket = (urlLike) => {
+                try {
+                    const url = new URL(String(urlLike || ''), window.location.href);
+                    return url.host === window.location.host && /\/ws$/i.test(url.pathname);
+                } catch (_) {
+                    return false;
+                }
+            };
+            const shouldSuppressMessage = (urlLike, event) => {
+                if (!isLiveServerSocket(urlLike)) return false;
+                const data = String(event && event.data || '');
+                return data === 'reload' || data === 'refreshcss';
+            };
+
+            class PlanningSafeWebSocket extends NativeWebSocket {
+                constructor(url, protocols) {
+                    super(url, protocols);
+                    this.__planningSafeUrl = String(url || '');
+                    this.__planningSafeOnMessage = null;
+                    this.__planningSafeListeners = new Map();
+                    super.addEventListener('message', (event) => {
+                        if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                        if (typeof this.__planningSafeOnMessage === 'function') {
+                            this.__planningSafeOnMessage.call(this, event);
+                        }
+                    });
+                }
+
+                get onmessage() {
+                    return this.__planningSafeOnMessage;
+                }
+
+                set onmessage(listener) {
+                    this.__planningSafeOnMessage = typeof listener === 'function' ? listener : null;
+                }
+
+                addEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = (event) => {
+                            if (shouldSuppressMessage(this.__planningSafeUrl, event)) return;
+                            listener.call(this, event);
+                        };
+                        this.__planningSafeListeners.set(listener, wrapped);
+                        return super.addEventListener(type, wrapped, options);
+                    }
+                    return super.addEventListener(type, listener, options);
+                }
+
+                removeEventListener(type, listener, options) {
+                    if (type === 'message' && typeof listener === 'function') {
+                        const wrapped = this.__planningSafeListeners.get(listener);
+                        if (wrapped) {
+                            this.__planningSafeListeners.delete(listener);
+                            return super.removeEventListener(type, wrapped, options);
+                        }
+                    }
+                    return super.removeEventListener(type, listener, options);
+                }
+            }
+
+            window.WebSocket = PlanningSafeWebSocket;
+        })();
+    </script>
     <style>
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
@@ -65,7 +192,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="./firebase-rtdb-rf-bypass.js?v=20260303d"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <!-- Logo font: load selected font from Google Fonts (per-user) -->
     <script>
@@ -4751,6 +4878,7 @@
         let planningUsersList = [];
         let planningDataParticipantsByEvent = {};
         let planningEventsSnapshotRefreshTimer = null;
+        let applyPlanningEventsSnapshot = () => {};
         let lastBeerRatingHash = '';
         let lastEventsHash = '';
         let lastBacklogHash = '';
@@ -5695,6 +5823,10 @@
                 }
                 const next = `${url.pathname}${url.search}${url.hash}`;
                 const state = { page: resolved };
+                const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+                if (next === current && !options.push) {
+                    return;
+                }
                 if (options.push) {
                     window.history.pushState(state, '', next);
                 } else {
@@ -6480,6 +6612,34 @@
             const src = frame.getAttribute('data-src');
             if (src) frame.setAttribute('src', src);
         }
+
+        const pendingServiceFrameEnsureSections = new Set();
+        let pendingServiceFrameEnsureLoadBound = false;
+
+        function flushPendingServiceFrameEnsure() {
+            if (!pendingServiceFrameEnsureSections.size) return;
+            const sections = Array.from(pendingServiceFrameEnsureSections);
+            pendingServiceFrameEnsureSections.clear();
+            sections.forEach((section) => {
+                ensureServiceFrame(section);
+            });
+        }
+
+        function scheduleServiceFrameEnsure(section) {
+            if (!section || !section.classList.contains('page-service')) return;
+            if (document.readyState === 'complete') {
+                ensureServiceFrame(section);
+                return;
+            }
+            pendingServiceFrameEnsureSections.add(section);
+            if (pendingServiceFrameEnsureLoadBound) return;
+            pendingServiceFrameEnsureLoadBound = true;
+            window.addEventListener('load', () => {
+                pendingServiceFrameEnsureLoadBound = false;
+                flushPendingServiceFrameEnsure();
+            }, { once: true });
+        }
+
         function unloadServiceFrame(section) {
             if (!section || !section.classList.contains('page-service')) return;
             const frame = section.querySelector('iframe');
@@ -6814,6 +6974,9 @@
         function setActivePage(page, options = {}) {
             const fromSection = SECTION_TO_PAGE[page];
             const resolved = PAGE_IDS[page] ? page : (fromSection || 'calendar');
+            if (resolved === 'svc_homm3' && typeof window.__ensureCoiServiceWorkerScript === 'function') {
+                window.__ensureCoiServiceWorkerScript();
+            }
             activeLayoutPage = resolved;
             localStorage.setItem(PAGE_LS_KEY, resolved);
             if (options.updateUrl !== false) {
@@ -6853,7 +7016,7 @@
                     section.classList.toggle('is-active', isActive);
                     section.hidden = !isActive;
                     if (isActive) {
-                        ensureServiceFrame(section);
+                        scheduleServiceFrameEnsure(section);
                     } else {
                         unloadServiceFrame(section);
                     }
@@ -6884,7 +7047,7 @@
                 requestAnimationFrame(syncBacklogHeight);
             }
             if (useSidebar && resolved === 'svc_planning') {
-                ensureServiceFrame(document.getElementById('svc_planning'));
+                scheduleServiceFrameEnsure(document.getElementById('svc_planning'));
             }
             updateSidebarMiniPlayerVisibility(resolved);
             syncMusicFullscreenTransitionMode(resolved);
@@ -8467,7 +8630,7 @@
                 };
                 db.ref('birthdayWishlists').on('value', applyBirthdaySnapshot);
 
-                function applyPlanningEventsSnapshot(snapshot) {
+                applyPlanningEventsSnapshot = (snapshot) => {
                     const raw = snapshot.val() || {};
                     let items = [];
                     if (Array.isArray(raw)) {
@@ -8510,7 +8673,7 @@
 
                     renderCalendar();
                     if (selectedDate) renderPanelContent();
-                }
+                };
                 db.ref('planning/events').on('value', applyPlanningEventsSnapshot);
 
                 const applyPlanningUsersSnapshot = (snapshot) => {

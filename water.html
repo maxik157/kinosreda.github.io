@@ -53,6 +53,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script>
+        window.KINOSREDA_RTDB_TRANSPORT_MODE = 'websocket';
+    </script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
@@ -1132,6 +1136,8 @@
         const JUG_SCALE_TOP_FALLBACK = 80;
         const JUG_SCALE_BOTTOM_FALLBACK = 485;
         const JUG_VIEWBOX_HEIGHT = 512;
+        const LOG_SAVE_DEBOUNCE_MS = 80;
+        const SETTINGS_SAVE_DEBOUNCE_MS = 120;
 
         const state = {
             db: null,
@@ -1150,9 +1156,18 @@
             goalMl: 0,
             dateCounts: {},
             rangeType: 'day',
-            suppressLogUpdate: false,
+            activeTab: 'tracker',
+            pendingLogWrite: false,
             lastSavedAt: null,
-            settingsLoaded: false
+            logSaveTimer: null,
+            pendingLogSave: null,
+            settingsSaveTimer: null,
+            pendingSettingsSave: null,
+            renderCalendarQueued: false,
+            renderRatingQueued: false,
+            ratingDirty: false,
+            settingsLoaded: false,
+            currentSettingsFingerprint: ''
         };
         let ratingCalendarTarget = null;
 
@@ -1166,6 +1181,13 @@
         }
 
         function initFirebase() {
+            if (firebase.database && firebase.database.INTERNAL) {
+                if (window.KINOSREDA_RTDB_TRANSPORT_MODE === 'websocket' && typeof firebase.database.INTERNAL.forceWebSockets === 'function') {
+                    firebase.database.INTERNAL.forceWebSockets();
+                } else if (typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                    firebase.database.INTERNAL.forceLongPolling();
+                }
+            }
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
             }
@@ -1173,34 +1195,32 @@
             state.settingsRef = state.db.ref('waterTracker/settings');
             state.logsRef = state.db.ref('waterTracker/logs');
 
-            state.settingsRef.on('value', snapshot => {
+            state.settingsRef.once('value', snapshot => {
                 state.data.settings = snapshot.val() || {};
-                getUserSettings();
-                applySettingsToForm();
+                syncOwnSettingsFromStore({ force: true });
+                scheduleRatingRender();
                 if (!state.settingsLoaded) {
                     state.settingsLoaded = true;
                     document.documentElement.classList.add('settings-ready');
                 }
+                state.settingsRef.on('child_added', childSnapshot => {
+                    applySettingsUserSnapshot(childSnapshot.key, childSnapshot.val());
+                });
+                state.settingsRef.on('child_changed', childSnapshot => {
+                    applySettingsUserSnapshot(childSnapshot.key, childSnapshot.val());
+                });
+                state.settingsRef.on('child_removed', childSnapshot => {
+                    applySettingsUserSnapshot(childSnapshot.key, null);
+                });
             });
-
-            state.logsRef.on('value', snapshot => {
-                state.data.logs = snapshot.val() || {};
-                rebuildDateCounts();
-                const currentEntry = state.currentDate
-                    ? (state.data.logs[state.currentDate] || {})[state.userDbKey]
-                    : null;
-                const shouldSkip = state.suppressLogUpdate
-                    && currentEntry
-                    && state.lastSavedAt != null
-                    && currentEntry.updatedAt === state.lastSavedAt;
-                if (!shouldSkip) {
-                    state.entries = getEntriesForDate(state.currentDate);
-                    renderEntries();
-                    updateTotals();
-                }
-                state.suppressLogUpdate = false;
-                renderCalendar();
-                renderRating();
+            state.logsRef.on('child_added', snapshot => {
+                applyLogDaySnapshot(snapshot.key, snapshot.val());
+            });
+            state.logsRef.on('child_changed', snapshot => {
+                applyLogDaySnapshot(snapshot.key, snapshot.val());
+            });
+            state.logsRef.on('child_removed', snapshot => {
+                removeLogDaySnapshot(snapshot.key);
             });
         }
 
@@ -1287,6 +1307,42 @@
             }
             state.settings.color = normalizeColor(state.settings.color);
             state.goalMl = computeGoal(state.settings);
+        }
+
+        function getSettingsFingerprint(settings) {
+            if (!settings) return '';
+            return JSON.stringify({
+                weight: settings.weight === '' ? '' : Number(settings.weight) || DEFAULT_SETTINGS.weight,
+                activity: settings.activity || DEFAULT_SETTINGS.activity,
+                climate: settings.climate || DEFAULT_SETTINGS.climate,
+                color: normalizeColor(settings.color),
+                name: settings.name || '',
+                updatedAt: Number(settings.updatedAt) || 0
+            });
+        }
+
+        function syncOwnSettingsFromStore(options = {}) {
+            const force = !!options.force;
+            const saved = state.data.settings[state.userDbKey] || null;
+            const fingerprint = getSettingsFingerprint(saved);
+            if (!force && fingerprint === state.currentSettingsFingerprint) return false;
+            state.currentSettingsFingerprint = fingerprint;
+            getUserSettings();
+            applySettingsToForm();
+            return true;
+        }
+
+        function applySettingsUserSnapshot(userKey, value) {
+            if (!userKey) return;
+            if (value) {
+                state.data.settings[userKey] = value;
+            } else {
+                delete state.data.settings[userKey];
+            }
+            if (userKey === state.userDbKey) {
+                syncOwnSettingsFromStore();
+            }
+            scheduleRatingRender();
         }
 
         function setThemeWaterColor() {
@@ -1418,22 +1474,127 @@
             const day = state.data.logs[dateKey];
             if (!day) return [];
             const entry = day[state.userDbKey];
-            return entry && Array.isArray(entry.entries) ? entry.entries : [];
+            if (!entry || !Array.isArray(entry.entries)) return [];
+            return entry.entries.map(item => ({
+                time: item && item.time ? item.time : '',
+                amount: item && item.amount ? item.amount : ''
+            }));
         }
 
-        function saveCurrentDay() {
-            if (!state.currentDate || !state.db) return;
-            const updatedAt = Date.now();
-            const payload = {
+        function buildCurrentDayPayload(updatedAt = Date.now()) {
+            return {
                 name: state.userName,
-                entries: state.entries,
+                entries: state.entries.map(entry => ({
+                    time: entry && entry.time ? entry.time : '',
+                    amount: entry && entry.amount ? entry.amount : ''
+                })),
                 goalMl: state.goalMl,
                 color: state.settings.color,
                 updatedAt
             };
-            state.suppressLogUpdate = true;
-            state.lastSavedAt = updatedAt;
-            state.db.ref(`waterTracker/logs/${state.currentDate}/${state.userDbKey}`).set(payload);
+        }
+
+        function getUserLogEntryFingerprint(entry) {
+            if (!entry) return '';
+            const updatedAt = Number(entry.updatedAt) || 0;
+            if (updatedAt > 0) {
+                return `u:${updatedAt}`;
+            }
+            return JSON.stringify({
+                name: entry.name || '',
+                goalMl: Number(entry.goalMl) || 0,
+                color: normalizeColor(entry.color),
+                entries: Array.isArray(entry.entries)
+                    ? entry.entries.map(item => ({
+                        time: item && item.time ? item.time : '',
+                        amount: item && item.amount ? item.amount : ''
+                    }))
+                    : []
+            });
+        }
+
+        function updateDateCountForDate(dateKey) {
+            if (!dateKey) return;
+            const day = state.data.logs[dateKey] || {};
+            const entry = day[state.userDbKey];
+            const totalEntries = entry && Array.isArray(entry.entries)
+                ? entry.entries.filter(item => Number(item.amount) > 0).length
+                : 0;
+            if (totalEntries > 0) {
+                state.dateCounts[dateKey] = totalEntries;
+            } else {
+                delete state.dateCounts[dateKey];
+            }
+        }
+
+        function isCalendarOpen() {
+            const panel = document.getElementById('calendarPanel');
+            return !!(panel && !panel.classList.contains('hidden'));
+        }
+
+        function scheduleCalendarRender() {
+            if (!isCalendarOpen() || state.renderCalendarQueued) return;
+            state.renderCalendarQueued = true;
+            requestAnimationFrame(() => {
+                state.renderCalendarQueued = false;
+                renderCalendar();
+            });
+        }
+
+        function scheduleRatingRender(options = {}) {
+            const force = !!options.force;
+            if (!force && state.activeTab !== 'rating') {
+                state.ratingDirty = true;
+                return;
+            }
+            if (state.renderRatingQueued) return;
+            state.renderRatingQueued = true;
+            window.setTimeout(() => {
+                state.renderRatingQueued = false;
+                state.ratingDirty = false;
+                renderRating();
+            }, 32);
+        }
+
+        function applyLocalDayPayload(dateKey, payload) {
+            if (!dateKey || !payload) return;
+            const day = { ...(state.data.logs[dateKey] || {}) };
+            day[state.userDbKey] = payload;
+            state.data.logs[dateKey] = day;
+            updateDateCountForDate(dateKey);
+            scheduleCalendarRender();
+            scheduleRatingRender();
+        }
+
+        function flushCurrentDaySave() {
+            if (state.logSaveTimer) {
+                window.clearTimeout(state.logSaveTimer);
+                state.logSaveTimer = null;
+            }
+            if (!state.pendingLogSave || !state.db) return;
+            const { dateKey, payload } = state.pendingLogSave;
+            state.pendingLogSave = null;
+            state.pendingLogWrite = true;
+            state.lastSavedAt = payload.updatedAt;
+            state.db.ref(`waterTracker/logs/${dateKey}/${state.userDbKey}`).set(payload);
+        }
+
+        function saveCurrentDay(options = {}) {
+            if (!state.currentDate) return;
+            const payload = buildCurrentDayPayload(Date.now());
+            const dateKey = state.currentDate;
+            applyLocalDayPayload(dateKey, payload);
+            if (!state.db) return;
+            state.pendingLogSave = { dateKey, payload };
+            if (state.logSaveTimer) {
+                window.clearTimeout(state.logSaveTimer);
+                state.logSaveTimer = null;
+            }
+            if (options.immediate) {
+                flushCurrentDaySave();
+                return;
+            }
+            state.logSaveTimer = window.setTimeout(flushCurrentDaySave, LOG_SAVE_DEBOUNCE_MS);
         }
 
         function rebuildDateCounts() {
@@ -1445,6 +1606,51 @@
                 if (totalEntries > 0) counts[dateKey] = totalEntries;
             });
             state.dateCounts = counts;
+        }
+
+        function syncCurrentEntriesFromLog(dateKey, dayData, options = {}) {
+            if (!state.currentDate || dateKey !== state.currentDate) return;
+            const userEntryChanged = options.userEntryChanged !== false;
+            const currentEntry = dayData ? dayData[state.userDbKey] : null;
+            const remoteUpdatedAt = Number(currentEntry && currentEntry.updatedAt) || 0;
+            if (state.pendingLogWrite && state.lastSavedAt != null && remoteUpdatedAt <= state.lastSavedAt) {
+                if (remoteUpdatedAt === state.lastSavedAt) {
+                    state.pendingLogWrite = false;
+                }
+                return;
+            }
+            state.pendingLogWrite = false;
+            if (!userEntryChanged) return;
+            state.entries = getEntriesForDate(state.currentDate);
+            renderEntries();
+            updateTotals();
+        }
+
+        function applyLogDaySnapshot(dateKey, dayData) {
+            if (!dateKey) return;
+            const prevDay = state.data.logs[dateKey] || {};
+            const prevUserEntry = prevDay[state.userDbKey] || null;
+            const nextUserEntry = dayData ? dayData[state.userDbKey] : null;
+            const userEntryChanged = getUserLogEntryFingerprint(prevUserEntry) !== getUserLogEntryFingerprint(nextUserEntry);
+            state.data.logs[dateKey] = dayData || {};
+            updateDateCountForDate(dateKey);
+            syncCurrentEntriesFromLog(dateKey, state.data.logs[dateKey], { userEntryChanged });
+            scheduleCalendarRender();
+            scheduleRatingRender();
+        }
+
+        function removeLogDaySnapshot(dateKey) {
+            if (!dateKey) return;
+            delete state.data.logs[dateKey];
+            delete state.dateCounts[dateKey];
+            if (dateKey === state.currentDate) {
+                state.pendingLogWrite = false;
+                state.entries = [];
+                renderEntries();
+                updateTotals();
+            }
+            scheduleCalendarRender();
+            scheduleRatingRender();
         }
 
         function setDate(dateKey) {
@@ -1544,8 +1750,7 @@
             if (Number.isNaN(idx)) return;
             state.entries.splice(idx, 1);
             renderEntries();
-            saveCurrentDay();
-            updateTotals();
+            saveCurrentDay({ immediate: true });
         }
 
         function addEntryRow() {
@@ -1553,7 +1758,12 @@
             const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
             state.entries.push({ time, amount: '' });
             renderEntries();
-            saveCurrentDay();
+            saveCurrentDay({ immediate: true });
+            requestAnimationFrame(() => {
+                const body = document.getElementById('waterLogBody');
+                const lastAmount = body && body.querySelector('tr:last-child .entry-amount');
+                if (lastAmount) lastAmount.focus();
+            });
         }
 
         function renderCalendar() {
@@ -1844,6 +2054,7 @@
         }
 
         function setActiveTab(tabName) {
+            state.activeTab = tabName;
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tabName);
             });
@@ -1852,7 +2063,7 @@
             if (tracker) tracker.classList.toggle('hidden', tabName !== 'tracker');
             if (rating) rating.classList.toggle('hidden', tabName !== 'rating');
             if (tabName === 'rating') {
-                renderRating();
+                scheduleRatingRender({ force: true });
             }
         }
 
@@ -1929,13 +2140,21 @@
                     updatedAt: Date.now()
                 };
                 state.data.settings[state.userDbKey] = settingsPayload;
+                state.currentSettingsFingerprint = getSettingsFingerprint(settingsPayload);
                 syncCustomSelect(activityInput);
                 syncCustomSelect(climateInput);
                 updateGoalUI();
                 setThemeWaterColor();
-                if (state.db) {
-                    state.db.ref(`waterTracker/settings/${state.userDbKey}`).set(settingsPayload);
-                }
+                state.pendingSettingsSave = settingsPayload;
+                if (state.settingsSaveTimer) window.clearTimeout(state.settingsSaveTimer);
+                state.settingsSaveTimer = window.setTimeout(() => {
+                    const payload = state.pendingSettingsSave;
+                    state.pendingSettingsSave = null;
+                    state.settingsSaveTimer = null;
+                    if (payload && state.db) {
+                        state.db.ref(`waterTracker/settings/${state.userDbKey}`).set(payload);
+                    }
+                }, SETTINGS_SAVE_DEBOUNCE_MS);
                 saveCurrentDay();
                 updateTotals();
             }
@@ -2096,9 +2315,16 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') closeCustomSelects();
             });
+            window.addEventListener('beforeunload', () => {
+                flushCurrentDaySave();
+                if (state.pendingSettingsSave && state.db) {
+                    state.db.ref(`waterTracker/settings/${state.userDbKey}`).set(state.pendingSettingsSave);
+                    state.pendingSettingsSave = null;
+                }
+            });
 
             updateRangeButtons(state.rangeType);
-            renderRating();
+            scheduleRatingRender();
             syncRatingDateDisplays();
         }
 

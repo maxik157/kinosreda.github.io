@@ -68,6 +68,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         html:not(.logo-font-ready) .logo-text { opacity: 0; }
@@ -562,8 +563,29 @@
         .emoji-scale .emoji-seg:nth-child(9) .emoji-dot { font-size: 20px; }
         .emoji-scale .emoji-seg:nth-child(10) .emoji-dot { font-size: 22px; }
         @media (max-width: 640px) {
-            .game-controls { flex-wrap: nowrap; }
-            .game-controls button { flex: 1 1 0; text-align: center; }
+            #poopGameModal .game-controls {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+            }
+            #poopGameModal .game-hud {
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                min-width: 0;
+            }
+            #poopGameModal .game-hud > span {
+                min-width: 0;
+                text-align: center;
+                white-space: nowrap;
+            }
+            #poopGameModal .game-controls button {
+                width: 100%;
+                min-width: 0;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -960,7 +982,7 @@
                     <p class="text-xs text-gray-400 mt-1">Убивай говно и заноси новый покак.</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap game-controls">
-                    <div class="flex items-center gap-3 text-xs text-amber-200">
+                    <div class="flex items-center gap-3 text-xs text-amber-200 game-hud">
                         <span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">Счёт: <span id="gameScoreLabel">0</span></span>
                         <span class="px-2 py-1 rounded-lg border border-amber-500/25 bg-black/40">Жизни: <span id="gameLivesLabel">3</span></span>
                     </div>
@@ -2835,6 +2857,9 @@
 
             function initFirebase(){
                 try {
+                    if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
+                        firebase.database.INTERNAL.forceLongPolling();
+                    }
                     if (!firebase.apps.length) {
                         firebase.initializeApp(firebaseConfig);
                     }
