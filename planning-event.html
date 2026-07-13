@@ -129,7 +129,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Cormorant+Garamond:wght@500;600;700&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script>
         (function configurePlanningRtdbTransport() {
@@ -640,6 +640,2096 @@
         }
         .quick-participants-dropdown.hidden {
             display: none;
+        }
+        .equipment-experience {
+            --equipment-paper: #eadfce;
+            --equipment-paper-2: #f5eee2;
+            --equipment-ink: #17110e;
+            --equipment-burgundy: #5b1820;
+            --equipment-ruby: #a73a39;
+            --equipment-gold: #d5a24d;
+            --equipment-night: #130b0c;
+            --equipment-stage: #1f1013;
+            position: relative;
+            margin-bottom: 20px;
+            padding: 22px;
+            border-radius: 36px;
+            overflow: hidden;
+            border: 1px solid rgba(234,223,206,0.14);
+            background:
+                radial-gradient(circle at 10% 0%, rgba(220,162,73,0.18), transparent 26%),
+                radial-gradient(circle at 100% 10%, rgba(167,58,57,0.18), transparent 28%),
+                linear-gradient(145deg, #060304, #170c10 40%, #090507);
+            box-shadow: 0 34px 84px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.03);
+            isolation: isolate;
+        }
+        .equipment-experience.hidden {
+            display: none;
+        }
+        .equipment-experience::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 100%),
+                linear-gradient(180deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 100%);
+            background-size: 48px 48px;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+        .equipment-experience::after {
+            content: '';
+            position: absolute;
+            inset: 18px;
+            border-radius: 28px;
+            border: 1px solid rgba(213,162,77,0.12);
+            pointer-events: none;
+        }
+        .equipment-stage {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 18px;
+        }
+        .equipment-marquee {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            padding: 4px 4px 0;
+            color: rgba(234,223,206,0.76);
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.76rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        .equipment-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+        .equipment-hero-copy {
+            position: relative;
+            padding: 28px 28px 26px;
+            border-radius: 30px;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.24), transparent 32%),
+                linear-gradient(180deg, var(--equipment-paper-2), var(--equipment-paper));
+            color: var(--equipment-ink);
+            box-shadow: 0 28px 50px rgba(0,0,0,0.24);
+            overflow: hidden;
+        }
+        .equipment-hero-copy::before {
+            content: 'FIELD BOOK';
+            position: absolute;
+            right: -16px;
+            top: 24px;
+            transform: rotate(90deg);
+            transform-origin: right top;
+            color: rgba(91,24,32,0.32);
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.38em;
+        }
+        .equipment-overline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(91,24,32,0.88);
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+        .equipment-hero-title {
+            margin-top: 12px;
+            max-width: 10ch;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.7rem, 6vw, 5.4rem);
+            line-height: 0.84;
+            letter-spacing: -0.04em;
+            color: #120c0d;
+            text-wrap: balance;
+        }
+        .equipment-hero-text {
+            margin-top: 16px;
+            max-width: 60ch;
+            color: rgba(23,17,14,0.82);
+            font-size: 0.98rem;
+            line-height: 1.72;
+        }
+        .equipment-hero-meta {
+            margin-top: 22px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .equipment-hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(91,24,32,0.16);
+            background: rgba(255,255,255,0.4);
+            color: rgba(23,17,14,0.92);
+            font-size: 0.78rem;
+            font-weight: 700;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.34);
+        }
+        .equipment-dashboard {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .equipment-stat-card {
+            position: relative;
+            min-height: 162px;
+            padding: 18px 18px 16px;
+            border-radius: 28px 10px 28px 10px;
+            overflow: hidden;
+            border: 1px solid rgba(234,223,206,0.12);
+            background:
+                linear-gradient(180deg, rgba(32,15,19,0.98), rgba(15,8,10,0.96));
+            box-shadow: 0 18px 36px rgba(0,0,0,0.22);
+        }
+        .equipment-stat-card:nth-child(2),
+        .equipment-stat-card:nth-child(3) {
+            background:
+                linear-gradient(180deg, rgba(101,28,36,0.96), rgba(48,15,18,0.96));
+        }
+        .equipment-stat-card::before {
+            content: '';
+            position: absolute;
+            right: -28px;
+            top: -28px;
+            width: 124px;
+            height: 124px;
+            border-radius: 999px;
+            background: rgba(213,162,77,0.12);
+            pointer-events: none;
+        }
+        .equipment-stat-label {
+            color: rgba(234,223,206,0.68);
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.72rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .equipment-stat-value {
+            margin-top: 16px;
+            color: #f7efe3;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            font-weight: 700;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+        }
+        .equipment-stat-sub {
+            margin-top: 10px;
+            color: rgba(244,232,215,0.78);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+        .equipment-bar {
+            margin-top: 14px;
+            height: 9px;
+            border-radius: 999px;
+            background: rgba(245,238,226,0.14);
+            overflow: hidden;
+        }
+        .equipment-bar-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--equipment-gold), #f7d292, #efc15a);
+            box-shadow: 0 0 20px rgba(213,162,77,0.22);
+            transform-origin: left center;
+            animation: equipmentRise 0.65s ease;
+        }
+        .equipment-zones {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+        }
+        .equipment-zone {
+            position: relative;
+            min-height: 360px;
+            padding: 22px 20px 20px;
+            overflow: hidden;
+            transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] {
+            border-radius: 28px 28px 18px 18px;
+            background:
+                linear-gradient(180deg, rgba(245,238,226,0.98), rgba(234,223,206,0.96));
+            border: 1px solid rgba(91,24,32,0.12);
+            color: var(--equipment-ink);
+        }
+        .equipment-zone[data-pack-zone="backpack"] {
+            border-radius: 18px 18px 28px 28px;
+            background:
+                radial-gradient(circle at top, rgba(213,162,77,0.18), transparent 42%),
+                linear-gradient(180deg, rgba(33,15,20,0.98), rgba(14,8,10,0.96));
+            border: 1px solid rgba(234,223,206,0.12);
+            color: #f7efe3;
+        }
+        .equipment-zone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.06), transparent 38%),
+                radial-gradient(circle at 88% 16%, rgba(255,255,255,0.06), transparent 20%);
+            pointer-events: none;
+        }
+        .equipment-zone.is-target {
+            border-color: rgba(213,162,77,0.68);
+            box-shadow: 0 22px 48px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(213,162,77,0.18);
+            transform: translateY(-4px);
+        }
+        .equipment-zone-head {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+        }
+        .equipment-zone-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+        }
+        .equipment-zone-note {
+            margin-top: 8px;
+            max-width: 26ch;
+            font-size: 0.86rem;
+            line-height: 1.55;
+            color: inherit;
+            opacity: 0.78;
+        }
+        .equipment-zone-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 56px;
+            height: 56px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] .equipment-zone-badge {
+            background: rgba(91,24,32,0.08);
+            border-color: rgba(91,24,32,0.14);
+            color: rgba(91,24,32,0.92);
+        }
+        .equipment-card-stack {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .equipment-card {
+            position: relative;
+            padding: 16px 16px 14px;
+            cursor: grab;
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+            overflow: hidden;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] .equipment-card {
+            background: rgba(255,255,255,0.58);
+            border: 1px solid rgba(91,24,32,0.12);
+            border-radius: 20px 6px 20px 6px;
+            box-shadow: 0 16px 26px rgba(91,24,32,0.08);
+            color: var(--equipment-ink);
+        }
+        .equipment-zone[data-pack-zone="backpack"] .equipment-card {
+            background: rgba(246,236,220,0.06);
+            border: 1px solid rgba(246,236,220,0.14);
+            border-radius: 6px 20px 6px 20px;
+            box-shadow: 0 14px 24px rgba(0,0,0,0.16);
+            color: #f7efe3;
+        }
+        .equipment-card:nth-child(odd) {
+            transform: rotate(-0.5deg);
+        }
+        .equipment-card:nth-child(even) {
+            transform: rotate(0.55deg);
+        }
+        .equipment-card:hover {
+            transform: translateY(-4px) rotate(0deg);
+            box-shadow: 0 24px 34px rgba(0,0,0,0.18);
+        }
+        .equipment-card:active {
+            cursor: grabbing;
+        }
+        .equipment-card.is-packed {
+            border-color: rgba(213,162,77,0.3);
+        }
+        .equipment-card::before,
+        .equipment-card::after {
+            content: '';
+            position: absolute;
+            top: 16px;
+            width: 11px;
+            height: 11px;
+            border-radius: 999px;
+            background: rgba(23,17,14,0.08);
+            box-shadow: inset 0 0 0 1px rgba(23,17,14,0.08);
+        }
+        .equipment-card::before {
+            left: 12px;
+        }
+        .equipment-card::after {
+            right: 12px;
+        }
+        .equipment-zone[data-pack-zone="backpack"] .equipment-card::before,
+        .equipment-zone[data-pack-zone="backpack"] .equipment-card::after {
+            background: rgba(247,239,227,0.12);
+            box-shadow: inset 0 0 0 1px rgba(247,239,227,0.12);
+        }
+        .equipment-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .equipment-card-kicker {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            opacity: 0.66;
+        }
+        .equipment-card-action {
+            border-radius: 999px;
+            padding: 7px 11px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 500;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] .equipment-card-action {
+            border: 1px solid rgba(91,24,32,0.18);
+            background: rgba(91,24,32,0.05);
+            color: rgba(91,24,32,0.9);
+        }
+        .equipment-zone[data-pack-zone="backpack"] .equipment-card-action {
+            border: 1px solid rgba(247,239,227,0.18);
+            background: rgba(247,239,227,0.08);
+            color: #f7efe3;
+        }
+        .equipment-card-title {
+            margin-top: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            line-height: 0.96;
+            letter-spacing: -0.03em;
+        }
+        .equipment-card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 14px;
+        }
+        .equipment-card-pill {
+            padding: 9px 10px 8px;
+            border-radius: 14px;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] .equipment-card-pill {
+            background: rgba(91,24,32,0.05);
+            border: 1px solid rgba(91,24,32,0.08);
+        }
+        .equipment-zone[data-pack-zone="backpack"] .equipment-card-pill {
+            background: rgba(247,239,227,0.05);
+            border: 1px solid rgba(247,239,227,0.08);
+        }
+        .equipment-card-pill-label {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.62rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.64;
+        }
+        .equipment-card-pill-value {
+            margin-top: 6px;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .equipment-empty {
+            position: relative;
+            z-index: 1;
+            margin-top: 20px;
+            min-height: 210px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            border-radius: 24px;
+            padding: 22px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
+        .equipment-zone[data-pack-zone="arsenal"] .equipment-empty {
+            border: 1px dashed rgba(91,24,32,0.18);
+            background: rgba(255,255,255,0.32);
+            color: rgba(91,24,32,0.84);
+        }
+        .equipment-zone[data-pack-zone="backpack"] .equipment-empty {
+            border: 1px dashed rgba(247,239,227,0.18);
+            background: rgba(247,239,227,0.03);
+            color: rgba(247,239,227,0.74);
+        }
+        .equipment-backpack-visual {
+            position: absolute;
+            right: 18px;
+            bottom: 16px;
+            width: 126px;
+            height: 146px;
+            pointer-events: none;
+            opacity: 0.92;
+        }
+        .equipment-backpack-shell {
+            position: absolute;
+            inset: 18px 18px 8px;
+            border-radius: 30px 30px 22px 22px;
+            border: 2px solid rgba(247,239,227,0.72);
+            background: linear-gradient(180deg, rgba(213,162,77,0.16), rgba(167,58,57,0.18));
+            overflow: hidden;
+        }
+        .equipment-backpack-fill {
+            position: absolute;
+            inset: auto 0 0;
+            height: calc(var(--pack-ratio, 0) * 100%);
+            background: linear-gradient(180deg, rgba(213,162,77,0.8), rgba(167,58,57,0.92));
+            transition: height 0.35s ease;
+        }
+        .equipment-backpack-flap,
+        .equipment-backpack-pocket,
+        .equipment-backpack-handle {
+            position: absolute;
+            border: 2px solid rgba(247,239,227,0.72);
+        }
+        .equipment-backpack-flap {
+            left: 26px;
+            right: 26px;
+            top: 2px;
+            height: 26px;
+            border-bottom: 0;
+            border-radius: 18px 18px 0 0;
+        }
+        .equipment-backpack-pocket {
+            left: 28px;
+            right: 28px;
+            bottom: 18px;
+            height: 30px;
+            border-radius: 14px;
+        }
+        .equipment-backpack-handle {
+            left: 45px;
+            right: 45px;
+            top: -9px;
+            height: 18px;
+            border-bottom: 0;
+            border-radius: 16px 16px 0 0;
+        }
+        body.equipment-mode .card.section-card {
+            border-color: rgba(234,223,206,0.14);
+            background:
+                radial-gradient(circle at top right, rgba(213,162,77,0.06), transparent 34%),
+                rgba(11, 6, 8, 0.88);
+            box-shadow: 0 20px 48px rgba(0,0,0,0.28);
+        }
+        body.equipment-mode .section-title {
+            color: #f0e6d7;
+        }
+        body.equipment-mode .sheet th,
+        body.equipment-mode .sheet td {
+            border-color: rgba(234,223,206,0.12);
+        }
+        body.equipment-mode .sections-board,
+        body.equipment-mode #emptySections,
+        body.equipment-mode .quick-stats {
+            display: none !important;
+        }
+        body.equipment-mode #editParticipantsBtn,
+        body.equipment-mode #expenseToggleBtn,
+        body.equipment-mode .event-topbar-quick-actions > .relative {
+            display: none !important;
+        }
+        .row-packed {
+            background: linear-gradient(90deg, rgba(167,58,57,0.1), transparent 44%);
+        }
+        .pw-shell {
+            position: relative;
+            display: grid;
+            gap: 18px;
+            padding: 6px;
+        }
+        .pw-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+        .pw-title-block,
+        .pw-library,
+        .pw-pack {
+            border-radius: 26px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 18px 42px rgba(0,0,0,0.18);
+        }
+        .pw-title-block {
+            padding: 24px 24px 22px;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.14), transparent 26%),
+                linear-gradient(180deg, rgba(250,250,248,0.94), rgba(238,235,229,0.92));
+            color: #111111;
+        }
+        .pw-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(17,17,17,0.46);
+        }
+        .pw-title {
+            margin-top: 12px;
+            font-size: clamp(2.2rem, 5vw, 4.25rem);
+            line-height: 0.9;
+            letter-spacing: -0.06em;
+            font-family: "Cormorant Garamond", serif;
+            font-weight: 700;
+            max-width: 8ch;
+        }
+        .pw-copy {
+            margin-top: 14px;
+            max-width: 58ch;
+            font-size: 0.96rem;
+            line-height: 1.72;
+            color: rgba(17,17,17,0.7);
+        }
+        .pw-source {
+            margin-top: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(17,17,17,0.08);
+            background: rgba(255,255,255,0.5);
+            color: rgba(17,17,17,0.76);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .pw-source:hover {
+            background: rgba(255,255,255,0.78);
+            color: #111;
+        }
+        .pw-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .pw-metric {
+            padding: 18px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background:
+                linear-gradient(180deg, rgba(19,19,19,0.96), rgba(10,10,10,0.96));
+        }
+        .pw-metric-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.48);
+        }
+        .pw-metric-value {
+            margin-top: 14px;
+            font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+            line-height: 0.92;
+            font-weight: 700;
+            color: #f7f7f4;
+            letter-spacing: -0.05em;
+        }
+        .pw-metric-sub {
+            margin-top: 8px;
+            font-size: 0.82rem;
+            line-height: 1.45;
+            color: rgba(255,255,255,0.62);
+        }
+        .pw-grid {
+            display: grid;
+            grid-template-columns: minmax(360px, 0.88fr) minmax(0, 1.12fr);
+            gap: 16px;
+        }
+        .pw-library,
+        .pw-pack {
+            padding: 18px;
+        }
+        .pw-block-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .pw-block-title {
+            font-size: 1.08rem;
+            font-weight: 700;
+            color: #f5f5f1;
+            letter-spacing: -0.03em;
+        }
+        .pw-block-note {
+            margin-top: 4px;
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.5);
+        }
+        .pw-refresh {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.72);
+            border-radius: 999px;
+            padding: 9px 12px;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+        .pw-refresh:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+        .pw-toolbar {
+            display: grid;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .pw-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pw-tab {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: transparent;
+            color: rgba(255,255,255,0.62);
+            border-radius: 999px;
+            padding: 9px 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+        .pw-tab.active {
+            background: #f5f5f1;
+            color: #0e0e0e;
+            border-color: #f5f5f1;
+        }
+        .pw-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 50px;
+            padding: 0 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+        }
+        .pw-search input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: #f5f5f1;
+            font-size: 0.92rem;
+        }
+        .pw-search input::placeholder {
+            color: rgba(255,255,255,0.38);
+        }
+        .pw-results {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+            max-height: 820px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .pw-result-card {
+            display: grid;
+            grid-template-columns: 76px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+        }
+        .pw-result-thumb {
+            width: 76px;
+            height: 76px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+        }
+        .pw-result-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .pw-result-brand {
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.44);
+        }
+        .pw-result-name {
+            margin-top: 4px;
+            font-size: 0.94rem;
+            line-height: 1.3;
+            font-weight: 700;
+            color: #f7f7f4;
+        }
+        .pw-result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .pw-result-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+        .pw-add-btn {
+            white-space: nowrap;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #f5f5f1;
+            color: #111;
+            padding: 10px 14px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .pw-add-btn:hover {
+            background: #ffffff;
+        }
+        .pw-status {
+            display: grid;
+            place-items: center;
+            min-height: 220px;
+            padding: 24px;
+            border-radius: 22px;
+            border: 1px dashed rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.52);
+            text-align: center;
+            line-height: 1.6;
+        }
+        .pw-pack {
+            display: grid;
+            gap: 16px;
+        }
+        .pw-pack-overview {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+            padding: 16px;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .pw-pack-progress {
+            display: grid;
+            gap: 10px;
+        }
+        .pw-progress-row {
+            display: grid;
+            gap: 6px;
+        }
+        .pw-progress-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .pw-progress-bar {
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .pw-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #ffffff, #d9d3c8);
+            transform-origin: left center;
+        }
+        .pw-pack-count {
+            display: grid;
+            place-items: center;
+            width: 106px;
+            aspect-ratio: 1;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+        }
+        .pw-pack-count strong {
+            display: block;
+            font-size: 2rem;
+            line-height: 0.9;
+            color: #fff;
+            letter-spacing: -0.06em;
+        }
+        .pw-pack-count span {
+            margin-top: 6px;
+            display: block;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: rgba(255,255,255,0.45);
+        }
+        .pw-lanes {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .pw-lane {
+            display: grid;
+            align-content: start;
+            gap: 10px;
+            min-height: 360px;
+            padding: 14px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+        .pw-lane.is-target {
+            border-color: rgba(255,255,255,0.28);
+            background: rgba(255,255,255,0.06);
+            transform: translateY(-2px);
+        }
+        .pw-lane-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .pw-lane-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .pw-lane-note {
+            margin-top: 4px;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: rgba(255,255,255,0.46);
+        }
+        .pw-lane-count {
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            font-size: 0.84rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pw-item-card {
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.04);
+            cursor: grab;
+            transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+        }
+        .pw-item-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.06);
+        }
+        .pw-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .pw-item-name {
+            font-size: 0.9rem;
+            line-height: 1.28;
+            font-weight: 700;
+            color: #fff;
+        }
+        .pw-item-section {
+            margin-top: 5px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.42);
+        }
+        .pw-item-toggle {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: transparent;
+            color: rgba(255,255,255,0.74);
+            border-radius: 999px;
+            padding: 8px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .pw-item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .pw-item-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.76);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+        .gear-min-shell {
+            display: grid;
+            gap: 14px;
+        }
+        .gear-min-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 4px 2px;
+        }
+        .gear-min-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f5f5f1;
+            letter-spacing: -0.04em;
+        }
+        .gear-min-sub {
+            margin-top: 4px;
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.46);
+        }
+        .gear-min-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .gear-min-stat {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.74);
+            font-size: 0.78rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .gear-min-toolbar {
+            display: grid;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+        }
+        .gear-min-search {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 54px;
+            padding: 0 14px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .gear-min-search input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        .gear-min-search input::placeholder {
+            color: rgba(255,255,255,0.34);
+        }
+        .gear-min-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .gear-min-chip {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: transparent;
+            color: rgba(255,255,255,0.62);
+            border-radius: 999px;
+            padding: 9px 12px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+        }
+        .gear-min-chip.active {
+            background: #fff;
+            color: #111;
+            border-color: #fff;
+        }
+        .gear-min-main {
+            display: grid;
+            grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+            gap: 14px;
+        }
+        .gear-min-panel {
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+        }
+        .gear-min-panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .gear-min-panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gear-min-panel-note {
+            margin-top: 4px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.46);
+            line-height: 1.45;
+        }
+        .gear-min-source-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.72);
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .gear-min-results,
+        .gear-min-lane-list {
+            display: grid;
+            gap: 10px;
+        }
+        .gear-min-results {
+            max-height: 760px;
+            overflow: auto;
+            padding-right: 2px;
+        }
+        .gear-min-result {
+            display: grid;
+            grid-template-columns: 64px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+        }
+        .gear-min-result-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.05);
+        }
+        .gear-min-result-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .gear-min-result-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .gear-min-result-brand,
+        .gear-min-result-source {
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.4);
+        }
+        .gear-min-result-name {
+            margin-top: 4px;
+            font-size: 0.9rem;
+            line-height: 1.3;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gear-min-result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .gear-min-pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            padding: 0 9px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.72);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .gear-min-add {
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #fff;
+            color: #111;
+            padding: 10px 13px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .gear-min-pack-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .gear-min-lanes {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .gear-min-lane {
+            display: grid;
+            align-content: start;
+            gap: 10px;
+            min-height: 320px;
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.03);
+            transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+        }
+        .gear-min-lane.is-target {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.24);
+            background: rgba(255,255,255,0.05);
+        }
+        .gear-min-lane-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .gear-min-lane-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gear-min-lane-note {
+            margin-top: 4px;
+            font-size: 0.76rem;
+            line-height: 1.45;
+            color: rgba(255,255,255,0.44);
+        }
+        .gear-min-count {
+            min-width: 32px;
+            height: 32px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .gear-min-item {
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.04);
+            cursor: grab;
+        }
+        .gear-min-item-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .gear-min-item-name {
+            font-size: 0.86rem;
+            line-height: 1.3;
+            font-weight: 700;
+            color: #fff;
+        }
+        .gear-min-item-note {
+            margin-top: 5px;
+            font-size: 0.74rem;
+            color: rgba(255,255,255,0.42);
+        }
+        .gear-min-item-toggle {
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: transparent;
+            color: rgba(255,255,255,0.72);
+            padding: 7px 9px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .gear-min-empty {
+            display: grid;
+            place-items: center;
+            min-height: 180px;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px dashed rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.42);
+            text-align: center;
+            line-height: 1.55;
+        }
+        /* Equipment workbench: intentionally separate from the site chrome. */
+        .equipment-experience {
+            --gear-paper: #eeede7;
+            --gear-paper-muted: #d9d8ce;
+            --gear-ink: #1b1d18;
+            --gear-faded: #70736a;
+            --gear-line: rgba(27,29,24,0.14);
+            --gear-moss: #b9d64b;
+            --gear-moss-deep: #60751d;
+            position: relative;
+            margin: 18px 0 22px;
+            padding: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 26px;
+            background:
+                linear-gradient(110deg, rgba(255,255,255,0.65), transparent 34%),
+                linear-gradient(180deg, #eeede7, #dfded5);
+            box-shadow: 0 26px 60px rgba(0,0,0,0.28);
+        }
+        .equipment-experience::before,
+        .equipment-experience::after {
+            display: none;
+        }
+        .gear-workbench {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 12px;
+            color: var(--gear-ink);
+        }
+        .gear-workbench-top {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 2px 2px 0;
+        }
+        .gear-kicker {
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--gear-moss-deep);
+        }
+        .gear-title {
+            margin-top: 5px;
+            font-family: 'Oswald', sans-serif;
+            font-size: clamp(1.7rem, 3vw, 2.5rem);
+            font-weight: 600;
+            line-height: 0.95;
+            letter-spacing: -0.035em;
+        }
+        .gear-title-note {
+            max-width: 42ch;
+            margin-top: 5px;
+            color: var(--gear-faded);
+            font-size: 0.76rem;
+            line-height: 1.4;
+        }
+        .gear-overview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 0 0 auto;
+        }
+        .gear-overview-number {
+            min-width: 74px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            text-align: right;
+        }
+        .gear-overview-label {
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--gear-faded);
+        }
+        .gear-searchbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 4px;
+            align-items: center;
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--gear-line);
+            background: transparent;
+        }
+        .gear-search-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 48px;
+            padding: 0 12px;
+        }
+        .gear-search-glyph {
+            color: var(--gear-moss-deep);
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+        .gear-search-input input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--gear-ink);
+            font-size: 0.96rem;
+            font-weight: 700;
+        }
+        .gear-search-input input::placeholder {
+            color: #9b9d94;
+            font-weight: 500;
+        }
+        .gear-search-state {
+            padding: 0 12px;
+            color: var(--gear-faded);
+            font-size: 0.72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .gear-workbench-grid {
+            --gear-pack-width: 42%;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 10px minmax(320px, var(--gear-pack-width));
+            gap: 0;
+            align-items: start;
+        }
+        .gear-pack-resizer {
+            position: relative;
+            align-self: stretch;
+            min-height: 240px;
+            cursor: col-resize;
+            touch-action: none;
+        }
+        .gear-pack-resizer::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            bottom: 16px;
+            left: 4px;
+            width: 2px;
+            border-radius: 999px;
+            background: rgba(245,165,36,0.26);
+            transition: background 0.16s ease, transform 0.16s ease;
+        }
+        .gear-pack-resizer:hover::before,
+        .gear-pack-resizer.is-resizing::before {
+            background: rgba(245,165,36,0.9);
+            transform: scaleY(1.03);
+        }
+        .gear-workbench-grid.is-read-only {
+            display: block;
+        }
+        .gear-workbench-grid.is-read-only .gear-pack {
+            position: relative;
+            top: auto;
+            min-height: min(68vh, 760px);
+        }
+        .gear-workbench-grid.is-read-only .gear-pack-list {
+            max-height: min(620px, calc(100vh - 260px));
+        }
+        .gear-catalog {
+            min-width: 0;
+        }
+        .gear-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 5px 2px 7px;
+        }
+        .gear-section-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+        .gear-section-meta {
+            color: var(--gear-faded);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .gear-catalog-list {
+            display: grid;
+            gap: 1px;
+            border-top: 1px solid var(--gear-line);
+        }
+        .gear-result {
+            display: grid;
+            grid-template-columns: 52px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            padding: 8px 2px;
+            border-bottom: 1px solid var(--gear-line);
+        }
+        .gear-result:last-child { border-bottom: 0; }
+        .gear-result.is-without-image {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+        .gear-result-thumb {
+            width: 52px;
+            height: 52px;
+            overflow: hidden;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #ced0c4, #f5f4ee);
+        }
+        .gear-result-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .gear-result-source {
+            color: var(--gear-moss-deep);
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+        .gear-result-name {
+            margin-top: 2px;
+            color: var(--gear-ink);
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .gear-result-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 5px;
+            color: var(--gear-faded);
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .gear-result-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gear-action,
+        .gear-pack-action {
+            border: 0;
+            border-radius: 999px;
+            font: inherit;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            transition: transform 0.16s ease, background 0.16s ease, color 0.16s ease;
+        }
+        .gear-action:hover,
+        .gear-pack-action:hover { transform: translateY(-1px); }
+        .gear-action-primary {
+            padding: 9px 11px;
+            background: var(--gear-ink);
+            color: #f7f7f0;
+        }
+        .gear-action-secondary {
+            display: grid;
+            width: 32px;
+            height: 32px;
+            place-items: center;
+            border: 1px solid var(--gear-line);
+            background: transparent;
+            color: var(--gear-ink);
+            font-size: 1.1rem;
+        }
+        .gear-empty {
+            display: grid;
+            min-height: 0;
+            place-items: start;
+            padding: 24px 2px;
+            color: var(--gear-faded);
+            font-size: 0.84rem;
+            font-weight: 700;
+            text-align: left;
+        }
+        .gear-empty button { margin-top: 10px; }
+        .gear-pack {
+            position: sticky;
+            top: 14px;
+            display: grid;
+            gap: 11px;
+            padding: 14px;
+            overflow: hidden;
+            border-radius: 20px;
+            color: #f0f1e9;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(185,214,75,0.2), transparent 35%),
+                #191d18;
+            box-shadow: 0 18px 38px rgba(17,20,16,0.22);
+        }
+        .gear-pack::before {
+            content: '';
+            position: absolute;
+            inset: auto -50px -66px auto;
+            width: 180px;
+            height: 180px;
+            border: 1px solid rgba(238,237,231,0.1);
+            border-radius: 50%;
+        }
+        .gear-pack-head,
+        .gear-lane-head {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .gear-pack-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+        .gear-pack-subtitle {
+            margin-top: 4px;
+            color: rgba(240,241,233,0.58);
+            font-size: 0.72rem;
+            line-height: 1.4;
+        }
+        .gear-pack-weight {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1;
+            text-align: right;
+        }
+        .gear-pack-count {
+            margin-top: 4px;
+            color: rgba(240,241,233,0.54);
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .gear-pack-rail {
+            position: relative;
+            z-index: 1;
+            height: 4px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(240,241,233,0.14);
+        }
+        .gear-pack-rail span {
+            display: block;
+            width: calc(var(--gear-pack-ratio, 0) * 100%);
+            height: 100%;
+            border-radius: inherit;
+            background: var(--gear-moss);
+            transition: width 0.38s ease;
+        }
+        .gear-pack-metrics {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+        .gear-pack-metrics span {
+            padding: 6px 8px;
+            border-radius: 7px;
+            background: rgba(240,241,233,0.08);
+            color: rgba(240,241,233,0.74);
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+        .gear-pack-tools {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 7px;
+        }
+        .gear-pack-action {
+            padding: 8px 10px;
+            background: rgba(240,241,233,0.08);
+            color: rgba(240,241,233,0.84);
+        }
+        .gear-pack-action.primary {
+            background: var(--gear-moss);
+            color: #202519;
+        }
+        .gear-lanes {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 4px;
+        }
+        .gear-lane {
+            min-height: 0;
+            padding: 10px 0;
+            border: 0;
+            border-top: 1px solid rgba(240,241,233,0.1);
+            border-radius: 0;
+            background: transparent;
+            transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+        }
+        .gear-lane.is-target {
+            border-color: var(--gear-moss);
+            background: rgba(185,214,75,0.05);
+            transform: none;
+        }
+        .gear-lane-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .gear-lane-count {
+            color: var(--gear-moss);
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .gear-lane-list {
+            display: grid;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .gear-pack-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid rgba(240,241,233,0.08);
+            cursor: grab;
+        }
+        .gear-pack-card:first-child { border-top: 0; }
+        .gear-pack-card:active { cursor: grabbing; }
+        .gear-pack-card-name {
+            overflow: hidden;
+            color: #f4f5ec;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.25;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .gear-pack-card-meta {
+            margin-top: 3px;
+            color: rgba(240,241,233,0.48);
+            font-size: 0.66rem;
+            font-weight: 700;
+        }
+        .gear-pack-card button {
+            padding: 7px 8px;
+            background: transparent;
+            color: rgba(240,241,233,0.76);
+            border: 1px solid rgba(240,241,233,0.14);
+        }
+        .gear-lane-empty {
+            padding: 6px 0 2px;
+            color: rgba(240,241,233,0.42);
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+        .gear-load-more-wrap {
+            padding: 12px 0 2px;
+        }
+        .gear-load-more {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--gear-line);
+            border-radius: 9px;
+            background: transparent;
+            color: var(--gear-ink);
+            font: inherit;
+            font-size: 0.74rem;
+            font-weight: 800;
+        }
+        /* The equipment desk deliberately uses the application's low-light palette. */
+        .equipment-experience {
+            --gear-paper: #10110f;
+            --gear-paper-muted: #191a16;
+            --gear-ink: #f2eee4;
+            --gear-faded: #9b9d92;
+            --gear-line: rgba(255,255,255,0.09);
+            --gear-moss: #f5a524;
+            --gear-moss-deep: #f7bb4c;
+            border-color: rgba(245,165,36,0.17);
+            background:
+                radial-gradient(circle at 93% -18%, rgba(245,165,36,0.17), transparent 34%),
+                linear-gradient(145deg, #11120f, #090a09 66%);
+            box-shadow: 0 24px 58px rgba(0,0,0,0.36);
+        }
+        .equipment-experience,
+        .equipment-experience button,
+        .equipment-experience input {
+            font-family: 'Comfortaa', cursive;
+        }
+        .gear-title,
+        .gear-pack-title,
+        .gear-pack-weight,
+        .gear-overview-number {
+            font-family: 'Comfortaa', cursive;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+        }
+        .gear-title { color: var(--gear-ink); }
+        .gear-searchbar { border-bottom-color: var(--gear-line); }
+        .gear-search-input input::placeholder { color: #777a70; }
+        .gear-catalog-list {
+            border-top: 0;
+            max-height: min(640px, calc(100vh - 285px));
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-color: rgba(245,165,36,0.56) transparent;
+            scrollbar-width: thin;
+        }
+        .gear-catalog-list::-webkit-scrollbar { width: 7px; }
+        .gear-catalog-list::-webkit-scrollbar-thumb {
+            border: 2px solid #0d0e0c;
+            border-radius: 999px;
+            background: rgba(245,165,36,0.62);
+        }
+        .gear-result { transition: background 0.16s ease, padding 0.16s ease; }
+        .gear-result:hover {
+            padding-right: 8px;
+            padding-left: 8px;
+            background: rgba(255,255,255,0.035);
+        }
+        .gear-result-thumb {
+            position: relative;
+            overflow: visible;
+            background: #1c1e19;
+        }
+        .gear-result-thumb > img {
+            border-radius: 9px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.24);
+        }
+        .gear-image-preview { display: none; }
+        .gear-image-floating-preview {
+            position: fixed;
+            z-index: 1000;
+            width: min(300px, 42vw);
+            padding: 5px;
+            border: 1px solid rgba(245,165,36,0.32);
+            border-radius: 13px;
+            background: #10110f;
+            box-shadow: 0 20px 46px rgba(0,0,0,0.54);
+            pointer-events: none;
+        }
+        .gear-image-floating-preview img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 330px;
+            border-radius: 8px;
+            object-fit: contain;
+            background: #191a16;
+        }
+        .gear-action-primary {
+            background: var(--gear-moss);
+            color: #1d160a;
+        }
+        .gear-pack {
+            gap: 10px;
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 16px;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(245,165,36,0.13), transparent 40%),
+                #141511;
+            box-shadow: none;
+        }
+        .gear-pack::before { display: none; }
+        .gear-pack-metrics span {
+            padding: 0;
+            background: transparent;
+            color: rgba(242,238,228,0.62);
+        }
+        .gear-pack-list {
+            max-height: min(470px, calc(100vh - 360px));
+            overflow-y: auto;
+            scrollbar-color: rgba(245,165,36,0.5) transparent;
+            scrollbar-width: thin;
+        }
+        .gear-pack-table-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            padding: 9px 0 7px;
+            border-top: 1px solid rgba(255,255,255,0.09);
+            color: rgba(242,238,228,0.44);
+            font-size: 0.62rem;
+            font-weight: 800;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+        }
+        .gear-pack-card {
+            grid-template-columns: 36px minmax(0, 1fr) auto;
+            gap: 9px;
+            padding: 8px 1px;
+            cursor: default;
+        }
+        .gear-pack-image {
+            width: 36px;
+            height: 36px;
+            border-radius: 7px;
+            object-fit: cover;
+            background: rgba(255,255,255,0.08);
+        }
+        .gear-pack-image-empty {
+            display: block;
+            background: linear-gradient(135deg, rgba(245,165,36,0.23), rgba(255,255,255,0.06));
+        }
+        .gear-pack-card button {
+            padding: 5px 0;
+            border: 0;
+            color: rgba(242,238,228,0.5);
+            font-size: 0.64rem;
+        }
+        .gear-pack-card button:hover { color: #f7bb4c; }
+        .gear-pack-card-copy { min-width: 0; }
+        .gear-pack-edit {
+            min-width: 0;
+            border: 0;
+            border-bottom: 1px solid transparent;
+            outline: 0;
+            border-radius: 0;
+            background: transparent;
+            color: #f4f5ec;
+            font: inherit;
+        }
+        .gear-pack-edit:hover,
+        .gear-pack-edit:focus { border-bottom-color: rgba(245,165,36,0.7); }
+        .gear-pack-edit[readonly] {
+            cursor: default;
+            border-bottom-color: transparent;
+            opacity: 0.76;
+        }
+        .gear-pack-edit-name {
+            width: 100%;
+            padding: 0 0 3px;
+            font-size: 0.77rem;
+            font-weight: 800;
+            line-height: 1.25;
+        }
+        .gear-pack-edit-fields {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
+            color: rgba(240,241,233,0.48);
+            font-size: 0.64rem;
+            font-weight: 700;
+        }
+        .gear-pack-edit-field { display: inline-flex; align-items: center; gap: 3px; }
+        .gear-pack-edit-field input { width: 49px; padding: 1px 0; color: rgba(240,241,233,0.78); font-size: 0.64rem; }
+        @media (max-width: 1080px) {
+            .gear-workbench-grid { grid-template-columns: 1fr; }
+            .gear-pack-resizer { display: none; }
+            .gear-pack { position: relative; top: auto; }
+        }
+        @media (max-width: 680px) {
+            .equipment-experience { padding: 13px; border-radius: 20px; }
+            .gear-workbench-top { align-items: flex-start; flex-direction: column; }
+            .gear-overview { align-self: stretch; justify-content: space-between; }
+            .gear-overview-number { text-align: left; }
+            .gear-searchbar { grid-template-columns: 1fr; }
+            .gear-search-state { padding: 0 12px 6px; }
+            .gear-result { grid-template-columns: 44px minmax(0, 1fr); }
+            .gear-result-thumb { width: 44px; height: 44px; }
+            .gear-result-actions { grid-column: 1 / -1; justify-content: flex-end; }
+            .gear-action-primary { flex: 1; }
+            .gear-catalog-list,
+            .gear-pack-list { max-height: 52vh; }
+            .gear-image-floating-preview { display: none; }
+        }
+        @media (max-width: 1120px) {
+            .gear-min-main {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 760px) {
+            .gear-min-head {
+                flex-direction: column;
+            }
+            .gear-min-stats {
+                justify-content: flex-start;
+            }
+            .gear-min-lanes {
+                grid-template-columns: 1fr;
+            }
+            .gear-min-result {
+                grid-template-columns: 56px minmax(0, 1fr);
+            }
+            .gear-min-result-thumb {
+                width: 56px;
+                height: 56px;
+            }
+            .gear-min-add {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+        }
+        @media (max-width: 1180px) {
+            .pw-head,
+            .pw-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 760px) {
+            .pw-metrics,
+            .pw-lanes {
+                grid-template-columns: 1fr;
+            }
+            .pw-result-card {
+                grid-template-columns: 64px minmax(0, 1fr);
+            }
+            .pw-result-thumb {
+                width: 64px;
+                height: 64px;
+            }
+            .pw-add-btn {
+                grid-column: 1 / -1;
+                width: 100%;
+                margin-top: 2px;
+            }
+            .pw-pack-overview {
+                grid-template-columns: 1fr;
+            }
+            .pw-pack-count {
+                width: 88px;
+            }
+        }
+        @keyframes equipmentPulse {
+            0%, 100% { transform: scale(1) translate3d(0, 0, 0); }
+            50% { transform: scale(1.08) translate3d(8px, -6px, 0); }
+        }
+        @keyframes equipmentSweep {
+            0%, 100% { transform: translateX(-120%); }
+            55% { transform: translateX(120%); }
+        }
+        @keyframes equipmentRise {
+            from { transform: scaleX(0.12); opacity: 0.4; }
+            to { transform: scaleX(1); opacity: 1; }
+        }
+        @media (max-width: 1100px) {
+            .equipment-hero {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 860px) {
+            .equipment-zones,
+            .equipment-dashboard {
+                grid-template-columns: 1fr;
+            }
+            .equipment-zone {
+                min-height: 300px;
+            }
+        }
+        @media (max-width: 640px) {
+            .equipment-experience {
+                padding: 16px;
+                border-radius: 28px;
+            }
+            .equipment-hero-copy,
+            .equipment-zone {
+                border-radius: 24px;
+                padding: 16px;
+            }
+            .equipment-hero-title {
+                max-width: none;
+                font-size: clamp(2.2rem, 13vw, 3.6rem);
+            }
+            .equipment-marquee {
+                gap: 6px;
+                font-size: 0.68rem;
+                letter-spacing: 0.14em;
+            }
+            .equipment-card-grid {
+                grid-template-columns: 1fr;
+            }
+            .equipment-backpack-visual {
+                width: 100px;
+                height: 122px;
+                right: 12px;
+                bottom: 12px;
+            }
         }
         .collab-status {
             display: inline-flex;
@@ -5171,19 +7261,19 @@
             </div>
             <div class="quick-stats">
                 <div class="quick-stat">
-                    <div class="quick-stat-label">Позиции</div>
+                    <div id="quickRowsLabel" class="quick-stat-label">Позиции</div>
                     <div id="quickRowsCount" class="quick-stat-value">0</div>
                 </div>
                 <div class="quick-stat">
-                    <div class="quick-stat-label">Общие расходы</div>
+                    <div id="quickSharedLabel" class="quick-stat-label">Общие расходы</div>
                     <div id="quickSharedTotal" class="quick-stat-value">0 ₽</div>
                 </div>
                 <div class="quick-stat">
-                    <div class="quick-stat-label">Личные расходы</div>
+                    <div id="quickPersonalLabel" class="quick-stat-label">Личные расходы</div>
                     <div id="quickPersonalTotal" class="quick-stat-value">0 ₽</div>
                 </div>
                 <div class="quick-stat">
-                    <div class="quick-stat-label">Участники</div>
+                    <div id="quickParticipantsLabel" class="quick-stat-label">Участники</div>
                     <div id="quickParticipantsCount" class="quick-stat-value quick-participants-shell">
                         <div class="quick-participants-row">
                             <div id="quickParticipantsInline" class="quick-participants-inline">
@@ -5199,6 +7289,8 @@
                 </div>
             </div>
         </div>
+
+        <div id="equipmentExperience" class="equipment-experience hidden"></div>
 
         <div id="expensePanel" class="card glow p-4 md:p-6 mb-6 hidden">
             <div id="expenseIntro" class="expense-intro">
@@ -5458,6 +7550,11 @@
             { id: 'owner', name: 'Ответственный', type: 'owners', width: 220 },
             { id: 'cost', name: 'Стоимость', type: 'cost', width: COST_COLUMN_MIN_WIDTH }
         ];
+        const equipmentColumns = [
+            { id: 'item', name: 'Название', type: 'text', width: 240 },
+            { id: 'weight', name: 'Вес', type: 'measure', width: 128 },
+            { id: 'cost', name: 'Стоимость', type: 'cost', width: COST_COLUMN_MIN_WIDTH }
+        ];
 
         const sectionColumnOverrides = {
             'Пиво': {
@@ -5476,9 +7573,10 @@
                 { id: 'qty', name: 'Кол-во', type: 'number', width: 118 },
                 { id: 'owner', name: 'Ответственный', type: 'owners', width: 220 },
                 { id: 'cost', name: 'Стоимость', type: 'cost', width: COST_COLUMN_MIN_WIDTH }
-            ]
+            ],
+            'Снаряжение': equipmentColumns
         };
-        const defaultColumnWidths = { item: 220, qty: 118, owner: 220, cost: COST_COLUMN_MIN_WIDTH };
+        const defaultColumnWidths = { item: 220, qty: 118, owner: 220, cost: COST_COLUMN_MIN_WIDTH, weight: 128, volume: 128 };
         const PLANNING_SHARED_VIEW_ENABLED = false;
         const PLANNING_DIAGNOSTICS_ENABLED = !!window.KINOSREDA_PLANNING_DIAG;
 
@@ -5490,6 +7588,9 @@
         let lastSectionsRenderSignature = '';
         let sectionsLayoutVersion = 0;
         let currentUserName = '';
+        let currentUserLogin = '';
+        let eventOwnerLogin = '';
+        let eventOwnerName = '';
         let usersList = [];
         let beerList = [];
         let saveTimer = null;
@@ -5534,6 +7635,189 @@
         let eventCustomParticipantsSignature = '';
         let eventNameValue = '';
         let eventDateValue = '';
+        let eventTypeValue = '';
+        let equipmentCatalogSource = 'all';
+        let equipmentCatalogSearch = '';
+        let equipmentCatalogLoading = false;
+        let equipmentCatalogError = '';
+        let equipmentCatalogActiveCategory = 'backpacks';
+        let equipmentCatalogRequestToken = 0;
+        const equipmentCatalogByCategory = {};
+        const equipmentCatalogLoadedKeys = new Set();
+        const equipmentCatalogPendingKeys = new Set();
+        const equipmentCatalogRequestTokensByKey = {};
+        let decathlonCatalogLoading = false;
+        let decathlonCatalogError = '';
+        let decathlonCatalogRequestToken = 0;
+        const decathlonCatalogByKey = {};
+        const decathlonCatalogLoadedKeys = new Set();
+        const decathlonCatalogPendingKeys = new Set();
+        const decathlonCatalogRequestTokensByKey = {};
+        let gggCatalogLoading = false;
+        let gggCatalogError = '';
+        let gggCatalogRequestToken = 0;
+        const gggCatalogByKey = {};
+        const gggCatalogLoadedKeys = new Set();
+        const gggCatalogPendingKeys = new Set();
+        const gggCatalogRequestTokensByKey = {};
+        let hyperliteCatalogLoading = false;
+        let hyperliteCatalogError = '';
+        const hyperliteCatalogByKey = {};
+        const hyperliteCatalogLoadedKeys = new Set();
+        const hyperliteCatalogPendingKeys = new Set();
+        const hyperliteCatalogRequestTokensByKey = {};
+        let zpacksCatalogLoading = false;
+        let zpacksCatalogError = '';
+        const zpacksCatalogByKey = {};
+        const zpacksCatalogLoadedKeys = new Set();
+        const zpacksCatalogPendingKeys = new Set();
+        const zpacksCatalogRequestTokensByKey = {};
+        let gossamerCatalogLoading = false;
+        let gossamerCatalogError = '';
+        const gossamerCatalogByKey = {};
+        const gossamerCatalogLoadedKeys = new Set();
+        const gossamerCatalogPendingKeys = new Set();
+        const gossamerCatalogRequestTokensByKey = {};
+        let outdoorVitalsCatalogLoading = false;
+        let outdoorVitalsCatalogError = '';
+        const outdoorVitalsCatalogByKey = {};
+        const outdoorVitalsCatalogLoadedKeys = new Set();
+        const outdoorVitalsCatalogPendingKeys = new Set();
+        const outdoorVitalsCatalogRequestTokensByKey = {};
+        let sixMoonCatalogLoading = false;
+        let sixMoonCatalogError = '';
+        const sixMoonCatalogByKey = {};
+        const sixMoonCatalogLoadedKeys = new Set();
+        const sixMoonCatalogPendingKeys = new Set();
+        const sixMoonCatalogRequestTokensByKey = {};
+        let gearxCatalogLoading = false;
+        let gearxCatalogError = '';
+        const gearxCatalogByKey = {};
+        const gearxCatalogLoadedKeys = new Set();
+        const gearxCatalogPendingKeys = new Set();
+        const gearxCatalogRequestTokensByKey = {};
+        let geartradeCatalogLoading = false;
+        let geartradeCatalogError = '';
+        const geartradeCatalogByKey = {};
+        const geartradeCatalogLoadedKeys = new Set();
+        const geartradeCatalogPendingKeys = new Set();
+        const geartradeCatalogRequestTokensByKey = {};
+        let evoCatalogLoading = false;
+        let evoCatalogError = '';
+        const evoCatalogByKey = {};
+        const evoCatalogLoadedKeys = new Set();
+        const evoCatalogPendingKeys = new Set();
+        const evoCatalogRequestTokensByKey = {};
+        const equipmentExtraStorefrontSources = [
+            {
+                sourceKey: 'wildbounds',
+                endpoint: 'https://wildbounds.myshopify.com/api/2024-07/graphql.json',
+                token: 'e2bce69a96d34fab94f35bedb66a6f17',
+                urlBase: 'https://wildbounds.com/products',
+                errorMessage: 'Не удалось загрузить каталог Wildbounds.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'valleyandpeak',
+                endpoint: 'https://valleyandpeak-co-uk.myshopify.com/api/2024-07/graphql.json',
+                token: '065e4e85998efb892e9e3915d9bb965a',
+                urlBase: 'https://valleyandpeak.co.uk/products',
+                errorMessage: 'Не удалось загрузить каталог Valley and Peak.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'kammok',
+                endpoint: 'https://kammok.myshopify.com/api/2024-07/graphql.json',
+                token: 'd066642fbafccdcd986d1fe8d9905ce2',
+                urlBase: 'https://kammok.com/products',
+                errorMessage: 'Не удалось загрузить каталог Kammok.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'durston',
+                endpoint: 'https://durstongear.myshopify.com/api/2024-07/graphql.json',
+                token: '785cab369c1179181eb12c220434cd44',
+                urlBase: 'https://durstongear.com/products',
+                errorMessage: 'Не удалось загрузить каталог Durston.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'katabatic',
+                endpoint: 'https://katabatic-gear.myshopify.com/api/2024-07/graphql.json',
+                token: '156937e52634137ecf3afb099e46ce63',
+                urlBase: 'https://katabaticgear.com/products',
+                errorMessage: 'Не удалось загрузить каталог Katabatic Gear.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'slingfin',
+                endpoint: 'https://finsling.myshopify.com/api/2024-07/graphql.json',
+                token: '4c54864fbfff0520cba04d46f5a41313',
+                urlBase: 'https://www.slingfin.com/products',
+                errorMessage: 'Не удалось загрузить каталог Slingfin.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'bigagnes',
+                endpoint: 'https://www-bigagnes-com.myshopify.com/api/2024-07/graphql.json',
+                token: '2c9dfd8266ff4c8445522ea3c51dc7db',
+                urlBase: 'https://www.bigagnes.com/products',
+                errorMessage: 'Не удалось загрузить каталог Big Agnes.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'seatosummit',
+                endpoint: 'https://seatosummitusa.myshopify.com/api/2024-07/graphql.json',
+                token: 'f18a10cb3f62ccd6881a3da521050f0a',
+                urlBase: 'https://seatosummit.com/products',
+                errorMessage: 'Не удалось загрузить каталог Sea to Summit.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'nashvillepack',
+                endpoint: 'https://nashville-pack-and-equipment-company.myshopify.com/api/2024-07/graphql.json',
+                token: '02ca8182952eaa75d767d9cfda0d0029',
+                urlBase: 'https://nashvillepack.com/products',
+                errorMessage: 'Не удалось загрузить каталог Nashville Pack.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'featheredfriends',
+                endpoint: 'https://storefeatheredfriends.myshopify.com/api/2024-07/graphql.json',
+                token: 'fca7b864e4335502e932575910162722',
+                urlBase: 'https://featheredfriends.com/products',
+                errorMessage: 'Не удалось загрузить каталог Feathered Friends.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            },
+            {
+                sourceKey: 'cascadedesigns',
+                endpoint: 'https://ce6df2-8b.myshopify.com/api/2024-07/graphql.json',
+                token: 'e96015f5ae393f91a2d45244514f201a',
+                urlBase: 'https://cascadedesigns.com/products',
+                errorMessage: 'Не удалось загрузить каталог Cascade Designs.',
+                catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
+            }
+        ];
+        let equipmentCatalogSearchDebounceTimer = null;
+        let equipmentCatalogSearchRenderTimer = null;
+        let equipmentRenderedSearchResults = [];
+        let equipmentCatalogResultLimit = 30;
+        let equipmentCatalogLazyLoadRaf = null;
+        let equipmentCatalogScrollTop = 0;
+        let equipmentPackScrollTop = 0;
+        let equipmentCatalogHasMoreResults = false;
+        let equipmentCurrencyRatesLoading = false;
+        let equipmentCurrencyRatesUpdatedAt = 0;
+        let equipmentCurrencyRatesPromise = null;
+        const equipmentCurrencyRates = {
+            RUB: 1,
+            USD: 76,
+            EUR: 88,
+            GBP: 103,
+            CAD: 55,
+            AUD: 53,
+            JPY: 0.48
+        };
         let eventDataCacheLoaded = false;
         let pendingEventDataVerifyTimer = null;
         let pendingEventDataVerifyToken = 0;
@@ -5577,9 +7861,66 @@
         const columnTypes = [
             { value: 'text', label: 'Строка' },
             { value: 'number', label: 'Число' },
+            { value: 'measure', label: 'Вес / объем' },
             { value: 'cost', label: 'Стоимость' },
             { value: 'owners', label: 'Пользователи' }
         ];
+        const PACKWIZARD_CATEGORY_META = [
+            { key: 'backpacks', label: 'Рюкзаки', endpoint: 'https://www.packwizard.com/api/gear/backpacks', decathlonQuery: 'backpack' },
+            { key: 'tents', label: 'Палатки', endpoint: 'https://www.packwizard.com/api/gear/tents', decathlonQuery: 'tent' },
+            { key: 'sleepingPads', label: 'Коврики', endpoint: 'https://www.packwizard.com/api/gear/sleepingPads', decathlonQuery: 'sleeping pad' },
+            { key: 'sleepingBags', label: 'Спальники', endpoint: 'https://www.packwizard.com/api/gear/sleepingBags', decathlonQuery: 'sleeping bag' },
+            { key: 'stoves', label: 'Горелки', endpoint: 'https://www.packwizard.com/api/gear/stoves', decathlonQuery: 'stove' },
+            { key: 'insulatedJackets', label: 'Куртки', endpoint: 'https://www.packwizard.com/api/gear/insulatedJackets', decathlonQuery: 'jacket' }
+        ];
+        const EQUIPMENT_SOURCE_LABELS = {
+            packwizard: 'PackWizard',
+            decathlon: 'Decathlon',
+            ggg: 'Garage Grown Gear',
+            hyperlite: 'Hyperlite',
+            zpacks: 'Zpacks',
+            gossamer: 'Gossamer Gear',
+            outdoorvitals: 'Outdoor Vitals',
+            sixmoon: 'Six Moon Designs',
+            gearx: 'GearX',
+            geartrade: 'Geartrade',
+            evo: 'Evo',
+            wildbounds: 'Wildbounds',
+            valleyandpeak: 'Valley and Peak',
+            kammok: 'Kammok',
+            durston: 'Durston Gear',
+            katabatic: 'Katabatic Gear',
+            slingfin: 'Slingfin',
+            bigagnes: 'Big Agnes',
+            seatosummit: 'Sea to Summit',
+            nashvillepack: 'Nashville Pack',
+            featheredfriends: 'Feathered Friends',
+            cascadedesigns: 'Cascade Designs'
+        };
+        const EQUIPMENT_SOURCE_PRIORITIES = {
+            packwizard: 54,
+            geartrade: 53,
+            gearx: 52,
+            evo: 51,
+            gossamer: 53,
+            hyperlite: 50,
+            zpacks: 49,
+            sixmoon: 48,
+            ggg: 47,
+            outdoorvitals: 46,
+            decathlon: 45,
+            wildbounds: 50,
+            valleyandpeak: 49,
+            kammok: 48,
+            durston: 52,
+            katabatic: 51,
+            slingfin: 50,
+            bigagnes: 49,
+            seatosummit: 49,
+            nashvillepack: 51,
+            featheredfriends: 50,
+            cascadedesigns: 48
+        };
         const BEER_BACKLOG_STATUS_META = {
             stock: {
                 label: 'В запасе',
@@ -6032,6 +8373,9 @@
                 event: {
                     name: String(payload.event && payload.event.name || '').trim(),
                     date: String(payload.event && payload.event.date || '').trim(),
+                    type: normalizeEventType(payload.event && payload.event.type),
+                    createdByLogin: String(payload.event && payload.event.createdByLogin || '').trim(),
+                    createdBy: String(payload.event && payload.event.createdBy || '').trim(),
                     participants: Array.isArray(payload.event && payload.event.participants)
                         ? payload.event.participants.map((v) => String(v || '').trim()).filter(Boolean)
                         : [],
@@ -6129,6 +8473,9 @@
                 event: {
                     name: eventNameValue,
                     date: eventDateValue,
+                    type: eventTypeValue,
+                    createdByLogin: eventOwnerLogin,
+                    createdBy: eventOwnerName,
                     participants: eventParticipants,
                     participantsCustom: eventCustomParticipants
                 },
@@ -6148,6 +8495,9 @@
                 publishPlanningDiag('patch-sections', {
                     sectionCount: Array.isArray(nextData && nextData.sections) ? nextData.sections.length : 0
                 });
+                if (isEquipmentEvent()) {
+                    renderEquipmentExperience();
+                }
                 return;
             }
             renderSections();
@@ -6612,8 +8962,6 @@
                 if (initialRenderCommitted) return;
                 if (initialDataSnapshotReady && initialEventSnapshotReady && eventData) {
                     commitInitialRender();
-                } else {
-                    hideBootFlickerGuard();
                 }
             }, 900);
         }
@@ -6636,6 +8984,737 @@
             return /\d/.test(raw) ? raw : '';
         }
 
+        function normalizeEventType(value) {
+            return String(value || '').trim().toLowerCase() === 'equipment' ? 'equipment' : 'default';
+        }
+
+        function isEquipmentEvent() {
+            return normalizeEventType(eventTypeValue) === 'equipment';
+        }
+
+        function canEditEquipmentEvent() {
+            if (!isEquipmentEvent()) return true;
+            const owner = String(eventOwnerLogin || '').trim().toLowerCase();
+            const viewer = String(currentUserLogin || '').trim().toLowerCase();
+            return !!owner && owner === viewer;
+        }
+
+        function cloneEquipmentColumns() {
+            return equipmentColumns.map((col) => ({ ...col }));
+        }
+
+        function isMeasureColumnType(type) {
+            return String(type || '') === 'measure';
+        }
+
+        function getPackwizardCategoryMeta(categoryKey) {
+            return PACKWIZARD_CATEGORY_META.find((item) => item.key === categoryKey) || PACKWIZARD_CATEGORY_META[0];
+        }
+
+        function normalizePackwizardCatalogCategory(value) {
+            const safe = String(value || '').trim();
+            return getPackwizardCategoryMeta(safe).key;
+        }
+
+        function getPackwizardCatalogItems(categoryKey) {
+            const safeKey = normalizePackwizardCatalogCategory(categoryKey);
+            return Array.isArray(equipmentCatalogByCategory[safeKey]) ? equipmentCatalogByCategory[safeKey] : [];
+        }
+
+        function formatImportedWeightKg(value) {
+            const grams = Number(value);
+            if (!Number.isFinite(grams) || grams <= 0) return '';
+            return formatEquipmentNumber(grams / 1000);
+        }
+
+        function getEquipmentSearchInputState() {
+            const active = document.activeElement;
+            if (!(active instanceof HTMLInputElement) || active.id !== 'pwCatalogSearchInput') return null;
+            return {
+                value: active.value || '',
+                selectionStart: typeof active.selectionStart === 'number' ? active.selectionStart : null,
+                selectionEnd: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
+            };
+        }
+
+        function restoreEquipmentSearchInputState(state) {
+            if (!state) return;
+            const input = document.getElementById('pwCatalogSearchInput');
+            if (!(input instanceof HTMLInputElement)) return;
+            try {
+                input.focus({ preventScroll: true });
+            } catch (_) {
+                input.focus();
+            }
+            if (input.value !== state.value) {
+                input.value = state.value;
+            }
+            if (typeof input.setSelectionRange === 'function') {
+                const start = Math.min(Number(state.selectionStart) || 0, input.value.length);
+                const end = Math.min(
+                    state.selectionEnd == null ? start : Number(state.selectionEnd) || start,
+                    input.value.length
+                );
+                input.setSelectionRange(start, end);
+            }
+        }
+
+        function scheduleEquipmentSearchRefresh() {
+            if (equipmentCatalogSearchRenderTimer) {
+                clearTimeout(equipmentCatalogSearchRenderTimer);
+            }
+            equipmentCatalogSearchRenderTimer = setTimeout(() => {
+                equipmentCatalogSearchRenderTimer = null;
+                renderEquipmentExperience();
+                const queryText = getEquipmentQueryText();
+                if (!shouldRunRemoteEquipmentSearch(queryText)) return;
+                ensureDecathlonCatalogLoaded('global', queryText).catch(() => {});
+                ensureGggCatalogLoaded('global', queryText).catch(() => {});
+                ensureHyperliteCatalogLoaded('global', queryText).catch(() => {});
+                ensureZpacksCatalogLoaded('global', queryText).catch(() => {});
+                ensureGossamerCatalogLoaded('global', queryText).catch(() => {});
+                ensureOutdoorVitalsCatalogLoaded('global', queryText).catch(() => {});
+                ensureSixMoonCatalogLoaded('global', queryText).catch(() => {});
+                ensureGearxCatalogLoaded('global', queryText).catch(() => {});
+                ensureGeartradeCatalogLoaded('global', queryText).catch(() => {});
+                ensureEvoCatalogLoaded('global', queryText).catch(() => {});
+            }, 120);
+        }
+
+        function buildPackwizardSearchText(item) {
+            return [
+                item && item.brand,
+                item && item.formattedBrand,
+                item && item.name,
+                item && item.category,
+                item && item.searchName
+            ].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean).join(' ');
+        }
+
+        function getEquipmentQueryText() {
+            return String(equipmentCatalogSearch || '').trim();
+        }
+
+        function normalizeEquipmentSearchKey(query = '') {
+            return String(query || '').trim().toLowerCase();
+        }
+
+        function shouldRunRemoteEquipmentSearch(queryText = '') {
+            return String(queryText || '').trim().length >= 2;
+        }
+
+        function getEquipmentSourceLabel(sourceKey) {
+            return EQUIPMENT_SOURCE_LABELS[String(sourceKey || '').trim()] || 'Gear';
+        }
+
+        function getEquipmentSourcePriority(sourceKey) {
+            return Number(EQUIPMENT_SOURCE_PRIORITIES[String(sourceKey || '').trim()] || 0);
+        }
+
+        function getAllPackwizardCatalogItems() {
+            return PACKWIZARD_CATEGORY_META.flatMap((item) => getPackwizardCatalogItems(item.key));
+        }
+
+        function getPackwizardCatalogReadyCount() {
+            return PACKWIZARD_CATEGORY_META.filter((item) => equipmentCatalogLoadedKeys.has(item.key)).length;
+        }
+
+        function mergeEquipmentSearchResults(groups) {
+            const out = [];
+            const seen = new Set();
+            groups.forEach((group) => {
+                (Array.isArray(group) ? group : []).forEach((item) => {
+                    const key = `${String(item && item.__source || 'local')}::${String(item && item._id || item && item.id || item && item.name || '')}`;
+                    if (!key || seen.has(key)) return;
+                    seen.add(key);
+                    out.push(item);
+                });
+            });
+            return out;
+        }
+
+        function getEquipmentSearchScore(item, queryText = '') {
+            const query = normalizeEquipmentSearchKey(queryText);
+            const sourceScore = getEquipmentSourcePriority(item && item.__source);
+            if (!query) return sourceScore;
+            const name = normalizeEquipmentSearchKey(item && item.name);
+            const brand = normalizeEquipmentSearchKey(item && (item.formattedBrand || item.brand));
+            const category = normalizeEquipmentSearchKey(item && item.category);
+            const searchText = normalizeEquipmentSearchKey(item && item.__searchText);
+            let score = sourceScore;
+            if (name === query) score += 320;
+            if (brand === query) score += 180;
+            if (name.startsWith(query)) score += 150;
+            if (`${brand} ${name}`.trim().startsWith(query)) score += 120;
+            if (category.startsWith(query)) score += 70;
+            const matchIndex = searchText.indexOf(query);
+            if (matchIndex >= 0) score += 90 - Math.min(matchIndex, 45);
+            return score;
+        }
+
+        function getEquipmentQueryVariants(queryText = '') {
+            const query = normalizeEquipmentSearchKey(queryText);
+            if (!query) return [];
+            const variants = new Set([query]);
+            if (query.includes('backpack')) {
+                variants.add('pack');
+            }
+            if (query.includes('tent')) {
+                variants.add('shelter');
+                variants.add('tarp');
+            }
+            if (query.includes('sleeping bag')) {
+                variants.add('quilt');
+                variants.add('sleeping');
+            }
+            if (query.includes('stove')) {
+                variants.add('cook');
+                variants.add('cooking');
+            }
+            return Array.from(variants);
+        }
+
+        function escapeEquipmentRegex(value) {
+            return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function doesEquipmentTextMatchTerm(text, term) {
+            const haystack = normalizeEquipmentSearchKey(text);
+            const needle = normalizeEquipmentSearchKey(term);
+            if (!haystack || !needle) return false;
+            if (needle.includes(' ')) {
+                return haystack.includes(needle);
+            }
+            const pattern = new RegExp(`(^|[^a-z0-9])${escapeEquipmentRegex(needle)}([^a-z0-9]|$)`, 'i');
+            return pattern.test(haystack);
+        }
+
+        function doesEquipmentItemMatchQuery(item, queryText = '') {
+            const query = normalizeEquipmentSearchKey(queryText);
+            if (!query) return false;
+            const variants = getEquipmentQueryVariants(queryText);
+            const haystacks = [
+                item && item.__searchText,
+                item && item.name,
+                item && item.formattedBrand,
+                item && item.brand,
+                item && item.category
+            ].map((value) => normalizeEquipmentSearchKey(value)).filter(Boolean);
+            if (!haystacks.length) return false;
+            const terms = query.split(/\s+/).filter(Boolean);
+            const searchable = haystacks.join(' ');
+            const aliases = {
+                pad: ['pad', 'mat'],
+                mat: ['mat', 'pad'],
+                backpack: ['backpack', 'pack'],
+                pack: ['pack', 'backpack']
+            };
+            // Every word may match a different field and only needs to be a prefix/fragment.
+            if (terms.length && terms.every((term) => (aliases[term] || [term]).some((variant) => searchable.includes(variant)))) return true;
+            if (haystacks.some((text) => text.includes(query))) return true;
+            return variants.some((variant) => haystacks.some((text) => doesEquipmentTextMatchTerm(text, variant)));
+        }
+
+        function sortEquipmentSearchResults(items, queryText = '') {
+            return (Array.isArray(items) ? items.slice() : []).sort((left, right) => {
+                const scoreDiff = getEquipmentSearchScore(right, queryText) - getEquipmentSearchScore(left, queryText);
+                if (scoreDiff) return scoreDiff;
+                const sourceDiff = getEquipmentSourcePriority(right && right.__source) - getEquipmentSourcePriority(left && left.__source);
+                if (sourceDiff) return sourceDiff;
+                return collatorEn.compare(String(left && left.name || ''), String(right && right.name || ''));
+            });
+        }
+
+        function getEquipmentCombinedCatalogError() {
+            return [
+                equipmentCatalogError,
+                gossamerCatalogError,
+                gearxCatalogError,
+                geartradeCatalogError,
+                evoCatalogError,
+                hyperliteCatalogError,
+                zpacksCatalogError,
+                sixMoonCatalogError,
+                gggCatalogError,
+                outdoorVitalsCatalogError,
+                decathlonCatalogError,
+                ...equipmentExtraStorefrontSources.map((source) => source.error)
+            ].find(Boolean) || '';
+        }
+
+        async function ensureAllPackwizardCatalogLoaded(options = {}) {
+            const tasks = PACKWIZARD_CATEGORY_META.map((item) => ensureEquipmentCatalogLoaded(item.key, options).catch(() => []));
+            return Promise.all(tasks);
+        }
+
+        async function ensureEquipmentCatalogLoaded(categoryKey, options = {}) {
+            const safeKey = normalizePackwizardCatalogCategory(categoryKey);
+            const meta = getPackwizardCategoryMeta(safeKey);
+            if (!meta) return [];
+            if (!options.force && equipmentCatalogLoadedKeys.has(safeKey)) {
+                return getPackwizardCatalogItems(safeKey);
+            }
+            if (!options.force && equipmentCatalogPendingKeys.has(safeKey)) {
+                return getPackwizardCatalogItems(safeKey);
+            }
+            const requestToken = (Number(equipmentCatalogRequestTokensByKey[safeKey]) || 0) + 1;
+            equipmentCatalogRequestTokensByKey[safeKey] = requestToken;
+            equipmentCatalogPendingKeys.add(safeKey);
+            equipmentCatalogLoading = equipmentCatalogPendingKeys.size > 0;
+            equipmentCatalogError = '';
+            if (isEquipmentEvent()) renderEquipmentExperience();
+            try {
+                const response = await fetch(meta.endpoint, {
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const payload = await response.json();
+                if (equipmentCatalogRequestTokensByKey[safeKey] !== requestToken) return [];
+                const items = Array.isArray(payload && payload.data) ? payload.data : [];
+                equipmentCatalogByCategory[safeKey] = items.map((item) => ({
+                    ...item,
+                    originalPrice: Number(item && (item.lowestPrice || item.price) || 0),
+                    originalCurrency: 'UNKNOWN',
+                    price: 0,
+                    lowestPrice: 0,
+                    __catalogCategory: safeKey,
+                    __searchText: buildPackwizardSearchText(item)
+                }));
+                equipmentCatalogLoadedKeys.add(safeKey);
+                equipmentCatalogPendingKeys.delete(safeKey);
+                equipmentCatalogLoading = equipmentCatalogPendingKeys.size > 0;
+                equipmentCatalogError = '';
+                if (isEquipmentEvent()) renderEquipmentExperience();
+                return equipmentCatalogByCategory[safeKey];
+            } catch (error) {
+                if (equipmentCatalogRequestTokensByKey[safeKey] !== requestToken) return [];
+                equipmentCatalogPendingKeys.delete(safeKey);
+                equipmentCatalogLoading = equipmentCatalogPendingKeys.size > 0;
+                equipmentCatalogError = 'Не удалось загрузить каталог PackWizard.';
+                if (isEquipmentEvent()) renderEquipmentExperience();
+                return [];
+            }
+        }
+
+        function getEquipmentStorefrontCacheKey(query) {
+            return normalizeEquipmentSearchKey(query) || '__empty__';
+        }
+
+        function getEquipmentStorefrontSearchQuery(queryText = '') {
+            const terms = normalizeEquipmentSearchKey(queryText).split(/\s+/).filter(Boolean);
+            if (!terms.length) return '';
+            // Fetch broadly by the first prefix, then match every requested fragment locally.
+            // This avoids source-specific word-order and exact-phrase search behavior.
+            const firstTerm = terms[0].replace(/[^a-z0-9а-яё-]/gi, '');
+            return firstTerm ? `${firstTerm}*` : '';
+        }
+
+        function convertEquipmentPriceToRub(value, currencyCode = 'RUB') {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount <= 0) return 0;
+            const code = String(currencyCode || 'RUB').trim().toUpperCase();
+            const rate = Number(equipmentCurrencyRates[code] || 0);
+            return rate > 0 ? Math.round(amount * rate * 100) / 100 : 0;
+        }
+
+        function convertEquipmentWeightToGrams(value, unit = 'GRAMS') {
+            const amount = Number(value);
+            if (!Number.isFinite(amount) || amount <= 0) return 0;
+            const normalizedUnit = String(unit || 'GRAMS').trim().toUpperCase();
+            const factors = {
+                GRAMS: 1,
+                KILOGRAMS: 1000,
+                OUNCES: 28.349523125,
+                POUNDS: 453.59237
+            };
+            return Math.round(amount * Number(factors[normalizedUnit] || 1));
+        }
+
+        async function ensureEquipmentCurrencyRatesLoaded() {
+            const maxAge = 6 * 60 * 60 * 1000;
+            if (equipmentCurrencyRatesUpdatedAt && (Date.now() - equipmentCurrencyRatesUpdatedAt) < maxAge) {
+                return equipmentCurrencyRates;
+            }
+            if (equipmentCurrencyRatesPromise) return equipmentCurrencyRatesPromise;
+            equipmentCurrencyRatesLoading = true;
+            equipmentCurrencyRatesPromise = fetch('https://www.cbr-xml-daily.ru/daily_json.js')
+                .then((response) => response.json())
+                .then((payload) => {
+                    const rates = payload && payload.Valute ? payload.Valute : {};
+                    Object.keys(rates).forEach((code) => {
+                        const item = rates[code];
+                        const value = Number(item && item.Value);
+                        const nominal = Number(item && item.Nominal) || 1;
+                        if (Number.isFinite(value) && value > 0) {
+                            equipmentCurrencyRates[String(code || '').toUpperCase()] = value / nominal;
+                        }
+                    });
+                    equipmentCurrencyRates.RUB = 1;
+                    equipmentCurrencyRatesUpdatedAt = Date.now();
+                    return equipmentCurrencyRates;
+                })
+                .catch(() => equipmentCurrencyRates)
+                .finally(() => {
+                    equipmentCurrencyRatesLoading = false;
+                    equipmentCurrencyRatesPromise = null;
+                });
+            return equipmentCurrencyRatesPromise;
+        }
+
+        function normalizeStorefrontProductNode(node, options = {}) {
+            const variants = node && node.variants && Array.isArray(node.variants.edges)
+                ? node.variants.edges.map((edge) => edge && edge.node).filter(Boolean)
+                : [];
+            const pricedVariants = variants
+                .filter((variant) => Number(variant && variant.price && variant.price.amount) > 0)
+                .sort((left, right) => Number(left.price.amount) - Number(right.price.amount));
+            // Keep the displayed weight tied to the same variant as the displayed price.
+            const variant = pricedVariants[0] || variants[0] || null;
+            const currencyCode = variant && variant.price ? String(variant.price.currencyCode || 'RUB').trim().toUpperCase() : 'RUB';
+            const originalPrice = variant && variant.price ? Number(variant.price.amount || 0) : 0;
+            const price = convertEquipmentPriceToRub(originalPrice, currencyCode);
+            const weight = convertEquipmentWeightToGrams(variant && variant.weight, variant && variant.weightUnit);
+            const sourceKey = String(options.sourceKey || '').trim();
+            const vendor = String(node && node.vendor || '').trim();
+            const title = String(node && node.title || '').trim();
+            const productType = String(node && node.productType || '').trim();
+            return {
+                _id: String(node && node.id || ''),
+                brand: vendor,
+                formattedBrand: vendor,
+                name: title,
+                category: productType,
+                imageUrl: node && node.featuredImage ? String(node.featuredImage.url || '').trim() : '',
+                price,
+                lowestPrice: price,
+                originalPrice,
+                originalCurrency: currencyCode,
+                priceCurrency: 'RUB',
+                priceIsFrom: pricedVariants.length > 1,
+                weight,
+                packedWeight: weight,
+                url: node && node.handle ? `${String(options.urlBase || '').replace(/\/$/, '')}/${String(node.handle).trim()}` : '',
+                __catalogCategory: 'global',
+                __source: sourceKey,
+                __searchText: buildPackwizardSearchText({
+                    brand: vendor,
+                    formattedBrand: vendor,
+                    name: title,
+                    category: productType,
+                    searchName: `${vendor} ${title} ${productType}`.trim()
+                })
+            };
+        }
+
+        async function ensureEquipmentStorefrontCatalogLoaded(config, query = '', options = {}) {
+            const safeQuery = getEquipmentQueryText() === String(query || '').trim()
+                ? getEquipmentQueryText()
+                : String(query || '').trim();
+            if (!shouldRunRemoteEquipmentSearch(safeQuery)) return [];
+            const cacheKey = getEquipmentStorefrontCacheKey(safeQuery);
+            const existing = Array.isArray(config.catalogByKey[cacheKey]) ? config.catalogByKey[cacheKey] : [];
+            if (!options.force && config.loadedKeys.has(cacheKey)) {
+                return existing;
+            }
+            if (!options.force && config.pendingKeys.has(cacheKey)) {
+                return existing;
+            }
+            const requestToken = (Number(config.requestTokensByKey[cacheKey]) || 0) + 1;
+            config.requestTokensByKey[cacheKey] = requestToken;
+            config.pendingKeys.add(cacheKey);
+            config.setLoading(config.pendingKeys.size > 0);
+            config.setError('');
+            if (isEquipmentEvent()) renderEquipmentExperience();
+            try {
+                await ensureEquipmentCurrencyRatesLoaded();
+                const response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Shopify-Storefront-Access-Token': config.token
+                    },
+                    body: JSON.stringify({
+                        query: `
+                            query GearSearch($query: String!) {
+                                products(first: 36, query: $query) {
+                                    edges {
+                                        node {
+                                            id
+                                            title
+                                            handle
+                                            vendor
+                                            productType
+                                            featuredImage { url }
+                                            variants(first: 12) {
+                                                edges {
+                                                    node {
+                                                        weight
+                                                        weightUnit
+                                                        price { amount currencyCode }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        `,
+                        variables: { query: getEquipmentStorefrontSearchQuery(safeQuery) || safeQuery }
+                    })
+                });
+                const payload = await response.json();
+                if (config.requestTokensByKey[cacheKey] !== requestToken) return existing;
+                const edges = payload && payload.data && payload.data.products && Array.isArray(payload.data.products.edges)
+                    ? payload.data.products.edges
+                    : [];
+                config.catalogByKey[cacheKey] = edges
+                    .map((edge) => normalizeStorefrontProductNode(edge && edge.node, {
+                        sourceKey: config.sourceKey,
+                        urlBase: config.urlBase
+                    }))
+                    .filter((item) => item && item.name);
+                config.loadedKeys.add(cacheKey);
+                config.pendingKeys.delete(cacheKey);
+                config.setLoading(config.pendingKeys.size > 0);
+                config.setError('');
+                if (isEquipmentEvent()) renderEquipmentExperience();
+                return config.catalogByKey[cacheKey];
+            } catch (_) {
+                if (config.requestTokensByKey[cacheKey] !== requestToken) return existing;
+                config.pendingKeys.delete(cacheKey);
+                config.setLoading(config.pendingKeys.size > 0);
+                config.setError(config.errorMessage);
+                if (isEquipmentEvent()) renderEquipmentExperience();
+                return [];
+            }
+        }
+
+        function getDecathlonCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(decathlonCatalogByKey[key]) ? decathlonCatalogByKey[key] : [];
+        }
+
+        function getGggCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(gggCatalogByKey[key]) ? gggCatalogByKey[key] : [];
+        }
+
+        function getHyperliteCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(hyperliteCatalogByKey[key]) ? hyperliteCatalogByKey[key] : [];
+        }
+
+        function getZpacksCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(zpacksCatalogByKey[key]) ? zpacksCatalogByKey[key] : [];
+        }
+
+        function getGossamerCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(gossamerCatalogByKey[key]) ? gossamerCatalogByKey[key] : [];
+        }
+
+        function getOutdoorVitalsCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(outdoorVitalsCatalogByKey[key]) ? outdoorVitalsCatalogByKey[key] : [];
+        }
+
+        function getSixMoonCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(sixMoonCatalogByKey[key]) ? sixMoonCatalogByKey[key] : [];
+        }
+
+        function getGearxCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(gearxCatalogByKey[key]) ? gearxCatalogByKey[key] : [];
+        }
+
+        function getGeartradeCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(geartradeCatalogByKey[key]) ? geartradeCatalogByKey[key] : [];
+        }
+
+        function getEvoCatalogItems(categoryKey, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return Array.isArray(evoCatalogByKey[key]) ? evoCatalogByKey[key] : [];
+        }
+
+        function getExtraStorefrontCatalogItems(source, query) {
+            const key = getEquipmentStorefrontCacheKey(query);
+            return source && Array.isArray(source.catalogByKey[key]) ? source.catalogByKey[key] : [];
+        }
+
+        async function ensureExtraStorefrontCatalogLoaded(source, query = '', options = {}) {
+            if (!source) return [];
+            return ensureEquipmentStorefrontCatalogLoaded({
+                ...source,
+                setLoading(value) { source.loading = !!value; },
+                setError(value) { source.error = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureDecathlonCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'decathlon',
+                endpoint: 'https://decathlon-usa.myshopify.com/api/2024-07/graphql.json',
+                token: '9cb3ae2eead1376cead48f51504e8535',
+                urlBase: 'https://www.decathlon.com/products',
+                errorMessage: 'Не удалось загрузить каталог Decathlon.',
+                catalogByKey: decathlonCatalogByKey,
+                loadedKeys: decathlonCatalogLoadedKeys,
+                pendingKeys: decathlonCatalogPendingKeys,
+                requestTokensByKey: decathlonCatalogRequestTokensByKey,
+                setLoading(value) { decathlonCatalogLoading = !!value; },
+                setError(value) { decathlonCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureGggCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'ggg',
+                endpoint: 'https://garage-grown-gear-dev.myshopify.com/api/2024-07/graphql.json',
+                token: '41a60ca72045bfb225b6bcb1d833cce3',
+                urlBase: 'https://www.garagegrowngear.com/products',
+                errorMessage: 'Не удалось загрузить каталог Garage Grown Gear.',
+                catalogByKey: gggCatalogByKey,
+                loadedKeys: gggCatalogLoadedKeys,
+                pendingKeys: gggCatalogPendingKeys,
+                requestTokensByKey: gggCatalogRequestTokensByKey,
+                setLoading(value) { gggCatalogLoading = !!value; },
+                setError(value) { gggCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureHyperliteCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'hyperlite',
+                endpoint: 'https://hyperlite.myshopify.com/api/2024-07/graphql.json',
+                token: 'a3ba6b4a783b811dfdfe77dff206892e',
+                urlBase: 'https://hyperlitemountaingear.com/products',
+                errorMessage: 'Не удалось загрузить каталог Hyperlite.',
+                catalogByKey: hyperliteCatalogByKey,
+                loadedKeys: hyperliteCatalogLoadedKeys,
+                pendingKeys: hyperliteCatalogPendingKeys,
+                requestTokensByKey: hyperliteCatalogRequestTokensByKey,
+                setLoading(value) { hyperliteCatalogLoading = !!value; },
+                setError(value) { hyperliteCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureZpacksCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'zpacks',
+                endpoint: 'https://zpacks.myshopify.com/api/2024-07/graphql.json',
+                token: '8867b6ec9eb14ef071962bd7a675b285',
+                urlBase: 'https://zpacks.com/products',
+                errorMessage: 'Не удалось загрузить каталог Zpacks.',
+                catalogByKey: zpacksCatalogByKey,
+                loadedKeys: zpacksCatalogLoadedKeys,
+                pendingKeys: zpacksCatalogPendingKeys,
+                requestTokensByKey: zpacksCatalogRequestTokensByKey,
+                setLoading(value) { zpacksCatalogLoading = !!value; },
+                setError(value) { zpacksCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureGossamerCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'gossamer',
+                endpoint: 'https://gossamer-gear.myshopify.com/api/2024-07/graphql.json',
+                token: 'd2fe87facc96d06df14491aba738bdc6',
+                urlBase: 'https://www.gossamergear.com/products',
+                errorMessage: 'Не удалось загрузить каталог Gossamer Gear.',
+                catalogByKey: gossamerCatalogByKey,
+                loadedKeys: gossamerCatalogLoadedKeys,
+                pendingKeys: gossamerCatalogPendingKeys,
+                requestTokensByKey: gossamerCatalogRequestTokensByKey,
+                setLoading(value) { gossamerCatalogLoading = !!value; },
+                setError(value) { gossamerCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureOutdoorVitalsCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'outdoorvitals',
+                endpoint: 'https://outdoorvitals.myshopify.com/api/2024-07/graphql.json',
+                token: '35b4ddecb99a644fef3124ae1f9cd72c',
+                urlBase: 'https://outdoorvitals.com/products',
+                errorMessage: 'Не удалось загрузить каталог Outdoor Vitals.',
+                catalogByKey: outdoorVitalsCatalogByKey,
+                loadedKeys: outdoorVitalsCatalogLoadedKeys,
+                pendingKeys: outdoorVitalsCatalogPendingKeys,
+                requestTokensByKey: outdoorVitalsCatalogRequestTokensByKey,
+                setLoading(value) { outdoorVitalsCatalogLoading = !!value; },
+                setError(value) { outdoorVitalsCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureSixMoonCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'sixmoon',
+                endpoint: 'https://six-moon-designs.myshopify.com/api/2024-07/graphql.json',
+                token: 'a925353b10b5bc45a5d07bf4e63f5d8a',
+                urlBase: 'https://www.sixmoondesigns.com/products',
+                errorMessage: 'Не удалось загрузить каталог Six Moon Designs.',
+                catalogByKey: sixMoonCatalogByKey,
+                loadedKeys: sixMoonCatalogLoadedKeys,
+                pendingKeys: sixMoonCatalogPendingKeys,
+                requestTokensByKey: sixMoonCatalogRequestTokensByKey,
+                setLoading(value) { sixMoonCatalogLoading = !!value; },
+                setError(value) { sixMoonCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureGearxCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'gearx',
+                endpoint: 'https://pxqnfy-fs.myshopify.com/api/2024-07/graphql.json',
+                token: 'b9caa0b8123fbfd6f81c7067285ea409',
+                urlBase: 'https://www.gearx.com/products',
+                errorMessage: 'Не удалось загрузить каталог GearX.',
+                catalogByKey: gearxCatalogByKey,
+                loadedKeys: gearxCatalogLoadedKeys,
+                pendingKeys: gearxCatalogPendingKeys,
+                requestTokensByKey: gearxCatalogRequestTokensByKey,
+                setLoading(value) { gearxCatalogLoading = !!value; },
+                setError(value) { gearxCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureGeartradeCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'geartrade',
+                endpoint: 'https://e12f1b.myshopify.com/api/2024-07/graphql.json',
+                token: '25e5a7d1bcedb06c2e52c76967a84dea',
+                urlBase: 'https://www.geartrade.com/products',
+                errorMessage: 'Не удалось загрузить каталог Geartrade.',
+                catalogByKey: geartradeCatalogByKey,
+                loadedKeys: geartradeCatalogLoadedKeys,
+                pendingKeys: geartradeCatalogPendingKeys,
+                requestTokensByKey: geartradeCatalogRequestTokensByKey,
+                setLoading(value) { geartradeCatalogLoading = !!value; },
+                setError(value) { geartradeCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
+        async function ensureEvoCatalogLoaded(categoryKey, query = '', options = {}) {
+            return ensureEquipmentStorefrontCatalogLoaded({
+                sourceKey: 'evo',
+                endpoint: 'https://qe10ec-cr.myshopify.com/api/2024-07/graphql.json',
+                token: '3b4cf4f1df34e08903bc7ef4870a46e7',
+                urlBase: 'https://www.evo.com',
+                errorMessage: 'Не удалось загрузить каталог Evo.',
+                catalogByKey: evoCatalogByKey,
+                loadedKeys: evoCatalogLoadedKeys,
+                pendingKeys: evoCatalogPendingKeys,
+                requestTokensByKey: evoCatalogRequestTokensByKey,
+                setLoading(value) { evoCatalogLoading = !!value; },
+                setError(value) { evoCatalogError = String(value || ''); }
+            }, query, options);
+        }
+
         function loadEvent() {
             if (!eventId || !db) return;
             publishPlanningDiag('load-event-bind', { eventId });
@@ -6652,6 +9731,7 @@
                 clearPendingPlanningEventMissingVerification();
                 const missing = document.getElementById('missingEvent');
                 let shouldRender = false;
+                const prevEventType = normalizeEventType(eventTypeValue);
                 if (!event) {
                     if (eventData && (eventData.sections.length || eventData.layoutRows.length)) {
                         schedulePlanningEventMissingVerification();
@@ -6664,6 +9744,16 @@
                 }
                 eventNameValue = String(event && event.name || '').trim();
                 eventDateValue = String(event && event.date || '').trim();
+                eventTypeValue = normalizeEventType(event && event.type);
+                eventOwnerLogin = String(event && event.createdByLogin || '').trim();
+                eventOwnerName = String(event && event.createdBy || '').trim();
+                if (eventTypeValue !== prevEventType) {
+                    shouldRender = true;
+                }
+                document.body.classList.toggle('equipment-mode', isEquipmentEvent());
+                if (isEquipmentEvent()) {
+                    renderEquipmentExperience();
+                }
                 const title = eventNameValue || 'Мероприятие';
                 const titleEl = document.getElementById('eventTitle');
                 if (titleEl && titleEl.textContent !== title) {
@@ -6710,6 +9800,9 @@
                         event: {
                             name: event.name || '',
                             date: event.date || '',
+                            type: normalizeEventType(event.type),
+                            createdByLogin: event.createdByLogin || '',
+                            createdBy: event.createdBy || '',
                             participants: eventParticipants,
                             participantsCustom: eventCustomParticipants
                         },
@@ -6857,10 +9950,16 @@
                         if (normalizedId === 'ответственный') normalizedId = 'owner';
                         if (normalizedId === 'стоимость') normalizedId = 'cost';
                         if (normalizedId === 'вещь') normalizedId = 'item';
+                        if (normalizedId === 'вес') normalizedId = 'weight';
+                        if (normalizedId === 'объем' || normalizedId === 'объём') normalizedId = 'volume';
                         return {
                             id: normalizedId,
                             name: (normalizedId === 'qty' && (!col.name || col.name === 'Количество')) ? 'Кол-во' : (col.name || 'Колонка'),
-                            type: col.type || (normalizedId === 'owner' ? 'owners' : 'text'),
+                            type: col.type || (
+                                normalizedId === 'owner'
+                                    ? 'owners'
+                                    : ((normalizedId === 'weight' || normalizedId === 'volume') ? 'measure' : 'text')
+                            ),
                             width: normalizeColumnWidth(col.width, normalizedId)
                         };
                     });
@@ -6890,6 +9989,7 @@
                         return {
                             id: rowId,
                             cells: normalizedCells,
+                            equipmentImageUrl: String(row && row.equipmentImageUrl || '').trim(),
                             position: normalizeRowPositionValue(row.position ?? row.sortOrder ?? row.order, rowIndex),
                             closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
                                 normalizedBeerBacklog.status === 'done'
@@ -6901,6 +10001,7 @@
                                 )
                             )),
                             shared: typeof row.shared === 'boolean' ? row.shared : getDefaultShareForSection(sec.name),
+                            packed: !!row.packed,
                             participants: Array.isArray(row.participants)
                                 ? row.participants.map(v => String(v).trim()).filter(Boolean)
                                 : undefined,
@@ -7072,9 +10173,12 @@
                     markEventDataChanged();
                     writeCachedPlanningEventState({
                         event: {
-                            name: eventNameValue,
-                            date: eventDateValue,
-                            participants: eventParticipants,
+                        name: eventNameValue,
+                        date: eventDateValue,
+                        type: eventTypeValue,
+                        createdByLogin: eventOwnerLogin,
+                        createdBy: eventOwnerName,
+                        participants: eventParticipants,
                             participantsCustom: eventCustomParticipants
                         },
                         data: eventData
@@ -7327,6 +10431,8 @@
                 let next = input.value;
                 if (column.type === 'number') {
                     next = sanitizeNumericInput(next, { allowDecimal: false }).value;
+                } else if (isMeasureColumnType(column.type)) {
+                    next = sanitizeNumericInput(next, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
                 } else if (column.type === 'cost') {
                     next = sanitizeNumericInput(next, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }).value;
                 }
@@ -7350,7 +10456,9 @@
 
         function saveEventData() {
             if (!eventId || !db || !eventData) return;
-            commitRenderedInputValuesToEventData();
+            if (isEquipmentEvent() && !canEditEquipmentEvent()) return;
+            // Equipment is edited in the backpack, while the legacy table stays hidden.
+            if (!isEquipmentEvent()) commitRenderedInputValuesToEventData();
             clearTimeout(saveTimer);
             eventDataDirty = true;
             markEventDataChanged();
@@ -7358,6 +10466,9 @@
                 event: {
                     name: eventNameValue,
                     date: eventDateValue,
+                    type: eventTypeValue,
+                    createdByLogin: eventOwnerLogin,
+                    createdBy: eventOwnerName,
                     participants: eventParticipants,
                     participantsCustom: eventCustomParticipants
                 },
@@ -7375,7 +10486,8 @@
                 id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
                 cells,
                 position: 0,
-                shared: typeof shared === 'boolean' ? shared : true
+                shared: typeof shared === 'boolean' ? shared : true,
+                packed: false
             };
         }
 
@@ -7465,7 +10577,7 @@
                 const manualDiff = normalizeRowPositionValue(a && a.position, 0) - normalizeRowPositionValue(b && b.position, 0);
                 const aval = getCellText(a, col).trim();
                 const bval = getCellText(b, col).trim();
-                if (col.type === 'number' || col.type === 'cost') {
+                if (col.type === 'number' || isMeasureColumnType(col.type) || col.type === 'cost') {
                     const an = parseFloat(aval.replace(',', '.'));
                     const bn = parseFloat(bval.replace(',', '.'));
                     const aValid = !Number.isNaN(an);
@@ -7813,6 +10925,221 @@
                 });
             });
             return count;
+        }
+
+        function parseMeasureCellValue(value) {
+            const sanitized = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
+            if (!sanitized) return 0;
+            const parsed = Number.parseFloat(String(sanitized).replace(',', '.'));
+            return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+        }
+
+        function formatEquipmentNumber(value) {
+            const rounded = Math.round((Number(value) || 0) * 100) / 100;
+            if (!Number.isFinite(rounded) || rounded <= 0) return '0';
+            if (Math.abs(rounded - Math.round(rounded)) < 0.001) return String(Math.round(rounded));
+            return rounded.toFixed(2).replace(/\.?0+$/, '');
+        }
+
+        function formatEquipmentMeasure(value, unit) {
+            return `${formatEquipmentNumber(value)} ${unit}`;
+        }
+
+        function collectEquipmentRows() {
+            if (!eventData || !Array.isArray(eventData.sections)) return [];
+            const rows = [];
+            eventData.sections.forEach((section) => {
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                const itemCol = section.columns.find((col) => col && col.id === 'item')
+                    || section.columns.find((col) => col && col.type === 'text');
+                const weightCol = section.columns.find((col) => col && col.id === 'weight');
+                const volumeCol = section.columns.find((col) => col && col.id === 'volume');
+                const costCol = section.columns.find((col) => col && col.type === 'cost');
+                section.rows.forEach((row) => {
+                    if (!row || !row.cells) return;
+                    const label = itemCol ? String(row.cells[itemCol.id] || '').trim() : '';
+                    const weight = weightCol ? parseMeasureCellValue(row.cells[weightCol.id]) : 0;
+                    const volume = volumeCol ? parseMeasureCellValue(row.cells[volumeCol.id]) : 0;
+                    const cost = costCol ? parseCostValue(row.cells[costCol.id]) : 0;
+                    if (!label && !(weight > 0) && !(volume > 0) && !(cost > 0)) return;
+                    rows.push({
+                        sectionId: section.id,
+                        sectionName: section.name || 'Снаряжение',
+                        rowId: row.id,
+                        label: label || 'Без названия',
+                        weight,
+                        volume,
+                        cost,
+                        imageUrl: String(row.equipmentImageUrl || '').trim(),
+                        packed: !!row.packed
+                    });
+                });
+            });
+            return rows.sort((left, right) => collator.compare(left.label, right.label));
+        }
+
+        function getEquipmentStats() {
+            const items = collectEquipmentRows();
+            // The equipment view has one destination now: every saved item is in the backpack.
+            const packedItems = items;
+            const totals = items.reduce((acc, item) => {
+                acc.weight += item.weight;
+                acc.volume += item.volume;
+                acc.cost += item.cost;
+                return acc;
+            }, { weight: 0, volume: 0, cost: 0 });
+            const packedTotals = totals;
+            return {
+                items,
+                packedItems,
+                unpackedItems: [],
+                totalCount: items.length,
+                packedCount: packedItems.length,
+                totalWeight: totals.weight,
+                packedWeight: packedTotals.weight,
+                totalVolume: totals.volume,
+                packedVolume: packedTotals.volume,
+                totalCost: totals.cost,
+                packedCost: packedTotals.cost
+            };
+        }
+
+        function setEquipmentPackedState(rowId, packed) {
+            if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
+            let changed = false;
+            eventData.sections.forEach((section) => {
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                if (!section.columns.some((column) => column && column.id === 'weight')) return;
+                section.rows.forEach((row) => {
+                    if (!row || row.id !== rowId) return;
+                    const nextPacked = !!packed;
+                    if (!!row.packed === nextPacked) return;
+                    row.packed = nextPacked;
+                    changed = true;
+                });
+            });
+            if (!changed) return false;
+            markEventDataChanged();
+            saveEventData();
+            renderEquipmentExperience();
+            updateQuickStats();
+            return true;
+        }
+
+        function setAllEquipmentPackedState(packed) {
+            if (!eventData || !Array.isArray(eventData.sections)) return false;
+            let changed = false;
+            eventData.sections.forEach((section) => {
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                if (!section.columns.some((column) => column && column.id === 'weight')) return;
+                section.rows.forEach((row) => {
+                    if (!row || !!row.packed === !!packed) return;
+                    row.packed = !!packed;
+                    changed = true;
+                });
+            });
+            if (!changed) return false;
+            markEventDataChanged();
+            saveEventData();
+            renderEquipmentExperience();
+            updateQuickStats();
+            return true;
+        }
+
+        function removeEquipmentItem(rowId) {
+            if (!canEditEquipmentEvent()) return false;
+            if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
+            let removed = false;
+            eventData.sections.forEach((section) => {
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                if (!section.columns.some((column) => column && column.id === 'weight')) return;
+                const nextRows = section.rows.filter((row) => {
+                    if (!row || row.id !== rowId) return true;
+                    removed = true;
+                    return false;
+                });
+                if (nextRows.length !== section.rows.length) {
+                    section.rows = nextRows;
+                    reindexSectionRows(section);
+                }
+            });
+            if (!removed) return false;
+            markEventDataChanged();
+            saveEventData();
+            renderSections();
+            return true;
+        }
+
+        function updateEquipmentItem(rowId, field, value) {
+            if (!canEditEquipmentEvent()) return false;
+            if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
+            const activePackList = document.querySelector('#equipmentExperience .gear-pack-list');
+            if (activePackList) equipmentPackScrollTop = activePackList.scrollTop;
+            const fieldName = String(field || '').trim();
+            let changed = false;
+            eventData.sections.forEach((section) => {
+                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
+                const itemCol = section.columns.find((col) => col && col.id === 'item')
+                    || section.columns.find((col) => col && col.type === 'text');
+                const weightCol = section.columns.find((col) => col && col.id === 'weight');
+                const costCol = section.columns.find((col) => col && col.type === 'cost');
+                const row = section.rows.find((entry) => entry && entry.id === rowId);
+                if (!row || !row.cells) return;
+                let column = null;
+                let nextValue = '';
+                if (fieldName === 'name' && itemCol) {
+                    column = itemCol;
+                    nextValue = String(value || '').trim();
+                } else if (fieldName === 'weight' && weightCol) {
+                    column = weightCol;
+                    nextValue = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
+                } else if (fieldName === 'cost' && costCol) {
+                    column = costCol;
+                    nextValue = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }).value;
+                }
+                if (!column || String(row.cells[column.id] ?? '') === nextValue) return;
+                row.cells[column.id] = nextValue;
+                dirtyCellKeys.add(`${section.id}\u001f${rowId}\u001f${column.id}`);
+                changed = true;
+            });
+            if (!changed) return false;
+            markEventDataChanged();
+            saveEventData();
+            renderSections();
+            emitCollabAction('Обновил параметры снаряжения');
+            return true;
+        }
+
+        function getEquipmentImportSection() {
+            if (!eventData || !Array.isArray(eventData.sections)) return null;
+            let section = eventData.sections.find((item) => item && Array.isArray(item.columns) && item.columns.some((col) => col && col.id === 'weight'));
+            if (section) return section;
+            section = createSection('Снаряжение', cloneEquipmentColumns());
+            eventData.sections.push(section);
+            if (!Array.isArray(eventData.layoutRows)) eventData.layoutRows = [];
+            eventData.layoutRows = sanitizeSectionLayoutRows(eventData.layoutRows.concat([[section.id]]), eventData.sections.map((item) => item.id));
+            return section;
+        }
+
+        function addEquipmentItemFromCatalog(rawItem, options = {}) {
+            if (!canEditEquipmentEvent()) return;
+            if (!rawItem) return;
+            const section = getEquipmentImportSection();
+            if (!section) return;
+            const row = createRow(section.columns, false);
+            row.position = section.rows.length + 1;
+            row.packed = options.packed !== false;
+            row.equipmentImageUrl = String(rawItem.imageUrl || '').trim();
+            row.cells.item = String(rawItem.formattedBrand || rawItem.brand || '').trim()
+                ? `${String(rawItem.formattedBrand || rawItem.brand).trim()} ${String(rawItem.name || '').trim()}`.trim()
+                : String(rawItem.name || '').trim();
+            row.cells.weight = formatImportedWeightKg(rawItem.packedWeight || rawItem.weight || 0);
+            row.cells.cost = rawItem.lowestPrice || rawItem.price ? formatEquipmentNumber(Number(rawItem.lowestPrice || rawItem.price || 0)) : '';
+            section.rows.push(row);
+            reindexSectionRows(section);
+            saveEventData();
+            renderSections();
+            emitCollabAction(`${options.packed ? 'Уложил' : 'Добавил'} из ${getEquipmentSourceLabel(rawItem.__source)}: ${row.cells.item || 'снаряжение'}`);
         }
 
         function normalizeOwnerList(value) {
@@ -8458,15 +11785,298 @@
             syncQuickParticipantsDropdownVisibility();
         }
 
+        function setQuickMetricValue(text) {
+            const inline = document.getElementById('quickParticipantsInline');
+            const dropdown = document.getElementById('quickParticipantsDropdown');
+            const moreBtn = document.getElementById('quickParticipantsMoreBtn');
+            if (!inline) return;
+            inline.innerHTML = `<span class="quick-participants-empty">${escapeHtml(text || '—')}</span>`;
+            if (moreBtn) moreBtn.classList.add('hidden');
+            if (dropdown) dropdown.classList.add('hidden');
+            quickParticipantsDropdownOpen = false;
+        }
+
+        function renderEquipmentExperience() {
+            const shell = document.getElementById('equipmentExperience');
+            if (!shell) return;
+            const searchInputState = getEquipmentSearchInputState();
+            const previousCatalogList = shell.querySelector('.gear-catalog-list');
+            if (previousCatalogList) equipmentCatalogScrollTop = previousCatalogList.scrollTop;
+            const previousPackList = shell.querySelector('.gear-pack-list');
+            if (previousPackList) equipmentPackScrollTop = previousPackList.scrollTop;
+            const equipmentMode = isEquipmentEvent();
+            document.body.classList.toggle('equipment-mode', equipmentMode);
+            if (!equipmentMode) {
+                shell.classList.add('hidden');
+                shell.innerHTML = '';
+                return;
+            }
+
+            const stats = getEquipmentStats();
+            const canEditEquipment = canEditEquipmentEvent();
+            let packPaneWidth = 42;
+            try {
+                const savedWidth = Number(localStorage.getItem(`planningGearPackWidth:${eventId}`));
+                if (Number.isFinite(savedWidth) && savedWidth >= 30 && savedWidth <= 68) packPaneWidth = savedWidth;
+            } catch (_) {}
+            const packItems = stats.items;
+            const packWeight = stats.totalWeight;
+            const packCost = stats.totalCost;
+            const queryText = getEquipmentQueryText();
+            const query = normalizeEquipmentSearchKey(queryText);
+            const remoteSearchEnabled = shouldRunRemoteEquipmentSearch(queryText);
+            const remoteCacheKey = getEquipmentStorefrontCacheKey(queryText);
+            const totalPackwizardSources = PACKWIZARD_CATEGORY_META.length;
+            const totalSourceCount = Object.keys(EQUIPMENT_SOURCE_LABELS).length;
+            const remoteLoading = decathlonCatalogLoading
+                || gggCatalogLoading
+                || hyperliteCatalogLoading
+                || zpacksCatalogLoading
+                || gossamerCatalogLoading
+                || outdoorVitalsCatalogLoading
+                || sixMoonCatalogLoading
+                || gearxCatalogLoading
+                || geartradeCatalogLoading
+                || evoCatalogLoading
+                || equipmentExtraStorefrontSources.some((source) => source.loading);
+            const anyLoading = equipmentCatalogLoading || remoteLoading;
+
+            if (canEditEquipment && getPackwizardCatalogReadyCount() < totalPackwizardSources && !equipmentCatalogLoading && !equipmentCatalogError) {
+                ensureAllPackwizardCatalogLoaded().catch(() => {});
+            }
+            if (canEditEquipment && remoteSearchEnabled) {
+                if (!decathlonCatalogLoadedKeys.has(remoteCacheKey) && !decathlonCatalogPendingKeys.has(remoteCacheKey) && !decathlonCatalogError) {
+                    ensureDecathlonCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!gggCatalogLoadedKeys.has(remoteCacheKey) && !gggCatalogPendingKeys.has(remoteCacheKey) && !gggCatalogError) {
+                    ensureGggCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!hyperliteCatalogLoadedKeys.has(remoteCacheKey) && !hyperliteCatalogPendingKeys.has(remoteCacheKey) && !hyperliteCatalogError) {
+                    ensureHyperliteCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!zpacksCatalogLoadedKeys.has(remoteCacheKey) && !zpacksCatalogPendingKeys.has(remoteCacheKey) && !zpacksCatalogError) {
+                    ensureZpacksCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!gossamerCatalogLoadedKeys.has(remoteCacheKey) && !gossamerCatalogPendingKeys.has(remoteCacheKey) && !gossamerCatalogError) {
+                    ensureGossamerCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!outdoorVitalsCatalogLoadedKeys.has(remoteCacheKey) && !outdoorVitalsCatalogPendingKeys.has(remoteCacheKey) && !outdoorVitalsCatalogError) {
+                    ensureOutdoorVitalsCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!sixMoonCatalogLoadedKeys.has(remoteCacheKey) && !sixMoonCatalogPendingKeys.has(remoteCacheKey) && !sixMoonCatalogError) {
+                    ensureSixMoonCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!gearxCatalogLoadedKeys.has(remoteCacheKey) && !gearxCatalogPendingKeys.has(remoteCacheKey) && !gearxCatalogError) {
+                    ensureGearxCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!geartradeCatalogLoadedKeys.has(remoteCacheKey) && !geartradeCatalogPendingKeys.has(remoteCacheKey) && !geartradeCatalogError) {
+                    ensureGeartradeCatalogLoaded('global', queryText).catch(() => {});
+                }
+                if (!evoCatalogLoadedKeys.has(remoteCacheKey) && !evoCatalogPendingKeys.has(remoteCacheKey) && !evoCatalogError) {
+                    ensureEvoCatalogLoaded('global', queryText).catch(() => {});
+                }
+                equipmentExtraStorefrontSources.forEach((source) => {
+                    if (!source.loadedKeys.has(remoteCacheKey) && !source.pendingKeys.has(remoteCacheKey) && !source.error) {
+                        ensureExtraStorefrontCatalogLoaded(source, queryText).catch(() => {});
+                    }
+                });
+            }
+
+            const packwizardItems = query
+                ? getAllPackwizardCatalogItems()
+                    .filter((item) => doesEquipmentItemMatchQuery(item, queryText))
+                    .map((item) => ({ ...item, __source: 'packwizard' }))
+                : [];
+            const decathlonItems = remoteSearchEnabled ? getDecathlonCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const gggItems = remoteSearchEnabled ? getGggCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const hyperliteItems = remoteSearchEnabled ? getHyperliteCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const zpacksItems = remoteSearchEnabled ? getZpacksCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const gossamerItems = remoteSearchEnabled ? getGossamerCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const outdoorVitalsItems = remoteSearchEnabled ? getOutdoorVitalsCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const sixMoonItems = remoteSearchEnabled ? getSixMoonCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const gearxItems = remoteSearchEnabled ? getGearxCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const geartradeItems = remoteSearchEnabled ? getGeartradeCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const evoItems = remoteSearchEnabled ? getEvoCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [];
+            const extraStorefrontItems = remoteSearchEnabled
+                ? equipmentExtraStorefrontSources.flatMap((source) => getExtraStorefrontCatalogItems(source, queryText)
+                    .filter((item) => doesEquipmentItemMatchQuery(item, queryText)))
+                : [];
+
+            const renderPackCard = (item) => `
+                <article class="gear-pack-card">
+                    ${item.imageUrl ? `<img class="gear-pack-image" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" data-gear-preview-src="${escapeHtml(item.imageUrl)}" data-gear-preview-alt="${escapeHtml(item.label)}" />` : '<span class="gear-pack-image gear-pack-image-empty" aria-hidden="true"></span>'}
+                    <div class="gear-pack-card-copy">
+                        <input class="gear-pack-edit gear-pack-edit-name" data-equipment-edit="name" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.label)}" aria-label="Название снаряжения" ${canEditEquipment ? '' : 'readonly'} />
+                        <div class="gear-pack-edit-fields">
+                            <label class="gear-pack-edit-field"><input class="gear-pack-edit" type="text" inputmode="decimal" data-equipment-edit="weight" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.weight ? formatEquipmentNumber(item.weight) : '')}" aria-label="Вес в килограммах" ${canEditEquipment ? '' : 'readonly'} /><span>кг</span></label>
+                            <label class="gear-pack-edit-field"><input class="gear-pack-edit" type="text" inputmode="decimal" data-equipment-edit="cost" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.cost ? formatEquipmentNumber(item.cost) : '')}" aria-label="Стоимость в рублях" ${canEditEquipment ? '' : 'readonly'} /><span>₽</span></label>
+                        </div>
+                    </div>
+                    ${canEditEquipment ? `<button
+                        type="button"
+                        class="gear-pack-action"
+                        data-equipment-remove="${escapeHtml(item.rowId)}"
+                    >Удалить</button>` : ''}
+                </article>
+            `;
+
+            const catalogResults = query
+                ? sortEquipmentSearchResults(
+                    mergeEquipmentSearchResults([
+                        packwizardItems,
+                        geartradeItems,
+                        gearxItems,
+                        evoItems,
+                        extraStorefrontItems,
+                        gossamerItems,
+                        hyperliteItems,
+                        zpacksItems,
+                        sixMoonItems,
+                        gggItems,
+                        outdoorVitalsItems,
+                        decathlonItems
+                    ]),
+                    queryText
+                )
+                : [];
+            const visibleCatalog = catalogResults.slice(0, equipmentCatalogResultLimit);
+            equipmentCatalogHasMoreResults = catalogResults.length > visibleCatalog.length;
+            equipmentRenderedSearchResults = visibleCatalog.slice();
+
+            const combinedError = getEquipmentCombinedCatalogError();
+            const searchStatus = !queryText
+                ? `${totalSourceCount} источников готовы к поиску`
+                : (!remoteSearchEnabled
+                    ? 'Наберите еще один символ для внешних каталогов'
+                    : (remoteLoading ? 'Ищу в каталогах...' : `${catalogResults.length} совпадений`));
+
+            let libraryContent = '';
+            if (!queryText) {
+                libraryContent = '<div class="gear-empty">Введите модель, бренд или тип снаряжения.</div>';
+            } else if (anyLoading && !visibleCatalog.length) {
+                libraryContent = '<div class="gear-empty">Собираю совпадения из всех каталогов...</div>';
+            } else if (!visibleCatalog.length && combinedError) {
+                libraryContent = `
+                    <div class="gear-empty">
+                        <div>${escapeHtml(combinedError)}</div>
+                        <button type="button" class="gear-action gear-action-primary" data-pw-refresh>Повторить</button>
+                    </div>
+                `;
+            } else if (!visibleCatalog.length) {
+                libraryContent = '<div class="gear-empty">Ничего подходящего не найдено.</div>';
+            } else {
+                libraryContent = visibleCatalog.map((item) => `
+                    <article class="gear-result ${item.imageUrl ? '' : 'is-without-image'}">
+                        ${item.imageUrl ? `
+                            <div class="gear-result-thumb" data-gear-preview-src="${escapeHtml(item.imageUrl)}" data-gear-preview-alt="${escapeHtml(item.name || 'Снаряжение')}">
+                                <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name || 'Gear')}" loading="lazy" />
+                            </div>
+                        ` : ''}
+                        <div>
+                            <div class="gear-result-source">${escapeHtml(getEquipmentSourceLabel(item.__source))}</div>
+                            <div class="gear-result-name">${escapeHtml(item.name || 'Без названия')}</div>
+                            <div class="gear-result-details">
+                                <span>${((item.packedWeight || item.weight) > 0) ? `${escapeHtml(formatImportedWeightKg(item.packedWeight || item.weight || 0))} кг` : 'вес не указан'}</span>
+                                ${Number(item.lowestPrice || item.price || 0) > 0 ? `<span>${item.priceIsFrom ? 'от ' : ''}${escapeHtml(formatMoneyValue(Number(item.lowestPrice || item.price || 0)))}</span>` : ''}
+                                ${item.category ? `<span>${escapeHtml(String(item.category))}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="gear-result-actions">
+                            ${canEditEquipment ? `<button
+                                type="button"
+                                class="gear-action gear-action-primary"
+                                data-pw-add-packed="${escapeHtml(item.__source || 'packwizard')}::${escapeHtml(String(item._id || ''))}"
+                            >Добавить</button>` : ''}
+                        </div>
+                    </article>
+                `).join('');
+            }
+
+            shell.classList.remove('hidden');
+            shell.innerHTML = `
+                <div class="gear-workbench">
+                    <header class="gear-workbench-top">
+                        <div class="gear-title">Снаряжение</div>
+                    </header>
+                    <section class="gear-searchbar">
+                        <label class="gear-search-input">
+                            <span class="gear-search-glyph" aria-hidden="true">⌕</span>
+                            <input type="search" id="pwCatalogSearchInput" value="${escapeHtml(equipmentCatalogSearch)}" placeholder="Например: Mariposa 60, палатка, горелка..." />
+                        </label>
+                        ${queryText ? `<div class="gear-search-state">${escapeHtml(searchStatus)}</div>` : ''}
+                    </section>
+                    <div class="gear-workbench-grid ${canEditEquipment ? '' : 'is-read-only'}" ${canEditEquipment ? `style="--gear-pack-width: ${packPaneWidth}%"` : ''}>
+                        ${canEditEquipment ? `<section class="gear-catalog">
+                            <div class="gear-catalog-list">
+                                ${libraryContent}
+                            </div>
+                        </section>
+                        <div class="gear-pack-resizer" data-gear-pack-resizer role="separator" aria-orientation="vertical" aria-label="Изменить ширину рюкзака"></div>` : ''}
+                        <aside class="gear-pack">
+                            <div class="gear-pack-head">
+                                <div>
+                                    <div class="gear-pack-title">Рюкзак</div>
+                                </div>
+                                <div>
+                                    <div class="gear-pack-weight">${escapeHtml(formatEquipmentMeasure(packWeight, 'кг'))}</div>
+                                    <div class="gear-pack-count">${escapeHtml(`${stats.totalCount} позиций`)}</div>
+                                </div>
+                            </div>
+                            <div class="gear-pack-metrics">
+                                <span>${escapeHtml(formatMoneyValue(packCost || 0))}</span>
+                            </div>
+                            <div class="gear-pack-table-head">
+                                <span>Позиция</span>
+                                <span>Вес · стоимость</span>
+                            </div>
+                            <div class="gear-pack-list">
+                                ${packItems.length ? packItems.map(renderPackCard).join('') : '<div class="gear-lane-empty">Добавьте первую вещь из поиска.</div>'}
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            `;
+            restoreEquipmentSearchInputState(searchInputState);
+            const nextCatalogList = shell.querySelector('.gear-catalog-list');
+            if (nextCatalogList && equipmentCatalogScrollTop > 0) nextCatalogList.scrollTop = equipmentCatalogScrollTop;
+            const nextPackList = shell.querySelector('.gear-pack-list');
+            if (nextPackList && equipmentPackScrollTop > 0) {
+                nextPackList.scrollTop = equipmentPackScrollTop;
+                requestAnimationFrame(() => { nextPackList.scrollTop = equipmentPackScrollTop; });
+            }
+        }
+
         function updateQuickStats(result) {
             const data = result || calculateExpenses();
             const rowsEl = document.getElementById('quickRowsCount');
             const sharedEl = document.getElementById('quickSharedTotal');
             const personalEl = document.getElementById('quickPersonalTotal');
+            const rowsLabel = document.getElementById('quickRowsLabel');
+            const sharedLabel = document.getElementById('quickSharedLabel');
+            const personalLabel = document.getElementById('quickPersonalLabel');
+            const participantsLabel = document.getElementById('quickParticipantsLabel');
+            if (isEquipmentEvent()) {
+                const stats = getEquipmentStats();
+                if (rowsLabel) rowsLabel.textContent = 'Позиции';
+                if (sharedLabel) sharedLabel.textContent = 'Вес рюкзака';
+                if (personalLabel) personalLabel.textContent = 'В рюкзаке';
+                if (participantsLabel) participantsLabel.textContent = 'Стоимость';
+                if (rowsEl) rowsEl.textContent = String(stats.totalCount);
+                if (sharedEl) sharedEl.textContent = formatEquipmentMeasure(stats.packedWeight, 'кг');
+                if (personalEl) personalEl.textContent = `${stats.packedCount}/${stats.totalCount}`;
+                setQuickMetricValue(formatMoneyValue(stats.packedCost || 0));
+                renderEquipmentExperience();
+                return;
+            }
+            if (rowsLabel) rowsLabel.textContent = 'Позиции';
+            if (sharedLabel) sharedLabel.textContent = 'Общие расходы';
+            if (personalLabel) personalLabel.textContent = 'Личные расходы';
+            if (participantsLabel) participantsLabel.textContent = 'Участники';
             if (rowsEl) rowsEl.textContent = String(countNamedRows());
             if (sharedEl) sharedEl.textContent = formatMoneyFromCents(data.sharedTotal || 0);
             if (personalEl) personalEl.textContent = formatMoneyFromCents(data.personalTotal || 0);
             setQuickParticipantsList(data.participants || []);
+            renderEquipmentExperience();
         }
 
         function scheduleExpenseSummaryRefresh(options = {}) {
@@ -9173,7 +12783,7 @@
         }
 
         function isDefaultColumn(col) {
-            return ['item', 'qty', 'owner', 'cost'].includes(col.id);
+            return ['item', 'qty', 'owner', 'cost', 'weight', 'volume'].includes(col.id);
         }
 
         function getSectionScrollState() {
@@ -9238,6 +12848,7 @@
             else if (col && col.type === 'owners') min = 138;
             else if (col && col.type === 'cost') min = Math.max(164, COST_COLUMN_MIN_WIDTH - 16);
             else if (col && col.type === 'number') min = 84;
+            else if (col && isMeasureColumnType(col.type)) min = 98;
             return Math.min(base, min);
         }
 
@@ -9434,6 +13045,7 @@
             tr.dataset.sectionId = section.id;
             tr.dataset.rowId = rowData.id;
             if (rowData.closed) tr.classList.add('row-closed');
+            if (rowData.packed) tr.classList.add('row-packed');
 
             columns.forEach((col, colIndex) => {
                 const td = document.createElement('td');
@@ -9483,6 +13095,10 @@
                         input.min = '0';
                         input.step = '1';
                         input.inputMode = 'numeric';
+                    } else if (isMeasureColumnType(col.type)) {
+                        input.type = 'text';
+                        input.inputMode = 'decimal';
+                        input.pattern = '[0-9.,]*';
                     } else {
                         input.type = 'text';
                     }
@@ -9793,6 +13409,9 @@
             empty.classList.toggle('hidden', !!nextData.sections.length);
             scheduleExpenseSummaryRefresh();
             scheduleQuickStatsRefresh();
+            if (isEquipmentEvent()) {
+                renderEquipmentExperience();
+            }
             if (active) restoreActiveField(active);
             renderTick += 1;
             scheduleStickyUpdate();
@@ -10862,17 +14481,20 @@
             menu.innerHTML = '';
 
             const existing = new Set(eventData.sections.map(sec => sec.name));
-            const available = presetSections.filter(name => !existing.has(name));
+            const availablePresets = isEquipmentEvent()
+                ? ['Снаряжение']
+                : presetSections;
+            const available = availablePresets.filter(name => !existing.has(name));
 
             const customBtn = document.createElement('button');
             customBtn.type = 'button';
             customBtn.dataset.sectionName = '__custom__';
-            customBtn.textContent = 'Новый раздел';
+            customBtn.textContent = isEquipmentEvent() ? 'Новый отсек' : 'Новый раздел';
             menu.appendChild(customBtn);
 
             const divider = document.createElement('div');
             divider.className = 'text-xs text-gray-500 px-2 py-1';
-            divider.textContent = 'Предустановленные';
+            divider.textContent = isEquipmentEvent() ? 'Походные пресеты' : 'Предустановленные';
             menu.appendChild(divider);
 
             if (!available.length) return;
@@ -10895,6 +14517,8 @@
             let next = value;
             if (column && column.type === 'number') {
                 next = sanitizeNumericInput(value, { allowDecimal: false }).value;
+            } else if (column && isMeasureColumnType(column.type)) {
+                next = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
             } else if (column && column.type === 'cost') {
                 next = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }).value;
             }
@@ -16931,7 +20555,8 @@
             const input = document.getElementById('newSectionNameInput');
             if (!modal || !input) return;
             input.value = '';
-            newSectionColumnsDraft = defaultColumns.map(col => ({ id: col.id, name: col.name, type: col.type, width: col.width }));
+            newSectionColumnsDraft = (isEquipmentEvent() ? cloneEquipmentColumns() : defaultColumns)
+                .map(col => ({ id: col.id, name: col.name, type: col.type, width: col.width }));
             renderNewSectionColumns();
             modal.classList.add('active');
             updateModalScrollLock();
@@ -17045,6 +20670,7 @@
                     currentUserName = currentUser.name;
                     if (nameEl) nameEl.textContent = currentUser.name;
                 }
+                if (currentUser && currentUser.username) currentUserLogin = String(currentUser.username).trim();
             } catch (_) {}
         }
 
@@ -17220,6 +20846,10 @@
                 const cachedEvent = cachedPlanningState.event || {};
                 eventNameValue = String(cachedEvent.name || '').trim();
                 eventDateValue = String(cachedEvent.date || '').trim();
+                eventTypeValue = normalizeEventType(cachedEvent.type);
+                eventOwnerLogin = String(cachedEvent.createdByLogin || '').trim();
+                eventOwnerName = String(cachedEvent.createdBy || '').trim();
+                document.body.classList.toggle('equipment-mode', isEquipmentEvent());
                 eventParticipants = Array.isArray(cachedEvent.participants)
                     ? cachedEvent.participants.map((v) => String(v).trim()).filter(Boolean)
                     : [];
@@ -17259,7 +20889,7 @@
                 backlogSectionId: readBeerBacklogRouteState().sectionId
             });
             ensureInitialRenderFallback();
-            if (eventDataCacheLoaded) {
+            if (eventDataCacheLoaded && eventTypeValue) {
                 requestAnimationFrame(() => {
                     if (eventData && !initialRenderCommitted) {
                         renderSections({ preserveActiveField: false, preservePageScroll: false });
@@ -17403,10 +21033,206 @@
                 } else {
                     const name = btn.dataset.sectionName;
                     const presetCols = presetSectionColumns[name];
-                    addSection(name, presetCols || defaultColumns);
+                    addSection(name, presetCols || (isEquipmentEvent() ? cloneEquipmentColumns() : defaultColumns));
                 }
                 toggleSectionMenu(true);
             });
+
+            const equipmentExperience = document.getElementById('equipmentExperience');
+            if (equipmentExperience) {
+                let gearImagePreview = null;
+                let gearPackResizeGrid = null;
+                const hideGearImagePreview = () => {
+                    if (!gearImagePreview) return;
+                    gearImagePreview.remove();
+                    gearImagePreview = null;
+                };
+                const showGearImagePreview = (thumb) => {
+                    const src = String(thumb && thumb.dataset.gearPreviewSrc || '').trim();
+                    if (!src || window.matchMedia('(max-width: 680px)').matches) return;
+                    hideGearImagePreview();
+                    const preview = document.createElement('div');
+                    preview.className = 'gear-image-floating-preview';
+                    const image = document.createElement('img');
+                    image.src = src;
+                    image.alt = String(thumb.dataset.gearPreviewAlt || 'Снаряжение');
+                    preview.appendChild(image);
+                    document.body.appendChild(preview);
+                    const rect = thumb.getBoundingClientRect();
+                    const width = Math.min(300, Math.max(180, Math.floor(window.innerWidth * 0.42)));
+                    let left = rect.right + 12;
+                    if (left + width > window.innerWidth - 12) left = Math.max(12, rect.left - width - 12);
+                    preview.style.left = `${Math.round(left)}px`;
+                    preview.style.top = `${Math.max(12, Math.min(window.innerHeight - 170, rect.top - 26))}px`;
+                    gearImagePreview = preview;
+                };
+                const handleEquipmentSearchFieldInput = (target) => {
+                    const searchInput = target && typeof target.closest === 'function'
+                        ? target.closest('#pwCatalogSearchInput')
+                        : null;
+                    if (!searchInput) return;
+                    const nextSearch = searchInput.value || '';
+                    if (nextSearch !== equipmentCatalogSearch) {
+                        equipmentCatalogResultLimit = 30;
+                        equipmentCatalogScrollTop = 0;
+                        const currentCatalogList = equipmentExperience.querySelector('.gear-catalog-list');
+                        if (currentCatalogList) currentCatalogList.scrollTop = 0;
+                    }
+                    equipmentCatalogSearch = nextSearch;
+                    if (equipmentCatalogSearchDebounceTimer) {
+                        clearTimeout(equipmentCatalogSearchDebounceTimer);
+                        equipmentCatalogSearchDebounceTimer = null;
+                    }
+                    equipmentCatalogSearchDebounceTimer = setTimeout(() => {
+                        equipmentCatalogSearchDebounceTimer = null;
+                        scheduleEquipmentSearchRefresh();
+                    }, 90);
+                };
+                equipmentExperience.addEventListener('click', (e) => {
+                    const addPackedBtn = e.target.closest('[data-pw-add-packed]');
+                    const addBtn = addPackedBtn || e.target.closest('[data-pw-add-item]');
+                    if (addBtn) {
+                        const [sourceKey, itemId] = String((addPackedBtn ? addPackedBtn.dataset.pwAddPacked : addBtn.dataset.pwAddItem) || '').split('::');
+                        const item = equipmentRenderedSearchResults.find((entry) => (
+                            String(entry && entry._id || '') === String(itemId || '')
+                            && String(entry && entry.__source || '') === String(sourceKey || '')
+                        ));
+                        if (item) addEquipmentItemFromCatalog(item, { packed: !!addPackedBtn });
+                        return;
+                    }
+                    const removeBtn = e.target.closest('[data-equipment-remove]');
+                    if (removeBtn) {
+                        removeEquipmentItem(removeBtn.dataset.equipmentRemove);
+                        return;
+                    }
+                    const refreshBtn = e.target.closest('[data-pw-refresh]');
+                    if (refreshBtn) {
+                        ensureAllPackwizardCatalogLoaded({ force: true }).catch(() => {});
+                        if (shouldRunRemoteEquipmentSearch(getEquipmentQueryText())) {
+                            ensureDecathlonCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureGggCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureHyperliteCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureZpacksCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureGossamerCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureOutdoorVitalsCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureSixMoonCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureGearxCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureGeartradeCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            ensureEvoCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
+                            equipmentExtraStorefrontSources.forEach((source) => {
+                                ensureExtraStorefrontCatalogLoaded(source, equipmentCatalogSearch, { force: true }).catch(() => {});
+                            });
+                        }
+                        return;
+                    }
+                    const toggleBtn = e.target.closest('[data-equipment-toggle]');
+                    if (!toggleBtn) return;
+                    setEquipmentPackedState(toggleBtn.dataset.equipmentToggle, toggleBtn.dataset.packed === '1');
+                });
+                equipmentExperience.addEventListener('input', (e) => {
+                    handleEquipmentSearchFieldInput(e.target);
+                });
+                equipmentExperience.addEventListener('change', (e) => {
+                    const input = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
+                    if (!input) return;
+                    updateEquipmentItem(input.dataset.equipmentRow, input.dataset.equipmentEdit, input.value);
+                });
+                equipmentExperience.addEventListener('keydown', (e) => {
+                    const input = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
+                    if (!input || e.key !== 'Enter') return;
+                    e.preventDefault();
+                    input.blur();
+                });
+                equipmentExperience.addEventListener('search', (e) => {
+                    handleEquipmentSearchFieldInput(e.target);
+                });
+                equipmentExperience.addEventListener('pointerover', (e) => {
+                    const thumb = e.target && e.target.closest ? e.target.closest('[data-gear-preview-src]') : null;
+                    if (thumb) showGearImagePreview(thumb);
+                });
+                equipmentExperience.addEventListener('pointerout', (e) => {
+                    const thumb = e.target && e.target.closest ? e.target.closest('[data-gear-preview-src]') : null;
+                    if (!thumb || (e.relatedTarget && thumb.contains(e.relatedTarget))) return;
+                    hideGearImagePreview();
+                });
+                equipmentExperience.addEventListener('pointerdown', (e) => {
+                    const handle = e.target && e.target.closest ? e.target.closest('[data-gear-pack-resizer]') : null;
+                    if (!handle || window.matchMedia('(max-width: 1080px)').matches) return;
+                    const grid = handle.closest('.gear-workbench-grid');
+                    if (!grid) return;
+                    e.preventDefault();
+                    gearPackResizeGrid = grid;
+                    handle.classList.add('is-resizing');
+                });
+                window.addEventListener('pointermove', (e) => {
+                    if (!gearPackResizeGrid) return;
+                    const rect = gearPackResizeGrid.getBoundingClientRect();
+                    if (!rect.width) return;
+                    const width = Math.max(30, Math.min(68, ((rect.right - e.clientX) / rect.width) * 100));
+                    gearPackResizeGrid.style.setProperty('--gear-pack-width', `${width.toFixed(2)}%`);
+                });
+                window.addEventListener('pointerup', () => {
+                    if (!gearPackResizeGrid) return;
+                    const value = Number.parseFloat(gearPackResizeGrid.style.getPropertyValue('--gear-pack-width'));
+                    if (Number.isFinite(value) && eventId) {
+                        try { localStorage.setItem(`planningGearPackWidth:${eventId}`, String(value)); } catch (_) {}
+                    }
+                    const handle = gearPackResizeGrid.querySelector('[data-gear-pack-resizer]');
+                    if (handle) handle.classList.remove('is-resizing');
+                    gearPackResizeGrid = null;
+                });
+                equipmentExperience.addEventListener('scroll', (e) => {
+                    const packList = e.target && e.target.closest ? e.target.closest('.gear-pack-list') : null;
+                    if (packList) {
+                        equipmentPackScrollTop = packList.scrollTop;
+                        return;
+                    }
+                    const list = e.target && e.target.closest ? e.target.closest('.gear-catalog-list') : null;
+                    if (!list || !equipmentCatalogHasMoreResults || equipmentCatalogLazyLoadRaf) return;
+                    hideGearImagePreview();
+                    if (list.scrollTop + list.clientHeight < list.scrollHeight - 100) return;
+                    equipmentCatalogScrollTop = list.scrollTop;
+                    equipmentCatalogLazyLoadRaf = requestAnimationFrame(() => {
+                        equipmentCatalogLazyLoadRaf = null;
+                        if (!equipmentCatalogHasMoreResults) return;
+                        equipmentCatalogResultLimit += 30;
+                        renderEquipmentExperience();
+                    });
+                }, true);
+                equipmentExperience.addEventListener('dragstart', (e) => {
+                    const card = e.target.closest('[data-equipment-card]');
+                    if (!card || !e.dataTransfer) return;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', card.dataset.equipmentCard || '');
+                    card.classList.add('is-dragging');
+                });
+                equipmentExperience.addEventListener('dragend', (e) => {
+                    const card = e.target.closest('[data-equipment-card]');
+                    if (card) card.classList.remove('is-dragging');
+                    equipmentExperience.querySelectorAll('[data-pack-zone]').forEach((zone) => zone.classList.remove('is-target'));
+                });
+                equipmentExperience.addEventListener('dragover', (e) => {
+                    const zone = e.target.closest('[data-pack-zone]');
+                    if (!zone) return;
+                    e.preventDefault();
+                    zone.classList.add('is-target');
+                });
+                equipmentExperience.addEventListener('dragleave', (e) => {
+                    const zone = e.target.closest('[data-pack-zone]');
+                    if (!zone) return;
+                    if (e.relatedTarget && zone.contains(e.relatedTarget)) return;
+                    zone.classList.remove('is-target');
+                });
+                equipmentExperience.addEventListener('drop', (e) => {
+                    const zone = e.target.closest('[data-pack-zone]');
+                    if (!zone) return;
+                    e.preventDefault();
+                    zone.classList.remove('is-target');
+                    const rowId = e.dataTransfer ? e.dataTransfer.getData('text/plain') : '';
+                    if (!rowId) return;
+                    setEquipmentPackedState(rowId, zone.dataset.packZone === 'backpack');
+                });
+            }
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#sectionMenu') && !e.target.closest('#addSectionBtn')) {
@@ -17485,11 +21311,17 @@
                 if (target.tagName === 'INPUT' && eventData) {
                     const section = eventData.sections.find(sec => sec.id === sectionId);
                     const column = section ? section.columns.find(col => col.id === colId) : null;
-                    if (column && (column.type === 'number' || column.type === 'cost')) {
+                    if (column && (column.type === 'number' || isMeasureColumnType(column.type) || column.type === 'cost')) {
                         const caret = typeof target.selectionStart === 'number' ? target.selectionStart : null;
                         const sanitized = column.type === 'number'
                             ? sanitizeNumericInput(target.value, { allowDecimal: false }, caret)
-                            : sanitizeNumericInput(target.value, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }, caret);
+                            : sanitizeNumericInput(
+                                target.value,
+                                isMeasureColumnType(column.type)
+                                    ? { allowDecimal: true, maxDecimals: 2, maxLength: 8 }
+                                    : { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS },
+                                caret
+                            );
                         if (sanitized.value !== target.value) {
                             target.value = sanitized.value;
                             if (sanitized.caret !== null) {
@@ -17515,7 +21347,7 @@
                 if (!sectionId || !colId || !eventData) return;
                 const section = eventData.sections.find(sec => sec.id === sectionId);
                 const column = section ? section.columns.find(col => col.id === colId) : null;
-                if (!column || (column.type !== 'number' && column.type !== 'cost')) return;
+                if (!column || (column.type !== 'number' && !isMeasureColumnType(column.type) && column.type !== 'cost')) return;
                 const key = e.key;
                 if (key === '-' || key === '+' || key === 'e' || key === 'E') {
                     e.preventDefault();

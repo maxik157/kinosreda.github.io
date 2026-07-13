@@ -344,6 +344,32 @@
             flex-wrap: wrap;
             gap: 6px;
         }
+        .event-view-switcher {
+            display: inline-flex;
+            justify-self: start;
+            width: fit-content;
+            gap: 3px;
+            margin-top: 16px;
+            padding: 3px;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 999px;
+            background: rgba(0,0,0,0.24);
+        }
+        .event-view-switcher button {
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: #9ca3af;
+            padding: 7px 11px;
+            font: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: background 0.16s ease, color 0.16s ease;
+        }
+        .event-view-switcher button.active {
+            background: rgba(245,158,11,0.18);
+            color: var(--accent-200);
+        }
         .event-tag {
             display: inline-flex;
             align-items: center;
@@ -495,6 +521,64 @@
             color: #9ca3af;
             margin-top: 8px;
         }
+        .event-type-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .event-type-btn {
+            position: relative;
+            border: 1px solid var(--accent-border-20);
+            border-radius: 16px;
+            background:
+                radial-gradient(circle at top left, rgba(245,158,11,0.18), transparent 58%),
+                rgba(0,0,0,0.45);
+            color: #d1d5db;
+            padding: 14px 12px;
+            text-align: left;
+            transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .event-type-btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent-border-50);
+            box-shadow: 0 16px 34px rgba(245,158,11,0.12);
+        }
+        .event-type-btn.active {
+            border-color: rgba(110,231,255,0.48);
+            background:
+                radial-gradient(circle at top left, rgba(110,231,255,0.26), transparent 52%),
+                linear-gradient(135deg, rgba(8,47,73,0.86), rgba(16,24,40,0.94));
+            color: #ecfeff;
+            box-shadow: 0 0 0 1px rgba(110,231,255,0.18) inset, 0 18px 38px rgba(34,211,238,0.12);
+        }
+        .event-type-title {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .event-type-desc {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            line-height: 1.35;
+            color: #94a3b8;
+        }
+        .event-type-btn.active .event-type-desc {
+            color: rgba(236,254,255,0.82);
+        }
+        #addEventModal.is-equipment .event-date-field,
+        #addEventModal.is-equipment .event-participants-field {
+            display: none !important;
+        }
+        #addEventModal .event-date-field[hidden],
+        #addEventModal .event-participants-field[hidden] {
+            display: none !important;
+        }
+        #addEventModal:has([data-event-type="equipment"].active) .event-date-field,
+        #addEventModal:has([data-event-type="equipment"].active) .event-participants-field {
+            display: none !important;
+        }
     </style>
 </head>
 <body class="bg-dark min-h-screen planning-booting">
@@ -512,6 +596,10 @@
                     </button>
                 </div>
             </div>
+            <div class="event-view-switcher" id="eventViewSwitcher" aria-label="Тип мероприятий">
+                <button type="button" class="active" data-event-view="default" aria-pressed="true">Мероприятия</button>
+                <button type="button" data-event-view="equipment" aria-pressed="false">Снаряжение</button>
+            </div>
             <div id="eventsList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4 pb-4"></div>
             <div id="emptyState" class="text-gray-400 text-sm mt-4 hidden">Пока нет мероприятий. Добавьте первое событие справа сверху.</div>
         </section>
@@ -522,11 +610,24 @@
             <h3 id="addEventTitle" class="text-lg font-semibold text-amber-200">Новое мероприятие</h3>
             <p class="text-xs text-gray-400 mt-1">Введите название события.</p>
             <input id="eventNameInput" class="modal-input mt-4" type="text" placeholder="Название мероприятия" />
-            <div class="mt-3">
+            <div class="mt-3 event-date-field">
                 <div class="text-xs text-gray-400 mb-2">Дата</div>
                 <input id="eventDateInput" class="modal-input" type="date" />
             </div>
-            <div class="mt-4">
+            <div class="mt-4 event-type-field">
+                <div class="text-xs text-gray-400 mb-2">Тип мероприятия</div>
+                <div class="event-type-grid" id="eventTypeGrid">
+                    <button type="button" class="event-type-btn active" data-event-type="default" onclick="this.closest('#addEventModal').querySelectorAll('.event-date-field,.event-participants-field').forEach(function(field){field.hidden=false;field.style.removeProperty('display');});">
+                        <span class="event-type-title">Обычное</span>
+                        <span class="event-type-desc">Классическое планирование поездки, трат и задач.</span>
+                    </button>
+                    <button type="button" class="event-type-btn" data-event-type="equipment" onclick="this.closest('#addEventModal').querySelectorAll('.event-date-field,.event-participants-field').forEach(function(field){field.hidden=true;field.style.setProperty('display','none','important');});">
+                        <span class="event-type-title">Снаряжение</span>
+                        <span class="event-type-desc">Походный набор с весом, объемом и укладкой в рюкзак.</span>
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 event-participants-field">
                 <div class="text-xs text-gray-400 mb-2">Участники</div>
                 <div class="participant-actions">
                     <button type="button" class="participant-action-btn" data-event-participants-action="all">Выбрать всех</button>
@@ -561,6 +662,9 @@
         let db = null;
         let eventsCache = [];
         let currentUserLogin = '';
+        let currentUserName = '';
+        let eventViewFilter = 'default';
+        let equipmentItemCounts = {};
         let usersList = [];
         let eventCustomParticipants = [];
         let editingEventId = null;
@@ -568,6 +672,69 @@
         let initialUsersSnapshotReady = false;
         let initialPlanningRenderCommitted = false;
         let initialPlanningFallbackTimer = null;
+
+        function normalizeEventType(value) {
+            return String(value || '').trim().toLowerCase() === 'equipment' ? 'equipment' : 'default';
+        }
+
+        function isEquipmentEventOwner(event) {
+            const owner = String(event && event.createdByLogin || '').trim().toLowerCase();
+            return !!owner && owner === String(currentUserLogin || '').trim().toLowerCase();
+        }
+
+        function setEventViewFilter(value) {
+            eventViewFilter = normalizeEventType(value);
+            document.querySelectorAll('[data-event-view]').forEach((button) => {
+                const active = button.dataset.eventView === eventViewFilter;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            renderEvents();
+        }
+
+        function setSelectedEventType(type) {
+            const safeType = normalizeEventType(type);
+            document.querySelectorAll('[data-event-type]').forEach((button) => {
+                const active = button.dataset.eventType === safeType;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+            const modal = document.getElementById('addEventModal');
+            if (modal) {
+                const equipmentMode = safeType === 'equipment';
+                modal.classList.toggle('is-equipment', equipmentMode);
+                modal.querySelectorAll('.event-date-field, .event-participants-field').forEach((field) => {
+                    field.hidden = equipmentMode;
+                    field.setAttribute('aria-hidden', equipmentMode ? 'true' : 'false');
+                    if (equipmentMode) field.style.setProperty('display', 'none', 'important');
+                    else field.style.removeProperty('display');
+                });
+            }
+        }
+
+        function getSelectedEventType() {
+            const active = document.querySelector('[data-event-type].active');
+            return normalizeEventType(active ? active.dataset.eventType : 'default');
+        }
+
+        function createEquipmentInitialData() {
+            const sectionId = `sec_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            return {
+                sections: [
+                    {
+                        id: sectionId,
+                        name: 'Снаряжение',
+                        columns: [
+                            { id: 'item', name: 'Название', type: 'text', width: 240 },
+                            { id: 'weight', name: 'Вес', type: 'measure', width: 128 },
+                            { id: 'cost', name: 'Стоимость', type: 'cost', width: 188 }
+                        ],
+                        rows: []
+                    }
+                ],
+                layoutRows: [[sectionId]]
+            };
+        }
 
         function hidePlanningBootGuard() {
             document.body.classList.remove('planning-booting');
@@ -627,6 +794,25 @@
                 }
                 renderEvents();
             });
+            db.ref('planning/data').on('value', (snapshot) => {
+                const source = snapshot.val() || {};
+                const entries = Array.isArray(source)
+                    ? source.map((data, index) => [String(index), data])
+                    : Object.entries(source);
+                equipmentItemCounts = entries.reduce((counts, [eventId, data]) => {
+                    const sections = Array.isArray(data && data.sections)
+                        ? data.sections
+                        : Object.values((data && data.sections) || {});
+                    counts[eventId] = sections.reduce((total, section) => {
+                        const columns = Array.isArray(section && section.columns) ? section.columns : [];
+                        if (!columns.some((column) => column && column.id === 'weight')) return total;
+                        const rows = Array.isArray(section && section.rows) ? section.rows : Object.values((section && section.rows) || {});
+                        return total + rows.filter(Boolean).length;
+                    }, 0);
+                    return counts;
+                }, {});
+                if (initialPlanningRenderCommitted) renderEvents();
+            });
         }
 
         function initUsers() {
@@ -666,13 +852,15 @@
         function renderEvents() {
             const list = document.getElementById('eventsList');
             const empty = document.getElementById('emptyState');
-            const filteredEvents = eventsCache.slice();
+            const filteredEvents = eventsCache.filter((event) => normalizeEventType(event.type) === eventViewFilter);
 
             list.innerHTML = '';
 
             if (!filteredEvents.length) {
                 empty.classList.remove('hidden');
-                empty.textContent = 'Пока нет мероприятий. Добавьте первое событие справа сверху.';
+                empty.textContent = eventViewFilter === 'equipment'
+                    ? 'Пока нет списков снаряжения.'
+                    : 'Пока нет мероприятий. Добавьте первое событие справа сверху.';
                 return;
             }
 
@@ -682,6 +870,8 @@
                 const card = document.createElement('a');
                 card.href = `planning-event.html?id=${encodeURIComponent(event.id)}`;
                 card.className = 'card event-card p-4';
+                const eventType = normalizeEventType(event.type);
+                const canEdit = eventType !== 'equipment' || isEquipmentEventOwner(event);
                 const explicitParticipants = Array.isArray(event.participants)
                     ? Array.from(new Set(event.participants.map((name) => String(name || '').trim()).filter(Boolean)))
                     : [];
@@ -700,10 +890,16 @@
                     <div class="event-summary">
                         <div class="event-title">${escapeHtml(event.name || 'Без названия')}</div>
                         ${dateLabel ? `<div class="event-meta">Дата: ${escapeHtml(dateLabel)}</div>` : ''}
-                        <div class="event-meta">${participantsLabel}</div>
+                        ${eventType === 'equipment' ? `
+                            <div class="event-meta">В рюкзаке: ${Number(equipmentItemCounts[event.id] || 0)} предметов</div>
+                            <div class="event-meta">Создатель: ${escapeHtml(event.createdBy || 'не указан')}</div>
+                            <div class="event-tags">
+                                <span class="event-tag">Снаряжение</span>
+                            </div>
+                        ` : `<div class="event-meta">${participantsLabel}</div>`}
                     </div>
                     <div class="event-actions">
-                        <button type="button" class="event-action" data-edit-event="${event.id}" title="Редактировать">✎</button>
+                        ${canEdit ? `<button type="button" class="event-action" data-edit-event="${event.id}" title="Редактировать">✎</button>` : ''}
                         ${canDelete ? `<button type="button" class="event-action" data-delete-event="${event.id}" title="Удалить">🗑</button>` : ''}
                         <span class="event-action event-open" aria-hidden="true">→</span>
                     </div>
@@ -819,6 +1015,7 @@
             setEventModalMode('add');
             input.value = '';
             if (dateInput) dateInput.value = '';
+            setSelectedEventType('default');
             eventCustomParticipants = [];
             renderEventParticipantsList(null);
             const customInput = document.getElementById('eventParticipantsCustomInput');
@@ -832,10 +1029,12 @@
             const input = document.getElementById('eventNameInput');
             const dateInput = document.getElementById('eventDateInput');
             if (!modal || !input || !event) return;
+            if (normalizeEventType(event.type) === 'equipment' && !isEquipmentEventOwner(event)) return;
             editingEventId = event.id;
             setEventModalMode('edit');
             input.value = event.name || '';
             if (dateInput) dateInput.value = String(event.date || '').trim();
+            setSelectedEventType(event.type);
             const storedCustom = Array.isArray(event.participantsCustom) ? event.participantsCustom : [];
             const storedParticipants = Array.isArray(event.participants) ? event.participants : [];
             const inferredCustom = storedParticipants.filter(name => !usersList.includes(name));
@@ -859,15 +1058,25 @@
             const dateInput = document.getElementById('eventDateInput');
             if (!input) return;
             const trimmed = input.value.trim();
-            const eventDate = dateInput ? String(dateInput.value || '').trim() : '';
+            const eventType = getSelectedEventType();
+            const eventDate = eventType === 'equipment' ? '' : (dateInput ? String(dateInput.value || '').trim() : '');
             if (!trimmed || !db) return;
             const selected = getSelectedEventParticipantsFromModal();
-            const participants = Array.isArray(selected) ? selected : [];
+            const participants = eventType === 'equipment' ? [] : (Array.isArray(selected) ? selected : []);
             const hasCustom = participants.some(name => !usersList.includes(name));
             const customParticipants = participants.filter(name => !usersList.includes(name));
 
             if (editingEventId) {
-                const update = { name: trimmed, date: eventDate };
+                const existingEvent = eventsCache.find((event) => event.id === editingEventId);
+                if (existingEvent && normalizeEventType(existingEvent.type) === 'equipment' && !isEquipmentEventOwner(existingEvent)) {
+                    closeAddEventModal();
+                    return;
+                }
+                const update = { name: trimmed, date: eventDate, type: eventType };
+                if (eventType === 'equipment' && !String(existingEvent && existingEvent.createdByLogin || '').trim()) {
+                    update.createdByLogin = currentUserLogin;
+                    update.createdBy = currentUserName || currentUserLogin || 'Пользователь';
+                }
                 if (participants.length && (hasCustom || participants.length < usersList.length)) {
                     update.participants = participants;
                 } else {
@@ -879,11 +1088,26 @@
                     update.participantsCustom = null;
                 }
                 db.ref(`planning/events/${editingEventId}`).update(update);
+                if (eventType === 'equipment') {
+                    db.ref(`planning/data/${editingEventId}`).once('value').then((snapshot) => {
+                        const current = snapshot.val();
+                        const hasSections = !!(current && (
+                            (Array.isArray(current.sections) && current.sections.length)
+                            || (!Array.isArray(current.sections) && typeof current.sections === 'object' && Object.keys(current.sections || {}).length)
+                        ));
+                        if (!hasSections) {
+                            db.ref(`planning/data/${editingEventId}`).set(createEquipmentInitialData());
+                        }
+                    }).catch(() => {});
+                }
             } else {
                 const payload = {
                     name: trimmed,
                     date: eventDate,
-                    createdAt: Date.now()
+                    type: eventType,
+                    createdAt: Date.now(),
+                    createdByLogin: currentUserLogin,
+                    createdBy: currentUserName || currentUserLogin || 'Пользователь'
                 };
                 if (participants.length && (hasCustom || participants.length < usersList.length)) {
                     payload.participants = participants;
@@ -893,7 +1117,11 @@
                 }
                 const ref = db.ref('planning/events').push(payload);
                 if (ref && ref.key) {
-                    db.ref(`planning/data/${ref.key}`).set({ sections: [] });
+                    db.ref(`planning/data/${ref.key}`).set(
+                        eventType === 'equipment'
+                            ? createEquipmentInitialData()
+                            : { sections: [] }
+                    );
                 }
             }
             closeAddEventModal();
@@ -904,6 +1132,7 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
                 const nameEl = document.getElementById('profileName');
                 if (currentUser && currentUser.username) currentUserLogin = currentUser.username;
+                if (currentUser && currentUser.name) currentUserName = currentUser.name;
                 if (nameEl && currentUser && currentUser.name) nameEl.textContent = currentUser.name;
             } catch (_) {}
         }
@@ -922,6 +1151,20 @@
         }
 
         document.getElementById('addEventBtn').addEventListener('click', openAddEventModal);
+        document.getElementById('eventViewSwitcher').addEventListener('click', (e) => {
+            const button = e.target.closest('[data-event-view]');
+            if (!button) return;
+            setEventViewFilter(button.dataset.eventView);
+        });
+        document.getElementById('eventTypeGrid').addEventListener('click', (e) => {
+            const button = e.target.closest('[data-event-type]');
+            if (!button) return;
+            setSelectedEventType(button.dataset.eventType);
+            const equipmentMode = button.dataset.eventType === 'equipment';
+            document.querySelectorAll('#addEventModal .event-date-field, #addEventModal .event-participants-field').forEach((field) => {
+                field.hidden = equipmentMode;
+            });
+        });
         document.getElementById('eventsList').addEventListener('click', (e) => {
             const editBtn = e.target.closest('[data-edit-event]');
             if (editBtn) {
