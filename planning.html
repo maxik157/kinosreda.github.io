@@ -216,6 +216,30 @@
             opacity: 0;
             pointer-events: none;
         }
+        @media (max-width: 768px) {
+            html,
+            body {
+                height: 100% !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+            }
+            body {
+                overscroll-behavior: none;
+            }
+            #planningPageScroll {
+                height: 100dvh !important;
+                min-height: 0 !important;
+                overflow-x: hidden;
+                overflow-y: auto !important;
+                touch-action: pan-y;
+                overscroll-behavior-y: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+            #eventsList,
+            .planning-shell {
+                touch-action: pan-y;
+            }
+        }
         @font-face {
             font-family: 'Egyptian Bold Extended';
             src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
@@ -582,7 +606,7 @@
     </style>
 </head>
 <body class="bg-dark min-h-screen planning-booting">
-    <main class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8" style="min-height:100dvh;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));">
+    <main id="planningPageScroll" class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8" style="min-height:100dvh;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));">
         <section class="planning-shell p-0">
             <div class="planning-head">
                 <div>
