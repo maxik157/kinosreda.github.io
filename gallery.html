@@ -1979,13 +1979,18 @@
         const REMOVE_BG_API_KEY = '';
         const REMOVE_BG_ENDPOINT = '';
         const REMOVE_BG_PROXY_URL = '';
-        const LOCAL_BG_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
-        const LOCAL_IMAGE_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/fetch-image';
+        const REMBG_SERVER_ENDPOINT = 'https://realtime.киносреда.рф/remove-bg';
+        const REMBG_PRIMARY_ENDPOINT = REMBG_SERVER_ENDPOINT;
+        const REMBG_FALLBACK_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
+        const REMOVE_BG_REQUEST_TIMEOUT_MS = 45000;
+        const REALTIME_IMAGE_PROXY_ENDPOINT = 'https://realtime.киносреда.рф/fetch-image';
+        const LOCAL_IMAGE_PROXY_ENDPOINT = REALTIME_IMAGE_PROXY_ENDPOINT;
         const WALL_IMAGE_PROXY_ENDPOINT = 'https://realtime.киносреда.рф/fetch-image';
         const FALLBACK_IMAGE_PROXY_ENDPOINTS = [];
         const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
         const POSTIMAGES_API_ENDPOINT = 'https://api.imageban.ru/v1';
-        const POSTIMAGES_PROXY_ENDPOINT = 'https://max157-kinosreda.hf.space/upload-image';
+        const REALTIME_UPLOAD_PROXY_ENDPOINT = 'https://realtime.киносреда.рф/upload-image';
+        const POSTIMAGES_PROXY_ENDPOINT = REALTIME_UPLOAD_PROXY_ENDPOINT;
         const IMAGE_OUTPUT_SCALE = 3;
         const IMAGE_CACHE_KEY = 'beerShelfImageCache';
         const BEER_CACHE_KEY = 'beerShelfBeerCache';
@@ -2764,26 +2769,30 @@
             }
             const headers = { 'Content-Type': 'application/json' };
             if (apiKey) headers['X-API-Key'] = apiKey;
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ image_base64: imageBase64 })
-            });
-            if (!response.ok) throw new Error('removebg_failed');
-            const data = await response.json();
-            const base64 = data?.image_base64 || data?.result_base64 || data?.data || data?.image || data?.result;
-            if (!base64) throw new Error('removebg_invalid');
-            return `data:image/png;base64,${base64}`;
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), REMOVE_BG_REQUEST_TIMEOUT_MS);
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ image_base64: imageBase64 }),
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error('removebg_failed');
+                const data = await response.json();
+                const base64 = data?.image_base64 || data?.result_base64 || data?.data || data?.image || data?.result;
+                if (!base64) throw new Error('removebg_invalid');
+                return `data:image/png;base64,${base64}`;
+            } finally {
+                window.clearTimeout(timeoutId);
+            }
         }
 
         async function removeBackground(dataUrl) {
             const base64 = dataUrlToBase64(dataUrl);
             const endpoints = [];
-            const canUseLocal = location.protocol === 'http:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            const localBgIsLocal = isLocalEndpoint(LOCAL_BG_ENDPOINT);
-            if (LOCAL_BG_ENDPOINT && (canUseLocal || !localBgIsLocal)) {
-                endpoints.push({ url: LOCAL_BG_ENDPOINT, key: '' });
-            }
+            if (REMBG_PRIMARY_ENDPOINT) endpoints.push({ url: REMBG_PRIMARY_ENDPOINT, key: '' });
+            if (REMBG_FALLBACK_ENDPOINT) endpoints.push({ url: REMBG_FALLBACK_ENDPOINT, key: '' });
             if (REMOVE_BG_PROXY_URL) endpoints.push({ url: REMOVE_BG_PROXY_URL, key: '' });
             for (const item of endpoints) {
                 try {
@@ -12027,6 +12036,7 @@
                         volume,
                         alcohol,
                         calories,
+                        imageUrl: current.imageUrl || '',
                         updatedAt: Date.now()
                     };
                     updated = beerData.map((item) => (String(item.id) === String(beerEditId) ? edited : item));
@@ -12041,6 +12051,7 @@
                         volume,
                         alcohol,
                         calories,
+                        imageUrl: '',
                         author,
                         ratings: {},
                         timestamp: Date.now()

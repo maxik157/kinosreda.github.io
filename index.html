@@ -2784,7 +2784,6 @@
         html.page-service-active {
             overflow: hidden;
         }
-
         @media (min-width: 1024px) {
             body.layout-sidebar {
                 overflow: hidden;
@@ -4296,6 +4295,7 @@
             <h3 class="text-xl font-bold text-amber-400 mb-4">Добавить пиво</h3>
             <input type="text" id="beerNameInput" placeholder="Название..."
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+            <button id="addBeerPhotoBtn" type="button" onclick="openBeerPhotoPicker('add')" class="w-full mb-3 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-left text-sm text-amber-100"><img id="addBeerPhotoPreview" class="hidden h-10 w-7 rounded object-contain bg-black/20" alt=""><span id="addBeerPhotoLabel">📷 Фото пива</span></button>
             <select id="beerTypeInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
                 <option value="Светлое">Светлое</option>
@@ -4393,6 +4393,7 @@
             <h3 class="text-xl font-bold text-amber-400 mb-4">Редактировать пиво</h3>
             <input type="text" id="editBeerNameInput" placeholder="Название..."
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white placeholder-gray-500 border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
+            <button id="editBeerPhotoBtn" type="button" onclick="openBeerPhotoPicker('edit')" class="w-full mb-3 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-left text-sm text-amber-100"><img id="editBeerPhotoPreview" class="hidden h-10 w-7 rounded object-contain bg-black/20" alt=""><span id="editBeerPhotoLabel">📷 Фото пива</span></button>
             <select id="editBeerTypeInput"
                 class="w-full px-4 py-2 rounded-xl bg-gray-900 text-white border border-amber-500/30 focus:outline-none focus:border-amber-400 mb-3 text-sm">
                 <option value="Светлое">Светлое</option>
@@ -4463,6 +4464,19 @@
                     Отмена
                 </button>
             </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes beerPhotoPickerEnter { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .beer-photo-picker-enter { animation: beerPhotoPickerEnter .28s cubic-bezier(.2,.8,.2,1) both; }
+    </style>
+    <div id="beerPhotoPicker" class="modal fixed inset-0 bg-black/80 hidden items-end sm:items-center justify-center z-[13000] p-2 sm:p-4">
+        <div id="beerPhotoPickerSheet" class="w-full max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-2xl bg-gray-950 border border-amber-500/30 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] mx-0 sm:mx-4">
+            <div class="flex items-center justify-between mb-3"><b class="text-amber-300">Фото пива</b><button type="button" onclick="closeBeerPhotoPicker()" class="text-gray-400">×</button></div>
+            <input id="beerPhotoFileInput" type="file" accept="image/*" capture="environment" hidden>
+            <div class="grid grid-cols-3 gap-2"><button id="beerPhotoSearchBtn" type="button" onclick="searchBeerImageCandidates()" class="rounded-xl bg-amber-500/15 p-2 text-xs text-amber-100">🔎 Найти</button><button id="beerPhotoFileBtn" type="button" onclick="chooseBeerPhotoFile()" class="rounded-xl bg-gray-800 p-2 text-xs text-white">🖼️ Файл</button><button id="beerPhotoCameraBtn" type="button" onclick="takeBeerPhoto()" class="rounded-xl bg-gray-800 p-2 text-xs text-white">📷 Камера</button></div>
+            <p id="beerPhotoStatus" class="min-h-5 mt-3 text-xs text-gray-400" aria-live="polite"></p><div id="beerPhotoGrid" class="grid grid-cols-4 gap-2 max-h-[min(16rem,42dvh)] overflow-auto pb-1"></div>
         </div>
     </div>
 
@@ -4866,6 +4880,8 @@
         let editingBeerId = null;
         let pendingDeleteBeerId = null;
         let addBeerRatingValue = 0;
+        let beerPendingImageUrl = '';
+        let beerPhotoMode = 'add';
         let beerBringSelections = [];
         let beerBringSearchQuery = '';
         let beerBringOptionsHash = '';
@@ -5321,6 +5337,12 @@
         const SIDEBAR_MUSIC_FALLBACK_COVER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23f59e0b'/%3E%3Cstop offset='1' stop-color='%23fcd34d'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='120' height='120' rx='16' fill='%230b0f17'/%3E%3Ccircle cx='30' cy='28' r='34' fill='url(%23g)' fill-opacity='.35'/%3E%3Ccircle cx='94' cy='96' r='36' fill='url(%23g)' fill-opacity='.28'/%3E%3Cpath fill='white' fill-opacity='.9' d='M79 28v42c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V41l-30 6v32c0 9-6 14-15 14-8 0-14-5-14-11s6-11 14-11c2 0 4 .3 6 1V40l48-10z'/%3E%3C/svg%3E";
         const VICE_CITY_ICON_HTML = '<img src="assets/vice-city-icon.png" alt="" width="18" height="18" style="display:block;width:18px;height:18px;object-fit:contain;" />';
         const SIDEBAR_REALTIME_BASE = 'https://realtime.xn--80ahcljthqi.xn--p1ai';
+        const BEER_IMAGE_SEARCH_ENDPOINT = `${SIDEBAR_REALTIME_BASE}/beer-image-search`;
+        const BEER_IMAGE_FETCH_ENDPOINT = `${SIDEBAR_REALTIME_BASE}/fetch-image`;
+        const BEER_IMAGE_REMOVE_BG_ENDPOINT = `${SIDEBAR_REALTIME_BASE}/remove-bg`;
+        const BEER_IMAGE_REMOVE_BG_FALLBACK_ENDPOINT = 'https://max157-kinosreda.hf.space/remove-bg';
+        const BEER_IMAGE_UPLOAD_ENDPOINT = `${SIDEBAR_REALTIME_BASE}/upload-image`;
+        const BEER_IMAGE_OUTPUT_SCALE = 3;
         const VIDEO_SERVICE_VERSION = '20260221-10';
         const MUSIC_SERVICE_VERSION = '20260221-5';
         const VICE_CITY_SERVICE_VERSION = '20260406-2';
@@ -11604,6 +11626,63 @@
             });
         }
 
+        function setBeerPhotoStatus(text, success = false) { const el = document.getElementById('beerPhotoStatus'); if (!el) return; el.textContent = text || ''; el.classList.toggle('text-emerald-300', success); el.classList.toggle('text-gray-400', !success); }
+        function clearBeerPhotoCandidates() { const grid = document.getElementById('beerPhotoGrid'); if (grid) grid.innerHTML = ''; }
+        function setBeerPhotoBusy(busy, text = '') {
+            document.querySelectorAll('#beerPhotoSearchBtn, #beerPhotoFileBtn, #beerPhotoCameraBtn, #beerPhotoGrid button').forEach((button) => { button.disabled = busy; button.classList.toggle('opacity-50', busy); button.classList.toggle('cursor-wait', busy); });
+            if (text) setBeerPhotoStatus(text);
+        }
+        function renderBeerPhotoPreview(url, mode = beerPhotoMode) {
+            const prefix = mode === 'edit' ? 'edit' : 'add'; const preview = document.getElementById(`${prefix}BeerPhotoPreview`); const label = document.getElementById(`${prefix}BeerPhotoLabel`);
+            if (preview) { preview.src = url || ''; preview.classList.toggle('hidden', !url); }
+            if (label) label.textContent = url ? '✓ Фото добавлено' : '📷 Фото пива';
+        }
+        function openBeerPhotoPicker(mode) { beerPhotoMode = mode; clearBeerPhotoCandidates(); setBeerPhotoStatus(''); const picker = document.getElementById('beerPhotoPicker'); const sheet = document.getElementById('beerPhotoPickerSheet'); picker.classList.remove('hidden'); picker.classList.add('flex'); sheet.classList.remove('beer-photo-picker-enter'); requestAnimationFrame(() => sheet.classList.add('beer-photo-picker-enter')); }
+        function closeBeerPhotoPicker() { const picker = document.getElementById('beerPhotoPicker'); picker.classList.add('hidden'); picker.classList.remove('flex'); }
+        function chooseBeerPhotoFile() { const i=document.getElementById('beerPhotoFileInput'); i.removeAttribute('capture'); i.click(); }
+        function takeBeerPhoto() { const i=document.getElementById('beerPhotoFileInput'); i.setAttribute('capture','environment'); i.click(); }
+        async function imageBlobToDataUrl(blob) { return new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(blob);}); }
+        async function loadBeerPhoto(dataUrl) { return new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = dataUrl; }); }
+        function beerPhotoDataUrlToBlob(dataUrl) { const [header, base64] = String(dataUrl).split(','); if (!base64) return null; const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0)); return new Blob([bytes], { type: (header.match(/data:(.*?);base64/i) || [])[1] || 'image/png' }); }
+        async function cropBeerPhotoTransparentEdges(dataUrl) {
+            const image = await loadBeerPhoto(dataUrl); const canvas = document.createElement('canvas'); canvas.width = image.naturalWidth || image.width; canvas.height = image.naturalHeight || image.height;
+            const context = canvas.getContext('2d'); if (!context) return dataUrl; context.drawImage(image, 0, 0);
+            const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height); let minX = width, minY = height, maxX = -1, maxY = -1;
+            for (let y = 0; y < height; y += 1) for (let x = 0; x < width; x += 1) if (data[(y * width + x) * 4 + 3] > 8) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+            if (maxX < 0 || maxY < 0) return dataUrl;
+            const cropped = document.createElement('canvas'); cropped.width = maxX - minX + 1; cropped.height = maxY - minY + 1; const croppedContext = cropped.getContext('2d'); if (!croppedContext) return dataUrl;
+            croppedContext.drawImage(canvas, minX, minY, cropped.width, cropped.height, 0, 0, cropped.width, cropped.height); return cropped.toDataURL('image/png');
+        }
+        async function normalizeBeerPhotoToBox(dataUrl, boxWidth = 90, boxHeight = 170, scale = BEER_IMAGE_OUTPUT_SCALE) {
+            const cropped = await cropBeerPhotoTransparentEdges(dataUrl); const image = await loadBeerPhoto(cropped); const sourceWidth = image.naturalWidth || image.width; const sourceHeight = image.naturalHeight || image.height;
+            if (!sourceWidth || !sourceHeight) return beerPhotoDataUrlToBlob(cropped);
+            const canvas = document.createElement('canvas'); canvas.width = Math.round(boxWidth * scale); canvas.height = Math.round(boxHeight * scale); const context = canvas.getContext('2d'); if (!context) return beerPhotoDataUrlToBlob(cropped);
+            const drawWidth = sourceWidth * canvas.height / sourceHeight; context.clearRect(0, 0, canvas.width, canvas.height); context.imageSmoothingEnabled = true; context.imageSmoothingQuality = 'high'; context.drawImage(image, 0, 0, sourceWidth, sourceHeight, (canvas.width - drawWidth) / 2, 0, drawWidth, canvas.height);
+            return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob || beerPhotoDataUrlToBlob(cropped)), 'image/png', 0.95));
+        }
+        async function removeBeerPhotoBackground(dataUrl) {
+            const image_base64 = String(dataUrl).split(',')[1];
+            for (const endpoint of [BEER_IMAGE_REMOVE_BG_ENDPOINT, BEER_IMAGE_REMOVE_BG_FALLBACK_ENDPOINT]) {
+                try { const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_base64 }) }); const payload = await response.json(); const result = payload?.result_base64 || payload?.image_base64 || payload?.data; if (!response.ok || !result) throw new Error('remove_bg_failed'); return `data:image/png;base64,${result}`; } catch (_) {}
+            }
+            throw new Error('remove_bg_failed');
+        }
+        async function uploadBeerPhoto(imageBlob) {
+            if (!imageBlob) throw new Error('image_invalid'); const formData = new FormData(); formData.append('image', imageBlob, 'beer.png'); const response = await fetch(BEER_IMAGE_UPLOAD_ENDPOINT, { method: 'POST', body: formData }); const rawText = await response.text(); let payload = null; try { payload = JSON.parse(rawText); } catch (_) {} const url = payload?.url || payload?.data?.[0]?.link || payload?.data?.[0]?.short_link || payload?.data?.[0]?.url || payload?.data?.[0]?.image_url || payload?.data?.url || payload?.data?.link || payload?.data?.image?.url || payload?.result?.url || payload?.result?.link || payload?.image?.url || payload?.direct_url || payload?.image_url || rawText.match(/https?:\/\/[^\s"']+/)?.[0]; if (!response.ok || !url) throw new Error('upload_failed'); return url;
+        }
+        async function processBeerPhotoDataUrl(dataUrl) {
+            setBeerPhotoBusy(true, 'Удаляем фон…');
+            try { const removed = await removeBeerPhotoBackground(dataUrl); setBeerPhotoBusy(true, 'Подготавливаем…'); const processed = await normalizeBeerPhotoToBox(removed, 90, 170, BEER_IMAGE_OUTPUT_SCALE); setBeerPhotoBusy(true, 'Сохраняем…'); beerPendingImageUrl = await uploadBeerPhoto(processed); renderBeerPhotoPreview(beerPendingImageUrl); closeBeerPhotoPicker(); clearBeerPhotoCandidates(); setBeerPhotoStatus('✓ Фото добавлено', true); }
+            catch (_) { setBeerPhotoStatus('Не удалось обработать фото. Попробуйте другое.'); }
+            finally { setBeerPhotoBusy(false); }
+        }
+        async function searchBeerImageCandidates() {
+            const id=beerPhotoMode==='edit'?'editBeerNameInput':'beerNameInput'; const query=document.getElementById(id).value.trim(); if(!query){setBeerPhotoStatus('Сначала укажите название');return;}
+            setBeerPhotoBusy(true, 'Ищем…'); try { const response = await fetch(BEER_IMAGE_SEARCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query})}); const out = await response.json(); if (!response.ok || !Array.isArray(out.images) || !out.images.length) throw new Error('search_failed'); const grid=document.getElementById('beerPhotoGrid'); grid.innerHTML=''; out.images.forEach(candidate=>{const b=document.createElement('button');b.type='button';b.className='aspect-square overflow-hidden rounded-lg border border-amber-500/30';b.innerHTML=`<img class="w-full h-full object-cover" src="${candidate.thumbnailUrl||candidate.imageUrl}" alt="">`;b.onclick=()=>selectBeerImageCandidate(candidate);grid.appendChild(b);}); setBeerPhotoStatus('Выберите фото'); } catch (_) { setBeerPhotoStatus('Поиск не сработал. Выберите файл или камеру.'); } finally { setBeerPhotoBusy(false); }
+        }
+        async function selectBeerImageCandidate(candidate) { setBeerPhotoBusy(true, 'Загружаем…'); try { const response = await fetch(BEER_IMAGE_FETCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:candidate.imageUrl})}); const payload = await response.json(); const base64 = payload?.result_base64 || payload?.image_base64; if (!response.ok || !base64) throw new Error('fetch_failed'); await processBeerPhotoDataUrl(`data:image/png;base64,${base64}`); } catch (_) { setBeerPhotoStatus('Не удалось загрузить фото. Выберите другое.'); setBeerPhotoBusy(false); } }
+        document.addEventListener('change', async e=>{if(e.target?.id!=='beerPhotoFileInput')return;const file=e.target.files?.[0];e.target.value='';if(!file)return;await processBeerPhotoDataUrl(await imageBlobToDataUrl(file));});
+
         function openAddBeerModal() {
             const modal = document.getElementById('addBeerModal');
             if (!modal) return;
@@ -11614,6 +11693,8 @@
             document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
             document.getElementById('beerCaloriesInput').value = '';
+            beerPendingImageUrl = '';
+            renderBeerPhotoPreview('', 'add');
             addBeerRatingValue = 0;
             // default style
             const styleSel = document.getElementById('beerStyleInput');
@@ -11709,6 +11790,7 @@
                 name, type, style, filtered, country, volume,
                 alcohol: alcohol || '0',
                 calories: calories || '',
+                imageUrl: beerPendingImageUrl,
                 author: userName,
                 ratings: {},
                 timestamp: Date.now()
@@ -11802,6 +11884,8 @@
             document.getElementById('editBeerVolumeInput').value = beer.volume || '0.5';
             document.getElementById('editBeerAlcoholInput').value = beer.alcohol || '';
             document.getElementById('editBeerCaloriesInput').value = beer.calories || '';
+            beerPendingImageUrl = beer.imageUrl || '';
+            renderBeerPhotoPreview(beerPendingImageUrl, 'edit');
             document.getElementById('editBeerModal').classList.remove('hidden');
             document.getElementById('editBeerModal').classList.add('flex');
 
@@ -11838,6 +11922,7 @@
                 beer.volume = volume;
                 beer.alcohol = alcohol;
                 beer.calories = calories;
+                beer.imageUrl = beerPendingImageUrl || beer.imageUrl || '';
                 closeEditBeerModal();
                 renderBeerRating();
                 const savePromise = persistBeerUpsert(beer);
