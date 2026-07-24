@@ -22,8 +22,10 @@
     html.is-page-zoomed,html.is-page-zoomed body { overscroll-behavior-x:auto; }
     html.is-page-zoomed body { overflow-x:visible; }
     html.is-page-zoomed main,html.is-page-zoomed .beer-shelf-item { touch-action:auto; }
+    html.is-page-zoomed .shelf-header { touch-action:auto; }
     body::before { content:""; position:fixed; inset:0; z-index:-2; pointer-events:none; opacity:.55; background:linear-gradient(90deg,transparent 9%,rgba(255,255,255,.035) 9.15% 9.25%,transparent 9.35% 90.65%,rgba(255,255,255,.035) 90.75% 90.85%,transparent 91%); }
     .shelf-header { position:sticky; z-index:10; top:0; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:max(14px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 12px max(18px,env(safe-area-inset-left)); background:linear-gradient(180deg,rgba(5,7,11,.96),rgba(5,7,11,.78),rgba(5,7,11,0)); backdrop-filter:blur(10px); }
+    .shelf-header { touch-action:pan-y; }
     .back { color:#ebddb3; text-decoration:none; font-size:12px; font-weight:700; }
     .shelf-actions { display:flex; align-items:center; justify-content:flex-end; gap:10px; min-width:0; }
     #addBeerButton { border:1px solid rgba(244,185,65,.58); border-radius:999px; padding:9px 13px; color:#271807; background:var(--amber); box-shadow:0 0 18px rgba(244,185,65,.17); font:700 11px/1 Comfortaa,system-ui,sans-serif; cursor:pointer; }
@@ -48,6 +50,7 @@
     .beer-search-popover input::placeholder { color:#9a927e; }
     .density-control { display:flex; align-items:center; min-width:0; }
     .density-control input { width:clamp(72px,13vw,138px); accent-color:var(--amber); cursor:pointer; }
+    .density-control input { touch-action:pan-x; }
     main { position:relative; min-height:calc(100dvh - 56px); padding:14px max(0px,env(safe-area-inset-right)) calc(34px + env(safe-area-inset-bottom)) max(0px,env(safe-area-inset-left)); touch-action:pan-y; }
     main::before { content:""; position:absolute; z-index:-1; inset:4px 0 0; background:radial-gradient(ellipse 72% 24% at 50% 16%,rgba(255,187,68,.09),transparent 72%),linear-gradient(180deg,rgba(255,255,255,.012),transparent 18%,rgba(0,0,0,.16) 100%); }
     #shelfRows { --light-x:50%; }
