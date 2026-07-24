@@ -3420,7 +3420,7 @@
                                 <span class="nav-label nav-label--short">Бэклог</span>
                             </span>
                         </button>
-                        <button type="button" onclick="scrollToSection('beerSection')" class="nav-pill">
+                        <button type="button" onclick="openBeerRatingDefault(); return false;" class="nav-pill">
                             <span>🍺</span>
                             <span class="nav-text"><span class="nav-label">Рейтинг пива</span></span>
                         </button>
@@ -3446,7 +3446,7 @@
                             <span class="mobile-nav-icon">🎥</span>
                             <span class="mobile-nav-label">Бэклог фильмов</span>
                         </button>
-                        <button type="button" class="mobile-nav-link" data-page-link="beer" onclick="openSidebarPage('beer')">
+                        <button type="button" class="mobile-nav-link" data-page-link="beer" onclick="openBeerRatingDefault(); return false;">
                             <span class="mobile-nav-icon">🍺</span>
                             <span class="mobile-nav-label">Рейтинг пива</span>
                         </button>
@@ -3556,7 +3556,7 @@
                         <span class="sidebar-icon">🎥</span>
                         <span class="sidebar-label">Бэклог фильмов</span>
                     </button>
-                    <button type="button" class="sidebar-link" data-page-link="beer" onclick="openSidebarPage('beer')" title="Рейтинг пива">
+                    <button type="button" class="sidebar-link" data-page-link="beer" onclick="openBeerRatingDefault(); return false;" title="Рейтинг пива">
                         <span class="sidebar-icon">🍺</span>
                         <span class="sidebar-label">Рейтинг пива</span>
                     </button>
@@ -3865,7 +3865,11 @@
                                style="text-decoration:none">
                                 Пива: 0
                             </a>
-
+                            <a href="#beerShelfOverlay" title="Открыть интерактивную полку" onclick="openBeerShelfOverlay(); return false;"
+                               class="text-xs px-3 py-1 rounded-full border border-amber-400/40 bg-amber-500/15 text-amber-100 no-underline hover:bg-amber-500/25 hover:text-amber-50 focus:text-amber-50 transition"
+                               style="text-decoration:none">
+                                Полка
+                            </a>
                             <!-- Search (by beer name) -->
                             <input id="beerSearchInput" type="search" placeholder="Поиск пива…"
                                 oninput="setBeerSearch(this.value)"
@@ -4066,6 +4070,10 @@
             </div>
         </div>
 
+        <div id="beerShelfOverlay" class="hidden fixed inset-0 z-[13050] bg-black" aria-hidden="true">
+            <iframe id="beerShelfFrame" src="beer-shelf.html" title="Интерактивная пивная полка" class="block h-full w-full border-0"></iframe>
+        </div>
+
         <!-- Service Pages -->
         <div id="svc_pokaki" data-page="svc_pokaki" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
@@ -4080,6 +4088,11 @@
         <div id="svc_beer_space" data-page="svc_beer_space" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
                 <iframe title="Пространство пива" data-src="beer.html" loading="lazy" scrolling="no"></iframe>
+            </div>
+        </div>
+        <div id="svc_beer_shelf" data-page="svc_beer_shelf" class="page page-service max-w-7xl mx-auto">
+            <div class="service-frame">
+                <iframe title="Интерактивная пивная полка" data-src="beer-shelf.html" loading="lazy" scrolling="yes"></iframe>
             </div>
         </div>
         <div id="svc_roulette" data-page="svc_roulette" class="page page-service max-w-7xl mx-auto">
@@ -5320,6 +5333,7 @@
             svc_pokaki: 'svc_pokaki',
             svc_profile: 'svc_profile',
             svc_beer_space: 'svc_beer_space',
+            svc_beer_shelf: 'svc_beer_shelf',
             svc_roulette: 'svc_roulette',
             svc_planning: 'svc_planning',
             svc_call: 'svc_call',
@@ -7582,6 +7596,10 @@
             window.addEventListener('message', (e) => {
                 const data = e && e.data ? e.data : null;
                 if (!data || !data.type) return;
+                if (data.type === 'beer-shelf-close' && e.origin === window.location.origin) {
+                    closeBeerShelfOverlay();
+                    return;
+                }
                 if (data.type === 'planning:route') {
                     const currentPage = getPageFromUrl() || localStorage.getItem(PAGE_LS_KEY) || 'calendar';
                     const currentPlanningId = getPlanningEventIdFromUrl();
@@ -8637,6 +8655,7 @@
                     }
                     lastBeerRatingHash = JSON.stringify(data.beerRating || []);
                     renderBeerRating();
+                    openBeerModalFromShelfUrl();
                 };
                 db.ref('beerRating').on('value', applyBeerRatingSnapshot);
 
@@ -11019,6 +11038,34 @@
         }
 
         // Beer Rating Methods
+        function openBeerRatingDefault(){openBeerShelfOverlay();}
+
+        function openBeerShelfOverlay() {
+            if (document.body.classList.contains('layout-sidebar')) {
+                openSidebarPage('svc_beer_shelf');
+                return;
+            }
+            const overlay = document.getElementById('beerShelfOverlay');
+            if (!overlay) return;
+            if (overlay.parentElement!==document.body) document.body.append(overlay);
+            overlay.style.zIndex = '2147483647';
+            overlay.classList.remove('hidden');
+            overlay.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('overflow-hidden');
+        }
+
+        function closeBeerShelfOverlay() {
+            if (document.body.classList.contains('layout-sidebar') && activeLayoutPage === 'svc_beer_shelf') {
+                openSidebarPage('beer');
+                return;
+            }
+            const overlay = document.getElementById('beerShelfOverlay');
+            if (!overlay) return;
+            overlay.classList.add('hidden');
+            overlay.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('overflow-hidden');
+        }
+
         function toggleBeerFilters() {
             const panel = document.getElementById('beerFiltersPanel');
             panel.classList.toggle('hidden');
@@ -11709,6 +11756,7 @@
                 valueId: 'addBeerRatingValue',
                 onRate: setAddBeerRating
             }));
+            notifyShelfModal('shelf-modal-open');
         }
 
         function initAddBeerButtonFallback() {
@@ -11761,6 +11809,7 @@
             modal.classList.remove('flex');
             modal.style.display = '';
             modal.style.zIndex = '';
+            notifyShelfModal('shelf-modal-close');
         }
 
         function setAddBeerRating(rating) {
@@ -11816,6 +11865,35 @@
         window.openAddBeerModal = openAddBeerModal;
         window.closeAddBeerModal = closeAddBeerModal;
         window.addBeer = addBeer;
+
+        let shelfBeerModalHandled = false;
+        function openBeerModalFromShelfUrl() {
+            if (shelfBeerModalHandled) return;
+            const params = new URLSearchParams(window.location.search);
+            const beerId = params.get('beerEdit');
+            const shouldAdd = params.get('beerAdd') === '1';
+            if (!beerId && !shouldAdd) return;
+
+            if (shouldAdd) {
+                shelfBeerModalHandled = true;
+                requestAnimationFrame(openAddBeerModal);
+            } else if (data.beerRating.some((beer) => String(beer.id) === String(beerId))) {
+                shelfBeerModalHandled = true;
+                requestAnimationFrame(() => openEditBeerModal(beerId));
+            } else {
+                return;
+            }
+
+            params.delete('beerEdit');
+            params.delete('beerAdd');
+            const query = params.toString();
+            history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`);
+        }
+
+        function notifyShelfModal(type) {
+            if (new URLSearchParams(window.location.search).get('shelfModal') !== '1' || window.parent === window) return;
+            window.parent.postMessage({ type }, window.location.origin);
+        }
 
         function openRateBeerModal(beerId) {
             currentBeerIdForRating = beerId;
@@ -11892,12 +11970,14 @@
             // ensure custom selects are applied and in sync
             enhanceBeerSelects();
             syncBeerSelects();
+            notifyShelfModal('shelf-modal-open');
         }
 
         function closeEditBeerModal() {
             document.getElementById('editBeerModal').classList.add('hidden');
             document.getElementById('editBeerModal').classList.remove('flex');
             editingBeerId = null;
+            notifyShelfModal('shelf-modal-close');
         }
 
         function saveBeerEdit() {
