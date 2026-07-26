@@ -1162,7 +1162,7 @@
             color: #4b5563;
         }
 
-        /* Half-star picker for beer rating (0.5 step) */
+        /* Continuous beer rating picker (0.1 step) */
         .star-picker {
             display: flex;
             flex-wrap: nowrap;
@@ -1173,7 +1173,7 @@
             -webkit-overflow-scrolling: touch;
             padding: 6px 6px;
             min-height: 34px;
-            touch-action: pan-x;
+            touch-action: none;
         }
         #beerStarPicker { min-height: 34px; }
         .star-unit {
@@ -2148,6 +2148,8 @@
             width: 100%;
             height: 100%;
         }
+        body.layout-sidebar #svc_beer_shelf .service-frame { overflow:clip; }
+        body.layout-sidebar #svc_beer_shelf iframe { max-width:100%; transform:none; will-change:auto; }
         body.layout-sidebar .service-frame iframe {
             width: 100%;
             height: 100%;
@@ -4483,6 +4485,7 @@
     <style>
         @keyframes beerPhotoPickerEnter { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
         .beer-photo-picker-enter { animation: beerPhotoPickerEnter .28s cubic-bezier(.2,.8,.2,1) both; }
+        #addBeerPhotoPreview,#editBeerPhotoPreview{object-fit:contain!important;object-position:center!important;transform:scale(.82);transform-origin:center}
     </style>
     <div id="beerPhotoPicker" class="modal fixed inset-0 bg-black/80 hidden items-end sm:items-center justify-center z-[13000] p-2 sm:p-4">
         <div id="beerPhotoPickerSheet" class="w-full max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-2xl bg-gray-950 border border-amber-500/30 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] mx-0 sm:mx-4">
@@ -11681,7 +11684,7 @@
         }
         function renderBeerPhotoPreview(url, mode = beerPhotoMode) {
             const prefix = mode === 'edit' ? 'edit' : 'add'; const preview = document.getElementById(`${prefix}BeerPhotoPreview`); const label = document.getElementById(`${prefix}BeerPhotoLabel`);
-            if (preview) { preview.src = url || ''; preview.classList.toggle('hidden', !url); }
+            if (preview) { for (const [property, value] of [['display','block'],['width','100%'],['height','100%'],['max-width','100%'],['max-height','100%'],['object-fit','contain'],['object-position','center center'],['transform','scale(.78)'],['transform-origin','center center']]) preview.style.setProperty(property, value, 'important'); preview.src = url || ''; preview.classList.toggle('hidden', !url); }
             if (label) label.textContent = url ? '✓ Фото добавлено' : '📷 Фото пива';
         }
         function openBeerPhotoPicker(mode) { beerPhotoMode = mode; clearBeerPhotoCandidates(); setBeerPhotoStatus(''); const picker = document.getElementById('beerPhotoPicker'); const sheet = document.getElementById('beerPhotoPickerSheet'); picker.classList.remove('hidden'); picker.classList.add('flex'); sheet.classList.remove('beer-photo-picker-enter'); requestAnimationFrame(() => sheet.classList.add('beer-photo-picker-enter')); }
@@ -11704,7 +11707,7 @@
             const cropped = await cropBeerPhotoTransparentEdges(dataUrl); const image = await loadBeerPhoto(cropped); const sourceWidth = image.naturalWidth || image.width; const sourceHeight = image.naturalHeight || image.height;
             if (!sourceWidth || !sourceHeight) return beerPhotoDataUrlToBlob(cropped);
             const canvas = document.createElement('canvas'); canvas.width = Math.round(boxWidth * scale); canvas.height = Math.round(boxHeight * scale); const context = canvas.getContext('2d'); if (!context) return beerPhotoDataUrlToBlob(cropped);
-            const drawWidth = sourceWidth * canvas.height / sourceHeight; context.clearRect(0, 0, canvas.width, canvas.height); context.imageSmoothingEnabled = true; context.imageSmoothingQuality = 'high'; context.drawImage(image, 0, 0, sourceWidth, sourceHeight, (canvas.width - drawWidth) / 2, 0, drawWidth, canvas.height);
+            const sideMargin = .04, topMargin = 0, innerWidth = canvas.width * (1 - sideMargin * 2), innerHeight = canvas.height * (1 - topMargin), fitScale = Math.min(innerWidth / sourceWidth, innerHeight / sourceHeight), drawWidth = sourceWidth * fitScale, drawHeight = sourceHeight * fitScale; context.clearRect(0, 0, canvas.width, canvas.height); context.imageSmoothingEnabled = true; context.imageSmoothingQuality = 'high'; context.drawImage(image, 0, 0, sourceWidth, sourceHeight, (canvas.width - drawWidth) / 2, canvas.height - drawHeight, drawWidth, drawHeight);
             return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob || beerPhotoDataUrlToBlob(cropped)), 'image/png', 0.95));
         }
         async function removeBeerPhotoBackground(dataUrl) {
@@ -11933,7 +11936,7 @@
             const beer = data.beerRating.find(b => String(b.id) === String(currentBeerIdForRating));
             if (beer) {
                 if (!beer.ratings) beer.ratings = {};
-                const safeRating = Math.max(0.5, Math.min(STAR_MAX, Number(rating) || 0));
+                const safeRating = roundBeerRating(Number(rating) || 0);
                 if (!safeRating) return;
                 beer.ratings[userName] = safeRating;
                 renderBeerRating();
@@ -12050,8 +12053,10 @@
             }
         }
 
-        // Half-star picker (0.5 step) for beer rating
+        // Continuous star picker (0.1 step) for beer rating
         const STAR_MAX = 10;
+        const STAR_MIN = 0.1;
+        const roundBeerRating = value => Math.max(STAR_MIN, Math.min(STAR_MAX, Math.round(Number(value) * 10) / 10));
 
         function getStarSVG() {
             return `
@@ -12070,17 +12075,22 @@
             if (!picker || !valueEl) return;
 
             let baseValue = (typeof currentValue === 'number') ? currentValue : (parseFloat(currentValue) || 0);
+            baseValue = baseValue > 0 ? roundBeerRating(baseValue) : 0;
             const setValueText = (val) => {
                 valueEl.textContent = val ? val.toFixed(1).replace(/\.0$/, '') : '—';
             };
             const setBaseValue = (val) => {
-                baseValue = val;
+                baseValue = val > 0 ? roundBeerRating(val) : 0;
                 applyBeerStarVisual(picker, baseValue, false);
                 setValueText(baseValue);
+                picker.setAttribute('aria-valuenow', String(baseValue));
             };
 
             setValueText(baseValue);
             picker.innerHTML = '';
+            picker.setAttribute('role', 'slider');
+            picker.setAttribute('aria-valuemin', String(STAR_MIN));
+            picker.setAttribute('aria-valuemax', String(STAR_MAX));
 
             for (let i = 1; i <= STAR_MAX; i++) {
                 const unit = document.createElement('div');
@@ -12091,27 +12101,7 @@
                     <div class="star-base">${getStarSVG()}</div>
                     <div class="star-fill">${getStarSVG()}</div>
                     <div class="star-dim">${getStarSVG()}</div>
-                    <div class="star-hit left" data-val="${(i - 0.5).toFixed(1)}"></div>
-                    <div class="star-hit right" data-val="${i.toFixed(1)}"></div>
                 `;
-
-                // Hover preview
-                unit.querySelectorAll('.star-hit').forEach(hit => {
-                    const commitRate = (event) => {
-                        event?.preventDefault?.();
-                        event?.stopPropagation?.();
-                        const v = parseFloat(hit.dataset.val);
-                        setBaseValue(v);
-                        onRate(v);
-                    };
-                    hit.addEventListener('mouseenter', () => {
-                        const v = parseFloat(hit.dataset.val);
-                        applyBeerStarVisual(picker, v, true);
-                        setValueText(v);
-                    });
-                    hit.addEventListener('click', commitRate);
-                    hit.addEventListener('pointerup', commitRate);
-                });
 
                 picker.appendChild(unit);
             }
@@ -12127,27 +12117,13 @@
                 const fillEl = unit.querySelector('.star-fill');
                 const dimEl = unit.querySelector('.star-dim');
 
-                // Determine fill for each star: 0, 50, 100
-                let fill = 0;
-                if (v >= i) fill = 100;
-                else if (v >= i - 0.5) fill = 50;
+                const fill = Math.max(0, Math.min(100, (v - (i - 1)) * 100));
 
                 fillEl.style.width = fill + '%';
 
-                // Extra dimming only for hover-preview:
-                // - if rating ends with .5 => dim the remaining half of that star
-                // - dim fully the remaining stars after the hovered value
                 if (isHover) {
-                    if (fill === 50) {
-                        dimEl.style.width = '50%';
-                        dimEl.style.left = '50%';
-                    } else if (fill === 0) {
-                        dimEl.style.width = '100%';
-                        dimEl.style.left = '0%';
-                    } else {
-                        dimEl.style.width = '0%';
-                        dimEl.style.left = '0%';
-                    }
+                    dimEl.style.width = `${100 - fill}%`;
+                    dimEl.style.left = `${fill}%`;
                 } else {
                     dimEl.style.width = '0%';
                     dimEl.style.left = '0%';
@@ -12158,42 +12134,20 @@
         // Swipe/drag rating (mobile friendly)
         function getBeerRatingFromPointerEvent(picker, evt) {
             if (!picker) return 0;
-            const rect = picker.getBoundingClientRect();
-
             const clientX = (evt.touches && evt.touches[0]) ? evt.touches[0].clientX : evt.clientX;
-            const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-
             const units = Array.from(picker.querySelectorAll('.star-unit'));
             if (!units.length) return 0;
-
-            // find closest unit by x center
-            let closest = units[0];
-            let closestDist = Infinity;
-            for (const u of units) {
-                const r = u.getBoundingClientRect();
-                const center = (r.left + r.right) / 2;
-                const dist = Math.abs(clientX - center);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closest = u;
-                }
-            }
-
-            const cr = closest.getBoundingClientRect();
-            const isRightHalf = clientX >= (cr.left + cr.width / 2);
-            const star = parseInt(closest.dataset.star, 10);
-            const v = isRightHalf ? star : (star - 0.5);
-            return Math.max(0.5, Math.min(STAR_MAX, v));
+            const first = units[0].getBoundingClientRect(),last = units[units.length - 1].getBoundingClientRect();
+            const progress = Math.max(STAR_MIN / STAR_MAX, Math.min(1, (clientX - first.left) / Math.max(1, last.right - first.left)));
+            return Math.max(STAR_MIN, Math.min(STAR_MAX, Math.round(progress * STAR_MAX * 10) / 10));
         }
 
         function bindBeerStarPickerSwipe(picker, valueEl, getBaseValue, setBaseValue, onRate) {
             if (!picker || !valueEl) return;
 
-            // Enable swipe/drag only on touch/coarse-pointer devices to avoid double-trigger on desktop.
-            const isCoarse = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window);
-
-            let isDragging = false;
+            let activePointerId = null;
             let lastV = null;
+            let suppressClickUntil = 0;
 
             const preview = (evt) => {
                 const v = getBeerRatingFromPointerEvent(picker, evt);
@@ -12204,26 +12158,30 @@
             };
 
             const start = (evt) => {
-                isDragging = true;
+                if (evt.pointerType === 'mouse') return;
+                activePointerId = evt.pointerId;
+                picker.setPointerCapture?.(activePointerId);
                 picker.classList.add('select-none');
                 preview(evt);
                 evt.preventDefault?.();
             };
 
             const move = (evt) => {
-                if (!isDragging) return;
-                preview(evt);
-                evt.preventDefault?.();
+                if (activePointerId === evt.pointerId) {
+                    preview(evt);
+                    evt.preventDefault?.();
+                } else if (evt.pointerType === 'mouse') preview(evt);
             };
 
-            const end = () => {
-                if (!isDragging) return;
-                isDragging = false;
+            const end = (evt) => {
+                if (activePointerId !== evt?.pointerId) return;
+                activePointerId = null;
                 picker.classList.remove('select-none');
                 if (lastV != null) {
                     setBaseValue(lastV);
                     onRate(lastV);
                 }
+                suppressClickUntil = Date.now() + 350;
             };
 
             // remove previous handlers to avoid stacking
@@ -12231,27 +12189,19 @@
             picker.onpointermove = null;
             picker.onpointerup = null;
             picker.onpointercancel = null;
-            picker.ontouchstart = null;
-            picker.ontouchmove = null;
-            picker.ontouchend = null;
-            picker.ontouchcancel = null;
-
-            if (isCoarse) {
-                picker.onpointerdown = start;
-                picker.onpointermove = move;
-                picker.onpointerup = end;
-                picker.onpointercancel = end;
-
-                // iOS Safari sometimes prefers touch events
-                picker.ontouchstart = (e) => start(e);
-                picker.ontouchmove = (e) => move(e);
-                picker.ontouchend = () => end();
-                picker.ontouchcancel = () => end();
-            }
-
-            // keep existing mouseleave behavior (restore fixed value)
+            picker.onpointerdown = start;
+            picker.onpointermove = move;
+            picker.onpointerup = end;
+            picker.onpointercancel = end;
+            picker.onclick = event => {
+                if (Date.now() < suppressClickUntil) return;
+                const value = getBeerRatingFromPointerEvent(picker, event);
+                if (!value) return;
+                setBaseValue(value);
+                onRate(value);
+            };
             picker.onmouseleave = () => {
-                if (isDragging) return;
+                if (activePointerId !== null) return;
                 const fixed = getBaseValue();
                 setBaseValue(fixed);
             };
