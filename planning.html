@@ -824,15 +824,22 @@
                     ? source.map((data, index) => [String(index), data])
                     : Object.entries(source);
                 equipmentItemCounts = entries.reduce((counts, [eventId, data]) => {
-                    const sections = Array.isArray(data && data.sections)
-                        ? data.sections
-                        : Object.values((data && data.sections) || {});
-                    counts[eventId] = sections.reduce((total, section) => {
-                        const columns = Array.isArray(section && section.columns) ? section.columns : [];
-                        if (!columns.some((column) => column && column.id === 'weight')) return total;
+                    const sections = Array.isArray(data && data.sections) ? data.sections : Object.values((data && data.sections) || {});
+                    const count = sections.reduce((total, section) => {
+                        const columns = Array.isArray(section && section.columns) ? section.columns : Object.values((section && section.columns) || {});
+                        const equipmentSection = String(section && section.name || '').toLowerCase().includes('снаряж')
+                            || columns.some((column) => ['weight','equipmentimageurl','equipmentrole'].includes(String(column && column.id || '').toLowerCase()));
+                        if (!equipmentSection) return total;
                         const rows = Array.isArray(section && section.rows) ? section.rows : Object.values((section && section.rows) || {});
-                        return total + rows.filter(Boolean).length;
+                        return total + rows.filter((row) => {
+                            if (!row) return false;
+                            const cells = row.cells || row;
+                            return Object.values(cells).some((value) => Array.isArray(value) ? value.length : String(value ?? '').trim())
+                                || !!row.equipmentImageUrl || !!row.equipmentRole;
+                        }).length;
                     }, 0);
+                    counts[eventId] = count;
+                    if (data && data.eventId) counts[String(data.eventId)] = count;
                     return counts;
                 }, {});
                 if (initialPlanningRenderCommitted) renderEvents();
