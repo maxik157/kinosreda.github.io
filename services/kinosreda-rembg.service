@@ -1,0 +1,22 @@
+[Unit]
+Description=Kinosreda rembg service
+After=network-online.target
+Wants=network-online.target
+Requires=kinosreda-zram.service
+After=kinosreda-zram.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kinosreda-realtime
+ExecStart=/opt/kinosreda-rembg-venv/bin/uvicorn services.rembg_service:app --host 127.0.0.1 --port 8787
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+# u2netp keeps production inference within this server's 1 GiB RAM budget.
+Environment=REMBG_MODEL=u2netp
+# Do not let proxy requests pile up behind the single low-memory inference slot.
+Environment=REMBG_QUEUE_TIMEOUT=8
+Environment=REMBG_RESULT_CACHE_SIZE=24
+
+[Install]
+WantedBy=multi-user.target
