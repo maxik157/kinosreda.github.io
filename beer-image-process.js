@@ -36,7 +36,7 @@
   }
   async function prepare(url) {
     const image = await load(url);
-    const scale = Math.min(1, 2560 / Math.max(image.naturalWidth, image.naturalHeight));
+    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
     if (scale === 1 && url.length < 12 * 1024 * 1024) return url;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(image.naturalWidth * scale);
@@ -112,7 +112,8 @@
     const context = output.getContext('2d');
     context.imageSmoothingQuality = 'high';
     context.drawImage(source, left, top, width, height, (output.width - width * scale) / 2, output.height - height * scale, width * scale, height * scale);
-    return blob(output);
+    // WebP preserves alpha but is several times smaller than a PNG for product photos.
+    return blob(output, 'image/webp', 0.92);
   }
   async function fetchImage(url, { signal, base } = {}) {
     const controller = new AbortController();
