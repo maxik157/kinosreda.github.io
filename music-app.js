@@ -42,6 +42,7 @@
     provider: "truffled",
     current: null,
     queue: [],
+    manualQueue: [],
     index: -1,
     results: [],
     cursor: "",
@@ -227,9 +228,9 @@
       s.view === "discover"
         ? s.results
         : s.view === "queue"
-          ? s.queue
+          ? s.manualQueue
           : s.tracks;
-    const q = $("filter").value.trim().toLowerCase();
+    const q = s.view === "discover" ? "" : $("filter").value.trim().toLowerCase();
     return list.filter(
       (t) =>
         (!q || `${t.title} ${t.artists.join(" ")}`.toLowerCase().includes(q)) &&
@@ -246,6 +247,7 @@
       b.setAttribute("aria-pressed", String(b.dataset.provider === s.provider));
     });
     $("discoveryControls").hidden = s.view !== "discover";
+    $("librarySearch").hidden = s.view === "discover";
     $("likedOnly").hidden = s.view !== "library";
     $("likedOnly").setAttribute("aria-pressed", String(s.likedOnly));
     $("playlistEdit").hidden = !canManagePlaylist(activeMeta());
@@ -287,7 +289,7 @@
             addTrack(t),
           ),
           button("queue", "Добавить в очередь", () => {
-            s.queue.push({ ...t });
+            enqueue(t);
             notice("Добавлено в очередь");
           }),
         );
@@ -295,9 +297,13 @@
         actions.append(
           button("add", "Сохранить в плейлист", () => addTrack(t)),
           button("close", "Убрать из очереди", () => {
-            const n = s.queue.indexOf(t);
-            s.queue.splice(n, 1);
-            if (n <= s.index) s.index--;
+            s.manualQueue.splice(s.manualQueue.indexOf(t), 1);
+            const n = s.queue.findIndex(item => key(item) === key(t));
+            if (n >= 0) {
+              s.queue.splice(n, 1);
+              if (n <= s.index) s.index--;
+            }
+            save();
             render();
           }),
         );
@@ -307,7 +313,7 @@
         );
         actions.append(
           button("queue", "В очередь", () => {
-            s.queue.push({ ...t });
+            enqueue(t);
             notice("Добавлено в очередь");
           }),
         );
@@ -484,7 +490,7 @@
     }
   }
   function start(t, queue) {
-    s.queue = queue.slice();
+    s.queue = s.view === "discover" ? [t] : queue.slice();
     s.index = s.queue.findIndex((x) => key(x) === key(t));
     s.retry = 0;
     play(t);
@@ -672,6 +678,7 @@
           JSON.stringify({
             track: s.current,
             queue: s.queue.slice(0, 300),
+            manualQueue: s.manualQueue.slice(0, 300),
             index: s.index,
             time: audio.currentTime,
           }),
@@ -689,6 +696,7 @@
       }),
     );
     $("playlist").value = s.activePlaylist;
+    syncSelect($("playlist"));
     render();
   }
   function bindTracks() {
@@ -778,6 +786,7 @@
       : "Настройки плейлиста";
     $("playlistName").value = meta?.title || "";
     $("playlistScope").value = meta?.scope || "shared";
+    syncSelect($("playlistScope"));
     $("deletePlaylist").hidden = !meta;
     $("playlistDialog").showModal();
   }
@@ -817,13 +826,137 @@
       if (blobUrl) setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     }
   }
+  const playerAnchor = document.createComment("player-home");
+  const selectControls = new Map();
+  function syncSelect(select) {
+    const ui = selectControls.get(select);
+    if (!ui) return;
+    ui.label.textContent = select.selectedOptions[0]?.textContent || "Выбери плейлист";
+    ui.menu.replaceChildren(...Array.from(select.options, option => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "select-option";
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", String(option.selected));
+      item.textContent = option.textContent;
+      item.onclick = () => {
+        select.value = option.value;
+        ui.close();
+        syncSelect(select);
+        select.dispatchEvent(new Event("change", {bubbles:true}));
+        ui.toggle.focus({preventScroll:true});
+      };
+      return item;
+    }));
+  }
+  function initSelects() {
+    document.querySelectorAll("select").forEach(select => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "music-select";
+      select.before(wrapper);
+      wrapper.append(select);
+      select.classList.add("select-native");
+      select.tabIndex = -1;
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "select-toggle";
+      toggle.setAttribute("aria-label", select.getAttribute("aria-label") || "Доступ к плейлисту");
+      toggle.setAttribute("aria-haspopup", "listbox");
+      toggle.setAttribute("aria-expanded", "false");
+      const label = document.createElement("span");
+      label.className = "select-label";
+      toggle.append(label);
+      toggle.insertAdjacentHTML("beforeend", '<svg class="select-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>');
+      const menu = document.createElement("div");
+      menu.className = "select-options";
+      menu.id = select.id + "-options";
+      menu.setAttribute("role", "listbox");
+      menu.setAttribute("aria-label", toggle.getAttribute("aria-label"));
+      menu.setAttribute("popover", "auto");
+      menu.hidden = true;
+      toggle.setAttribute("aria-controls", menu.id);
+      wrapper.append(toggle, menu);
+      const close = () => {
+        if (typeof menu.hidePopover === "function" && menu.matches(":popover-open")) menu.hidePopover();
+        menu.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+      };
+      const position = () => {
+        const r = toggle.getBoundingClientRect();
+        menu.style.left = r.left + "px";
+        menu.style.top = Math.min(r.bottom, innerHeight - 80) + "px";
+        menu.style.setProperty("--select-width", r.width + "px");
+        menu.style.maxHeight = Math.max(60,Math.min(320,innerHeight-r.bottom-20)) + "px";
+      };
+      toggle.onclick = () => {
+        const open = toggle.getAttribute("aria-expanded") === "true";
+        if (open) return close();
+        for (const ui of selectControls.values()) ui.close();
+        syncSelect(select);
+        menu.hidden = false;
+        position();
+        if (typeof menu.showPopover === "function") menu.showPopover();
+        toggle.setAttribute("aria-expanded", "true");
+      };
+      menu.addEventListener("toggle", event => {
+        toggle.setAttribute("aria-expanded", String(event.newState === "open"));
+        if (event.newState === "closed") menu.hidden = true;
+      });
+      toggle.onkeydown = event => {
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          if (toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+          menu.querySelector('[aria-selected="true"]')?.focus();
+        }
+      };
+      menu.onkeydown = event => {
+        if (event.key === "Escape") { close(); toggle.focus(); }
+        if (["ArrowDown","ArrowUp"].includes(event.key)) {
+          event.preventDefault();
+          const items = [...menu.children];
+          const i = items.indexOf(document.activeElement);
+          items[(i + (event.key === "ArrowDown" ? 1 : items.length-1)) % items.length]?.focus();
+        }
+      };
+      document.addEventListener("pointerdown", event => {
+        if (!wrapper.contains(event.target)) close();
+      });
+      window.addEventListener("resize", close);
+      window.addEventListener("scroll", close, {passive:true});
+      selectControls.set(select, {toggle,menu,label,close});
+      syncSelect(select);
+    });
+  }
+  function enqueue(t) {
+    const queued = {...t};
+    s.manualQueue.push(queued);
+    s.queue.push(queued);
+    save();
+  }
   function expanded(open) {
-    $(".player").classList.toggle("is-expanded", open);
+    const player = $(".player");
+    if (open === player.classList.contains("is-expanded")) return;
+    if (open) {
+      player.after(playerAnchor);
+      document.body.append(player);
+      $(".music-page").inert = true;
+      player.setAttribute("role", "dialog");
+      player.setAttribute("aria-modal", "true");
+    } else {
+      playerAnchor.replaceWith(player);
+      $(".music-page").inert = false;
+      player.removeAttribute("role");
+      player.removeAttribute("aria-modal");
+    }
+    document.body.classList.toggle("music-expanded", open);
+    player.classList.toggle("is-expanded", open);
     $("closePlayer").hidden = !open;
     $("cover").setAttribute(
       "aria-label",
       open ? "Свернуть плеер" : "Развернуть плеер",
     );
+    if (open) $("closePlayer").focus({preventScroll:true});
+    else $("cover").focus({preventScroll:true});
     notify();
   }
   function bindEvents() {
@@ -886,7 +1019,7 @@
       render();
     };
     $("refresh").onclick = () =>
-      s.view === "discover" ? search() : bindTracks();
+      s.view === "discover" ? search() : s.view === "queue" ? render() : bindTracks();
     $("playlist").onchange = () => {
       s.activePlaylist = $("playlist").value;
       save();
@@ -1024,6 +1157,12 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") expanded(false);
+      if (e.key === "Tab" && $(".player").classList.contains("is-expanded")) {
+        const controls = [...$(".player").querySelectorAll("button,input")].filter(el => !el.hidden && !el.disabled && el.getClientRects().length && getComputedStyle(el).display !== "none");
+        const first = controls[0], last = controls.at(-1);
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
       if (
         e.code === "Space" &&
         !e.target.closest("input,select,textarea,button,dialog")
@@ -1098,10 +1237,12 @@
     s.queue = (restored.queue || [])
       .map((t) => normalize(t, t.key))
       .filter(Boolean);
+    s.manualQueue = (restored.manualQueue || []).map(t => normalize(t, t.key)).filter(Boolean);
     s.index = Number(restored.index) || 0;
   }
   audio.volume = Math.min(1, Math.max(0, Number(settings.volume ?? 0.85)));
   $("volume").value = String(audio.volume);
+  initSelects();
   bindEvents();
   initFirebase();
   renderPlaylists();
