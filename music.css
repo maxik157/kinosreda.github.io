@@ -31,7 +31,6 @@ body.ks-page-music .glass { border:0; border-radius:26px; background:linear-grad
 .volume input { min-width:0; width:100%; accent-color:var(--accent); }
 .notice { margin:0; font-size:12px; line-height:1.6; color:var(--muted); }
 #notice:not(:empty) { margin:18px 0 0; }
-.expand-player { display:block; margin:24px auto 0; font-size:12px; }
 .player-heading { display:none; }
 .library { padding:clamp(16px,2vw,28px); min-width:0; min-height:calc(100svh - 80px); }
 .library-head { display:flex; align-items:center; gap:8px; }
@@ -68,7 +67,8 @@ input::placeholder { color:#a8a9ad; }
 .track-actions { display:flex; flex-wrap:nowrap; gap:0; align-items:center; justify-content:flex-end; }
 .track-actions .icon-btn { width:32px; height:36px; }
 .empty { padding:44px 20px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
-#loadMore { margin:20px auto 0; }
+#loadMore { margin:8px 0 0; min-height:24px; }
+.load-more-sentinel[data-loading="true"] { min-height:34px; }
 .music-dialog { color:var(--text); width:min(440px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border:0; border-radius:26px; padding:26px; background:#151b25df; backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px); box-shadow:0 24px 70px #0005; }
 .music-dialog::backdrop { background:#07090d70; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); }
 .music-dialog h2 { font-size:18px; margin:0 0 22px; }
@@ -96,7 +96,6 @@ body.ks-page-music .player.is-expanded { position:fixed; inset:0; z-index:10000;
 .player.is-expanded .controls { gap:clamp(14px,2vw,32px); margin:34px 0; }
 .player.is-expanded .control { width:52px; height:52px; }
 .player.is-expanded .control.play { width:76px; height:76px; }
-.player.is-expanded .expand-player { display:none; }
 .track-list-viewport { min-height:0; }
 .track-menu { position:fixed; inset:auto; z-index:12000; width:190px; margin:0; padding:6px; border:0; border-radius:16px; color:var(--text); background:#1b222ef5; backdrop-filter:blur(30px); -webkit-backdrop-filter:blur(30px); box-shadow:0 16px 45px #0007; }
 .track-menu-item { display:flex; align-items:center; gap:12px; width:100%; min-height:42px; padding:8px 10px; border-radius:10px; background:transparent; text-align:left; font-size:13px; }
@@ -112,7 +111,6 @@ body.ks-page-music .player.is-expanded { position:fixed; inset:0; z-index:10000;
  .player:not(.is-expanded) .cover-wrap { width:min(100%,380px, max(90px,calc(100dvh - 410px))); margin-bottom:20px; }
  .player:not(.is-expanded) .track-artists { margin-bottom:16px; }
  .player:not(.is-expanded) .controls { margin:16px 0; }
- .player:not(.is-expanded) .expand-player { margin-top:16px; }
  .player:not(.is-expanded) #notice:not(:empty) { position:absolute; top:calc(100% + 8px); left:0; right:0; padding:10px; margin:0; border-radius:12px; background:#141b27ee; text-align:center; }
 }
 @media (hover:hover) { .action:hover,.icon-btn:hover,.control:hover { background-color:#ffffff14; } .select-option:hover,.track-menu-item:hover { background:#ffffff0a; } .track:hover { background-color:#ffffff08; } }
@@ -153,7 +151,7 @@ body.ks-page-music .player.is-expanded { position:fixed; inset:0; z-index:10000;
  .player:not(.is-expanded) .controls { grid-column:3; grid-row:1/3; gap:4px; margin:0; }
  .player:not(.is-expanded) .control { width:30px; height:36px; }
  .player:not(.is-expanded) .control.play { width:42px; height:42px; }
- .player:not(.is-expanded) :is(.times,.volume,#shuffle,#repeat,.expand-player) { display:none; }
+ .player:not(.is-expanded) :is(.times,.volume,#shuffle,#repeat) { display:none; }
  .player:not(.is-expanded) .seek { grid-column:1/-1; grid-row:3; width:100%; height:22px; margin:3px 0 0; }
  .player:not(.is-expanded) #notice:not(:empty) { position:absolute; bottom:calc(100% + 8px); left:0; right:0; padding:10px; margin:0; border-radius:12px; background:#141b27ee; text-align:center; }
  body.ks-page-music .player.is-expanded { display:flex; flex-direction:column; justify-content:center; gap:0; padding:calc(76px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom)); }

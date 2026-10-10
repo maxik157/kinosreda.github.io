@@ -66,6 +66,9 @@
     retry: 0,
     saveSecond: -1,
     debounce: 0,
+    loadMoreObserver: null,
+    loadMoreMedia: null,
+    loadMoreMediaHandler: null,
   };
   const icons = {
     play: '<path d="m8 5 11 7-11 7Z"/>',
@@ -422,8 +425,9 @@
       : s.view === "discover"
         ? `${s.results.length} треков · ${s.provider === "truffled" ? "Truffled" : "Яндекс Музыка"}`
         : `${list.length} треков`;
-    $("loadMore").hidden = s.view !== "discover" || !s.cursor;
-    $("loadMore").disabled = s.loading;
+    const loadMore = $("loadMore");
+    loadMore.hidden = s.view !== "discover" || !s.cursor;
+    loadMore.dataset.loading = String(s.loading);
     $("searchBtn").disabled = s.loading;
     updatePlaybackRows();
   }
@@ -1057,7 +1061,6 @@
     $("seek").oninput = () => seek($("seek").value);
     $("cover").onclick = () =>
       expanded(!$(".player").classList.contains("is-expanded"));
-    $("expandPlayer").onclick = () => expanded(true);
     $("closePlayer").onclick = () => expanded(false);
     document
       .querySelectorAll("[data-view]")
@@ -1074,7 +1077,6 @@
         }),
     );
     $("searchBtn").onclick = () => search();
-    $("loadMore").onclick = () => search(true);
     $("query").onkeydown = (e) => {
       if (e.key === "Enter") {
         clearTimeout(s.debounce);
@@ -1263,6 +1265,27 @@
       }
     }
   }
+  function initLoadMoreObserver() {
+    const sentinel = $("loadMore");
+    if (!sentinel || !("IntersectionObserver" in window)) return;
+    s.loadMoreObserver?.disconnect();
+    if (s.loadMoreMedia && s.loadMoreMediaHandler)
+      s.loadMoreMedia.removeEventListener("change", s.loadMoreMediaHandler);
+    const viewport = $(".track-list-viewport");
+    const media = window.matchMedia("(min-width: 861px)");
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (s.view === "discover" && s.cursor && !s.loading) search(true);
+      },
+      { root: media.matches ? viewport : null, rootMargin: "0px 0px 280px" },
+    );
+    observer.observe(sentinel);
+    s.loadMoreObserver = observer;
+    s.loadMoreMedia = media;
+    s.loadMoreMediaHandler = initLoadMoreObserver;
+    media.addEventListener?.("change", s.loadMoreMediaHandler);
+  }
   function initFirebase() {
     try {
       if (!firebase.apps.length) firebase.initializeApp(config);
@@ -1318,6 +1341,7 @@
   $("volume").value = String(audio.volume);
   initSelects();
   bindEvents();
+  initLoadMoreObserver();
   initFirebase();
   renderPlaylists();
   currentUi();
