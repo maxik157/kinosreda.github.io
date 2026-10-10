@@ -14,6 +14,7 @@ document.querySelector('#run').onclick = async () => {
   const desktopAgent = navigator.userAgent;
   const drawImage = CanvasRenderingContext2D.prototype.drawImage;
   let result, mediaCalls = 0, nativeCalls = 0, fileCalls = 0, denyCamera = false, added, returnFromForm;
+  let failures = [], scanRequests = 0;
   const records = [{key:'a',record:{id:'1',name:'Franziskaner Weissbier',ratings:{Макс:8}}}, {key:'b',record:{id:'2',name:'Franziskaner Weissbier Dunkel'}}];
   try {
     Object.defineProperties(HTMLVideoElement.prototype, {
@@ -27,7 +28,14 @@ document.querySelector('#run').onclick = async () => {
       if (denyCamera) throw new DOMException('Denied', 'NotAllowedError');
       return {getTracks:()=>[{stop(){}}]};
     };
-    window.fetch = async url => String(url).includes('/beer-recognize') ? {ok:true,json:async()=>result} : originalFetch(url);
+    window.fetch = async url => {
+      if (!String(url).includes('/beer-recognize')) return originalFetch(url);
+      if (String(url).includes('/status')) return new Response('{}', { status: 200 });
+      scanRequests++;
+      const failure = failures.shift();
+      if (failure) return new Response(failure.body, { status: failure.status });
+      return new Response(JSON.stringify(result), { status: 200 });
+    };
     const open = async (mobile = false) => {
       Object.defineProperty(navigator,'userAgent',{configurable:true,value:mobile?'iPhone':desktopAgent});
       BeerScanner.open({getCatalog:()=>records,getUserName:()=> 'Макс',onAddRecord:(record,resume)=>{added=record;returnFromForm=resume}});
@@ -53,6 +61,13 @@ document.querySelector('#run').onclick = async () => {
     }
     check(mediaCalls===3 && !fileCalls && !nativeCalls,'Камера была заменена выбором файла');close();
     report.textContent+='✓ Три последовательных сканирования открывают камеру\n';
+
+    failures=[{status:502,body:'<html>Bad Gateway</html>'},{status:503,body:'{"error":"catalog_warming"}'}];
+    const previousRequests=scanRequests;
+    await open();get('[data-action=shoot]').click();
+    for(let i=0;i<300 && get('.beer-scanner__card').hidden;i++) await new Promise(resolve=>setTimeout(resolve,10));
+    check(!get('.beer-scanner__card').hidden && scanRequests===previousRequests+3,'Временные 502/503 не восстановились после повтора');close();
+    report.textContent+='✓ HTML 502 и прогрев базы 503 повторяются без неизвестной ошибки\n';
 
     result={confident:false,matches:records.map(({key,record})=>({key,name:record.name})),ocrText:'NEW BREW\nSummer Wheat\n500 ml'};
     await open();get('[data-action=shoot]').click();await wait(()=>get('.beer-scanner__matches').children.length===2);

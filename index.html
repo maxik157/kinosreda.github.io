@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Киносреда</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010perf">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010mobile2">
     <script>
         // Auth gate: prevent UI flash before redirecting to login
         (function () {
@@ -3274,7 +3274,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010mobile2">
     <script src="kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="bg-dark min-h-screen text-white layout-sidebar ks-ui ks-page-index ks-shell-owner">
@@ -4619,7 +4619,8 @@
 
     <link rel="stylesheet" href="beer-scanner.css">
     <link rel="stylesheet" href="beer-form.css">
-    <script src="beer-scanner.js"></script>
+    <script src="beer-image-process.js?v=20261010mobile2"></script>
+    <script src="beer-scanner.js?v=20261010mobile2"></script>
     <script src="beer-facts.js"></script>
     <script src="beer-style-detect.js"></script>
     <script src="beer-data-autofill.js"></script>
@@ -7653,6 +7654,10 @@
                     return;
                 }
                 if (data.type === 'call:route' || data.type === 'meet:route') {
+                    if (data.inPlace && data.type === 'call:route') {
+                        updatePageUrl('svc_call', { push: true, callRoomSlug: normalizeCallRoomSlug(data.roomSlug || '') });
+                        return;
+                    }
                     openCallRoomInSidebar(data.roomSlug || '', { push: true });
                     return;
                 }
@@ -11821,11 +11826,7 @@
             return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob || beerPhotoDataUrlToBlob(cropped)), 'image/png', 0.95));
         }
         async function removeBeerPhotoBackground(dataUrl) {
-            const image_base64 = String(dataUrl).split(',')[1];
-            for (const endpoint of [BEER_IMAGE_REMOVE_BG_ENDPOINT, BEER_IMAGE_REMOVE_BG_FALLBACK_ENDPOINT]) {
-                try { const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image_base64 }) }); const payload = await response.json(); const result = payload?.result_base64 || payload?.image_base64 || payload?.data; if (!response.ok || !result) throw new Error('remove_bg_failed'); return `data:image/png;base64,${result}`; } catch (_) {}
-            }
-            throw new Error('remove_bg_failed');
+            return BeerImageProcess.remove(dataUrl);
         }
         async function uploadBeerPhoto(imageBlob) {
             if (!imageBlob) throw new Error('image_invalid'); const formData = new FormData(); formData.append('image', imageBlob, 'beer.png'); const response = await fetch(BEER_IMAGE_UPLOAD_ENDPOINT, { method: 'POST', body: formData }); const rawText = await response.text(); let payload = null; try { payload = JSON.parse(rawText); } catch (_) {} const url = payload?.url || payload?.data?.[0]?.link || payload?.data?.[0]?.short_link || payload?.data?.[0]?.url || payload?.data?.[0]?.image_url || payload?.data?.url || payload?.data?.link || payload?.data?.image?.url || payload?.result?.url || payload?.result?.link || payload?.image?.url || payload?.direct_url || payload?.image_url || rawText.match(/https?:\/\/[^\s"']+/)?.[0]; if (!response.ok || !url) throw new Error('upload_failed'); return url;
@@ -11840,7 +11841,7 @@
             const id=beerPhotoMode==='edit'?'editBeerNameInput':'beerNameInput'; const query=document.getElementById(id).value.trim(); if(!query){setBeerPhotoStatus('Сначала укажите название');return;}
             setBeerPhotoBusy(true, 'Ищем…'); try { const response = await fetch(BEER_IMAGE_SEARCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query})}); const out = await response.json(); if (!response.ok || !Array.isArray(out.images) || !out.images.length) throw new Error('search_failed'); const grid=document.getElementById('beerPhotoGrid'); grid.innerHTML=''; out.images.forEach(candidate=>{const b=document.createElement('button');b.type='button';b.className='aspect-square overflow-hidden rounded-lg border border-amber-500/30';b.innerHTML=`<img class="w-full h-full object-cover" src="${candidate.thumbnailUrl||candidate.imageUrl}" alt="">`;b.onclick=()=>selectBeerImageCandidate(candidate);grid.appendChild(b);}); setBeerPhotoStatus('Выберите фото'); } catch (_) { setBeerPhotoStatus('Поиск не сработал. Выберите файл или камеру.'); } finally { setBeerPhotoBusy(false); }
         }
-        async function selectBeerImageCandidate(candidate) { setBeerPhotoBusy(true, 'Загружаем…'); try { const response = await fetch(BEER_IMAGE_FETCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:candidate.imageUrl})}); const payload = await response.json(); const base64 = payload?.result_base64 || payload?.image_base64; if (!response.ok || !base64) throw new Error('fetch_failed'); await processBeerPhotoDataUrl(`data:image/png;base64,${base64}`); } catch (_) { setBeerPhotoStatus('Не удалось загрузить фото. Выберите другое.'); setBeerPhotoBusy(false); } }
+        async function selectBeerImageCandidate(candidate) { setBeerPhotoBusy(true, 'Загружаем…'); try { const dataUrl = await BeerImageProcess.fetchImage(candidate.imageUrl); await processBeerPhotoDataUrl(dataUrl); } catch (_) { setBeerPhotoStatus('Не удалось загрузить фото. Выберите другое.'); setBeerPhotoBusy(false); } }
         document.addEventListener('change', async e=>{if(e.target?.id!=='beerPhotoFileInput')return;const file=e.target.files?.[0];e.target.value='';if(!file)return;await processBeerPhotoDataUrl(await imageBlobToDataUrl(file));});
 
         function prepareBeerForm(mode) {

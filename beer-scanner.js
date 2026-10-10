@@ -222,14 +222,53 @@
       let image = source, url;
       if (source instanceof Blob) {
         url = URL.createObjectURL(source); image = new Image();
-        try { image.src = url; await image.decode(); } finally { URL.revokeObjectURL(url); }
+        try { image.src = url; await image.decode(); }
+        catch (_) { throw new Error('invalid_image'); }
+        finally { URL.revokeObjectURL(url); }
       }
       const width = image.videoWidth || image.naturalWidth, height = image.videoHeight || image.naturalHeight;
       if (!width || !height) throw new Error('invalid_image');
-      const scale = Math.min(1, 1200 / Math.max(width, height));
+      // iOS Safari is noticeably more reliable with a smaller, eagerly
+      // decoded JPEG. The recognition service resizes again, so keeping the
+      // upload below ~1 MB saves a mobile radio round trip without reducing
+      // useful label detail.
+      const scale = Math.min(1, 1000 / Math.max(width, height));
       canvas.width = Math.round(width * scale); canvas.height = Math.round(height * scale);
       canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-      return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('invalid_image')), 'image/jpeg', .88));
+      return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('invalid_image')), 'image/jpeg', .82));
+    }
+    async function requestRecognition(blob, signal) {
+      const maxAttempts = 3;
+      let lastError;
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+        try {
+          const response = await fetch(`${apiBase()}/beer-recognize`, {
+            method: 'POST', headers: { 'Content-Type': 'image/jpeg', Accept: 'application/json' },
+            body: blob, signal
+          });
+          const text = await response.text();
+          let data = null;
+          try { data = text ? JSON.parse(text) : null; } catch (_) {}
+          if (response.ok && data) return data;
+          const code = String(data?.error || '').toLowerCase();
+          const retryable = [429, 502, 503, 504].includes(response.status) ||
+            code === 'recognition_busy' || code === 'catalog_warming' || code === 'recognition_unavailable';
+          lastError = new Error(code || `recognition_http_${response.status || 0}`);
+          lastError.retryable = retryable;
+          if (!retryable || attempt === maxAttempts - 1) throw lastError;
+        } catch (error) {
+          if (error?.name === 'AbortError') throw error;
+          lastError = error;
+          if (error.retryable === false || attempt === maxAttempts - 1) throw error;
+        }
+        await new Promise((resolve, reject) => {
+          const abort = () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')); };
+          const timer = setTimeout(() => { signal.removeEventListener('abort', abort); resolve(); }, 500 * (attempt + 1));
+          signal.addEventListener('abort', abort, { once: true });
+        });
+      }
+      throw lastError || new Error('recognition_unavailable');
     }
     async function recognize(source) {
       if (busy) return;
@@ -241,17 +280,15 @@
       message('Ищем пиво по этикетке…', true);
       request?.abort(); request = new AbortController();
       const controller = request;
-      const timer = setTimeout(() => controller.abort(), 12_000);
+      const timer = setTimeout(() => controller.abort(), 40_000);
       try {
         const blob = await prepare(source);
         if (closed || token !== sequence) return;
         stopCamera(); video.hidden = true; guide.hidden = true; preview.hidden = false;
         if (photoUrl) URL.revokeObjectURL(photoUrl);
         photoUrl = URL.createObjectURL(blob); preview.src = photoUrl;
-        const response = await fetch(`${apiBase()}/beer-recognize`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob, signal: controller.signal });
-        const data = await response.json();
+        const data = await requestRecognition(blob, controller.signal);
         if (closed || token !== sequence) return;
-        if (!response.ok) throw new Error(data.error || 'recognition_unavailable');
         recognizedName = guessedName(data.ocrText);
         const entries = catalog();
         const matches = (data.matches || []).map(match => {
@@ -271,7 +308,8 @@
         }
       } catch (error) {
         if (closed || token !== sequence) return;
-        message(error.message === 'catalog_warming' ? 'База фотографий готовится. Попробуйте чуть позже.' :
+        message(error.name === 'AbortError' ? 'Распознавание заняло слишком много времени. Проверьте интернет и попробуйте ещё раз.' :
+          error.message === 'catalog_warming' ? 'База фотографий готовится. Попробуйте чуть позже.' :
           error.message === 'invalid_image' ? 'Не удалось прочитать фото. Выберите другое изображение.' :
           error.message === 'recognition_busy' ? 'Сейчас много снимков. Попробуйте ещё раз.' : 'Распознавание сейчас недоступно. Попробуйте ещё раз.');
       } finally {

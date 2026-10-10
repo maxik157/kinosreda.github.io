@@ -37,7 +37,7 @@
     @media(max-width:600px){.modal{width:min(560px,100%);border-radius:24px 8px 24px 8px}.head{padding:20px 20px 15px}.form{padding:4px 20px 22px}.photo{grid-template-columns:94px minmax(0,1fr);gap:13px;margin-bottom:18px}.preview{width:94px;height:124px;border-radius:15px}.photo-actions{gap:6px}.photo-actions button{min-height:40px;padding:0 5px}.fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px 8px}.actions{margin-right:-20px;margin-bottom:-22px;margin-left:-20px;padding:11px 20px calc(16px + env(safe-area-inset-bottom))}}
     @media(max-width:430px){.modal{border-radius:24px 24px 0 0}.head{padding:18px 16px 14px}.form{padding:2px 16px 18px}.fields{gap:10px 7px}.actions{margin-right:-16px;margin-bottom:-18px;margin-left:-16px;padding-right:16px;padding-left:16px}}
   </style>
-  <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
+  <link rel="stylesheet" href="kinosreda-shell.css?v=20261010mobile2">
   <script src="kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body>
@@ -46,7 +46,7 @@
   <script src="beer-style-detect.js"></script>
   <script src="beer-facts.js"></script>
   <script src="beer-data-autofill.js"></script>
-  <script src="beer-image-process.js"></script>
+  <script src="beer-image-process.js?v=20261010mobile2"></script>
   <script>
     const config={apiKey:"AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",authDomain:"kinosreda-ce8ef.firebaseapp.com",databaseURL:"https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",projectId:"kinosreda-ce8ef",storageBucket:"kinosreda-ce8ef.firebasestorage.app",messagingSenderId:"889337905300",appId:"1:889337905300:web:325aea2f3fb3c6b44a7481"};
     const params=new URLSearchParams(location.search),mode=params.get('mode')==='edit'?'edit':'add',key=params.get('key')||'',base=BeerImageProcess.apiBase(),els=Object.fromEntries(['title','form','close','cancel','deleteBeer','preview','photoPreviewImage','photoPreviewLabel','photoActions','file','camera','photoToggle','photoChoices','choosePhoto','cameraPhoto','searchPhoto','candidates','status','save','saveIcon','saveLabel','name','type','style','filtered','country','volume','alcohol','calories','rating','ratingLabel','starPicker'].map(id=>[id,document.getElementById(id)]));let db,record={},imageUrl='',ratingPointerId=null,ratingHoverValue=null;const field=id=>els[id].value;const set=id=>{if(els[id]){BeerDataAutofill.restoreSavedValue(els[id],record[id]);}};const status=text=>els.status.textContent=text;const notify=type=>parent.postMessage({type},location.origin);const close=()=>notify('shelf-modal-close');

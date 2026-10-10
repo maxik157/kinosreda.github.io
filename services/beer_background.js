@@ -66,9 +66,12 @@ async function handle(req, res, corsHeaders, { readRequestBody, writeJsonRespons
   }
   let body;
   try {
-    body = await readRequestBody(req, 21 * 1024 * 1024);
+    // Camera uploads are normalized in the browser. Keep the API bounded so
+    // an accidental multi-megapixel/HEIC payload cannot occupy the realtime
+    // process while the rembg worker is busy.
+    body = await readRequestBody(req, 9 * 1024 * 1024);
     const payload = JSON.parse(body.toString('utf8'));
-    if (typeof payload.image_base64 !== 'string' || !payload.image_base64) throw new Error('invalid_image');
+    if (typeof payload.image_base64 !== 'string' || !payload.image_base64 || payload.image_base64.length > 8 * 1024 * 1024) throw new Error('invalid_image');
   } catch (error) {
     writeJsonResponse(res, error.code === 'request_too_large' ? 413 : 400, corsHeaders, { error: 'invalid_image' });
     return;

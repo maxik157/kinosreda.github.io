@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Звонки | КИНОСРЕДА</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010perf">
+    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010mobile2">
   <script>
     (function () {
       try {
@@ -3038,7 +3038,7 @@
       }
     }
   </style>
-    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010perf">
+    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010mobile2">
     <script src="/kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="ks-ui ks-page-call">
@@ -4040,36 +4040,17 @@
       function activateRoom(slug) {
         const normalizedSlug = normalizeRoomSlug(slug);
         const nextRoom = resolveRoomMeta(normalizedSlug);
-        const parentUrl = buildSidebarCallUrl(nextRoom.slug);
         setCustomRoomError('');
-
+        activateRoomLocally(nextRoom.slug);
         try {
           if (window.parent && window.parent !== window) {
-            let parentHref = '';
-            try {
-              parentHref = String(window.parent.location && window.parent.location.href || '').trim();
-            } catch (_) {}
-
             window.parent.postMessage({
               type: 'call:route',
-              roomSlug: nextRoom.slug
+              roomSlug: nextRoom.slug,
+              inPlace: true
             }, '*');
-
-            if (parentHref && parentHref === parentUrl) {
-              activateRoomLocally(nextRoom.slug);
-              return;
-            }
-
-            try {
-              if (window.top && window.top.location) {
-                window.top.location.href = parentUrl;
-                return;
-              }
-            } catch (_) {}
           }
         } catch (_) {}
-
-        activateRoomLocally(nextRoom.slug);
       }
 
       async function copyRoomLink(slug) {
@@ -4118,25 +4099,7 @@
         if (dom.openDefaultRoomBtn) {
           dom.openDefaultRoomBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            const targetHref = String(dom.openDefaultRoomBtn.getAttribute('href') || '').trim();
-            const currentTopHref = getTopHrefSafe();
-            if (targetHref && currentTopHref) {
-              try {
-                const currentUrl = new URL(currentTopHref, window.location.href);
-                const targetUrl = new URL(targetHref, window.location.href);
-                const sameTarget = currentUrl.pathname === targetUrl.pathname && currentUrl.search === targetUrl.search;
-                if (sameTarget) {
-                  try {
-                    if (window.parent && window.parent !== window) {
-                      window.parent.postMessage({ type: 'call:route', roomSlug: COMMON_ROOM_SLUG }, '*');
-                    }
-                  } catch (_) {}
-                  activateRoomLocally('');
-                  return;
-                }
-              } catch (_) {}
-            }
-            openTopHrefFromElement(dom.openDefaultRoomBtn);
+            activateRoom(COMMON_ROOM_SLUG);
           });
         }
 
@@ -4159,9 +4122,6 @@
               if (dom.customRoomInput) dom.customRoomInput.focus();
               return;
             }
-            if (openTopHrefFromElement(dom.openCustomRoomBtn)) {
-              return;
-            }
             activateRoom(slug);
           });
         }
@@ -4176,7 +4136,7 @@
               return;
             }
             updateRoomPickerPreview();
-            openTopHrefFromElement(dom.openCustomRoomBtn);
+            activateRoom(slug);
           });
         }
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Пивная полка</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010perf">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010mobile2">
   <script>
     (() => { try { if (!localStorage.getItem('currentUser')) location.replace('login.html'); else document.documentElement.classList.add('authed'); } catch (_) { location.replace('login.html'); } })();
   </script>
@@ -234,7 +234,7 @@
       html.is-single-shelf .single-shelf-scroll-tick{min-width:0;max-width:none;height:13px;}
     }
   </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010mobile2">
     <script src="kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="ks-ui ks-page-beer-shelf">
@@ -245,11 +245,11 @@
   <script src="beer-style-detect.js"></script>
   <script src="beer-facts.js"></script>
   <script src="beer-data-autofill.js"></script>
-  <script src="beer-image-process.js"></script>
+  <script src="beer-image-process.js?v=20261010mobile2"></script>
   <script src="beer-shelf-modal.js"></script>
   <link rel="stylesheet" href="beer-scanner.css">
   <link rel="stylesheet" href="beer-form.css">
-  <script src="beer-scanner.js"></script>
+  <script src="beer-scanner.js?v=20261010mobile2"></script>
   <script>
     const firebaseConfig={apiKey:"AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",authDomain:"kinosreda-ce8ef.firebaseapp.com",databaseURL:"https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",projectId:"kinosreda-ce8ef",storageBucket:"kinosreda-ce8ef.firebasestorage.app",messagingSenderId:"889337905300",appId:"1:889337905300:web:325aea2f3fb3c6b44a7481"};
     const LONG_PRESS_MS=420;

@@ -597,6 +597,111 @@ body.ks-page-gallery #toolsToggle {
   -webkit-backdrop-filter: blur(22px);
   box-shadow: none;
 }
+
+/* iOS Safari needs a scrollable document once a detail surface is open. The
+   previous fixed 100dvh shells clipped the final controls behind the browser
+   toolbar and left an unreachable strip at the bottom. */
+@media (max-width: 720px) {
+  html, body { min-height: 100%; }
+  body.ks-page-recipes.mobile-detail-open,
+  body.ks-page-recipes.mobile-detail-open > .page,
+  body.ks-page-recipes.mobile-detail-open .content { overflow: hidden !important; }
+  body.ks-page-recipes.mobile-detail-open .detail-panel {
+    height: var(--ks-vh,100dvh) !important;
+    min-height: 0 !important;
+    grid-template-rows: max-content max-content !important;
+    align-content: start !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    padding-bottom: calc(28px + env(safe-area-inset-bottom)) !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  body.ks-page-recipes.mobile-detail-open .mobile-detail-back {
+    left: auto !important;
+    right: calc(12px + env(safe-area-inset-right)) !important;
+    top: max(10px, env(safe-area-inset-top)) !important;
+  }
+  body.ks-page-recipes.mobile-detail-open .detail-content { padding-bottom: calc(44px + env(safe-area-inset-bottom)) !important; }
+
+  html:has(body.ks-page-video .layout.is-details-open),
+  body.ks-page-video:has(.layout.is-details-open),
+  html:has(body.ks-ui:is(.ks-page-call,.ks-page-meet)),
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) { overflow: auto !important; }
+  body.ks-page-video:has(.layout.is-details-open) > .page,
+  body.ks-page-video:has(.layout.is-details-open) .layout {
+    height: auto !important;
+    min-height: 100svh !important;
+    overflow: visible !important;
+    align-content: start !important;
+    align-items: start !important;
+    grid-template-rows: max-content !important;
+  }
+  body.ks-page-video:has(.layout.is-details-open) > .page { padding-top: 0 !important; }
+  body.ks-page-video:has(.layout.is-details-open) .layout { min-height: 0 !important; }
+  body.ks-page-video:has(.layout.is-details-open) .discover { display: none !important; }
+  body.ks-page-video:has(.layout.is-details-open) .player-panel {
+    position: relative !important;
+    inset: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: grid !important;
+    grid-template-rows: auto auto max-content !important;
+    align-self: start !important;
+    padding: 0 0 calc(28px + env(safe-area-inset-bottom)) !important;
+  }
+  body.ks-page-video:has(.layout.is-details-open) .hero {
+    min-height: 250px !important;
+    padding-top: 56px !important;
+    padding-bottom: 20px !important;
+  }
+  body.ks-page-video:has(.layout.is-details-open) .hero p { max-height: none !important; overflow: visible !important; }
+  body.ks-page-video:has(.layout.is-details-open) .player-stage {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    align-self: start !important;
+  }
+  body.ks-page-video:has(.layout.is-details-open) .player-host {
+    height: auto !important;
+    max-height: none !important;
+    aspect-ratio: 16 / 9 !important;
+  }
+
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) {
+    height: auto !important;
+    min-height: 100svh !important;
+    overflow: auto !important;
+  }
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) .call-shell {
+    height: auto !important;
+    min-height: 100svh !important;
+    grid-template-rows: auto auto !important;
+    overflow: visible !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) .call-shell > .layout {
+    height: auto !important;
+    min-height: calc(100svh - 150px) !important;
+    overflow: visible !important;
+  }
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) .controls-row {
+    position: relative !important;
+    min-height: 0 !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+    z-index: 20;
+  }
+  body.ks-ui:is(.ks-page-call,.ks-page-meet) .dock {
+    max-width: calc(100vw - 64px) !important;
+    overflow: visible !important;
+  }
+}
 body.ks-page-gallery .tools-menu { border: 0; background: rgba(12,16,23,.72); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
 body.ks-page-gallery .tools-item { border: 0; }
 
