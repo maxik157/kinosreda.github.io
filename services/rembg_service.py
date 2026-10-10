@@ -88,8 +88,15 @@ def get_session() -> Any:
         with _session_lock:
             if _session is None:
                 from rembg import new_session
+                import onnxruntime as ort
 
-                _session = new_session(REMBG_MODEL)
+                options = ort.SessionOptions()
+                options.intra_op_num_threads = 1
+                options.inter_op_num_threads = 1
+                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+                options.enable_cpu_mem_arena = False
+                options.enable_mem_pattern = False
+                _session = new_session(REMBG_MODEL, sess_opts=options, providers=["CPUExecutionProvider"])
     return _session
 
 
