@@ -32,14 +32,14 @@
     <script src="./firebase-rtdb-rf-bypass.js?v=20261010music"></script>
     <link rel="stylesheet" href="kinosreda-shell.css?v=20261010music" />
     <script src="kinosreda-shell.js?v=20261010music" defer></script>
-    <link rel="stylesheet" href="music.css?v=20261011-layout2" />
+    <link rel="stylesheet" href="music.css?v=20261011-layout3" />
   </head>
   <body class="noise ks-ui ks-page-music">
     <main class="music-page">
       <header class="music-top ks-section-toolbar"><h1>Музыка</h1></header>
       <section class="music-layout">
         <section class="player glass" aria-label="Плеер">
-          <div class="player-heading"><span>Сейчас играет</span><button id="closePlayer" class="icon-btn" aria-label="Свернуть плеер" hidden>×</button></div>
+          <div class="player-heading"><button id="closePlayer" class="icon-btn" aria-label="Свернуть плеер" hidden>×</button></div>
           <div class="player-art">
           <button
             id="cover"
@@ -168,8 +168,10 @@
               ↻
             </button>
           </div>
+          <div class="track-list-viewport" tabindex="0" aria-label="Список треков">
           <ul id="tracks" class="list" aria-label="Треки"></ul>
           <button id="loadMore" class="action" hidden>Показать ещё</button>
+          </div>
         </section>
       </section>
     </main>
@@ -239,6 +241,6 @@
       crossorigin="anonymous"
     ></audio>
     <script src="vendor/hls/hls.min.js" defer></script>
-    <script src="music-app.js?v=20261011-layout2" defer></script>
+    <script src="music-app.js?v=20261011-layout3" defer></script>
   </body>
 </html>

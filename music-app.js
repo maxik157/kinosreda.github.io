@@ -83,6 +83,7 @@
     queue: '<path d="M3 5h14M3 10h14M3 15h8m7-2v8m-4-4h8"/>',
     edit: '<path d="m15 4 5 5M4 20l5-1L21 7l-4-4L5 15Z"/>',
     download: '<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',
+    more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
     refresh: '<path d="M20 10a8 8 0 1 0-2 8M20 3v7h-7"/>',
   };
   const svg = (name) =>
@@ -163,9 +164,12 @@
       likes: raw.likes || {},
     };
   }
+  let noticeTimer;
   function notice(message, error = false) {
+    clearTimeout(noticeTimer);
     $("notice").textContent = message || "";
     $("notice").style.color = error ? "#fca5a5" : "";
+    if (message) noticeTimer = setTimeout(() => notice(""), error ? 6000 : 2800);
   }
   async function api(route, params = {}, options = {}) {
     const url = new URL(API + route);
@@ -211,6 +215,78 @@
     };
     return b;
   }
+  const trackMenu = document.createElement("div");
+  trackMenu.id = "trackActionsMenu";
+  trackMenu.className = "track-menu";
+  trackMenu.setAttribute("role", "menu");
+  trackMenu.setAttribute("aria-label", "Действия с треком");
+  trackMenu.setAttribute("popover", "auto");
+  trackMenu.hidden = true;
+  document.body.append(trackMenu);
+  let trackMenuTrigger = null;
+  function closeTrackMenu() {
+    if (trackMenu.matches(":popover-open")) trackMenu.hidePopover();
+    trackMenu.hidden = true;
+    trackMenuTrigger?.setAttribute("aria-expanded", "false");
+    trackMenuTrigger = null;
+  }
+  function openTrackMenu(t, trigger) {
+    const wasOpen = trackMenuTrigger === trigger && !trackMenu.hidden;
+    closeTrackMenu();
+    if (wasOpen) return;
+    const items = [];
+    const add = (icon, label, handler) => {
+      const item = button(icon, label, (b) => {
+        closeTrackMenu();
+        trigger.focus({preventScroll:true});
+        return handler(b);
+      });
+      item.className = "track-menu-item";
+      item.setAttribute("role", "menuitem");
+      const text = document.createElement("span");
+      text.textContent = label;
+      item.append(text);
+      items.push(item);
+    };
+    add("download", "Скачать трек", b => download(t, b));
+    if (canManageTrack(t)) {
+      add("edit", "Редактировать", () => editTrack(t));
+      add("close", "Удалить трек", () => deleteTrack(t));
+    }
+    trackMenu.replaceChildren(...items);
+    trackMenuTrigger = trigger;
+    trackMenu.hidden = false;
+    if (typeof trackMenu.showPopover === "function") trackMenu.showPopover();
+    const rect = trigger.getBoundingClientRect();
+    const menuRect = trackMenu.getBoundingClientRect();
+    trackMenu.style.left = Math.max(8, Math.min(rect.right - menuRect.width, innerWidth - menuRect.width - 8)) + "px";
+    trackMenu.style.top = Math.max(8, Math.min(rect.bottom + 4, innerHeight - menuRect.height - 8)) + "px";
+    trigger.setAttribute("aria-expanded", "true");
+    items[0]?.focus({preventScroll:true});
+  }
+  trackMenu.addEventListener("toggle", event => {
+    if (event.newState === "closed") closeTrackMenu();
+  });
+  trackMenu.addEventListener("keydown", event => {
+    const items = [...trackMenu.children];
+    const index = items.indexOf(document.activeElement);
+    if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1 : (index + (event.key === "ArrowDown" ? 1 : items.length - 1)) % items.length;
+      items[next]?.focus();
+    } else if (event.key === "Escape" || event.key === "Tab") {
+      const trigger = trackMenuTrigger;
+      closeTrackMenu();
+      trigger?.focus({preventScroll:true});
+    }
+  });
+  document.addEventListener("pointerdown", event => {
+    if (!trackMenu.contains(event.target) && !trackMenuTrigger?.contains(event.target)) closeTrackMenu();
+  });
+  window.addEventListener("resize", closeTrackMenu);
+  document.addEventListener("scroll", event => {
+    if (!trackMenu.contains(event.target)) closeTrackMenu();
+  }, {capture:true, passive:true});
   function image(src, title) {
     const img = document.createElement("img");
     img.src = src;
@@ -238,6 +314,7 @@
     );
   }
   function render() {
+    closeTrackMenu();
     document.querySelectorAll("[data-view]").forEach((b) => {
       b.classList.toggle("active", b.dataset.view === s.view);
       b.setAttribute("aria-pressed", String(b.dataset.view === s.view));
@@ -317,14 +394,11 @@
             notice("Добавлено в очередь");
           }),
         );
-        if (canManageTrack(t))
-          actions.append(
-            button("edit", "Редактировать", () => editTrack(t)),
-            button("close", "Удалить трек", () => deleteTrack(t)),
-          );
-        actions.append(
-          button("download", "Скачать трек", (b) => download(t, b)),
-        );
+        const more = button("more", `Действия с треком ${t.title}`, (b) => openTrackMenu(t, b));
+        more.setAttribute("aria-haspopup", "menu");
+        more.setAttribute("aria-expanded", "false");
+        more.setAttribute("aria-controls", "trackActionsMenu");
+        actions.append(more);
       }
       info.append(title, meta);
       row.append(art, info, actions);
@@ -507,7 +581,7 @@
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
-    notice("Подготавливаю трек…");
+    notice("");
     notify();
     updatePlaybackRows();
     try {
