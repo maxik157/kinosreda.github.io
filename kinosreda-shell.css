@@ -1,0 +1,1074 @@
+/* Shared shelf-inspired design tokens and navigation. Never apply a filter,
+   transform or backdrop-filter to an iframe or its content container. */
+@font-face {
+  font-family: 'KS Comfortaa';
+  src: url('./comfortaa-400.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'KS Comfortaa';
+  src: url('./comfortaa-700.ttf') format('truetype');
+  font-weight: 600 800;
+  font-display: swap;
+}
+:root {
+  --ks-accent: #f4b941;
+  --ks-accent-rgb: 244,185,65;
+  --ks-ink: #05070b;
+  --ks-text: #f7f2e8;
+  --ks-muted: #b6b0a5;
+  --ks-line: rgba(244,185,65,.22);
+  --ks-surface: rgba(16,20,27,.78);
+  --ks-surface-raised: rgba(20,24,31,.94);
+  --ks-radius: 20px;
+  --ks-ease: cubic-bezier(.16,1,.3,1);
+  --ks-menu-left: max(10px, env(safe-area-inset-left, 0px));
+  --ks-menu-top: max(10px, env(safe-area-inset-top, 0px));
+  --ks-control-height: 30px;
+  --ks-control-gap: 12px;
+  --ks-clear-left: calc(var(--ks-menu-left) + var(--ks-control-height) + var(--ks-control-gap));
+  --ks-page-right: max(10px, env(safe-area-inset-right, 0px));
+  --ks-font: 'KS Comfortaa', Comfortaa, system-ui, sans-serif;
+  --amber: var(--ks-accent);
+  --accent: var(--ks-accent);
+  --accent-200: #ffe2a2;
+  --accent-300: #ffd778;
+  --accent-400: var(--ks-accent);
+  --accent-500: var(--ks-accent);
+  --accent-border-10: rgba(var(--ks-accent-rgb),.1);
+  --accent-border-20: rgba(var(--ks-accent-rgb),.2);
+  --accent-border-25: rgba(var(--ks-accent-rgb),.25);
+  --accent-border-30: rgba(var(--ks-accent-rgb),.3);
+  --accent-border-50: rgba(var(--ks-accent-rgb),.5);
+  --accent-soft: rgba(var(--ks-accent-rgb),.1);
+  --panel-border: var(--ks-line);
+}
+html[data-theme="white"] {
+  --ks-accent: #f5f3ee;
+  --ks-accent-rgb: 245,243,238;
+  --ks-line: rgba(var(--ks-accent-rgb),.22);
+  --amber: var(--ks-accent);
+  --accent: var(--ks-accent);
+  --accent-200: #fff;
+  --accent-300: #f5f3ee;
+  --accent-400: var(--ks-accent);
+  --accent-500: var(--ks-accent);
+  --accent-border-10: rgba(var(--ks-accent-rgb),.1);
+  --accent-border-20: rgba(var(--ks-accent-rgb),.2);
+  --accent-border-25: rgba(var(--ks-accent-rgb),.25);
+  --accent-border-30: rgba(var(--ks-accent-rgb),.3);
+  --accent-border-50: rgba(var(--ks-accent-rgb),.5);
+  --accent-soft: rgba(var(--ks-accent-rgb),.1);
+}
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body.ks-ui {
+  color: var(--ks-text);
+  font-family: var(--ks-font);
+  background: radial-gradient(ellipse 80% 42% at 50% -5%,rgba(var(--ks-accent-rgb),.13),transparent 70%),linear-gradient(115deg,#040609 0%,#10141a 48%,#050608 100%);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-x: none;
+}
+.ks-ui *, .ks-ui *::before, .ks-ui *::after { box-sizing: border-box; }
+.ks-ui :is(button, input, textarea, select, option) { font-family: var(--ks-font); }
+.ks-ui :is(input, textarea, [contenteditable="true"]) {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: manipulation;
+}
+.ks-ui :is(input, textarea, select) { scroll-margin-block: 80px; }
+/* Size text-entry fields, including dynamically created editors, rather than
+   inflating every small icon/button. Keep native pinch zoom available. */
+@media (max-width: 1023px), (pointer: coarse) {
+  body :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]), textarea, select, [contenteditable="true"]) {
+    font-size: max(16px, 1em) !important;
+    line-height: 1.4;
+  }
+  body :is(input[type="date"], input[type="time"], input[type="datetime-local"]) { min-width: 0; max-width: 100%; min-height: 42px; }
+  body textarea { max-width: 100%; }
+}
+.ks-ui a, .ks-ui button { -webkit-tap-highlight-color: transparent; }
+.ks-ui :is(button,a):focus:not(:focus-visible) { outline: none; }
+.ks-ui :is(.sidebar-link,.mobile-nav-link,.nav-pill,.nav-dropdown-item):focus { outline: none; }
+.ks-ui :is(input,textarea,select):focus-visible { outline: 2px solid rgba(var(--ks-accent-rgb),.6); outline-offset: 2px; }
+.ks-ui :is(*, *::before, *::after):focus,
+.ks-ui :is(*, *::before, *::after):focus-visible { outline: none !important; box-shadow: none !important; }
+
+/* Navigation floats above the section; it never reserves a viewport strip. */
+.ks-drawer-trigger {
+  position: fixed;
+  top: var(--ks-menu-top);
+  left: var(--ks-menu-left);
+  z-index: 12050;
+}
+.ks-drawer-trigger, .ks-drawer-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  padding: 0;
+  color: var(--ks-accent);
+  background: rgba(22,25,30,.48);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 6px 22px rgba(0,0,0,.12);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform .28s var(--ks-ease), background .22s, border-color .22s;
+}
+.ks-drawer-trigger svg { width: 14px; height: 14px; }
+@media (pointer: coarse) {
+  /* Keep the visual control small while preserving a comfortable touch target. */
+  .ks-drawer-trigger::before { content: ''; position: absolute; inset: -7px; }
+}
+.ks-drawer svg { width: 19px; height: 19px; flex-shrink: 0; }
+.ks-drawer svg, .ks-drawer-trigger svg { fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.ks-drawer-trigger:active, .ks-drawer-close:active { transform: scale(.94); }
+.ks-drawer-trigger:focus-visible, .ks-drawer-close:focus-visible { outline: 2px solid var(--ks-accent); outline-offset: 3px; }
+
+/* The blur belongs to overlay surfaces. Underlying iframe composition is
+   untouched, including WebGL, media and cross-origin embedded players. */
+.ks-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 12055;
+  isolation: isolate;
+  pointer-events: none;
+  visibility: hidden;
+}
+.ks-drawer.is-open, .ks-drawer.is-closing { visibility: visible; }
+.ks-drawer.is-open { pointer-events: auto; }
+.ks-drawer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 35%,rgba(12,13,17,.18),rgba(5,7,11,.56));
+  /* The document behind the drawer must remain crisp (especially iframe/canvas pages). */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  opacity: 0;
+  transition: opacity .36s ease;
+}
+.ks-drawer.is-open .ks-drawer-backdrop { opacity: 1; }
+.ks-drawer-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  padding: env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px);
+  width: min(344px,calc(100% - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0 28px 28px 0;
+  color: var(--ks-text);
+  background: radial-gradient(ellipse at 0 0,rgba(var(--ks-accent-rgb),.12),transparent 58%),rgba(8,11,17,.54);
+  -webkit-backdrop-filter: blur(24px) saturate(.8);
+  backdrop-filter: blur(24px) saturate(.8);
+  box-shadow: 20px 0 80px rgba(0,0,0,.2);
+  transform: translate3d(calc(-100% - 24px),0,0);
+  opacity: 1;
+  transition: transform .56s var(--ks-ease);
+}
+.ks-drawer.is-open .ks-drawer-panel { transform: translate3d(0,0,0); opacity: 1; }
+.ks-drawer-head { display: flex; align-items: center; gap: 11px; padding: 16px 15px 14px; flex: 0 0 auto; }
+.ks-drawer-brand-mark { display: grid; place-items: center; width: 26px; height: 26px; color: var(--ks-accent); }
+.ks-drawer-brand-mark .ks-beer-logo { width: 23.706px; height: 26px; stroke: none; display: block; }
+.ks-beer-bubble { transform-box: fill-box; transform-origin: center; animation: ks-bubble-rise var(--bubble-duration,4s) ease-in-out var(--bubble-delay,0s) infinite; }
+@keyframes ks-bubble-rise { 0%,100% { opacity:.12; transform:translateY(4px) scale(.72); } 38% { opacity:.72; } 76% { opacity:.05; transform:translateY(-34px) scale(1.08); } }
+.ks-drawer-brand-copy { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.ks-drawer-brand-copy b { font: 700 18px/32px var(--logo-font, var(--ks-font)); color: #fff2cc; white-space: nowrap; }
+.ks-logo-font-loading .ks-drawer-brand-copy b { opacity: 0; }
+.ks-drawer-brand-copy > span { font: 400 9px/1.4 var(--ks-font); color: var(--ks-muted); }
+.ks-drawer-close { width: 38px; height: 38px; background: transparent; border-color: transparent; color: var(--ks-muted); border-radius: 12px; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+.ks-drawer-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 12px 16px; scrollbar-width: none; }
+.ks-drawer-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.ks-drawer-section + .ks-drawer-section { margin-top: 18px; }
+.ks-drawer-section-title { margin: 0; padding: 0 11px 9px; font: 600 9px/1.4 var(--ks-font); text-transform: uppercase; letter-spacing: .16em; color: rgba(218,211,194,.5); }
+.ks-drawer-nav { display: grid; gap: 4px; }
+.ks-drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: #d5d0c4;
+  text-decoration: none;
+  text-align: left;
+  font: 600 12px/1.4 var(--ks-font);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .2s, border-color .2s, background .24s, transform .28s var(--ks-ease);
+}
+.ks-drawer-link > svg { color: rgba(var(--ks-accent-rgb),.6); transition: color .2s, transform .28s var(--ks-ease); }
+.ks-drawer-link > span:not(.ks-nav-arrow) { flex: 1; min-width: 0; }
+.ks-nav-arrow { color: rgba(var(--ks-accent-rgb),.4); font: 400 21px/1 system-ui; opacity: 0; transform: translateX(-5px); transition: opacity .2s, transform .3s var(--ks-ease); }
+.ks-drawer-link.is-active { color: #fff5dc; border-color: rgba(var(--ks-accent-rgb),.23); background: linear-gradient(90deg,rgba(var(--ks-accent-rgb),.14),rgba(var(--ks-accent-rgb),.025)); }
+.ks-drawer-link.is-active svg { color: var(--ks-accent); }
+.ks-drawer-link.is-active .ks-nav-arrow { opacity: .8; transform: none; }
+.ks-drawer-link:focus { outline: none; }
+/* Keyboard focus moves a small marker, without a sticky box/glow on the item. */
+.ks-drawer-link:focus-visible .ks-nav-arrow { opacity: 1; transform: none; }
+.ks-drawer-link:active { transform: scale(.985); background: rgba(var(--ks-accent-rgb),.12); }
+.ks-drawer-footer { flex: 0 0 auto; padding: 9px 12px 12px; border: 0; background: transparent; }
+.ks-drawer-logout { color: #d68d85; }
+.ks-drawer-logout > svg { color: #c7817a; }
+.ks-drawer-footer .sidebar-mini-player { margin-bottom: 10px; }
+body.ks-drawer-open { overflow: hidden !important; }
+@media (hover: hover) and (pointer: fine) {
+  .ks-drawer-trigger:hover, .ks-drawer-close:hover { border-color: rgba(var(--ks-accent-rgb),.5); background: rgba(var(--ks-accent-rgb),.11); transform: translateY(-1px); }
+  .ks-drawer-link:hover { color: #fff4d6; border-color: rgba(var(--ks-accent-rgb),.18); background: rgba(var(--ks-accent-rgb),.065); transform: translateX(2px); }
+  .ks-drawer-link:hover > svg { color: var(--ks-accent); transform: translateY(-1px); }
+  .ks-drawer-link:hover .ks-nav-arrow { opacity: 1; transform: none; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ks-drawer-panel { background: #0c1017; }
+  .ks-drawer-backdrop { background: rgba(3,5,8,.83); }
+}
+
+/* Consistent borderless glass surfaces, without neon text.
+   Scene canvases, map skins, album artwork and game/media renderers retain
+   their domain-specific presentation. */
+.ks-ui :is(.card,.panel,.recipe-card,.toolbar,.chat-shell,.chat-sidebar,.event-card,.profile-top-card,.backlog-column,.column-header,.glass) {
+  border: 0;
+  background-color: var(--ks-surface);
+  box-shadow: 0 12px 32px rgba(0,0,0,.16);
+}
+.ks-ui :is(.card,.recipe-card,.event-card,.profile-top-card,.panel,.chat-shell,.chat-sidebar) { border-radius: var(--ks-radius); }
+.ks-ui :is(.text-glow,.glow,.glow-amber,.glow-amber-strong) { text-shadow: none; box-shadow: 0 12px 32px rgba(0,0,0,.16); }
+.ks-ui :is(.input-field,.modal-input,.modal-field,.search,.input,.textarea,.macro-input,.search-input,.cs-btn,.select-trigger,.cs-trigger) {
+  border: 0;
+  background-color: rgba(255,255,255,.045);
+  color: var(--ks-text);
+  border-radius: 12px;
+}
+.ks-ui :is(.input-field,.modal-input,.modal-field,.search,.input,.textarea,.macro-input,.search-input)::placeholder { color: #8b8d8e; }
+.ks-ui :is(.cs-menu,.select-menu,.calc-custom-menu,.beer-sort-menu,.beer-search-popover) {
+  border: 0;
+  background: var(--ks-surface-raised);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,.35);
+}
+.ks-ui :is(.modal-card,.fullscreen-card,.detail-panel,.avatar-modal-card) { border: 0; background: linear-gradient(155deg,#151a23,#090c12); border-radius: 22px; }
+.ks-ui :is(.btn-amber,.btn-primary,.btn-main) { border-radius: 12px; }
+.ks-ui :is(.particles,.fx-grid,.fx-scan) { opacity: .18; }
+
+/* Render glass on UI surfaces only. Never blur a parent of a renderer. */
+.ks-ui :is(.card,.recipe-card,.event-card,.profile-top-card,.backlog-column,.column-header,.glass,.toolbar,.modal-card,.fullscreen-card,.detail-panel,.avatar-modal-card,.section-card) {
+  border: 0 !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+.ks-ui :is(.panel,.chat-shell,.chat-sidebar) { border: 0 !important; }
+.ks-ui :is(.card,.panel,.glass,.toolbar):has(iframe,canvas) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.ks-ui :is(.input-field,.modal-input,.search,.input,.textarea,.macro-input,.search-input,.cs-btn,.select-trigger,.cs-trigger,.btn,.btn-amber,.btn-main,.btn-primary,.pill-btn,.nav-pill,.tab-btn,.store-btn,.calc-custom-trigger,.section-toggle) { border: 0 !important; }
+.ks-drawer-link { transition: color .2s, background .24s, transform .38s var(--ks-ease), opacity .38s; }
+.ks-drawer.is-open .ks-drawer-link { animation: ks-menu-reveal .48s var(--ks-ease) both; animation-delay: calc(var(--ks-order,0) * 25ms); }
+@keyframes ks-menu-reveal { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+
+/* The home screen owns the routes and full-size service iframes. */
+body.ks-shell-owner.ks-page-index { height: var(--ks-vh,100dvh); padding: 0 !important; overflow: hidden; }
+body.ks-page-index header.header-shell,
+body.ks-page-index .sidebar,
+body.ks-page-index .mobile-sidebar,
+body.ks-page-index .mobile-sidebar-bar { display: none !important; }
+body.ks-page-index .layout-shell { display: block !important; height: 100%; min-height: 0; padding: 0 !important; }
+body.ks-page-index .content-shell { height: 100% !important; min-height: 0 !important; width: 100%; padding: 10px clamp(10px,2vw,24px) max(16px,env(safe-area-inset-bottom)) !important; overflow-y: auto; }
+body.ks-page-index.page-service-active .content-shell { padding: 0 !important; overflow: hidden; }
+body.ks-page-index.page-service-active .page-service { height: 100% !important; padding: 0 !important; margin: 0 !important; }
+body.ks-page-index .service-frame { height: 100% !important; min-height: 0 !important; border: 0 !important; border-radius: 0 !important; }
+body.ks-page-index .service-frame,
+body.ks-page-index .service-frame iframe { transform: none !important; filter: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; will-change: auto !important; backface-visibility: visible !important; }
+body.ks-page-index .service-frame iframe:focus { outline: none; }
+body.ks-page-index #calendarSection .calendar-left > div { padding: 10px 14px 14px !important; border: 0 !important; }
+body.ks-page-index #calendarSection .calendar-left > div > div:first-child { padding-left: 42px; min-height: 44px; margin-bottom: 10px; }
+body.ks-page-index #beerSticky { top: 0 !important; padding-top: 0 !important; border: 0 !important; }
+body.ks-page-index #beerSticky > div:first-child { padding-left: 54px; min-height: 44px; }
+body.ks-page-index #backlogSection > div:first-child { padding-left: 54px; }
+
+/* Section controls share their first row with the floating menu. No universal
+   top padding: embedded and standalone documents have the same layout. */
+body.ks-ui:is(.ks-page-planning,.ks-page-planning-event,.ks-page-profile,.ks-page-roulette,.ks-page-recipes) > main { padding-top: max(10px,env(safe-area-inset-top)) !important; }
+body.ks-page-planning .planning-head > div:first-child { padding-left: 46px; }
+body.ks-page-planning .planning-head { margin-bottom: 12px; }
+body.ks-page-planning .planning-head p { max-width: 55ch; }
+body.ks-page-planning-event .event-topbar { padding-top: 0; }
+body.ks-page-planning-event .event-topbar-main { padding-left: 0; min-height: 44px; }
+body.ks-page-planning-event .event-topbar-title { padding-left: 46px; min-height: 40px; }
+body.ks-page-profile .profile-top-card { padding: 12px !important; }
+body.ks-page-profile .profile-avatar-main { padding-left: 42px; }
+body.ks-page-roulette .roulette-title { margin-left: 46px; padding-left: 0; min-height: 40px; display: flex; align-items: center; font-size: clamp(14px,2vw,22px); }
+body.ks-page-water > main > section { padding-top: max(10px,env(safe-area-inset-top)); }
+body.ks-page-water .tabs { margin-left: 54px; min-height: 44px; }
+body.ks-page-water > main > section > div:first-child { margin-bottom: 12px; }
+body.ks-page-snacks > main { padding: max(10px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom)); }
+body.ks-page-snacks > main > section { padding-top: 0 !important; padding-bottom: 0 !important; }
+body.ks-page-snacks .stacked-sections { margin-top: 0 !important; gap: 12px; }
+body.ks-page-snacks [data-section-card="beer"] { padding-top: 8px; }
+body.ks-page-snacks [data-section-card="beer"] .section-head { min-height: 44px; }
+body.ks-page-snacks [data-section-card="beer"] .section-head-left { padding-left: 38px; }
+body.ks-page-snacks .total-overview-card { margin-top: 12px; }
+body.ks-page-pokaki > div > header { padding-top: max(10px,env(safe-area-inset-top)); padding-left: var(--ks-clear-left); }
+body.ks-page-pokaki .header-actions { min-height: 44px; }
+body.ks-page-pokaki .header-actions > div { border: 0; backdrop-filter: blur(16px); }
+body.ks-page-beer-shelf .shelf-header { top: 0; margin: 0; min-height: 64px; padding: max(10px,env(safe-area-inset-top)) 10px 10px var(--ks-clear-left); background: transparent; border: 0; backdrop-filter: none; }
+body.ks-page-beer-shelf .shelf-header .back { display: inline-flex; align-items: center; flex-shrink: 0; min-height: 36px; font-size: 11px; padding: 4px 6px; border: 0; background: rgba(22,25,30,.6); border-radius: 10px; }
+body.ks-page-beer-shelf .shelf-actions { flex: 1; min-width: 0; gap: 8px; }
+body.ks-page-beer-shelf main { min-height: calc(var(--ks-vh,100dvh) - 64px); }
+html.is-single-shelf body.ks-page-beer-shelf main { height: calc(var(--ks-vh,100dvh) - 64px); }
+body.ks-page-beer #space, body.ks-page-board .board { top: 0; }
+body.ks-page-board .board-header { top: var(--ks-menu-top); left: auto; right: 10px; max-width: calc(100% - var(--ks-clear-left) - 10px); }
+body.ks-page-board .widgets-menu { margin-top: 0; }
+body.ks-page-board .toolbox { max-height: calc(var(--ks-vh,100dvh) - 100px); }
+body.ks-page-board .toolbox-body { overflow-y: auto; }
+
+body.ks-page-gallery .header-shell { top: var(--ks-menu-top); }
+body.ks-page-map .map-page { top: 0; height: var(--ks-vh,100dvh); }
+body.ks-page-map .top-panel { top: var(--ks-menu-top); left: var(--ks-clear-left); right: 10px; padding: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+body.ks-page-map .top-panel .input-wrap { min-width: 0; }
+body.ks-page-map .top-panel :is(.search-input,.style-select,.btn,.link-btn) { background: rgba(16,20,27,.82); backdrop-filter: blur(16px); border: 0; }
+body.ks-page-map .top-panel .link-btn { display: none; }
+body.ks-page-restaurants .topbar { top: var(--ks-menu-top); left: var(--ks-clear-left); right: 10px; gap: 8px; }
+body.ks-page-restaurants .map-style-pod { margin-top: 0; }
+body.ks-page-recipes .toolbar { top: 0; padding: 10px; background: rgba(13,17,23,.88); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); box-shadow: 0 12px 32px rgba(0,0,0,.2); grid-template-columns: minmax(0,1fr) auto; gap: 10px; }
+body.ks-page-recipes #searchInput { width: calc(100% - 34px); margin-left: 34px; min-width: 0; }
+body.ks-page-recipes .categories { grid-column: 1 / -1; grid-row: 2; }
+body.ks-page-recipes #composerToggleBtn { white-space: nowrap; }
+body.ks-page-ai > .topbar { display: none; }
+body.ks-page-ai .page-shell { padding: max(10px,env(safe-area-inset-top)) 10px 10px; height: var(--ks-vh,100dvh); min-height: 0; }
+body.ks-page-ai .chat-layout { height: 100%; min-height: 0; }
+body.ks-page-ai .chat-sidebar { padding-top: 16px; }
+body.ks-page-ai .chat-sidebar > h3 { margin-left: 44px; min-height: 28px; }
+body.ks-page-ai .chat-list { max-height: none; overflow: auto; }
+body.ks-ui:is(.ks-page-call,.ks-page-meet) .call-shell { height: var(--ks-vh,100dvh); padding-top: max(10px,env(safe-area-inset-top)); }
+body.ks-ui:is(.ks-page-call,.ks-page-meet) .sr-note { padding-left: 40px; }
+body.ks-ui:is(.ks-page-call,.ks-page-meet) .cockpit-toggle { border: 0; }
+body.ks-page-call .room-picker-title { margin-left: 46px; }
+body.ks-page-meet .guest-entry-card,
+body.ks-page-meet .call-shell .panel,
+body.ks-page-meet .guest-entry-badge,
+body.ks-page-meet .guest-room-option { border: 0 !important; box-shadow: 0 18px 60px rgba(0,0,0,.24); }
+body.ks-page-meet .guest-entry-card { -webkit-backdrop-filter: blur(24px) saturate(1.08); backdrop-filter: blur(24px) saturate(1.08); }
+body.ks-page-meet .guest-room-option { -webkit-backdrop-filter: blur(18px) saturate(1.08); backdrop-filter: blur(18px) saturate(1.08); }
+body.ks-page-music > .page { padding-top: max(10px,env(safe-area-inset-top)); }
+body.ks-page-video > .page { height: var(--ks-vh,100dvh); min-height: 0; padding-top: max(10px,env(safe-area-inset-top)); }
+body.ks-page-video .discover-head.has-back { padding: 0 12px 0 54px; min-height: 44px; }
+body.ks-page-video .discover:not(:has(.discover-head.has-back)) > .search-wrap { padding-top: 0; }
+body.ks-page-video .discover:not(:has(.discover-head.has-back)) .search-row { margin-left: 0; padding-left: 38px; min-height: 44px; grid-template-columns: minmax(0,1fr) auto; }
+body.ks-page-homm3 > .app { height: var(--ks-vh,100dvh); margin: 0; }
+body.ks-page-host { padding: 0; }
+body.ks-page-stalker .minimal-shell { min-height: var(--ks-vh,100dvh); }
+
+@media (max-width: 1023px) {
+  .ks-drawer-panel { width: min(324px,calc(100% - 24px)); }
+  .ks-drawer-link { min-height: 46px; font-size: 12px; }
+  .ks-drawer-head { padding: 16px 12px; }
+  .ks-ui :is(.logo-block,.mobile-brand,.topbar-logo) { display: none !important; }
+  .ks-ui .participant-add { flex-wrap: wrap; }
+  .ks-ui .participant-add input { flex: 1 1 190px; min-width: 0; }
+  .ks-ui .modal-card { max-width: calc(100vw - 24px); max-height: calc(var(--ks-vh,100dvh) - 24px); overflow-y: auto; }
+  body.ks-page-recipes #composerToggleBtn { font-size: 11px; padding-inline: 10px; width: auto; }
+  body.ks-page-beer-shelf .shelf-actions { gap: 5px; }
+  body.ks-page-beer-shelf .density-control { flex: 1; }
+  body.ks-page-beer-shelf .density-control input { width: 100%; min-width: 28px; max-width: 110px; }
+  body.ks-page-beer-shelf #addBeerButton { font-size: 11px; padding: 8px; }
+  body.ks-page-snacks .section-head { gap: 8px; }
+  body.ks-page-snacks [data-section-card="beer"] .section-head-left { gap: 6px; }
+  body.ks-page-ai .chat-layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(0,1fr); gap: 8px; }
+  body.ks-page-ai .chat-sidebar { height: auto; max-height: 108px; display: flex; align-items: center; gap: 12px; padding: 10px; overflow: hidden; }
+  body.ks-page-ai .chat-sidebar > h3 { flex-shrink: 0; margin: 0 0 0 44px; min-height: 24px; }
+  body.ks-page-ai .chat-list { display: flex; gap: 6px; overflow-x: auto; max-height: 84px; min-width: 0; }
+  body.ks-page-ai .chat-list > * { flex: 0 0 150px; margin: 0; }
+  body.ks-page-ai .chat-shell { min-height: 0; }
+  body.ks-page-music .cover-carousel { width: min(calc(100vw - 28px), 42dvh); }
+  body.ks-page-music .cover-wrap { width: 100%; height: auto; aspect-ratio: 1; }
+}
+@media (max-width: 380px) {
+  body.ks-page-beer-shelf .shelf-actions { gap: 3px; }
+  body.ks-page-beer-shelf #addBeerButton { font-size: 10px; padding-inline: 6px; }
+  body.ks-page-water .tabs { flex-wrap: wrap; }
+  body.ks-page-snacks [data-section-card="beer"] .section-head { flex-wrap: nowrap; }
+  body.ks-page-snacks #addBeerRow { font-size: 10px; padding-inline: 8px; }
+  body.ks-page-restaurants .ranking-toggle { padding-inline: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ks-drawer *, .ks-drawer-trigger { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+/* The first row contains the menu slot; scrolling and dialogs temporarily
+   tuck away the trigger so it cannot cover a card or an editor. */
+.ks-drawer-trigger { transition: opacity .18s, transform .28s var(--ks-ease), background .22s; }
+.ks-drawer-trigger.is-suspended { opacity: 0; pointer-events: none; transform: translateY(-8px); }
+.ks-drawer-close:hover { background: transparent !important; }
+body.ks-page-restaurants .topbar { max-width: none; display: flex; align-items: center; }
+body.ks-page-restaurants .map-style-pod { position: static; margin-left: auto; }
+body.ks-page-restaurants :is(.ranking-toggle,.city-select-trigger,.map-style-toggle) { height: 44px; border: 0; }
+body.ks-page-restaurants .map-style-btn { height: 44px; min-height: 44px; border: 0; }
+body.ks-page-restaurants .map-style-indicator { border: 0; }
+body.ks-page-recipes .page { padding-top: 0 !important; }
+body.ks-page-recipes :is(.search,.category-chip,#composerToggleBtn) { background-color: rgba(28,33,41,.92); border: 0; }
+body.ks-ui:is(.ks-page-call,.ks-page-meet) :is(.room-picker-card,.room-tile,.room-history,.guest-entry-card,.guest-room-option,.guest-entry-badge) {
+  border: 0 !important; background: rgba(18,23,31,.66); -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); box-shadow: 0 12px 42px rgba(0,0,0,.18);
+}
+body.ks-page-call .room-picker { padding: 10px 12px; }
+body.ks-page-call .room-picker-card { margin: auto; max-height: calc(var(--ks-vh,100dvh) - 20px); overflow: auto; }
+body.ks-page-meet .guest-entry-title { padding-left: 38px; min-height: 36px; }
+body.ks-page-host:not(.gameIsStarted) { min-height: var(--ks-vh,100dvh); height: auto; display: grid; place-items: center; overflow-y: auto; }
+body.ks-page-host .start-container { width: min(100%,560px); padding: 10px 16px; text-align: center; }
+body.ks-page-host .button-container { display: flex; flex-direction: column; align-items: center; }
+body.ks-page-host .cover { width: min(230px,42vw); height: min(292px,34dvh); margin: 0 auto 14px; border: 0; }
+body.ks-page-host .click-to-play { margin: 0; width: 100%; }
+body.ks-page-host .profile-start { margin-bottom: 12px; width: 100%; }
+body.ks-page-host #profile-input { width: 100%; font-size: 16px; border: 0; background: rgba(24,29,38,.72); min-height: 44px; margin: 0; }
+body.ks-page-host .profile-note { font-size: 11px; }
+body.ks-page-host #click-to-play-button { border: 0; background: rgba(245,65,147,.12); backdrop-filter: blur(18px); box-shadow: none; font-size: 22px; }
+body.ks-page-host :is(.developed-by,.jsdos-key) { display: none; }
+body.ks-page-host.gameIsStarted { height: var(--ks-vh,100dvh); overflow: hidden; }
+@media (max-width: 1023px) {
+  .ks-drawer [data-route="svc_gallery"] { display: none; }
+  body.ks-page-video .search-input { min-width: 0; width: 100%; }
+  body.ks-page-video #searchBtn { padding: 12px 10px; font-size: 12px; }
+  body.ks-page-recipes #composerToggleBtn { font-size: 0; width: 42px; height: 48px; padding: 0; }
+  body.ks-page-recipes #composerToggleBtn::after { content: '＋'; font-size: 24px; }
+  body.ks-page-restaurants .topbar { gap: 5px; }
+  body.ks-page-restaurants .ranking-toggle { min-width: 0; padding: 0 8px; gap: 5px; }
+  body.ks-page-restaurants .ranking-toggle span { font-size: 10px; }
+  body.ks-page-restaurants .ranking-toggle b { min-width: 22px; padding: 0 5px; }
+  body.ks-page-restaurants .city-select { flex: 1; min-width: 0; max-width: 140px; }
+  body.ks-page-restaurants .city-select-trigger { padding: 0 8px; }
+  body.ks-page-restaurants .map-style-btn { min-width: 28px; width: 28px; height: 44px; min-height: 44px; padding: 0; }
+  body.ks-page-restaurants .map-style-btn :is(svg,img) { width: 18px; height: 18px; }
+  body.ks-page-music .cover-carousel { margin-top: 36px; }
+  body.ks-page-planning-event.equipment-mode .event-topbar-main { grid-template-columns: minmax(0,1fr); }
+  body.ks-page-planning-event.equipment-mode .event-topbar-title { width: 100%; }
+  body.ks-page-planning-event.equipment-mode .equipment-top-search { margin-top: 4px; }
+  body.ks-page-beer-shelf .shelf-header { flex-wrap: wrap; gap: 4px; }
+  body.ks-page-beer-shelf .shelf-actions { flex-basis: 100%; }
+  body.ks-page-beer-shelf .shelf-header .back { min-height: 36px; }
+}
+
+/* Full-width glass layouts share the fixed menu anchor above. */
+body.ks-page-restaurants .topbar { padding-left: 0; }
+body.ks-page-restaurants .topbar::before { content: ''; width: 30px; height: 30px; flex: 0 0 30px; }
+body.ks-page-restaurants .map-style-pod { margin-left: auto; }
+body.ks-page-recipes .page { width: 100%; max-width: none; padding: 10px 16px 28px !important; }
+body.ks-page-recipes .toolbar { width: 100%; max-width: none; }
+body.ks-page-recipes #searchInput { width: 100%; margin-left: 0; }
+body.ks-page-profile > main { width: 100%; max-width: none; padding: 10px 16px calc(24px + env(safe-area-inset-bottom)) !important; }
+body.ks-page-profile :is(.profile-top-card,.card,.stat-chip,.profile-avatar-actions,.cs-btn,.cs-menu,.modal-card,.avatar-crop-shell) {
+  border: 0 !important; background: rgba(18,23,31,.72) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.08); backdrop-filter: blur(20px) saturate(1.08);
+  box-shadow: 0 14px 38px rgba(0,0,0,.2) !important;
+}
+body.ks-page-profile .profile-top-card { padding: 14px !important; }
+body.ks-page-profile .profile-avatar-main { padding-left: 38px; }
+body.ks-page-profile :is(.text-gray-800,.border-gray-800,.border-amber-500\/10,.border-amber-500\/20,.border-amber-500\/25,.border-amber-500\/30,.border-amber-500\/50) { border-color: transparent !important; }
+body.ks-page-profile :is(input,textarea,select,.cs-btn) { min-height: 42px; }
+body.ks-page-profile .profile-avatar-actions { padding: 10px; border-radius: 16px; }
+body.ks-page-profile #logoFontCS .cs-btn { background: rgba(26,32,43,.94) !important; }
+body.ks-page-profile #logoFontCS .cs-menu { background: rgba(18,23,31,.98) !important; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+body.ks-page-video .discover-head.has-back { padding: 10px 12px; }
+body.ks-page-video .discover-head-row { min-height: 30px; padding-left: 34px; }
+body.ks-page-video .head-back-btn { border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; min-height: 30px; color: var(--accent); }
+body.ks-page-video .head-back-btn::before { content: none; }
+body.ks-page-video :is(.panel,.search-wrap,.source-toggle,.mode-switch,.hero,.player-source-bar) { border: 0 !important; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+body.ks-page-video .search-input:focus { border-color: transparent !important; box-shadow: none !important; }
+body.ks-page-video .search-wrap { padding-left: 12px; padding-right: 12px; }
+body.ks-page-video .search-row { padding-left: 34px; }
+body.ks-page-video .search-row .search-input { min-width: 0; }
+body.ks-page-video .btn-main { min-width: 90px; }
+body.ks-page-beer-shelf .shelf-header .back { display: none; }
+body.ks-page-beer-shelf .shelf-actions { width: 100%; }
+body.ks-page-beer-shelf .shelf-header { padding-left: var(--ks-clear-left); }
+@media (min-width: 721px) {
+  body.ks-page-recipes .toolbar { grid-template-columns: minmax(0,1fr) auto; }
+}
+@media (max-width: 1023px) {
+  body.ks-page-recipes .page { padding: 8px 10px 24px !important; }
+  body.ks-page-recipes #composerToggleBtn { display: grid; place-items: center; line-height: 1; font-size: 0; width: 42px; height: 48px; padding: 0; }
+  body.ks-page-recipes #composerToggleBtn::after { content: '＋'; display: block; font-size: 22px; line-height: 1; transform: translateY(-1px); }
+}
+.ks-ui :is(input,button,select,textarea,[tabindex]):focus,
+.ks-ui :is(input,button,select,textarea,[tabindex]):focus-visible { border-color: transparent !important; outline: none !important; box-shadow: none !important; }
+body.ks-page-restaurants .map-style-pod { margin-left: 8px !important; flex: 0 0 auto; }
+body.ks-page-restaurants .map-style-toggle { height: 44px; min-height: 44px; padding: 0; }
+body.ks-page-profile [class*="bg-black"] { background: rgba(8,12,17,.44) !important; }
+body.ks-page-profile table { background: rgba(8,12,17,.38) !important; }
+body.ks-page-profile .profile-avatar-main { position: relative; }
+body.ks-page-beer-shelf .shelf-actions { position: relative; }
+body.ks-page-video .search-row,
+body.ks-page-video .discover-head-row,
+body.ks-page-planning .planning-head > div:first-child,
+body.ks-page-water .tabs,
+body.ks-page-snacks [data-section-card="beer"] .section-head-left,
+body.ks-page-roulette .roulette-title,
+body.ks-page-pokaki .header-actions,
+body.ks-ui:is(.ks-page-call,.ks-page-meet) :is(.room-picker-head,.guest-entry-head),
+body.ks-page-gallery .tools-panel { position: relative; }
+
+/* Preboot guard for the index shell: the old header/sidebar never paints while
+   the deferred navigation controller is attaching. */
+html.ks-preboot body.layout-sidebar > .header-shell,
+html.ks-preboot body.layout-sidebar > .layout-shell > .sidebar,
+html.ks-preboot body.layout-sidebar > .mobile-sidebar-bar,
+html.ks-preboot body.layout-sidebar > .mobile-sidebar { display: none !important; }
+
+/* Shared glass language for the six high-traffic sections. */
+body.ks-page-index :is(#beerSection,.calendar-card,.backlog-column,.column-header,.beer-wrapper,#beerSticky,.beer-rating-card) {
+  border: 0 !important; background: rgba(15,20,27,.66) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.08); backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: 0 14px 42px rgba(0,0,0,.18) !important;
+}
+
+body.ks-page-index :is(#calendarSection .rounded-2xl,#backlogSection .rounded-2xl,#beerSection .rounded-2xl) { border-color: transparent !important; }
+body.ks-page-snacks :is(.content,.card,.section-card,.total-overview-card,.macro-card,.food-card,.meal-card,.form-card,.summary-card,.macro-grid),
+body.ks-page-recipes :is(.toolbar,.recipe-card,.content,.cards-shell,.detail-panel,.form-panel,.form-section,.photo-editor,.composer,.composer-body,.fullscreen-card),
+body.ks-page-music :is(.page,.layout,.panel,.panel-body,.current-track,.player-source-bar,.playlist-panel,.library-panel,.track-list,.queue-panel,.desktop-player-column,.mobile-player-column),
+body.ks-page-video :is(.page,.layout,.panel,.discover,.player-panel,.search-wrap,.mode-switch,.source-toggle,.player-source-bar,.results,.movie-card,.hero,.detail-panel) {
+  border: 0 !important; background: rgba(15,20,27,.64) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.08); backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: 0 14px 42px rgba(0,0,0,.18) !important;
+}
+body.ks-page-snacks :is(.input-field,.select-field,.macro-input,.section-toggle,.btn,.button),
+body.ks-page-music :is(input,button,select,textarea),
+body.ks-page-video :is(input,button,select,textarea),
+body.ks-page-recipes :is(input,button,select,textarea) { border-color: transparent !important; }
+
+/* The trigger owns this one invariant anchor on every page. */
+.ks-drawer-trigger { top: var(--ks-menu-top) !important; left: var(--ks-menu-left) !important; }
+.ks-drawer-backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(5,7,11,.2); }
+.ks-drawer-panel { -webkit-backdrop-filter: blur(32px) saturate(.86); backdrop-filter: blur(32px) saturate(.86); background: rgba(8,11,17,.46); box-shadow: 20px 0 80px rgba(0,0,0,.14); }
+
+/* Media and drawing surfaces keep their own compositing. The surrounding
+   controls remain glassy, while a player/renderer container never blurs its
+   iframe or canvas contents. */
+body.ks-page-video :is(.player-panel,.player-stage,.player-host,.floating-player):has(iframe,canvas),
+body.ks-page-recipes :is(.photo-editor,.photo-stage,.crop-stage,.fullscreen-card):has(canvas),
+body.ks-page-index :is(.service-frame,.service-frame iframe):has(iframe,canvas) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* A single top-row contract: every section starts at the same safe-area
+   anchor. Only the first row reserves the menu; content below stays centered. */
+.ks-section-toolbar {
+  min-height: var(--ks-control-height);
+  margin: 0 0 12px;
+  padding-left: calc(var(--ks-clear-left) - 10px);
+  display: flex;
+  align-items: center;
+}
+.ks-section-toolbar h1 {
+  margin: 0;
+  font: 700 15px/var(--ks-control-height) var(--ks-font);
+  color: var(--ks-text);
+}
+body.ks-page-gallery .header-shell {
+  position: fixed;
+  top: var(--ks-menu-top);
+  left: auto;
+  right: var(--ks-page-right);
+  width: fit-content;
+  max-width: calc(100% - var(--ks-clear-left) - var(--ks-page-right));
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+body.ks-page-gallery .header-inner { padding: 0; }
+body.ks-page-gallery #toolsToggle {
+  height: var(--ks-control-height);
+  min-height: var(--ks-control-height);
+  padding: 0 10px;
+  font-size: 12px;
+  display: inline-flex;
+  background: rgba(22,25,30,.48);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  box-shadow: none;
+}
+body.ks-page-gallery .tools-menu { border: 0; background: rgba(12,16,23,.72); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+body.ks-page-gallery .tools-item { border: 0; }
+
+/* Recipes use an unpainted grid around separate glass controls. The menu
+   never sits on top of the toolbar surface or its search input. */
+body.ks-page-recipes > .page { padding: var(--ks-menu-top) 10px 24px !important; }
+html:has(> body.ks-ui:is(.ks-page-recipes,.ks-page-pokaki)) { overflow-x: hidden; }
+body.ks-ui:is(.ks-page-recipes,.ks-page-pokaki) { width: 100%; max-width: 100%; overflow-x: clip; }
+body.ks-page-recipes .toolbar {
+  top: var(--ks-menu-top);
+  padding: 0;
+  gap: 10px 8px;
+  grid-template-columns: minmax(0,1fr) auto;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+body.ks-page-recipes .toolbar #searchInput {
+  grid-column: 1; grid-row: 1;
+  margin: 0 0 0 calc(var(--ks-clear-left) - 10px);
+  width: calc(100% - var(--ks-clear-left) + 10px);
+  height: var(--ks-control-height);
+  min-height: var(--ks-control-height);
+  padding: 0 10px;
+}
+body.ks-page-recipes #composerToggleBtn {
+  grid-column: 2; grid-row: 1;
+  height: var(--ks-control-height);
+  min-height: var(--ks-control-height);
+  padding: 0 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; line-height: 1;
+}
+body.ks-page-recipes .toolbar .categories { padding: 0 20px 0 0; min-height: 30px; align-items: center; }
+body.ks-page-recipes .category-chip { height: 30px; font-size: 11px; }
+body.ks-page-recipes :is(.search,.category-chip) { backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+body.ks-page-recipes .category-chip:not(.active) { background: rgba(28,33,41,.68); }
+body.ks-page-recipes .category-chip.active { background: linear-gradient(135deg,#f8c14a,#d97706); color: #241b0e; }
+
+body.ks-page-restaurants .topbar::before { content: none; }
+body.ks-page-restaurants .topbar { height: 30px; min-height: 30px; align-items: center; }
+body.ks-page-restaurants :is(.ranking-toggle,.city-select-trigger,.map-style-toggle,.map-style-btn) {
+  height: 30px; min-height: 30px; padding-block: 0;
+}
+body.ks-page-restaurants .map-style-toggle { padding: 0; }
+body.ks-page-restaurants .map-style-pod { margin-left: 0 !important; }
+body.ks-page-restaurants .city-select-trigger { font-size: 12px; }
+body.ks-page-restaurants .ranking-toggle b { height: 22px; min-width: 22px; }
+
+body.ks-page-video > .page { padding: var(--ks-menu-top) 0 0; }
+body.ks-page-video .search-wrap { padding: 0 10px 10px; background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-video .layout { padding: 0; }
+body.ks-page-video .discover:not(:has(.discover-head.has-back)) .search-row {
+  padding-left: calc(var(--ks-clear-left) - 10px);
+  min-height: 30px;
+}
+body.ks-page-video .search-row { min-height: 30px; padding-left: 0; }
+body.ks-page-video .search-input { height: 30px; min-height: 30px; padding: 0 10px; }
+body.ks-page-video #searchBtn { height: 30px; min-height: 30px; padding: 0 12px; min-width: 72px; font-size: 12px; }
+body.ks-page-video .discover-head.has-back { padding: 0 10px 10px; min-height: 30px; }
+body.ks-page-video .discover-head-row { height: 30px; min-height: 30px; padding-left: calc(var(--ks-clear-left) - 10px); }
+body.ks-page-video .mode-switch { background: transparent !important; box-shadow: none !important; }
+
+body.ks-page-snacks > .content { padding: var(--ks-menu-top) 10px 24px; background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-snacks [data-section-card="beer"] { padding: 0 14px 14px; background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-snacks [data-section-card="beer"] .section-head { min-height: 30px; flex-wrap: nowrap; }
+body.ks-page-snacks [data-section-card="beer"] .section-head-left { padding-left: calc(var(--ks-clear-left) - 24px); min-width: 0; }
+body.ks-page-snacks [data-section-card="food"] .section-head-left { padding-left: 0; }
+body.ks-page-snacks :is(.section-toggle,#addBeerRow,#addFoodRow) { height: 30px; min-height: 30px; padding-block: 0; }
+body.ks-page-snacks .section-toggle { width: 30px; }
+body.ks-page-snacks .section-title { margin: 0; line-height: 30px; font-size: 16px; }
+
+body.ks-page-index .content-shell { padding: var(--ks-menu-top) 10px max(16px,env(safe-area-inset-bottom)) !important; }
+body.ks-page-index #calendarSection { gap: 16px; background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-index #calendarSection .calendar-left > div:first-child { padding: 0 14px 14px !important; }
+body.ks-page-index #calendarSection .calendar-left > div > div:first-child {
+  padding-left: calc(var(--ks-clear-left) - 24px);
+  min-height: 30px; height: 30px;
+}
+body.ks-page-index #calendarSection .calendar-left > div:first-child > div:first-child button { width: 30px; height: 30px; padding: 0; }
+body.ks-page-index #monthYear { margin: 0; font-size: clamp(14px,2vw,19px); line-height: 30px; }
+body.ks-page-index #backlogSection > .backlog-wrapper { padding: 0 !important; background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-index .backlog-column { border-radius: 16px; }
+body.ks-page-index .column-header { height: 30px; min-height: 30px; padding: 0 10px; box-shadow: none; }
+body.ks-page-index #backlogSection > .ks-section-toolbar { flex: 0 0 30px; }
+body.ks-page-index.layout-sidebar #backlogSection.is-active { display: flex; flex-direction: column; min-height: 0; }
+body.ks-page-index.layout-sidebar #backlogSection > .backlog-wrapper { flex: 1; min-height: 0; height: auto; }
+body.ks-page-index .column-header button { min-height: 30px; }
+body.ks-page-index #beerSection > .beer-wrapper { padding: 0 !important; }
+body.ks-page-index.layout-sidebar #beerSticky { padding: 0 !important; }
+body.ks-page-index #beerSticky { padding: 0 !important; }
+body.ks-page-index #beerSticky .beer-controls-row { padding-left: calc(var(--ks-clear-left) - 10px); min-height: 30px; gap: 8px; }
+body.ks-page-index #beerSticky > .beer-controls-row:first-child { min-height: 30px; padding-left: calc(var(--ks-clear-left) - 10px); }
+body.ks-page-index #beerSticky .beer-controls-row { background: transparent; }
+body.ks-page-index #beerSticky { background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-index #beerSticky .beer-controls-row :is(button,a,input) { height: 30px; min-height: 30px; padding-block: 0; display: inline-flex; align-items: center; font-size: 12px; }
+
+body.ks-page-planning > main, body.ks-page-planning-event > main { padding-top: var(--ks-menu-top) !important; padding-inline: 10px; }
+body.ks-page-planning .planning-head { padding-left: calc(var(--ks-clear-left) - 10px); align-items: center; flex-wrap: nowrap; min-height: 30px; gap: 8px; }
+body.ks-page-planning .planning-head > div:first-child { padding-left: 0; min-width: 0; }
+body.ks-page-planning .planning-head h2 { margin: 0; font-size: clamp(14px,2vw,18px); line-height: 30px; }
+body.ks-page-planning #addEventBtn { height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; border: 0; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+body.ks-page-planning-event .event-topbar-main { margin: 0; padding: 0; min-height: 30px; align-items: center; }
+body.ks-page-planning-event .event-topbar-title { padding-left: calc(var(--ks-clear-left) - 10px); min-height: 30px; align-items: center; }
+body.ks-page-planning-event #eventTitle { font-size: 16px; line-height: 30px; }
+body.ks-page-planning-event .event-topbar :is(.event-topbar-title>a,.voice-mic-btn,.expense-toggle,.collab-status,.equipment-top-search input) { height: 30px; min-height: 30px; padding-block: 0 !important; }
+body.ks-page-planning-event .event-topbar-title > a { display: inline-flex; align-items: center; }
+
+body.ks-page-music > .page { padding: var(--ks-menu-top) 10px 12px; }
+body.ks-page-music .layout { flex: 1 1 auto; height: auto; min-height: 0; }
+body.ks-page-music .current-track { padding-left: 0; }
+body.ks-page-music .cover-carousel { margin-top: 0; }
+body.ks-page-profile > main { padding: var(--ks-menu-top) 10px calc(24px + env(safe-area-inset-bottom)) !important; }
+body.ks-page-profile .profile-avatar-main { padding-left: 0; }
+
+body.ks-page-water > main > section { padding: var(--ks-menu-top) 10px 24px; }
+body.ks-page-water .tabs { margin-left: calc(var(--ks-clear-left) - 10px); min-height: 30px; height: 30px; padding: 0; gap: 4px; }
+body.ks-page-water .tab-btn { height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+body.ks-page-roulette > main { padding: var(--ks-menu-top) 10px 24px !important; }
+body.ks-page-roulette .roulette-title { margin: 0 0 0 calc(var(--ks-clear-left) - 10px); height: 30px; min-height: 30px; line-height: 30px; }
+body.ks-page-roulette :is(.roulette-subtitle,#search) { margin: 0; height: 30px; min-height: 30px; line-height: 30px; padding-block: 0; }
+body.ks-page-pokaki > div > header { padding: var(--ks-menu-top) 10px 8px var(--ks-clear-left); }
+body.ks-page-pokaki .header-actions { min-height: 30px; }
+body.ks-page-pokaki .header-actions > div { height: 30px; padding-block: 0; }
+body.ks-page-pokaki :is(#poopExportBtn,#poopGameBtn) { height: 30px; width: 30px; }
+body.ks-page-pokaki #anonToggle { height: 24px; }
+body.ks-page-pokaki #anonToggle .anon-thumb { width: 18px; height: 18px; }
+body.ks-page-beer-shelf .shelf-header { min-height: 50px; padding: var(--ks-menu-top) var(--ks-page-right) 10px var(--ks-clear-left); flex-wrap: nowrap; }
+body.ks-page-beer-shelf .shelf-actions { flex-basis: auto; min-height: 30px; align-items: center; }
+body.ks-page-beer-shelf :is(.header-icon-button,#focusModeToggle,#sortBeerButton,#addBeerButton) { height: 30px; min-height: 30px; padding-block: 0; display: inline-flex; justify-content: center; align-items: center; }
+body.ks-page-beer-shelf .shelf-header [hidden] { display: none !important; }
+body.ks-page-beer-shelf .density-control { height: 30px; }
+body.ks-page-beer-shelf #shelfCapacity { height: 30px; }
+body.ks-page-beer-shelf main { min-height: calc(var(--ks-vh,100dvh) - 50px); }
+html.is-single-shelf body.ks-page-beer-shelf main { height: calc(var(--ks-vh,100dvh) - 50px); }
+body.ks-page-board .board-header { top: var(--ks-menu-top); left: auto; right: var(--ks-page-right); padding: 0; min-height: 30px; background: transparent; border: 0; }
+body.ks-ui:is(.ks-page-call,.ks-page-meet) :is(.room-picker-title,.guest-entry-title) { margin-left: 0; padding-left: 0; }
+body.ks-page-map .top-panel :is(.search-input,.style-select,.btn) { height: 30px; min-height: 30px; padding-block: 0; }
+
+@media (max-width: 1023px) {
+  body.ks-page-recipes #composerToggleBtn { width: 30px; height: 30px; min-height: 30px; padding: 0; font-size: 0; }
+  body.ks-page-recipes #composerToggleBtn::after { content: '+'; font: 400 22px/1 system-ui; transform: none; }
+  body.ks-page-restaurants .topbar { gap: 4px; }
+  body.ks-page-restaurants .city-select { max-width: none; }
+  body.ks-page-restaurants .map-style-btn { height: 30px; min-height: 30px; }
+  body.ks-page-video .search-input { line-height: normal; }
+  body.ks-page-video #searchBtn { padding: 0 10px; }
+}
+@media (max-width: 819px) {
+  body.ks-page-music > .page { padding-bottom: calc(84px + var(--mobile-bottom-guard)); }
+  body.ks-page-music .layout { flex: 0 0 auto; }
+  body.ks-page-music .current-track { justify-items: center; text-align: center; }
+  body.ks-page-music .cover-carousel { width: min(100%,42dvh); max-width: 100%; height: auto; aspect-ratio: 1; margin: 0 auto; }
+  body.ks-page-music .cover-wrap { width: 100%; height: 100%; }
+  body.ks-page-music .current-track > div:last-child { min-width: 0; width: 100%; }
+}
+@media (max-width: 600px) {
+  body.ks-page-index #beerSticky > .beer-controls-row:first-child {
+    display: grid;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    padding-left: 0;
+    gap: 8px;
+  }
+  body.ks-page-index #beerSticky .beer-controls-row > div { display: contents; }
+  body.ks-page-index #beerSticky .beer-controls-row :is(button,a) { justify-content: center; padding-inline: 6px; font-size: 10px; }
+  body.ks-page-index #beerSticky #beerSearchInput {
+    order: -1;
+    grid-column: 1 / -1;
+    margin-left: calc(var(--ks-clear-left) - 10px);
+    width: calc(100% - var(--ks-clear-left) + 10px);
+  }
+  body.ks-page-planning #addEventBtn span { display: none; }
+  body.ks-page-planning #addEventBtn { width: 30px; padding: 0; font-size: 22px; line-height: 1; }
+  body.ks-page-planning-event .event-topbar-title { min-height: 30px; }
+  body.ks-page-planning-event.equipment-mode .event-topbar-title > a { width: 30px; height: 30px; }
+  body.ks-page-water .tabs { flex-wrap: nowrap; }
+  body.ks-page-snacks #addBeerRow { font-size: 11px; padding-inline: 8px; }
+}
+
+/* Structural containers stay clear; only the actual cards carry glass. */
+body.ks-page-index :is(#backlogSection,.calendar-left,.calendar-right) {
+  border: 0 !important; background: transparent !important; box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+body.ks-page-index #calendarSection > .ks-section-toolbar {
+  grid-column: 1 / -1; width: 100%; height: 30px; margin: 0; flex: 0 0 30px; align-self: start;
+}
+body.ks-page-index #backlogSection > .ks-section-toolbar { padding-left: calc(var(--ks-clear-left) - 10px); }
+@media (min-width: 1024px) {
+  body.ks-page-index.layout-sidebar #calendarSection {
+    display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr);
+    align-items: stretch; align-content: start; grid-template-rows: 30px auto;
+  }
+}
+body.ks-page-index #calendarSection .calendar-left > div:first-child {
+  padding: 12px 14px 14px !important;
+}
+body.ks-page-index #calendarSection .calendar-left > div > div:first-child {
+  padding-left: 0;
+}
+body.ks-page-index #calendarSection :is(.calendar-left > div,.calendar-right > #eventPlaceholder > div,.calendar-right > #eventPanel > div) {
+  border: 0 !important; border-radius: 20px !important;
+  background: rgba(23,29,39,.56) !important;
+  backdrop-filter: blur(22px) saturate(1.08); -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: 0 12px 32px rgba(0,0,0,.12) !important;
+}
+body.ks-page-index #calendarSection .calendar-right > #eventPanel { background: transparent !important; }
+body.ks-page-index #calendarSection .calendar-left > div + div { margin-top: 16px; }
+body.ks-page-index #calendarSection #calendarDays { gap: 6px; }
+body.ks-page-index .backlog-column { border-radius: 20px; overflow: hidden; }
+body.ks-page-index .backlog-column .column-header { border-radius: 20px 20px 0 0; }
+body.ks-page-index .backlog-column .column-cards { border-radius: 0 0 20px 20px; }
+
+body.ks-page-recipes .content {
+  background: transparent !important; box-shadow: none !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+body.ks-page-recipes #composerToggleBtn::after { content: none; }
+body.ks-page-recipes #composerToggleBtn { gap: 6px; }
+body.ks-page-recipes #composerToggleBtn .composer-toggle-icon {
+  display: block; width: 18px; height: 18px; flex: 0 0 18px;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
+  transition: transform .22s var(--ks-ease);
+}
+body.ks-page-recipes #composerToggleBtn[aria-expanded="true"] .composer-toggle-icon { transform: rotate(45deg); }
+
+body.ks-page-planning .planning-head { margin-bottom: 0; }
+body.ks-page-planning .planning-shell { gap: 8px; }
+body.ks-page-planning .event-view-switcher {
+  margin-top: 0; border: 0; background: rgba(23,29,39,.56);
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+}
+body.ks-page-planning-event .event-topbar-title > #planningBackLink {
+  display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px;
+  padding: 0 !important; background: transparent !important; border: 0 !important;
+  box-shadow: none !important; border-radius: 0; font-size: 0;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+body.ks-page-planning-event #planningBackLink::before,
+body.ks-page-planning-event #planningBackLink::after { content: none !important; }
+body.ks-page-planning-event #planningBackLink svg {
+  width: 19px; height: 19px; display: block; fill: none; stroke: currentColor;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+body.ks-page-planning-event .card.section-card,
+body.ks-page-planning-event .sticky-wrap {
+  border: 0 !important; border-radius: 20px;
+  background: rgba(23,29,39,.64) !important;
+  backdrop-filter: blur(22px) saturate(1.08); -webkit-backdrop-filter: blur(22px) saturate(1.08);
+  box-shadow: 0 12px 36px rgba(0,0,0,.12) !important;
+}
+body.ks-page-planning-event .section-head {
+  background: transparent !important; backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important; border-radius: 12px;
+}
+body.ks-page-planning-event .sheet :is(th,td) { border-color: rgba(255,255,255,.065); }
+body.ks-page-planning-event .sheet th { background: rgba(245,185,69,.12) !important; }
+body.ks-page-planning-event .table-scroll { border-radius: 12px; }
+
+/* Fade the glass surface, leaving the wordmark and controls fully opaque. */
+.ks-drawer-panel {
+  isolation: isolate; background: transparent; box-shadow: none; border-radius: 0;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.ks-drawer-panel::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(120deg,rgba(20,25,33,.7),rgba(8,11,17,.5));
+  backdrop-filter: blur(36px) saturate(.86); -webkit-backdrop-filter: blur(36px) saturate(.86);
+  /* A long feather makes the right edge disappear without a visible seam. */
+  mask-image: linear-gradient(to right,#000 0,#000 68%,rgba(0,0,0,.98) 78%,rgba(0,0,0,.72) 88%,rgba(0,0,0,.28) 96%,transparent 100%);
+  -webkit-mask-image: linear-gradient(to right,#000 0,#000 68%,rgba(0,0,0,.98) 78%,rgba(0,0,0,.72) 88%,rgba(0,0,0,.28) 96%,transparent 100%);
+}
+.ks-drawer-brand-copy b { display: flex; align-items: center; height: 26px; }
+.ks-drawer .ks-wordmark { width: 180px; max-width: 100%; height: 26px; overflow: visible; fill: #fff2cc; stroke: none; }
+.ks-wordmark text { font: 400 64px var(--logo-font,var(--ks-font)); text-rendering: geometricPrecision; }
+.ks-drawer-close, .ks-drawer-close:hover { background: transparent !important; }
+@media (max-width: 1023px) {
+  body.ks-page-recipes #composerToggleBtn { gap: 0; }
+  body.ks-page-recipes #composerToggleBtn > span { display: none; }
+  body.ks-page-index #calendarSection { flex-direction: column !important; align-items: stretch !important; }
+}
+
+/* Let mobile browsers use the document scroller for the long tracker and
+   roulette pages. Their legacy full-height shell otherwise traps the gesture
+   in a nested main element before the service is fully initialized. */
+@media (max-width: 768px) {
+  html:has(> body.ks-page-water),
+  body.ks-page-water,
+  html:has(> body.ks-page-roulette),
+  body.ks-page-roulette { height: auto !important; min-height: 100%; overflow: visible !important; }
+  body.ks-page-water > main,
+  body.ks-page-roulette > main { height: auto !important; min-height: 100dvh; overflow: visible !important; touch-action: pan-y pinch-zoom; }
+}
+
+@media (max-width: 1023px) {
+  .ks-drawer-section:has(.ks-drawer-link[data-route="svc_vice_city"]) { display: none !important; }
+  .ks-drawer-link[data-route="svc_board"] { display: none !important; }
+}
+
+/* Equipment header shares the same 30px baseline as the menu control. */
+body.ks-page-planning-event .event-topbar-main { min-height: 30px; height: auto; }
+body.ks-page-planning-event .event-topbar-title,
+body.ks-page-planning-event .gear-top-search-row { min-height: 30px; height: 30px; align-items: center; }
+body.ks-page-planning-event .gear-search-dock,
+body.ks-page-planning-event .gear-top-metric { height: 30px; min-height: 30px; padding-block: 0; }
+body.ks-page-planning-event .gear-top-metric { align-content: center; }
+
+/* Video source controls are glass chips, without the old rectangular rails. */
+body.ks-page-video .player-source-bar { border: 0 !important; background: rgba(15,20,27,.58) !important; border-radius: 18px; }
+body.ks-page-video .source-toggle { gap: 8px; }
+body.ks-page-video .source-toggle { background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-video .source-btn { border: 0 !important; background: rgba(255,255,255,.045); box-shadow: none !important; }
+body.ks-page-video .mode-switch { background: transparent !important; border: 0 !important; }
+body.ks-page-video .player-source-bar::before,
+body.ks-page-video .player-source-bar::after { content: none !important; }
+body.ks-page-planning .modal { background: rgba(0,0,0,.3) !important; }
+body.ks-page-planning .modal-card,
+body.ks-page-planning-event .gear-detail-modal,
+body.ks-page-planning-event .gear-metrics-detail {
+  border: 0 !important; border-radius: 22px !important;
+  background: rgba(20,25,33,.74) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(1.08) !important;
+  backdrop-filter: blur(28px) saturate(1.08) !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.28) !important;
+}
+body.ks-page-planning .modal { backdrop-filter: blur(24px) !important; -webkit-backdrop-filter: blur(24px) !important; }
+body.ks-page-planning #addEventModal .modal-card { background: transparent !important; box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+body.ks-page-planning-event .gear-detail-modal::backdrop,
+body.ks-page-planning-event .gear-metrics-detail::backdrop { background: rgba(0,0,0,.3); backdrop-filter: none; }
+body.ks-page-planning-event .section-head { min-height: 30px; }
+body.ks-page-planning-event .section-title,
+body.ks-page-planning-event .section-actions { align-self: center; }
+body.ks-page-planning-event .section-actions-buttons > button,
+body.ks-page-planning-event .section-actions-trigger { height: 30px; min-height: 30px; display: inline-flex; align-items: center; }
+
+.ks-drawer-footer .ks-drawer-link { box-shadow: none !important; border: 0 !important; }
+.ks-drawer-link:is(:hover,:active,.is-active) {
+  background: linear-gradient(90deg,rgba(var(--ks-accent-rgb),.12),rgba(var(--ks-accent-rgb),.07) 65%,transparent 100%);
+}
+.ks-drawer-logout { background: transparent !important; }
+body.ks-page-planning #addEventModal .modal-card { width: min(400px,100%); max-height: min(560px,calc(100dvh - 24px)) !important; padding: 14px; }
+body.ks-page-planning #addEventModal :is(.mt-3,.mt-4) { margin-top: 10px; }
+body.ks-page-planning #addEventModal .event-type-btn { padding: 10px 12px; }
+body.ks-page-planning #addEventModal .participant-list { max-height: 140px; border: 0; background: transparent; padding: 0; }
+body.ks-page-planning #addEventModal .participant-note { font-size: 10px; }
+body.ks-page-planning #addEventModal .event-type-desc { display: none; }
+body.ks-page-planning #addEventModal .event-type-btn { border: 0 !important; background: rgba(255,255,255,.06); }
+body.ks-page-planning #addEventModal .event-type-btn.active { background: rgba(245,185,69,.16); }
+body.ks-page-planning #addEventModal .participant-list { max-height: 96px; }
+body.ks-page-planning #addEventModal .participant-opt { border: 0; background: transparent; padding: 5px 8px; min-height: 28px; }
+body.ks-page-planning #addEventModal .participant-note { margin-top: 6px; }
+body.ks-page-planning #addEventModal .modal-actions {
+  position: static; margin-top: 10px; padding: 4px 0;
+  background: transparent; border-radius: 12px;
+}
+body.ks-page-planning #addEventModal .participant-add { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; }
+body.ks-page-planning #addEventModal .participant-add-btn { font-size: 10px; padding-inline: 10px; }
+body.ks-page-planning-event .quick-stat { border: 0 !important; background: rgba(23,29,39,.56) !important; backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+body.ks-page-planning #addEventModal :is(.modal-input,.participant-add-btn) { min-height: 38px; padding-block: 8px; }
+body.ks-page-planning-event .section-head { flex-wrap: nowrap; align-items: center; gap: 8px; }
+body.ks-page-planning-event .section-actions { width: auto; flex: 0 0 auto; }
+body.ks-page-planning-event :is(.section-actions-trigger,.section-actions-buttons > button,.table-add-row-btn,.expense-toggle,.gear-action,.gear-mobile-search-toggle) {
+  border: 0 !important; border-radius: 12px !important; box-shadow: none !important;
+  background: rgba(245,185,69,.12); color: #f5d38c;
+}
+body.ks-page-planning-event :is(.modal,.owner-menu,.beer-menu,.participant-menu,.section-actions-dropdown) {
+  border: 0 !important; background: rgba(10,14,20,.24) !important;
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+}
+body.ks-page-planning-event .modal-card { background: transparent !important; box-shadow: none !important; }
+body.ks-page-planning-event .modal-card :is(.notes-shell,.participant-list,.rounded-xl) { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+body.ks-page-planning-event :is(.gear-search-dock,.gear-top-metric,.gear-search-results,.gear-result) {
+  border: 0 !important; box-shadow: none !important; background: rgba(23,29,39,.6) !important;
+  backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+}
+body.ks-page-planning-event .gear-search-dock label,
+body.ks-page-planning-event .gear-search-dock input { background: transparent !important; }
+body.ks-page-planning-event.equipment-mode > main { padding: var(--ks-menu-top) 10px 10px !important; }
+body.ks-page-planning-event.equipment-mode .equipment-experience { padding: 0; border: 0; background: transparent; }
+body.ks-page-planning-event.equipment-mode .gear-orbit-stage { border: 0; border-radius: 22px; background: rgba(23,29,39,.48); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+body.ks-page-planning-event.equipment-mode .gear-orbit-stage::after { display: none; }
+body.ks-page-planning-event.equipment-mode .gear-orbit-backpack-placeholder { border: 0; background: transparent; }
+@media (max-width: 900px) {
+  body.ks-page-planning-event.equipment-mode .event-topbar-main { grid-template-columns: minmax(0,1fr); height: auto; gap: 8px; }
+  body.ks-page-planning-event.equipment-mode .event-topbar-title { height: 30px; }
+  body.ks-page-planning-event .equipment-top-search { margin-top: 0; }
+  body.ks-page-planning-event .gear-mobile-search-toggle { width: 30px; height: 30px; min-height: 30px; }
+  body.ks-page-planning-event .gear-top-search-row { display: flex; justify-content: space-between; gap: 6px; }
+  body.ks-page-planning-event .gear-top-metrics { flex: 1; }
+  body.ks-page-planning-event .gear-top-metric { flex: 1; min-width: 0; padding-inline: 6px; }
+  body.ks-page-planning-event .gear-top-metric b { font-size: 10px; }
+  body.ks-page-planning-event .gear-top-search-row .gear-search-dock { height: 38px; }
+}
+body.ks-page-beer-shelf .beer-touch-info {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+  padding: max(16px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom));
+  background: transparent; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+}
+body.ks-page-beer-shelf .beer-touch-panel {
+  position: relative; width: min(100%,560px); max-height: calc(100dvh - 32px);
+  overflow: auto; padding: 32px 0 12px; border: 0; border-radius: 0;
+  color: #fff2d1; background: transparent;
+}
+.beer-touch-panel h2 { margin: 0 28px 16px; text-align: center; font-size: 16px; white-space: nowrap; }
+.beer-info-close { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; background: transparent; color: #ffe6ad; }
+.beer-info-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.beer-touch-stage { position: relative; display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); align-items: center; gap: 16px; min-height: 310px; }
+.beer-touch-stage > .beer-artwork { position: relative; display: grid; place-items: center; width: 100%; height: min(52dvh,390px); }
+.beer-touch-stage img { width: 100%; height: 100%; object-fit: contain; }
+.beer-touch-stage .beer-placeholder-bottle { width: 100%; height: 100%; max-height: none; }
+.beer-touch-stage .beer-image-fallback { position: absolute; inset: 0; }
+.beer-touch-details { display: grid; gap: 12px; min-width: 0; margin: 0; }
+.beer-touch-details > div { min-width: 0; }
+.beer-touch-details dt { color: #d6ac63; font-size: 9px; line-height: 1.4; white-space: nowrap; }
+.beer-touch-details dd { margin: 3px 0 0; font-size: 13px; line-height: 1.3; white-space: nowrap; }
+.beer-touch-info :is(.beer-info-orbit,.beer-info-node) { display: none; }
+.beer-touch-edit { display: block; margin: 8px auto 0; padding: 10px 16px; border: 0; border-radius: 12px; background: rgba(245,185,69,.12); color: #ffe3a0; font-size: 11px; }
+@media (max-height: 600px) {
+  .beer-touch-stage { min-height: 0; }
+  .beer-touch-details { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .beer-touch-panel h2 { margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .ks-beer-bubble { animation: none; } }
+
+/* Lock only the document that owns an open overlay. Closing navigation must
+   immediately return touch scrolling to both the host and embedded service. */
+html:has(> body.ks-drawer-open),
+html:has(> body.ks-page-planning .modal.active) { overflow: hidden !important; }
+body.ks-page-index .content-shell {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* A transparent action menu has no rectangular plate behind its glass chips. */
+body.ks-page-planning-event .section-actions-dropdown {
+  border: 0 !important; background: transparent !important;
+  background-color: transparent !important; background-image: none !important;
+  box-shadow: none !important; padding: 0; overflow: visible;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+body.ks-page-planning-event .section-actions-dropdown > button {
+  border: 0 !important; background: rgba(26,31,40,.72) !important;
+  border-radius: 12px; min-height: 34px; box-shadow: none !important;
+  backdrop-filter: blur(24px) !important; -webkit-backdrop-filter: blur(24px) !important;
+}
+body.ks-page-planning-event .section-actions-dropdown > [data-delete-section] {
+  background: rgba(71,30,34,.64) !important;
+}
+@media (max-width: 900px) {
+  body.ks-page-planning-event:not(.equipment-mode) .event-topbar-main {
+    height: auto; align-items: stretch; gap: 8px;
+  }
+  body.ks-page-planning-event .event-topbar-actions {
+    min-width: 0; height: auto; gap: 6px;
+  }
+  body.ks-page-planning-event .event-topbar-quick-actions {
+    display: grid; grid-template-columns: repeat(2,minmax(0,1fr));
+    flex: 1 1 100%; min-width: 0; gap: 6px;
+  }
+  body.ks-page-planning-event .event-topbar-quick-actions > .relative { grid-column: auto; }
+  body.ks-page-planning-event .event-topbar-quick-actions .expense-toggle {
+    height: 30px; min-height: 30px; padding: 4px 8px;
+    font-size: 11px; line-height: 1.2; white-space: nowrap;
+  }
+  body.ks-page-planning-event .collab-live-cluster { order: 1; }
+  body.ks-page-planning-event .quick-stats { margin-top: 0; }
+}
+
+body.ks-page-index #calendarSection { display: flex; flex-direction: column; align-items: stretch; }
+body.ks-page-index :is(.calendar-left,.calendar-right) { width: 100%; min-width: 0; max-width: none; }
+body.ks-page-index .ks-calendar-card { padding: 14px; }
+@media (min-width: 1024px) {
+  body.ks-page-index.layout-sidebar #calendarSection { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
+}

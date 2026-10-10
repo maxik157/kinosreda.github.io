@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Пивная рулетка — Киносреда</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
 
   <script>
     // Auth gate
@@ -476,8 +478,10 @@
       filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
     }
   </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body class="bg-dark min-h-screen">
+<body class="bg-dark min-h-screen ks-ui ks-page-roulette">
   <div class="particles" id="particles"></div>
   <div class="snow hidden" id="snow"></div>
 

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Киносреда</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
     <script>
         // Auth gate: prevent UI flash before redirecting to login
         (function () {
@@ -26,6 +28,9 @@
                 document.documentElement.dataset.theme = localStorage.getItem('siteTheme') || 'beer';
             } catch(_) {}
         })();
+        // Hide the legacy application chrome before the deferred shell mounts.
+        // This prevents a one-frame header/sidebar flash on a hard refresh.
+        document.documentElement.classList.add('ks-preboot');
         (function () {
             try {
                 const params = new URLSearchParams(window.location.search);
@@ -35,6 +40,18 @@
             } catch (_) {}
         })();
     </script>
+    <style id="ks-preboot-style">
+        html.ks-preboot:not(.route-ready) .content-shell { visibility: hidden; }
+        /* This guard intentionally lives in the document head so the legacy
+           chrome cannot paint before the shared shell stylesheet at the end of
+           the document has loaded. */
+        html.ks-preboot body.layout-sidebar > .header-shell,
+        html.ks-preboot body.layout-sidebar > .layout-shell > .sidebar,
+        html.ks-preboot body.layout-sidebar > .mobile-sidebar-bar,
+        html.ks-preboot body.layout-sidebar > .mobile-sidebar {
+            display: none !important;
+        }
+    </style>
     <script>
         (function () {
             const COI_SCRIPT_SRC = 'coi-serviceworker.js?v=20260528-14';
@@ -2395,12 +2412,8 @@
             line-height: 1.5;
         }
         @media (max-width: 1023px) {
-            .service-frame--gallery .service-mobile-block {
-                display: flex;
-            }
-            .service-frame--gallery iframe {
-                display: none !important;
-            }
+            .service-frame--gallery .service-mobile-block { display: none; }
+            .service-frame--gallery iframe { display: block !important; }
         }
         .mobile-sidebar-section-title {
             font-size: 10px;
@@ -2611,25 +2624,8 @@
         }
 
         @media (min-width: 1024px) {
-            body.layout-sidebar #calendarSection {
-                gap: 18px;
-                display: grid !important;
-                grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-                align-items: stretch !important;
-            }
-            body.layout-sidebar .calendar-left,
-            body.layout-sidebar .calendar-right {
-                max-width: none !important;
-                width: auto !important;
-            }
             body.layout-sidebar .page-calendar {
                 height: auto;
-            }
-            body.layout-sidebar #calendarSection .bg-black\\/60 {
-                padding: 1rem !important;
-            }
-            body.layout-sidebar #calendarSection .rounded-2xl {
-                border-radius: 14px;
             }
             body.layout-sidebar #backlogSection .backlog-wrapper {
                 padding: 0.85rem !important;
@@ -3278,8 +3274,10 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body class="bg-dark min-h-screen text-white layout-sidebar">
+<body class="bg-dark min-h-screen text-white layout-sidebar ks-ui ks-page-index ks-shell-owner">
     <div class="particles" id="particles"></div>
     <div class="snow hidden" id="snow"></div>
     <div id="condemnOverlay" class="condemn-overlay" aria-hidden="true">
@@ -3294,8 +3292,8 @@
                 <span class="burger-line"></span>
                 <span class="burger-line"></span>
             </button>
-            <div class="mobile-brand" aria-label="Киносреда">
-                <a href="index.html" class="mobile-brand-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
+            <div class="mobile-brand" aria-label="КИНОСРЕДА">
+                <a href="index.html" class="mobile-brand-link" aria-label="КИНОСРЕДА" onclick="openSidebarPage('calendar'); return false;">
                     <span class="mobile-brand-text text-glow"><span class="mobile-brand-text-inner">Киносреда</span></span>
                 </a>
                 <a href="roulette.html" class="mobile-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
@@ -3508,7 +3506,7 @@
         <aside id="sidebar" class="sidebar" aria-label="Навигация">
             <div class="sidebar-inner">
                 <div class="sidebar-logo-wrap">
-                    <a href="index.html" class="sidebar-logo-link" aria-label="Киносреда" onclick="openSidebarPage('calendar'); return false;">
+                    <a href="index.html" class="sidebar-logo-link" aria-label="КИНОСРЕДА" onclick="openSidebarPage('calendar'); return false;">
                         <span class="sidebar-logo-text logo-text"><span class="sidebar-logo-text-inner">Киносреда</span></span>
                     </a>
                     <a href="roulette.html" class="sidebar-mug-link" aria-label="Пивная рулетка" onclick="return openRoulettePage(event);">
@@ -3613,11 +3611,11 @@
         </aside>
 
         <main class="container mx-auto px-4 py-6 relative z-10 content-shell">
-        <div id="calendarSection" data-page="calendar" class="page page-calendar flex flex-col lg:flex-row lg:flex-nowrap lg:items-start gap-6 max-w-7xl mx-auto scroll-mt-24">
-            
+        <div id="calendarSection" data-page="calendar" class="page page-calendar">
+            <div class="ks-section-toolbar"><h1>Календарь</h1></div>
             <!-- Left Column - Calendar -->
-            <div class="lg:w-[45%] lg:flex-[0_0_45%] lg:max-w-[45%] min-w-0 calendar-left">
-                <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 glow-amber slide-in slide-in-delay-1">
+            <div class="calendar-left">
+                <div class="ks-calendar-card">
                     <div class="flex justify-between items-center mb-5">
                         <button onclick="prevMonth()" class="text-amber-400 hover:text-amber-300 transition p-2 hover:bg-amber-500/10 rounded-full group">
                             <svg class="w-7 h-7 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3646,7 +3644,7 @@
                 </div>
 
                 <!-- Upcoming Events -->
-                <div class="mt-6 bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/20 slide-in slide-in-delay-3">
+                <div class="ks-calendar-card">
                     <h3 class="text-lg font-bold text-amber-400 mb-4 flex items-center gap-2">
                         <span class="text-xl">🎬</span> Ближайшие встречи
                     </h3>
@@ -3655,10 +3653,10 @@
             </div>
 
             <!-- Right Column - User Info & Event Form -->
-            <div class="lg:w-[55%] lg:flex-[0_0_55%] lg:max-w-[55%] min-w-0 calendar-right">
+            <div class="calendar-right">
                 <!-- Event Details Panel -->
-                <div id="eventPanel" class="hidden slide-in">
-                    <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-5 border border-amber-500/30 glow-amber">
+                <div id="eventPanel" class="hidden">
+                    <div class="ks-calendar-card">
                         <div class="flex justify-between items-center mb-5">
                             <h3 id="panelDate" class="text-xl font-bold text-amber-400 text-glow"></h3>
                             <button onclick="closePanel()" class="text-gray-500 hover:text-white transition hover:rotate-90 transform duration-300">
@@ -3844,6 +3842,7 @@
 
         <!-- Backlog Section -->
         <div id="backlogSection" data-page="backlog" class="page page-backlog mt-12 max-w-7xl mx-auto scroll-mt-24">
+            <div class="ks-section-toolbar"><h1>Бэклог фильмов</h1></div>
             <div class="bg-black/60 backdrop-blur-sm rounded-2xl p-6 slide-in beer-rating-card backlog-wrapper">
                 <h2 class="text-2xl font-bold text-amber-400 mb-6 flex items-center gap-3">
                     <span class="text-3xl">🎥</span> Бэклог фильмов
@@ -3892,6 +3891,7 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
+                            <button id="scanRatingBeerButton" type="button" class="text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-200"></button>
                             <button id="openAddBeerBtn" data-open-add-beer="1" type="button" onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
                                 ➕ Добавить пиво
                             </button>
@@ -4073,7 +4073,7 @@
         </div>
 
         <div id="beerShelfOverlay" class="hidden fixed inset-0 z-[13050] bg-black" aria-hidden="true">
-            <iframe id="beerShelfFrame" src="beer-shelf.html" title="Интерактивная пивная полка" class="block h-full w-full border-0"></iframe>
+            <iframe id="beerShelfFrame" src="beer-shelf.html" title="Интерактивная пивная полка" allow="camera" class="block h-full w-full border-0"></iframe>
         </div>
 
         <!-- Service Pages -->
@@ -4094,7 +4094,7 @@
         </div>
         <div id="svc_beer_shelf" data-page="svc_beer_shelf" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
-                <iframe title="Интерактивная пивная полка" data-src="beer-shelf.html" loading="lazy" scrolling="yes"></iframe>
+                <iframe title="Интерактивная пивная полка" data-src="beer-shelf.html" loading="lazy" scrolling="yes" allow="camera"></iframe>
             </div>
         </div>
         <div id="svc_roulette" data-page="svc_roulette" class="page page-service max-w-7xl mx-auto">
@@ -4109,7 +4109,7 @@
         </div>
         <div id="svc_call" data-page="svc_call" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
-                <iframe title="Встреча" data-src="call.html" loading="lazy" scrolling="yes" allow="microphone; camera; display-capture; autoplay; clipboard-write"></iframe>
+                <iframe title="Звонки" data-src="call.html" loading="lazy" scrolling="yes" allow="microphone; camera; display-capture; autoplay; clipboard-write"></iframe>
             </div>
         </div>
         <div id="svc_board" data-page="svc_board" class="page page-service max-w-7xl mx-auto">
@@ -4617,6 +4617,12 @@
         </svg>
     </button>
 
+    <link rel="stylesheet" href="beer-scanner.css">
+    <link rel="stylesheet" href="beer-form.css">
+    <script src="beer-scanner.js"></script>
+    <script src="beer-facts.js"></script>
+    <script src="beer-style-detect.js"></script>
+    <script src="beer-data-autofill.js"></script>
     <script>
         // Create particles
         function createParticles() {
@@ -5758,10 +5764,14 @@
             } catch (_) {}
             return false;
         }
+        function getPlanningListViewFromUrl() {
+            return new URLSearchParams(location.search).get('planningView') === 'equipment' ? 'equipment' : 'default';
+        }
         function buildPlanningServiceSrc(eventId = null, notesOpen = false) {
             const params = new URLSearchParams();
             if (eventId) params.set('id', eventId);
             if (notesOpen) params.set('notes', '1');
+            if (!eventId) return getPlanningListViewFromUrl() === 'equipment' ? 'planning.html?view=equipment' : 'planning.html';
             const query = params.toString();
             return query ? `planning-event.html?${query}` : 'planning.html';
         }
@@ -5836,6 +5846,10 @@
                 const planningNotesOpen = resolved === 'svc_planning'
                     ? (options.planningNotesOpen !== undefined ? !!options.planningNotesOpen : getPlanningNotesOpenFromUrl())
                     : false;
+                const planningListView = options.planningListView !== undefined
+                    ? options.planningListView : getPlanningListViewFromUrl();
+                if (resolved === 'svc_planning' && planningListView === 'equipment') url.searchParams.set('planningView', 'equipment');
+                else url.searchParams.delete('planningView');
                 const callRoomSlug = resolved === 'svc_call'
                     ? normalizeCallRoomSlug(options.callRoomSlug !== undefined ? options.callRoomSlug : getCallRoomSlugFromUrl())
                     : '';
@@ -6567,17 +6581,11 @@
                 frame.setAttribute('tabindex', '0');
                 attachServiceFrameInputBridge(frame);
             }
-            if (section.id === 'svc_gallery' && !isDesktopLayout()) {
-                if (frame) frame.removeAttribute('src');
-                return;
-            }
             if (!frame) return;
             if (section.id === 'svc_planning') {
                 const eventId = getPlanningEventIdFromUrl();
                 const notesOpen = !!eventId && getPlanningNotesOpenFromUrl();
-                const desired = eventId
-                    ? buildPlanningServiceSrc(eventId, notesOpen)
-                    : 'planning.html';
+                const desired = buildPlanningServiceSrc(eventId, notesOpen);
                 if (desired) {
                     frame.setAttribute('data-src', desired);
                 }
@@ -7003,7 +7011,11 @@
             const headerHeight = header && getComputedStyle(header).display !== 'none'
                 ? header.getBoundingClientRect().height
                 : 0;
-            const available = shell.clientHeight - shellPad - wrapperPad - headerHeight;
+            const toolbar = backlog.querySelector(':scope > .ks-section-toolbar');
+            const toolbarStyles = toolbar ? getComputedStyle(toolbar) : null;
+            const toolbarHeight = toolbar ? toolbar.getBoundingClientRect().height
+                + parseFloat(toolbarStyles.marginTop || 0) + parseFloat(toolbarStyles.marginBottom || 0) : 0;
+            const available = shell.clientHeight - shellPad - wrapperPad - headerHeight - toolbarHeight;
             const height = Math.max(160, Math.floor(available));
             backlog.style.setProperty('--backlog-board-height', `${height}px`);
             board.style.height = `${height}px`;
@@ -7023,7 +7035,8 @@
                     push: !!options.push,
                     callRoomSlug: options.callRoomSlug,
                     planningEventId: options.planningEventId,
-                    planningNotesOpen: options.planningNotesOpen
+                    planningNotesOpen: options.planningNotesOpen,
+                    planningListView: options.planningListView
                 });
             }
 
@@ -7436,6 +7449,10 @@
         }
 
         function refreshHeaderOffset() {
+            if (document.body.classList.contains('ks-shell-owner')) {
+                document.documentElement.style.setProperty('--header-offset', '0px');
+                return;
+            }
             const header = document.querySelector('header');
             if (!header) return;
             const headerHeight = Math.ceil(header.getBoundingClientRect().height);
@@ -7626,12 +7643,16 @@
                             planningNotesOpen: nextNotesOpen
                         });
                     } else if (data.view === 'list') {
-                        if (currentPage === 'svc_planning' && !currentPlanningId) return;
-                        setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null });
+                        const listView = data.listView === 'equipment' ? 'equipment' : 'default';
+                        if (currentPage === 'svc_planning' && !currentPlanningId) {
+                            updatePageUrl('svc_planning', { push: false, planningListView: listView });
+                            return;
+                        }
+                        setActivePage('svc_planning', { scroll: false, push: true, planningEventId: null, planningListView: listView });
                     }
                     return;
                 }
-                if (data.type === 'call:route') {
+                if (data.type === 'call:route' || data.type === 'meet:route') {
                     openCallRoomInSidebar(data.roomSlug || '', { push: true });
                     return;
                 }
@@ -7731,7 +7752,7 @@
             const services = [
                 { href: 'pokaki.html', icon: '💩', label: 'График покаков', page: 'svc_pokaki' },
                 { href: 'planning.html', icon: '🌴', label: 'Планирование', page: 'svc_planning' },
-                { href: 'call.html', icon: '📞', label: 'Встреча', page: 'svc_call' },
+                { href: 'call.html', icon: '📞', label: 'Звонки', page: 'svc_call' },
                 { href: 'board.html', icon: '🎨', label: 'Доска', page: 'svc_board' },
                 { href: 'gallery.html', icon: '🖼️', label: 'Галерея', page: 'svc_gallery' },
                 { href: buildVideoServiceSrc(), icon: '🎬', label: 'Кино', page: 'svc_video' },
@@ -8659,6 +8680,7 @@
                     lastBeerRatingHash = JSON.stringify(data.beerRating || []);
                     renderBeerRating();
                     openBeerModalFromShelfUrl();
+                    BeerScanner.refresh();
                 };
                 db.ref('beerRating').on('value', applyBeerRatingSnapshot);
 
@@ -10139,6 +10161,12 @@
         }
 
         function setupBacklogDragDrop() {
+            const board = document.getElementById('backlogBoard');
+            if (!board) return;
+            board.cancelDragScroll?.();
+            const dragListeners = new AbortController();
+            let edgeFrame = 0;
+            let edgeX = 0, edgeY = 0, edgeTime = 0;
             let draggedCard = null;
             let draggedColumn = null;
             let draggedCardStartColumnId = null;
@@ -10147,6 +10175,60 @@
             let touchDrag = null;
             let touchRaf = 0;
             let touchLongPressTimer = 0;
+
+            const stopEdgeScroll = () => { cancelAnimationFrame(edgeFrame); edgeFrame = 0; edgeTime = 0; };
+            board.cancelDragScroll = () => {
+                stopEdgeScroll(); dragListeners.abort(); clearTimeout(touchLongPressTimer);
+                cancelAnimationFrame(touchRaf); touchDrag?.ghost?.remove();
+                document.body.classList.remove('backlog-touch-dragging');
+            };
+            const moveAtPoint = (x, y) => {
+                const hit = document.elementFromPoint(x, y);
+                const column = hit?.closest('.backlog-column');
+                const zone = hit?.closest('.column-cards') || column?.querySelector('.column-cards');
+                if (!zone || !board.contains(zone)) return;
+                if (touchDrag?.active) {
+                    touchDrag.currentZone?.parentElement.classList.remove('drag-over');
+                    touchDrag.currentZone = zone; zone.parentElement.classList.add('drag-over');
+                    const next = getDragAfterCard(zone, y);
+                    if (next) zone.insertBefore(touchDrag.card, next); else zone.appendChild(touchDrag.card);
+                    autoScrollZone(zone, y);
+                } else if (draggedCard) reorderCardInZone(zone, y);
+            };
+            const edgeTick = now => {
+                edgeFrame = 0;
+                if (!draggedCard && !draggedColumn && !touchDrag?.active) return;
+                const rect = board.getBoundingClientRect();
+                const left = Math.max(0, rect.left), right = Math.min(innerWidth, rect.right);
+                const threshold = Math.min(64, (right - left) / 4);
+                const speed = edgeX < left + threshold ? -Math.min(1, (left + threshold - edgeX) / threshold)
+                    : edgeX > right - threshold ? Math.min(1, (edgeX - right + threshold) / threshold) : 0;
+                const elapsed = edgeTime ? Math.min(32, now - edgeTime) : 16;
+                edgeTime = now;
+                if (edgeY >= rect.top && edgeY <= rect.bottom && speed) {
+                    board.scrollLeft += speed * 680 * elapsed / 1000;
+                    moveAtPoint(Math.max(left + 1, Math.min(right - 1, edgeX)), edgeY);
+                }
+                edgeFrame = requestAnimationFrame(edgeTick);
+            };
+            const trackEdge = (x, y) => {
+                edgeX = x; edgeY = y;
+                if (!edgeFrame) edgeFrame = requestAnimationFrame(edgeTick);
+            };
+            board.addEventListener('dragover', e => {
+                if (!draggedCard && !draggedColumn) return;
+                e.preventDefault(); trackEdge(e.clientX, e.clientY);
+            }, { signal: dragListeners.signal });
+            board.addEventListener('drop', e => {
+                stopEdgeScroll();
+                if (!draggedCard || draggedCardDropped) return;
+                const zone = e.target.closest('.backlog-column')?.querySelector('.column-cards');
+                if (!zone) return;
+                e.preventDefault(); draggedCardDropped = true;
+                finalizeCardDrop(zone);
+            }, { signal: dragListeners.signal });
+            board.addEventListener('dragend', stopEdgeScroll, { signal: dragListeners.signal });
+            window.addEventListener('blur', stopEdgeScroll, { signal: dragListeners.signal });
 
             const getDragAfterCard = (zone, y) => {
                 const cards = Array.from(zone.querySelectorAll('.backlog-card:not(.dragging)'));
@@ -10280,6 +10362,7 @@
                         if (!touchDrag || touchDrag.card !== card) return;
                         if (touchDrag.moved) return;
                         touchDrag.active = true;
+                        trackEdge(touchDrag.lastX, touchDrag.lastY);
                         card.classList.add('dragging');
                         document.body.classList.add('backlog-touch-dragging');
                     }, 260);
@@ -10304,6 +10387,7 @@
 
                     touchDrag.lastX = touch.clientX;
                     touchDrag.lastY = touch.clientY;
+                    trackEdge(touch.clientX, touch.clientY);
                     if (!touchRaf) {
                         touchRaf = requestAnimationFrame(() => {
                             touchRaf = 0;
@@ -10358,6 +10442,7 @@
 
                 const endTouchDrag = (e) => {
                     if (!touchDrag || touchDrag.card !== card) return;
+                    stopEdgeScroll();
                     if (touchRaf) {
                         cancelAnimationFrame(touchRaf);
                         touchRaf = 0;
@@ -10371,7 +10456,7 @@
                         touchDrag.currentZone.parentElement.classList.remove('drag-over');
                     }
 
-                    if (touchDrag.active && touchDrag.currentZone) {
+                    if (e.type !== 'touchcancel' && touchDrag.active && touchDrag.currentZone) {
                         const cardId = card.dataset.cardId;
                         const newColumnId = touchDrag.currentZone.dataset.columnId;
                         const oldColumnId = touchDrag.startColumnId;
@@ -11041,7 +11126,24 @@
         }
 
         // Beer Rating Methods
-        function openBeerRatingDefault(){openBeerShelfOverlay();}
+        let beerScannerEditReturn=null, beerScannerAddReturn=null;
+        function bindBeerScanner(){
+            BeerScanner.bind(document.getElementById('scanRatingBeerButton'), {
+                getCatalog:()=>Object.entries(data.beerRating||{}).map(([key,record])=>({key,record})),
+                getUserName,
+                onEditRecord:(item,onClose)=>{
+                    beerScannerEditReturn=onClose;
+                    openEditBeerModal(item.record.id);
+                },
+                onAddRecord:(record,onClose)=>{
+                    beerScannerAddReturn=onClose;
+                    openAddBeerModal(record);
+                }
+            });
+        }
+        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindBeerScanner);
+        else bindBeerScanner();
+        function openBeerRatingDefault(){openSidebarPage('beer');}
 
         function openBeerShelfOverlay() {
             if (document.body.classList.contains('layout-sidebar')) {
@@ -11684,7 +11786,11 @@
         }
         function renderBeerPhotoPreview(url, mode = beerPhotoMode) {
             const prefix = mode === 'edit' ? 'edit' : 'add'; const preview = document.getElementById(`${prefix}BeerPhotoPreview`); const label = document.getElementById(`${prefix}BeerPhotoLabel`);
-            if (preview) { for (const [property, value] of [['display','block'],['width','100%'],['height','100%'],['max-width','100%'],['max-height','100%'],['object-fit','contain'],['object-position','center center'],['transform','scale(.78)'],['transform-origin','center center']]) preview.style.setProperty(property, value, 'important'); preview.src = url || ''; preview.classList.toggle('hidden', !url); }
+            if (preview) {
+                for (const [property, value] of [['display',url?'block':'none'],['width','32px'],['height','52px'],['max-width','32px'],['max-height','52px'],['flex-shrink','0'],['object-fit','contain'],['object-position','center center'],['transform','none']]) preview.style.setProperty(property, value, 'important');
+                if (url) preview.src = url; else preview.removeAttribute('src');
+                preview.classList.toggle('hidden', !url);
+            }
             if (label) label.textContent = url ? '✓ Фото добавлено' : '📷 Фото пива';
         }
         function openBeerPhotoPicker(mode) { beerPhotoMode = mode; clearBeerPhotoCandidates(); setBeerPhotoStatus(''); const picker = document.getElementById('beerPhotoPicker'); const sheet = document.getElementById('beerPhotoPickerSheet'); picker.classList.remove('hidden'); picker.classList.add('flex'); sheet.classList.remove('beer-photo-picker-enter'); requestAnimationFrame(() => sheet.classList.add('beer-photo-picker-enter')); }
@@ -11733,14 +11839,34 @@
         async function selectBeerImageCandidate(candidate) { setBeerPhotoBusy(true, 'Загружаем…'); try { const response = await fetch(BEER_IMAGE_FETCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:candidate.imageUrl})}); const payload = await response.json(); const base64 = payload?.result_base64 || payload?.image_base64; if (!response.ok || !base64) throw new Error('fetch_failed'); await processBeerPhotoDataUrl(`data:image/png;base64,${base64}`); } catch (_) { setBeerPhotoStatus('Не удалось загрузить фото. Выберите другое.'); setBeerPhotoBusy(false); } }
         document.addEventListener('change', async e=>{if(e.target?.id!=='beerPhotoFileInput')return;const file=e.target.files?.[0];e.target.value='';if(!file)return;await processBeerPhotoDataUrl(await imageBlobToDataUrl(file));});
 
-        function openAddBeerModal() {
+        function prepareBeerForm(mode) {
+            const modal = document.getElementById(mode === 'add' ? 'addBeerModal' : 'editBeerModal');
+            if (modal.dataset.formReady) return;
+            modal.dataset.formReady = '1';
+            modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
+            const prefix = mode === 'add' ? 'beer' : 'editBeer';
+            const panel = modal.firstElementChild;
+            const grid = document.createElement('div'); grid.className = 'beer-form-fields';
+            const labels = {Type:'Тип',Style:'Стиль',Filtered:'Фильтрация',Country:'Страна',Volume:'Объём',Alcohol:'Крепость, %',Calories:'Калории ≈ ккал/100 мл'};
+            const first = document.getElementById(prefix + 'TypeInput');
+            panel.insertBefore(grid, first.closest('.cs') || first);
+            Object.entries(labels).forEach(([key, text]) => {
+                const control = document.getElementById(prefix + key + 'Input');
+                const label = document.createElement('label'); label.textContent = text; label.htmlFor = control.id;
+                label.append(control.closest('.cs') || control); grid.append(label);
+            });
+        }
+
+        function openAddBeerModal(prefill = {}) {
             const modal = document.getElementById('addBeerModal');
             if (!modal) return;
+            prepareBeerForm('add');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             modal.style.display = 'flex';
             modal.style.zIndex = '12050';
-            document.getElementById('beerNameInput').value = '';
+            document.getElementById('beerNameInput').value = prefill.name || '';
+            ['Type','Filtered','Country','Volume'].forEach(key => { const select = document.getElementById('beer' + key + 'Input'); select.selectedIndex = 0; });
             document.getElementById('beerAlcoholInput').value = '';
             document.getElementById('beerCaloriesInput').value = '';
             beerPendingImageUrl = '';
@@ -11749,6 +11875,13 @@
             // default style
             const styleSel = document.getElementById('beerStyleInput');
             if (styleSel) styleSel.value = 'Lager';
+
+            const autofillFields = Object.fromEntries(['name','type','style','filtered','country','alcohol','calories'].map(key => [key, document.getElementById('beer' + key[0].toUpperCase() + key.slice(1) + 'Input')]));
+            ['type','style','country'].forEach(key=>BeerDataAutofill.prepareUnknownSelect(autofillFields[key]));
+            BeerDataAutofill.prepareFiltrationSelect(autofillFields.filtered);
+            const existingAutofill = autofillFields.name.__beerAutofillController;
+            if (existingAutofill) existingAutofill.reset();
+            else BeerDataAutofill.bind(autofillFields);
 
             // ensure custom selects are applied and in sync
             enhanceBeerSelects();
@@ -11813,6 +11946,9 @@
             modal.style.display = '';
             modal.style.zIndex = '';
             notifyShelfModal('shelf-modal-close');
+            document.getElementById('beerNameInput').__beerAutofillController?.reset({lookupInitial:false});
+            const returnToScanner = beerScannerAddReturn; beerScannerAddReturn = null;
+            returnToScanner?.();
         }
 
         function setAddBeerRating(rating) {
@@ -11951,6 +12087,7 @@
         }
 
         function openEditBeerModal(beerId) {
+            prepareBeerForm('edit');
             editingBeerId = beerId;
             const beer = data.beerRating.find(b => String(b.id) === String(beerId));
             if (!beer) {
@@ -11981,6 +12118,9 @@
             document.getElementById('editBeerModal').classList.remove('flex');
             editingBeerId = null;
             notifyShelfModal('shelf-modal-close');
+            const returnToScanner=beerScannerEditReturn;
+            beerScannerEditReturn=null;
+            returnToScanner?.();
         }
 
         function saveBeerEdit() {

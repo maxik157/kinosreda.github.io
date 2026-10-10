@@ -6,6 +6,8 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no" />
     <title>revcDOS</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010q">
     <base href="/vice-city/engine/">
     <link rel="icon" type="image/svg+xml" href="../assets/vice-city-icon.svg">
     <style>
@@ -574,9 +576,11 @@
             margin-top: 2px;
         }
     </style>
+  <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010q">
+  <script src="/kinosreda-shell.js?v=20261010q" defer></script>
 </head>
 
-<body
+<body class="ks-ui ks-page-host"
     data-is-touch="0"
     data-state-car="0"
     data-state-car-gun="0"
@@ -612,7 +616,6 @@
                     <div id="loaderDetail" class="loader-status">Ожидание запуска.</div>
                 </div>
             </div>
-        </div>
 
         <div class="jsdos-key">
             <div>
@@ -621,7 +624,6 @@
             </div>
         </div>
 
-        <br/><br/>
 
         <div class="developed-by">
             <span id="port-by">HTML5 port by:</span>

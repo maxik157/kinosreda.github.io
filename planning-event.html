@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Мероприятие — Планирование</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
     <script>
@@ -222,12 +224,13 @@
             overflow-x: hidden;
             overscroll-behavior-x: none;
             overscroll-behavior-y: auto;
-            height: 100%;
+            min-height: 100%;
         }
-        html { overflow-y: hidden; }
+        html { height: auto; overflow-y: auto; }
         body {
             margin: 0;
-            overflow-y: auto;
+            height: auto;
+            overflow: visible;
         }
         html,
         body,
@@ -3834,6 +3837,8 @@
             font-size: 0.72rem !important;
             white-space: nowrap;
         }
+        .section-head { min-height: 30px; }
+        .section-title, .section-actions { align-self: center; }
         .section-actions-menu {
             display: none;
             position: relative;
@@ -7708,14 +7713,16 @@
             .gear-detail-modal[open],.gear-metrics-detail[open] { animation:none; }
         }
     </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body class="bg-dark min-h-screen event-booting">
+<body class="bg-dark min-h-screen event-booting ks-ui ks-page-planning-event">
     <main class="relative z-10 w-full px-3 md:px-5 py-4 md:py-5">
         <div class="event-topbar">
             <div class="event-topbar-main">
                 <div class="event-topbar-title">
-                    <a href="planning.html" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-2 rounded-xl text-xs font-semibold transition whitespace-nowrap">
-                        Назад
+                    <a id="planningBackLink" href="planning.html" aria-label="Назад к мероприятиям" class="planning-back-link">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
                     </a>
                     <div class="min-w-0">
                         <div class="event-title-row">
@@ -12781,6 +12788,11 @@
             if (previousSearchResults) equipmentCatalogScrollTop = previousSearchResults.scrollTop;
             const equipmentMode = isEquipmentEvent();
             document.body.classList.toggle('equipment-mode', equipmentMode);
+            const backLink = document.getElementById('planningBackLink');
+            if (backLink) {
+                backLink.href = equipmentMode ? 'planning.html?view=equipment' : 'planning.html';
+                backLink.setAttribute('aria-label', equipmentMode ? 'Назад к снаряжению' : 'Назад к мероприятиям');
+            }
             if (!equipmentMode) {
                 shell.classList.add('hidden');
                 shell.innerHTML = '';

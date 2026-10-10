@@ -2,19 +2,30 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Встреча | Kinosreda</title>
+  <title>Звонки | КИНОСРЕДА</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010q">
   <script>
     (function () {
       try {
         const currentUserRaw = localStorage.getItem('currentUser');
         if (!currentUserRaw) {
-          window.location.replace('login.html');
+          const guestUrl = new URL('/meet.html', window.location.origin);
+          guestUrl.search = window.location.search;
+          const room = window.location.pathname.match(/^\/call\/([a-z]+)\/?$/i);
+          if (room && !guestUrl.searchParams.has('room')) guestUrl.searchParams.set('room', room[1]);
+          window.location.replace(guestUrl.href);
           return;
         }
         document.documentElement.classList.add('authed');
       } catch (_) {
-        window.location.replace('login.html');
+        const guestUrl = new URL('/meet.html', window.location.origin);
+          guestUrl.search = window.location.search;
+          const room = window.location.pathname.match(/^\/call\/([a-z]+)\/?$/i);
+          if (room && !guestUrl.searchParams.has('room')) guestUrl.searchParams.set('room', room[1]);
+          window.location.replace(guestUrl.href);
       }
     })();
     (function () {
@@ -3027,8 +3038,10 @@
       }
     }
   </style>
+    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010q">
+    <script src="/kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body>
+<body class="ks-ui ks-page-call">
   <div class="fx-layer" aria-hidden="true">
     <div class="fx-grid"></div>
     <div class="fx-scan"></div>
@@ -3037,7 +3050,7 @@
   <div id="roomPicker" class="room-picker" aria-hidden="true">
     <div class="room-picker-card">
       <div class="room-picker-head">
-        <h1 class="room-picker-title">Встреча</h1>
+        <h1 class="room-picker-title">Звонки</h1>
       </div>
       <div class="room-picker-grid">
         <section class="room-tile">
@@ -3068,7 +3081,7 @@
       </div>
       <section id="roomHistorySection" class="room-history" hidden>
         <div class="room-history-head">
-          <h2 class="room-history-title">История встреч</h2>
+          <h2 class="room-history-title">История звонков</h2>
         </div>
         <div id="roomHistoryList" class="room-history-list"></div>
       </section>
@@ -3616,7 +3629,7 @@
             joinRoom().catch(() => {});
           }, 0);
         } else {
-          updateTransportBadge('offline', 'Встреча');
+          updateTransportBadge('offline', 'Звонки');
         }
         refreshSelfAvatarFromDirectory().catch(() => {});
         refreshDevices().catch(() => {});
@@ -3970,7 +3983,7 @@
         state.activeCameraStageOwnerId = '';
         renderScreenStage(true);
         renderParticipants(true);
-        updateTransportBadge('offline', 'Встреча');
+        updateTransportBadge('offline', 'Звонки');
         updateLocalStateText();
         state.lastTrackedRoomHistoryKey = '';
         syncRoomPicker();

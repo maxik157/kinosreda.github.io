@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Киносреда — График покаков</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
     <script>
         // Auth gate: keep page hidden until we know the user is logged in
         (function () {
@@ -588,8 +590,10 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body class="relative">
+<body class="relative ks-ui ks-page-pokaki">
     <div class="backdrop"></div>
     <div class="relative z-10 min-h-screen flex flex-col">
         <header class="px-4 pt-4 pb-2">

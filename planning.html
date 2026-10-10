@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Планирование — Киносреда</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
     <script>
@@ -205,8 +207,8 @@
             overscroll-behavior: none;
             min-height: 100%;
         }
-        html { height: 100%; overflow-y: auto; }
-        body { min-height: 100dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        html { height: auto; min-height: 100%; overflow-y: auto; }
+        body { height: auto; min-height: 100dvh; overflow: visible; }
         body {
             font-family: 'Comfortaa', cursive;
             color: #fff;
@@ -219,25 +221,21 @@
         @media (max-width: 768px) {
             html,
             body {
-                height: 100% !important;
-                min-height: 0 !important;
-                overflow: hidden !important;
+                height: auto;
+                min-height: 100%;
             }
             body {
-                overscroll-behavior: none;
+                overflow: visible;
             }
             #planningPageScroll {
-                height: 100dvh !important;
-                min-height: 0 !important;
-                overflow-x: hidden;
-                overflow-y: auto !important;
-                touch-action: pan-y;
-                overscroll-behavior-y: contain;
-                -webkit-overflow-scrolling: touch;
+                height: auto;
+                min-height: 100dvh;
+                overflow: visible;
+                touch-action: pan-x pan-y pinch-zoom;
             }
             #eventsList,
             .planning-shell {
-                touch-action: pan-y;
+                touch-action: pan-x pan-y pinch-zoom;
             }
         }
         @font-face {
@@ -373,7 +371,7 @@
             justify-self: start;
             width: fit-content;
             gap: 3px;
-            margin-top: 16px;
+            margin-top: 0;
             padding: 3px;
             border: 1px solid var(--accent-border-20);
             border-radius: 999px;
@@ -434,7 +432,9 @@
         .modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.34);
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
             display: none;
             align-items: center;
             justify-content: center;
@@ -451,23 +451,31 @@
         .modal.active { display: flex; }
         .modal-card {
             width: min(92vw, 420px);
-            background: rgba(8,8,8,0.95);
-            border: 1px solid var(--accent-border-30);
-            border-radius: 18px;
-            padding: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-            max-height: calc(100dvh - 32px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px));
+            background: rgba(20,25,33,.72);
+            border: 0;
+            border-radius: 22px;
+            padding: 16px;
+            -webkit-backdrop-filter: blur(28px) saturate(1.08);
+            backdrop-filter: blur(28px) saturate(1.08);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+            max-height: min(620px, calc(100dvh - 32px - env(safe-area-inset-top, 16px) - env(safe-area-inset-bottom, 16px)));
             overflow-y: auto;
         }
         .modal-input {
             width: 100%;
             background: rgba(0,0,0,0.4);
-            border: 1px solid var(--accent-border-30);
+            border: 0;
+            background: rgba(8,11,17,.42);
             border-radius: 12px;
             padding: 10px 12px;
             color: #fff;
             outline: none;
         }
+        .modal-card .event-type-btn,
+        .modal-card .participant-action-btn,
+        .modal-card .participant-add-btn,
+        .modal-card .modal-actions button { border: 0; border-radius: 12px; background: rgba(255,255,255,.07); }
+        .modal-card .modal-actions button:last-child { background: rgba(245,158,11,.22); color: #fde68a; }
         .modal-actions {
             display: flex;
             gap: 10px;
@@ -604,19 +612,19 @@
             display: none !important;
         }
     </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body class="bg-dark min-h-screen planning-booting">
+<body class="bg-dark min-h-screen planning-booting ks-ui ks-page-planning">
     <main id="planningPageScroll" class="relative z-10 w-full px-3 md:px-6 py-6 md:py-8" style="min-height:100dvh;padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px));">
         <section class="planning-shell p-0">
             <div class="planning-head">
                 <div>
-                    <div class="text-xs text-gray-400 uppercase tracking-[0.15em]">Планирование</div>
                     <h2 class="text-lg md:text-2xl font-semibold text-amber-200 mt-1">Мероприятия</h2>
-                    <p class="text-xs text-gray-400 mt-1">Создавайте поездки, распределяйте задачи и считайте расходы без хаоса в чате.</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button id="addEventBtn" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition">
-                        + Добавить мероприятие
+                    <button id="addEventBtn" aria-label="Добавить мероприятие" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-4 py-2 rounded-xl text-sm font-semibold transition">
+                        + <span>Добавить мероприятие</span>
                     </button>
                 </div>
             </div>
@@ -632,7 +640,6 @@
         <div class="modal" id="addEventModal" role="dialog" aria-modal="true" aria-labelledby="addEventTitle">
         <div class="modal-card">
             <h3 id="addEventTitle" class="text-lg font-semibold text-amber-200">Новое мероприятие</h3>
-            <p class="text-xs text-gray-400 mt-1">Введите название события.</p>
             <input id="eventNameInput" class="modal-input mt-4" type="text" placeholder="Название мероприятия" />
             <div class="mt-3 event-date-field">
                 <div class="text-xs text-gray-400 mb-2">Дата</div>
@@ -643,11 +650,9 @@
                 <div class="event-type-grid" id="eventTypeGrid">
                     <button type="button" class="event-type-btn active" data-event-type="default" onclick="this.closest('#addEventModal').querySelectorAll('.event-date-field,.event-participants-field').forEach(function(field){field.hidden=false;field.style.removeProperty('display');});">
                         <span class="event-type-title">Обычное</span>
-                        <span class="event-type-desc">Классическое планирование поездки, трат и задач.</span>
                     </button>
                     <button type="button" class="event-type-btn" data-event-type="equipment" onclick="this.closest('#addEventModal').querySelectorAll('.event-date-field,.event-participants-field').forEach(function(field){field.hidden=true;field.style.setProperty('display','none','important');});">
                         <span class="event-type-title">Снаряжение</span>
-                        <span class="event-type-desc">Походный набор с весом, объемом и укладкой в рюкзак.</span>
                     </button>
                 </div>
             </div>
@@ -687,7 +692,7 @@
         let eventsCache = [];
         let currentUserLogin = '';
         let currentUserName = '';
-        let eventViewFilter = 'default';
+        let eventViewFilter = normalizeEventType(new URLSearchParams(location.search).get('view'));
         let equipmentItemCounts = {};
         let usersList = [];
         let eventCustomParticipants = [];
@@ -708,12 +713,17 @@
 
         function setEventViewFilter(value) {
             eventViewFilter = normalizeEventType(value);
+            const url = new URL(location.href);
+            if (eventViewFilter === 'equipment') url.searchParams.set('view', 'equipment');
+            else url.searchParams.delete('view');
+            history.replaceState(history.state, '', url);
             document.querySelectorAll('[data-event-view]').forEach((button) => {
                 const active = button.dataset.eventView === eventViewFilter;
                 button.classList.toggle('active', active);
                 button.setAttribute('aria-pressed', active ? 'true' : 'false');
             });
             renderEvents();
+            notifyParentPlanningRoute('list');
         }
 
         function setSelectedEventType(type) {
@@ -1000,6 +1010,7 @@
                     window.parent.postMessage({
                         type: 'planning:route',
                         view,
+                        listView: eventViewFilter,
                         eventId: eventId || null
                     }, window.location.origin);
                 }
@@ -1235,6 +1246,8 @@
             if (e.key === 'Enter') addCustomParticipantToEventModal();
             if (e.key === 'Escape') closeAddEventModal();
         });
+        setEventViewFilter(eventViewFilter);
+        window.addEventListener('popstate', () => setEventViewFilter(new URLSearchParams(location.search).get('view')));
         initProfileName();
         ensurePlanningInitialRenderFallback();
         initFirebase();

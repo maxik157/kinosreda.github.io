@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="referrer" content="origin">
     <title>Рецепты — Киносреда</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
     <script>
         (function () {
             try {
@@ -1449,13 +1451,15 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
+    <script src="kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body>
+<body class="ks-ui ks-page-recipes">
     <main class="page">
         <section class="toolbar" aria-label="Фильтры">
             <input id="searchInput" class="search" type="search" placeholder="Найти рецепт">
             <div id="categoryBar" class="categories" role="tablist" aria-label="Категории рецептов"></div>
-            <button type="button" class="btn primary" id="composerToggleBtn">＋ Добавить рецепт</button>
+            <button type="button" class="btn primary" id="composerToggleBtn" aria-label="Добавить рецепт" aria-expanded="false"><svg class="composer-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Добавить рецепт</span></button>
         </section>
 
         <section id="composer" class="composer" aria-label="Добавление рецепта">
@@ -2875,7 +2879,9 @@
         function openComposer({ focus = false, scroll = false } = {}) {
             state.composerOpen = true;
             els.composer.classList.add('open');
-            els.composerToggleBtn.textContent = 'Свернуть форму';
+            els.composerToggleBtn.querySelector('span').textContent = 'Свернуть форму';
+            els.composerToggleBtn.setAttribute('aria-label', 'Свернуть форму');
+            els.composerToggleBtn.setAttribute('aria-expanded', 'true');
             requestAnimationFrame(() => {
                 if (scroll) {
                     const toolbarHeight = document.querySelector('.toolbar')?.getBoundingClientRect().height || 0;
@@ -2894,7 +2900,9 @@
         function closeComposer() {
             state.composerOpen = false;
             els.composer.classList.remove('open');
-            els.composerToggleBtn.textContent = '＋ Добавить рецепт';
+            els.composerToggleBtn.querySelector('span').textContent = 'Добавить рецепт';
+            els.composerToggleBtn.setAttribute('aria-label', 'Добавить рецепт');
+            els.composerToggleBtn.setAttribute('aria-expanded', 'false');
         }
 
         function loadRecipeIntoForm(recipe) {

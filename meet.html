@@ -2,8 +2,11 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Встреча | Kinosreda</title>
+  <title>Звонки | КИНОСРЕДА</title>
+    <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
+    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010q">
   <script>
     (function () {
       try {
@@ -18,18 +21,20 @@
         } catch (_) {}
         if (fromQuery) {
           guestProfile = { name: fromQuery, username: '', avatarUrl: '', manual: true };
-          localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile));
+          try { localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile)); } catch (_) {}
         }
         if (directRoom && (!guestProfile || guestProfile.manual !== true)) {
           guestProfile = { name: 'Гость', username: '', avatarUrl: '', manual: false };
-          localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile));
+          try { localStorage.setItem(GUEST_PROFILE_KEY, JSON.stringify(guestProfile)); } catch (_) {}
         }
         const hasGuestName = guestProfile && String(guestProfile.name || '').trim();
         window.__publicGuestProfile = hasGuestName ? guestProfile : null;
         if (!hasGuestName) document.documentElement.classList.add('guest-name-pending');
         document.documentElement.classList.add('authed');
       } catch (_) {
-        window.location.replace('index.html');
+        window.__publicGuestMode = true;
+        window.__publicGuestProfile = null;
+        document.documentElement.classList.add('authed', 'guest-name-pending');
       }
     })();
     (function () {
@@ -2844,8 +2849,10 @@
       }
     }
   </style>
+    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010q">
+    <script src="/kinosreda-shell.js?v=20261010q" defer></script>
 </head>
-<body>
+<body class="ks-ui ks-page-meet">
   <div class="fx-layer" aria-hidden="true">
     <div class="fx-grid"></div>
     <div class="fx-scan"></div>
@@ -2854,7 +2861,7 @@
   <div id="guestEntry" class="guest-entry" aria-hidden="true">
     <div class="guest-entry-card">
       <div class="guest-entry-head">
-        <h1 class="guest-entry-title">Вход во встречу</h1>
+        <h1 class="guest-entry-title">Звонки</h1>
         <p class="guest-entry-text">Введите имя и выберите комнату.</p>
       </div>
       <form id="guestEntryForm" class="guest-entry-form" novalidate>
@@ -2868,7 +2875,7 @@
           </button>
           <button id="guestCustomRoomBtn" class="guest-room-option" type="button" data-room-mode="custom">
             <span class="guest-room-option-title">Кастомная</span>
-            <span class="guest-room-option-text">Встреча по короткому имени на латинице.</span>
+            <span class="guest-room-option-text">Звонок по короткому имени на латинице.</span>
           </button>
         </div>
         <div id="guestCustomRoomWrap" class="guest-room-custom" hidden>
@@ -3407,7 +3414,7 @@
             }, 0);
           }
         } else {
-          updateTransportBadge('offline', 'Встреча');
+          updateTransportBadge('offline', 'Звонки');
         }
         refreshSelfAvatarFromDirectory().catch(() => {});
         refreshDevices().catch(() => {});
@@ -7972,7 +7979,7 @@
         updateGuestRoomPreview();
         renderScreenStage(true);
         renderParticipants(true);
-        updateTransportBadge('offline', 'Встреча');
+        updateTransportBadge('offline', 'Звонки');
         updateLocalStateText();
         syncGuestEntryVisibility();
         try {
@@ -7992,12 +7999,6 @@
         syncGuestRoomControls();
         updateGuestRoomPreview();
         syncGuestEntryVisibility();
-        if ((state.guestNameRequired || !state.roomReady) && dom.guestNameInput) {
-          window.setTimeout(() => {
-            dom.guestNameInput.focus();
-            dom.guestNameInput.select();
-          }, 40);
-        }
       }
 
       function syncGuestEntryVisibility() {
