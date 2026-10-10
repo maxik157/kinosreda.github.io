@@ -3891,7 +3891,6 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
-                            <button id="scanRatingBeerButton" type="button" class="text-sm px-3 py-2 rounded-xl border border-amber-500/30 text-amber-200"></button>
                             <button id="openAddBeerBtn" data-open-add-beer="1" type="button" onclick="openAddBeerModal()" class="btn-glow bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold py-2 px-4 rounded-xl transition transform hover:scale-105">
                                 ➕ Добавить пиво
                             </button>
@@ -4073,7 +4072,7 @@
         </div>
 
         <div id="beerShelfOverlay" class="hidden fixed inset-0 z-[13050] bg-black" aria-hidden="true">
-            <iframe id="beerShelfFrame" src="beer-shelf.html" title="Интерактивная пивная полка" allow="camera" class="block h-full w-full border-0"></iframe>
+            <iframe id="beerShelfFrame" src="beer-shelf.html" title="Интерактивная пивная полка" class="block h-full w-full border-0"></iframe>
         </div>
 
         <!-- Service Pages -->
@@ -4094,7 +4093,7 @@
         </div>
         <div id="svc_beer_shelf" data-page="svc_beer_shelf" class="page page-service max-w-7xl mx-auto">
             <div class="service-frame">
-                <iframe title="Интерактивная пивная полка" data-src="beer-shelf.html" loading="lazy" scrolling="yes" allow="camera"></iframe>
+                <iframe title="Интерактивная пивная полка" data-src="beer-shelf.html" loading="lazy" scrolling="yes"></iframe>
             </div>
         </div>
         <div id="svc_roulette" data-page="svc_roulette" class="page page-service max-w-7xl mx-auto">
@@ -4617,12 +4616,6 @@
         </svg>
     </button>
 
-    <link rel="stylesheet" href="beer-scanner.css">
-    <link rel="stylesheet" href="beer-form.css">
-    <script src="beer-scanner.js"></script>
-    <script src="beer-facts.js"></script>
-    <script src="beer-style-detect.js"></script>
-    <script src="beer-data-autofill.js"></script>
     <script>
         // Create particles
         function createParticles() {
@@ -8680,7 +8673,6 @@
                     lastBeerRatingHash = JSON.stringify(data.beerRating || []);
                     renderBeerRating();
                     openBeerModalFromShelfUrl();
-                    BeerScanner.refresh();
                 };
                 db.ref('beerRating').on('value', applyBeerRatingSnapshot);
 
@@ -11126,23 +11118,6 @@
         }
 
         // Beer Rating Methods
-        let beerScannerEditReturn=null, beerScannerAddReturn=null;
-        function bindBeerScanner(){
-            BeerScanner.bind(document.getElementById('scanRatingBeerButton'), {
-                getCatalog:()=>Object.entries(data.beerRating||{}).map(([key,record])=>({key,record})),
-                getUserName,
-                onEditRecord:(item,onClose)=>{
-                    beerScannerEditReturn=onClose;
-                    openEditBeerModal(item.record.id);
-                },
-                onAddRecord:(record,onClose)=>{
-                    beerScannerAddReturn=onClose;
-                    openAddBeerModal(record);
-                }
-            });
-        }
-        if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindBeerScanner);
-        else bindBeerScanner();
         function openBeerRatingDefault(){openSidebarPage('beer');}
 
         function openBeerShelfOverlay() {
@@ -11786,11 +11761,7 @@
         }
         function renderBeerPhotoPreview(url, mode = beerPhotoMode) {
             const prefix = mode === 'edit' ? 'edit' : 'add'; const preview = document.getElementById(`${prefix}BeerPhotoPreview`); const label = document.getElementById(`${prefix}BeerPhotoLabel`);
-            if (preview) {
-                for (const [property, value] of [['display',url?'block':'none'],['width','32px'],['height','52px'],['max-width','32px'],['max-height','52px'],['flex-shrink','0'],['object-fit','contain'],['object-position','center center'],['transform','none']]) preview.style.setProperty(property, value, 'important');
-                if (url) preview.src = url; else preview.removeAttribute('src');
-                preview.classList.toggle('hidden', !url);
-            }
+            if (preview) { for (const [property, value] of [['display','block'],['width','100%'],['height','100%'],['max-width','100%'],['max-height','100%'],['object-fit','contain'],['object-position','center center'],['transform','scale(.78)'],['transform-origin','center center']]) preview.style.setProperty(property, value, 'important'); preview.src = url || ''; preview.classList.toggle('hidden', !url); }
             if (label) label.textContent = url ? '✓ Фото добавлено' : '📷 Фото пива';
         }
         function openBeerPhotoPicker(mode) { beerPhotoMode = mode; clearBeerPhotoCandidates(); setBeerPhotoStatus(''); const picker = document.getElementById('beerPhotoPicker'); const sheet = document.getElementById('beerPhotoPickerSheet'); picker.classList.remove('hidden'); picker.classList.add('flex'); sheet.classList.remove('beer-photo-picker-enter'); requestAnimationFrame(() => sheet.classList.add('beer-photo-picker-enter')); }
@@ -11839,34 +11810,14 @@
         async function selectBeerImageCandidate(candidate) { setBeerPhotoBusy(true, 'Загружаем…'); try { const response = await fetch(BEER_IMAGE_FETCH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:candidate.imageUrl})}); const payload = await response.json(); const base64 = payload?.result_base64 || payload?.image_base64; if (!response.ok || !base64) throw new Error('fetch_failed'); await processBeerPhotoDataUrl(`data:image/png;base64,${base64}`); } catch (_) { setBeerPhotoStatus('Не удалось загрузить фото. Выберите другое.'); setBeerPhotoBusy(false); } }
         document.addEventListener('change', async e=>{if(e.target?.id!=='beerPhotoFileInput')return;const file=e.target.files?.[0];e.target.value='';if(!file)return;await processBeerPhotoDataUrl(await imageBlobToDataUrl(file));});
 
-        function prepareBeerForm(mode) {
-            const modal = document.getElementById(mode === 'add' ? 'addBeerModal' : 'editBeerModal');
-            if (modal.dataset.formReady) return;
-            modal.dataset.formReady = '1';
-            modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true');
-            const prefix = mode === 'add' ? 'beer' : 'editBeer';
-            const panel = modal.firstElementChild;
-            const grid = document.createElement('div'); grid.className = 'beer-form-fields';
-            const labels = {Type:'Тип',Style:'Стиль',Filtered:'Фильтрация',Country:'Страна',Volume:'Объём',Alcohol:'Крепость, %',Calories:'Калории ≈ ккал/100 мл'};
-            const first = document.getElementById(prefix + 'TypeInput');
-            panel.insertBefore(grid, first.closest('.cs') || first);
-            Object.entries(labels).forEach(([key, text]) => {
-                const control = document.getElementById(prefix + key + 'Input');
-                const label = document.createElement('label'); label.textContent = text; label.htmlFor = control.id;
-                label.append(control.closest('.cs') || control); grid.append(label);
-            });
-        }
-
-        function openAddBeerModal(prefill = {}) {
+        function openAddBeerModal() {
             const modal = document.getElementById('addBeerModal');
             if (!modal) return;
-            prepareBeerForm('add');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             modal.style.display = 'flex';
             modal.style.zIndex = '12050';
-            document.getElementById('beerNameInput').value = prefill.name || '';
-            ['Type','Filtered','Country','Volume'].forEach(key => { const select = document.getElementById('beer' + key + 'Input'); select.selectedIndex = 0; });
+            document.getElementById('beerNameInput').value = '';
             document.getElementById('beerAlcoholInput').value = '';
             document.getElementById('beerCaloriesInput').value = '';
             beerPendingImageUrl = '';
@@ -11875,13 +11826,6 @@
             // default style
             const styleSel = document.getElementById('beerStyleInput');
             if (styleSel) styleSel.value = 'Lager';
-
-            const autofillFields = Object.fromEntries(['name','type','style','filtered','country','alcohol','calories'].map(key => [key, document.getElementById('beer' + key[0].toUpperCase() + key.slice(1) + 'Input')]));
-            ['type','style','country'].forEach(key=>BeerDataAutofill.prepareUnknownSelect(autofillFields[key]));
-            BeerDataAutofill.prepareFiltrationSelect(autofillFields.filtered);
-            const existingAutofill = autofillFields.name.__beerAutofillController;
-            if (existingAutofill) existingAutofill.reset();
-            else BeerDataAutofill.bind(autofillFields);
 
             // ensure custom selects are applied and in sync
             enhanceBeerSelects();
@@ -11946,9 +11890,6 @@
             modal.style.display = '';
             modal.style.zIndex = '';
             notifyShelfModal('shelf-modal-close');
-            document.getElementById('beerNameInput').__beerAutofillController?.reset({lookupInitial:false});
-            const returnToScanner = beerScannerAddReturn; beerScannerAddReturn = null;
-            returnToScanner?.();
         }
 
         function setAddBeerRating(rating) {
@@ -12087,7 +12028,6 @@
         }
 
         function openEditBeerModal(beerId) {
-            prepareBeerForm('edit');
             editingBeerId = beerId;
             const beer = data.beerRating.find(b => String(b.id) === String(beerId));
             if (!beer) {
@@ -12118,9 +12058,6 @@
             document.getElementById('editBeerModal').classList.remove('flex');
             editingBeerId = null;
             notifyShelfModal('shelf-modal-close');
-            const returnToScanner=beerScannerEditReturn;
-            beerScannerEditReturn=null;
-            returnToScanner?.();
         }
 
         function saveBeerEdit() {
