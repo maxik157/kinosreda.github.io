@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Пивная полка</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010-full">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010perf">
   <script>
     (() => { try { if (!localStorage.getItem('currentUser')) location.replace('login.html'); else document.documentElement.classList.add('authed'); } catch (_) { location.replace('login.html'); } })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <link href="comfortaa.css" rel="stylesheet">
+  <script src="/vendor/firebase-9.22.0/firebase-app-compat.js"></script>
+  <script src="/vendor/firebase-9.22.0/firebase-database-compat.js"></script>
+  <script src="./firebase-rtdb-rf-bypass.js?v=20261010perf"></script>
   <style>
     :root { --amber:#f4b941; --ink:#05070b; --text:#f7f2e8; --muted:#b6b0a5; --shelf-capacity:8; }
     * { box-sizing:border-box; }
@@ -234,8 +234,8 @@
       html.is-single-shelf .single-shelf-scroll-tick{min-width:0;max-width:none;height:13px;}
     }
   </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010-full">
-    <script src="kinosreda-shell.js?v=20261010-full" defer></script>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
+    <script src="kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="ks-ui ks-page-beer-shelf">
   <header class="shelf-header"><a class="back" href="/index.html?page=beer" onclick="return closeShelfView()">← Таблица</a><div class="shelf-actions"><button id="scanBeerButton" class="header-icon-button" type="button" title="Распознать этикетку"></button><button id="beerSearchReset" class="header-icon-button search-reset" type="button" aria-label="Сбросить поиск" hidden><svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10"></path><path d="m17 7-10 10"></path></svg></button><div class="search-wrap"><button id="beerSearchButton" class="header-icon-button" type="button" aria-label="Поиск пива" aria-controls="beerSearchPopover" aria-expanded="false"><svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"></circle><path d="m15 15 4.5 4.5"></path></svg></button><div id="beerSearchPopover" class="beer-search-popover" role="search"><div class="beer-search-input-scale"><input id="beerSearchQuery" type="search" autocomplete="off" placeholder="Найти пиво" aria-label="Поиск пива"></div></div></div><label class="density-control" for="shelfCapacity"><input id="shelfCapacity" type="range" min="1" max="8" step="1" value="8" aria-label="Количество пива на полке" title="Количество пива на полке"></label><button id="focusModeToggle" class="header-icon-button focus-mode-toggle" type="button" aria-label="Экспериментальный просмотр" aria-pressed="false" title="Экспериментальный просмотр"><svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"></path><path d="M12 8v8M8 12h8"></path></svg></button><div class="sort-wrap"><button id="sortBeerButton" class="header-icon-button" type="button" aria-label="Сортировка" aria-controls="beerSortMenu" aria-expanded="false"><svg class="header-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h10"></path><path d="M7 12h7"></path><path d="M7 19h4"></path><path d="m15 15 3 3 3-3"></path></svg></button><div id="beerSortMenu" class="beer-sort-menu" role="menu"><button class="beer-sort-option" type="button" data-sort="title" role="menuitem">По названию</button><button class="beer-sort-option" type="button" data-sort="date" role="menuitem">По дате добавления</button><button class="beer-sort-option" type="button" data-sort="rating" role="menuitem">По рейтингу</button><button class="beer-sort-option" type="button" data-sort="personal" role="menuitem">Моя оценка</button></div></div><button id="addBeerButton" type="button">＋ Добавить</button></div></header>
@@ -244,12 +244,12 @@
   <div id="loading"><div class="spinner"></div></div>
   <script src="beer-style-detect.js"></script>
   <script src="beer-facts.js"></script>
-  <script src="beer-data-autofill.js?v=20261010-full"></script>
+  <script src="beer-data-autofill.js"></script>
   <script src="beer-image-process.js"></script>
-  <script src="beer-shelf-modal.js?v=20261010-full"></script>
-  <link rel="stylesheet" href="beer-scanner.css?v=20261010-full">
-  <link rel="stylesheet" href="beer-form.css?v=20261010-full">
-  <script src="beer-scanner.js?v=20261010-full"></script>
+  <script src="beer-shelf-modal.js"></script>
+  <link rel="stylesheet" href="beer-scanner.css">
+  <link rel="stylesheet" href="beer-form.css">
+  <script src="beer-scanner.js"></script>
   <script>
     const firebaseConfig={apiKey:"AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",authDomain:"kinosreda-ce8ef.firebaseapp.com",databaseURL:"https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",projectId:"kinosreda-ce8ef",storageBucket:"kinosreda-ce8ef.firebasestorage.app",messagingSenderId:"889337905300",appId:"1:889337905300:web:325aea2f3fb3c6b44a7481"};
     const LONG_PRESS_MS=420;

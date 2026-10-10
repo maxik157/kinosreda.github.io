@@ -115,3 +115,15 @@ def test_identical_photos_offer_choices_instead_of_selecting_arbitrarily(matcher
     result = matcher.recognize(image)
     assert {item['key'] for item in result['matches']} == {'a', 'b'}
     assert not result['confident']
+
+
+def test_large_phone_photo_preserves_perspective_matching(matcher):
+    matcher.catalog_update({'a': {'name': 'Amber Lager', 'imageUrl': 'https://example.com/a'}})
+    original = label(4, 'AMBER LAGER')
+    matcher.index_image('a', encode(cv2.resize(original, (640, 960))))
+    src = np.float32([[0, 0], [319, 0], [319, 479], [0, 479]])
+    dst = np.float32([[300, 100], [840, 180], [790, 1020], [240, 950]])
+    photo = cv2.warpPerspective(original, cv2.getPerspectiveTransform(src, dst), (1100, 1200), borderValue=(80, 80, 80))
+    result = matcher.recognize(encode(photo))
+    assert result['confident']
+    assert result['matches'][0]['key'] == 'a'

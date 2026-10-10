@@ -17,10 +17,12 @@ test('recognition HTTP API uses the catalog and returns verified label matches',
   for (let i = 0; i < 150; i++) shapes += `<circle cx="${20 + random(230)}" cy="${20 + random(460)}" r="${3 + random(12)}" stroke="#${random(0xffffff).toString(16).padStart(6, '0')}" fill="none" stroke-width="2"/>`;
   const image = await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="270" height="510"><rect width="270" height="510" fill="white"/>${shapes}</svg>`)).png().toBuffer();
   let downloads = 0;
+  let holdUpload = null;
+  let releaseUpload = null;
   const service = createRecognition({
     loadCatalog: async () => ({ beer: { id: 'test-123', name: 'Test Amber Lager', imageUrl: 'https://example.com/reference' } }),
     fetchAndDecodeImage: async () => { downloads++; return { source: image }; },
-    readRequestBody: async req => { const chunks = []; for await (const chunk of req) chunks.push(chunk); return Buffer.concat(chunks); },
+    readRequestBody: async req => { if (req.headers['x-hold-upload']) { holdUpload(); await new Promise(resolve => { releaseUpload = resolve; }); } const chunks = []; for await (const chunk of req) chunks.push(chunk); return Buffer.concat(chunks); },
     writeJsonResponse: (res, code, headers, result) => { res.writeHead(code, { ...headers, 'Content-Type': 'application/json' }); res.end(JSON.stringify(result)); }
   });
   const server = http.createServer((req, res) => service.handle(req, res, {}));
@@ -46,6 +48,17 @@ test('recognition HTTP API uses the catalog and returns verified label matches',
   assert.equal(result.matches[0].recordId, 'test-123');
   assert.equal(result.matches[0].name, 'Test Amber Lager');
   assert.equal(downloads, 1, 'scanning must not download catalog photos again');
+
+  const admitted = new Promise(resolve => { holdUpload = resolve; });
+  const firstScan = fetch(base, { method: 'POST', headers: { 'Content-Type': 'image/png', 'X-Hold-Upload': '1' }, body: image });
+  await admitted;
+  const competing = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'image/png' }, body: image });
+  assert.equal(competing.status, 429, 'concurrent scans must not allocate another image pyramid');
+  assert.equal((await competing.json()).error, 'recognition_busy');
+  const duringScan = await fetch(base);
+  assert.equal(duringScan.status, 200, 'status remains responsive during a scan');
+  releaseUpload();
+  assert.equal((await firstScan).status, 200);
 
   const invalid = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"url":"http://localhost/secret"}' });
   assert.equal(invalid.status, 400);

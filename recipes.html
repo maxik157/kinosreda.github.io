@@ -6,7 +6,7 @@
     <meta name="referrer" content="origin">
     <title>Рецепты — Киносреда</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010-full">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010perf">
     <script>
         (function () {
             try {
@@ -23,9 +23,9 @@
         })();
     </script>
     <link rel="stylesheet" href="comfortaa.css">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="./firebase-rtdb-rf-bypass.js?v=20260626d"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="/vendor/firebase-9.22.0/firebase-app-compat.js"></script>
+    <script src="/vendor/firebase-9.22.0/firebase-database-compat.js"></script>
+    <script src="./firebase-rtdb-rf-bypass.js?v=20261010perf"></script>
     <style>
         :root {
             --bg: #07090d;
@@ -1451,8 +1451,8 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010-full">
-    <script src="kinosreda-shell.js?v=20261010-full" defer></script>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
+    <script src="kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="ks-ui ks-page-recipes">
     <main class="page">
@@ -1590,8 +1590,9 @@
         const OPENROUTER_API_KEY = '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';
         const OPENROUTER_MODEL = 'openai/gpt-oss-120b:free';
         const LOCAL_RECIPES_KEY = 'kinosredaRecipesLocal';
-        const MAX_UPLOAD_DIMENSION = 1600;
-        const MAX_PHOTO_BYTES = 1200 * 1024;
+        const RECIPES_SNAPSHOT_KEY = 'kinosredaRecipesSnapshot.v1';
+        const MAX_UPLOAD_DIMENSION = 1280;
+        const MAX_PHOTO_BYTES = 600 * 1024;
         const categories = [
             { id: 'all', label: 'Все', icon: '✦' },
             { id: 'salads', label: 'Салаты', icon: '🥗' },
@@ -3079,7 +3080,7 @@
 
         function mergeRecipes(primary, fallback) {
             const map = new Map();
-            [...(fallback || []), ...(primary || [])].forEach((recipe) => {
+            [...(Array.isArray(fallback) ? fallback : []), ...(Array.isArray(primary) ? primary : [])].forEach((recipe) => {
                 if (!recipe || !recipe.id) return;
                 map.set(recipe.id, recipe);
             });
@@ -3122,12 +3123,7 @@
                     try {
                         preparedPhoto = await preparePhotoBlob(state.photoFile);
                         const uploadName = preparedPhoto === state.photoFile ? safePhotoFileName(state.photoFile) : 'recipe-photo.jpg';
-                        if (isIosLike() && preparedPhoto !== state.photoFile) {
-                            imageUrl = await blobToDataUrl(preparedPhoto);
-                            imageUploadFailed = true;
-                        } else {
-                            imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
-                        }
+                        imageUrl = await uploadToPostimages(preparedPhoto, uploadName);
                     } catch (uploadError) {
                         imageUploadFailed = true;
                         try {
@@ -3327,8 +3323,8 @@
 
         function initFirebase() {
             try {
-                if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceLongPolling === 'function') {
-                    firebase.database.INTERNAL.forceLongPolling();
+                if (firebase.database && firebase.database.INTERNAL && typeof firebase.database.INTERNAL.forceWebSockets === 'function') {
+                    firebase.database.INTERNAL.forceWebSockets();
                 }
                 if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
                 state.db = firebase.database();
@@ -3340,17 +3336,18 @@
                         createdAt: recipe.createdAt || recipe.createdAtClient || 0
                     }));
                     state.recipes = mergeRecipes(remoteRecipes, loadLocalRecipes());
+                    try { const json = JSON.stringify(remoteRecipes); if (json.length < 4500000) sessionStorage.setItem(RECIPES_SNAPSHOT_KEY, json); } catch (_) {}
                     renderAll();
                 }, (err) => {
                     console.warn('[recipes] firebase read failed', err);
                     state.db = null;
-                    state.recipes = loadLocalRecipes();
+                    state.recipes = mergeRecipes(state.recipes, loadLocalRecipes());
                     renderAll();
                 });
             } catch (err) {
                 console.warn('[recipes] firebase init failed', err);
                 state.db = null;
-                state.recipes = loadLocalRecipes();
+                state.recipes = mergeRecipes(state.recipes, loadLocalRecipes());
                 renderAll();
             }
         }
@@ -3545,8 +3542,9 @@
             state.currentUser = getCurrentUser();
             resetForm();
             bindEvents();
-            initFirebase();
+            try { state.recipes = mergeRecipes(JSON.parse(sessionStorage.getItem(RECIPES_SNAPSHOT_KEY) || '[]'), loadLocalRecipes()); } catch (_) { state.recipes = loadLocalRecipes(); }
             renderAll();
+            initFirebase();
         });
     </script>
 </body>

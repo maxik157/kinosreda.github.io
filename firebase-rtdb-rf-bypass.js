@@ -5,7 +5,7 @@
 
   var TARGET_NS = 'kinosreda-ce8ef-default-rtdb';
   var CANONICAL_RTDB_HOST = 'kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app';
-  var BYPASS_VERSION = '2026-06-26-block-live-server-reload';
+  var BYPASS_VERSION = '2026-10-10-preserve-firebase-transport';
   var RTDB_SUFFIX = '.firebasedatabase.app';
   var FIREBASEIO_SUFFIX = '.firebaseio.com';
   var RTDB_PROXY_PATH = '/firebase-rtdb';
@@ -641,17 +641,21 @@
       if (!window.firebase || typeof firebase.database !== 'function') return;
       if (firebase.__KINOSREDA_RTDB_DATABASE_HOOKED__) return;
 
-      var nativeDatabase = firebase.database.bind(firebase);
+      // Binding a function drops its static SDK properties (INTERNAL,
+      // ServerValue, etc.). Copy them from the original accessor, not the bound
+      // callable, so transport selection happens before the first connection.
+      var originalDatabase = firebase.database;
+      var nativeDatabase = originalDatabase.bind(firebase);
       firebase.database = function patchedDatabase() {
         scheduleFirebaseTransportPatch(30000);
         return nativeDatabase.apply(firebase, arguments);
       };
 
-      var staticKeys = Object.getOwnPropertyNames(nativeDatabase);
+      var staticKeys = Object.getOwnPropertyNames(originalDatabase);
       staticKeys.forEach(function (key) {
         if (key === 'length' || key === 'name' || key === 'prototype') return;
         try {
-          firebase.database[key] = nativeDatabase[key];
+          firebase.database[key] = originalDatabase[key];
         } catch (_) {}
       });
 

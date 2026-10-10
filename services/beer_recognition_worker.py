@@ -22,7 +22,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-cv2.setNumThreads(2)
+cv2.setNumThreads(1)
 MAX_PIXELS = 20_000_000
 STOP_WORDS = {'beer', 'bier', 'пиво', 'brewery', 'brewing', 'premium'}
 
@@ -92,6 +92,10 @@ class Matcher:
                 self.ocr = None
 
     def describe(self, image):
+        # Bound the float pyramid memory for large photos; references and
+        # queries use the same size limit without changing label thresholds.
+        if max(image.shape) > 800:
+            image = cv2.resize(image, None, fx=800 / max(image.shape), fy=800 / max(image.shape), interpolation=cv2.INTER_AREA)
         points, descriptors = self.sift.detectAndCompute(image, None)
         coords = np.array([p.pt for p in points], dtype=np.float32).reshape(-1, 2)
         return coords, descriptors
@@ -144,7 +148,7 @@ class Matcher:
     def rebuild(self):
         if not self.dirty:
             return
-        self.flann = cv2.FlannBasedMatcher(dict(algorithm=1, trees=4), dict(checks=48))
+        self.flann = cv2.FlannBasedMatcher(dict(algorithm=1, trees=2), dict(checks=24))
         self.owners = []
         descriptors = []
         unique = {}

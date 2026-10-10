@@ -59,7 +59,18 @@ function createRecognition({ fetchAndDecodeImage, readRequestBody, writeJsonResp
       const bundled = path.join(root, '.venv-beer', 'bin', 'python');
       const python = process.env.BEER_RECOGNITION_PYTHON || (fs.existsSync(bundled) ? bundled : process.env.PYTHON_BIN || 'python3');
       const child = spawn(python, ['-u', path.join(__dirname, 'beer_recognition_worker.py')], {
-        cwd: root, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, OMP_NUM_THREADS: '2' }
+        cwd: root,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        // The realtime host is deliberately small. Keep the OCR/SIFT worker
+        // from competing with the API process for every CPU and BLAS arena.
+        env: {
+          ...process.env,
+          OMP_NUM_THREADS: '1',
+          OPENBLAS_NUM_THREADS: '1',
+          MKL_NUM_THREADS: '1',
+          NUMEXPR_NUM_THREADS: '1',
+          OPENCV_OPENCL_RUNTIME: 'disabled'
+        }
       });
       worker = child;
       const timer = setTimeout(() => { child.kill(); reject(new Error('recognition_unavailable')); }, 30_000);
@@ -103,9 +114,10 @@ function createRecognition({ fetchAndDecodeImage, readRequestBody, writeJsonResp
       const catalog = await loadCatalog();
       const result = await command({ op: 'catalog', catalog });
       Object.assign(status, { catalogLoaded: true, catalogSize: result.catalogSize, indexed: result.indexed, indexing: true });
-      // Four bounded downloads; interactive scans have priority over indexing.
+      // One bounded download at a time keeps catalog warmup from exhausting the
+      // small realtime host. Interactive scans still jump ahead in the queue.
       const missing = [...result.missing];
-      await Promise.all(Array.from({ length: 4 }, async () => {
+      await Promise.all(Array.from({ length: 1 }, async () => {
         while (missing.length && worker) {
           const entry = missing.shift();
           try {
@@ -134,7 +146,7 @@ function createRecognition({ fetchAndDecodeImage, readRequestBody, writeJsonResp
       return;
     }
     if (req.method !== 'POST') { reply(405, { error: 'method_not_allowed' }); return; }
-    if (activeScans >= 3) {
+    if (activeScans >= 1) {
       reply(429, { error: 'recognition_busy' }); return;
     }
     activeScans++;
@@ -143,7 +155,7 @@ function createRecognition({ fetchAndDecodeImage, readRequestBody, writeJsonResp
       try {
         if (!/^image\/(jpeg|png|webp)$/i.test(String(req.headers['content-type'] || ''))) throw new Error('invalid_image');
         const source = await readRequestBody(req, 3 * 1024 * 1024);
-        image = await sharp(source, { limitInputPixels: 20_000_000 }).rotate()
+        image = await sharp(source, { limitInputPixels: 20_000_000, sequentialRead: true }).rotate()
           .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
       } catch (_) { reply(400, { error: 'invalid_image' }); return; }
       try {

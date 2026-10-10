@@ -1,0 +1,21 @@
+[Unit]
+Description=Kinosreda beer label recognition
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/kinosreda-realtime
+Environment=BEER_RECOGNITION_PORT=8092
+Environment=MALLOC_ARENA_MAX=2
+ExecStart=/usr/bin/node --max-old-space-size=96 /opt/kinosreda-realtime/services/beer_recognition_server.js
+Restart=on-failure
+RestartSec=3
+MemoryHigh=288M
+MemoryMax=384M
+MemorySwapMax=128M
+OOMPolicy=stop
+CPUWeight=25
+
+[Install]
+WantedBy=multi-user.target
