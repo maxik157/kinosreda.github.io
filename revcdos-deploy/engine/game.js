@@ -10,6 +10,7 @@ const loaderTitle = document.getElementById("loaderTitle");
 const loaderDetail = document.getElementById("loaderDetail");
 const archiveStatus = document.getElementById("archive-status");
 const installServerButton = document.getElementById("install-server-button");
+const fullscreenReturnButton = document.getElementById("fullscreenReturnButton");
 const installFileButton = document.getElementById("install-file-button");
 const archiveFileInput = document.getElementById("archive-file-input");
 const startContainer = document.querySelector(".start-container");
@@ -202,6 +203,7 @@ function hideStartupOverlay() {
         startContainer.style.visibility = "hidden";
         startContainer.style.pointerEvents = "none";
     }
+    updateFullscreenReturnButton();
 }
 
 async function dismissStartupOverlay() {
@@ -221,6 +223,43 @@ function normalizePath(path) {
 
 function formatMegabytes(value) {
     return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function isDocumentFullscreen() {
+    return !!(
+        document.fullscreenElement
+        || document.webkitFullscreenElement
+        || document.mozFullScreenElement
+        || document.msFullscreenElement
+    );
+}
+
+async function requestGameFullscreen() {
+    const element = document.documentElement;
+    const request =
+        element.requestFullscreen
+        || element.webkitRequestFullscreen
+        || element.mozRequestFullScreen
+        || element.msRequestFullscreen;
+    if (!request || isDocumentFullscreen()) {
+        return;
+    }
+    await request.call(element);
+}
+
+function updateFullscreenReturnButton() {
+    if (!fullscreenReturnButton) {
+        return;
+    }
+    fullscreenReturnButton.hidden = !startupOverlayDismissed || isDocumentFullscreen();
+}
+
+function isFullscreenButtonTarget(target) {
+    return !!(
+        fullscreenReturnButton
+        && target
+        && (target === fullscreenReturnButton || fullscreenReturnButton.contains(target))
+    );
 }
 
 function setArchiveStatus(text, isError = false) {
@@ -701,6 +740,7 @@ async function startGame(e) {
         return;
     }
     startRequested = true;
+    updateFullscreenReturnButton();
     updateToken('');
     if (clickToPlayButton) {
         clickToPlayButton.disabled = true;
@@ -789,11 +829,13 @@ async function loadGame() {
 
             if (!isMobile) {
                 try {
-                    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                        await document.documentElement.requestFullscreen();
-                    }
+                    await requestGameFullscreen();
                 } catch (_) {}
-                function lockMouseIfNeeded() {
+                updateFullscreenReturnButton();
+                function lockMouseIfNeeded(event) {
+                    if (isFullscreenButtonTarget(event && event.target)) {
+                        return;
+                    }
                     if (!document.pointerLockElement && typeof Module !== 'undefined' && Module.canvas) {
                         Module.canvas.requestPointerLock({
                             unadjustedMovement: true,
@@ -1129,6 +1171,18 @@ if (installFileButton && archiveFileInput) {
         }
     });
 }
+if (fullscreenReturnButton) {
+    fullscreenReturnButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        try {
+            await requestGameFullscreen();
+        } catch (_) {}
+        updateFullscreenReturnButton();
+    });
+}
+["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach((eventName) => {
+    document.addEventListener(eventName, updateFullscreenReturnButton);
+});
 window.addEventListener("vicecityarchive:status", (event) => {
     const detail = event.detail || {};
     if (detail.installing) {

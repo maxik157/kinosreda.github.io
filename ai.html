@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>AI чат — Киносреда</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010q">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010-full">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
 
     <script>
-        // Auth gate
+        // Auth gate (optional for AI page)
         (function () {
             try {
                 const cu = localStorage.getItem('currentUser');
-                if (!cu) {
-                    location.replace('login.html');
+                if (cu) {
+                    document.documentElement.classList.add('authed');
                     return;
                 }
                 document.documentElement.classList.add('authed');
-            } catch (e) {
-                location.replace('login.html');
+            } catch (_) {
+                document.documentElement.classList.add('authed');
             }
         })();
         // Theme gate
@@ -49,79 +49,12 @@
         }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.7/dist/purify.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://js.puter.com/v2/"></script>
-
-    <script>
-        // Logo font loader (per-user)
-        (function(){
-            const html = document.documentElement;
-            const KEY = 'logoFontFamily';
-            const DEFAULT = 'Rubik Wet Paint';
-            const LINK_ID = 'logoFontGF';
-
-            function familyToHref(fam){
-                const q = encodeURIComponent(fam).replace(/%20/g, '+');
-                return `https://fonts.googleapis.com/css2?family=${q}&display=swap`;
-            }
-
-            function ensureStylesheet(fam){
-                const family = (fam || DEFAULT).trim();
-                if (!family) return;
-                const href = familyToHref(family);
-                let link = document.getElementById(LINK_ID);
-                if (!link) {
-                    link = document.createElement('link');
-                    link.id = LINK_ID;
-                    link.rel = 'stylesheet';
-                    document.head.appendChild(link);
-                }
-                if (link.getAttribute('href') !== href) link.setAttribute('href', href);
-            }
-
-            function markReady(){
-                html.classList.add('logo-font-ready');
-                html.classList.remove('logo-font-loading');
-            }
-
-            function waitForFont(fam){
-                const family = (fam || DEFAULT).trim();
-                if (!family) return markReady();
-
-                ensureStylesheet(family);
-
-                html.classList.add('logo-font-loading');
-                html.classList.remove('logo-font-ready');
-                try {
-                    if (document.fonts && document.fonts.load) {
-                        document.fonts.load(`1em "${family}"`).then(markReady, markReady);
-                    } else {
-                        setTimeout(markReady, 1);
-                    }
-                } catch (_) {
-                    markReady();
-                }
-            }
-
-            try {
-                const fam = localStorage.getItem(KEY) || DEFAULT;
-                html.style.setProperty('--logo-font', `'${fam}'`);
-                waitForFont(fam);
-            } catch(_) {
-                markReady();
-            }
-        })();
-    </script>
+    <script src="tailwind.browser.js"></script>
+    <script src="marked.min.js"></script>
+    <script src="purify.min.js"></script>
+    <script src="puter.js"></script>
 
     <style>
-        html:not(.logo-font-ready) .logo-text { opacity: 0; }
-        .logo-text { transition: opacity 0.15s ease; }
-
         html, body {
             background: #000;
             overflow-x: hidden;
@@ -133,6 +66,27 @@
             min-height: 100vh;
         }
         @font-face {
+            font-family: 'Comfortaa';
+            src: url('comfortaa-400.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Comfortaa';
+            src: url('comfortaa-600.ttf') format('truetype');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Comfortaa';
+            src: url('comfortaa-700.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @font-face {
             font-family: 'Egyptian Bold Extended';
             src: local('Egyptian Bold Extended'), local('Egyptian Bold Extended Regular');
             font-weight: 700;
@@ -140,7 +94,7 @@
             font-display: swap;
         }
         :root {
-            --logo-font: 'Rubik Wet Paint';
+            --logo-font: 'Comfortaa';
             --accent-200: #fde68a;
             --accent-300: #fcd34d;
             --accent-400: #f59e0b;
@@ -392,6 +346,35 @@
             0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
             40% { transform: translateY(-4px); opacity: 1; }
         }
+        .chat-empty {
+            flex: 1;
+            display: grid;
+            place-items: center;
+            color: #fcd34d;
+            font-weight: 700;
+            font-size: clamp(1.3rem, 2.2vw, 2.2rem);
+            text-align: center;
+            padding: 24px;
+        }
+        .msg.ai { position: relative; }
+        .msg-cancel {
+            position: absolute;
+            top: 8px;
+            right: -28px;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid rgba(248,113,113,0.35);
+            background: rgba(248,113,113,0.12);
+            color: #fecaca;
+            display: grid;
+            place-items: center;
+            font-size: 0.8rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.2s ease;
+        }
+        .msg-cancel:hover { transform: translateY(-1px); background: rgba(248,113,113,0.22); }
         .msg-meta {
             font-size: 0.65rem;
             color: #9ca3af;
@@ -443,6 +426,11 @@
             border-color: rgba(245,158,11,0.6);
         }
         .pill-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .pill-btn.secondary {
+            background: rgba(255,255,255,0.06);
+            color: #e5e7eb;
+            border-color: rgba(255,255,255,0.18);
+        }
 
         .model-dock {
             position: absolute;
@@ -621,8 +609,8 @@
             .page-shell { padding: 8px 10px 16px; }
         }
     </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010q">
-    <script src="kinosreda-shell.js?v=20261010q" defer></script>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010-full">
+    <script src="kinosreda-shell.js?v=20261010-full" defer></script>
 </head>
 <body class="bg-dark min-h-screen ks-ui ks-page-ai">
     <div class="topbar">
@@ -702,6 +690,7 @@
                 <div class="quick-actions">
                     <button id="newChatBtn" class="pill-btn" type="button">Новый чат</button>
                     <button id="puterSignInBtn" class="tiny-btn" type="button">Войти</button>
+                    <button id="puterSignOutBtn" class="tiny-btn" type="button" style="display:none;">Выйти из Puter</button>
                 </div>
 
                 <div id="chatMessages" class="chat-messages">
@@ -715,7 +704,9 @@
                     <textarea id="chatInput" placeholder="Напиши сообщение и нажми Enter… (Shift+Enter — новая строка)"></textarea>
                     <div class="composer-actions">
                         <div class="text-xs text-gray-400" id="composerHint">Модель пока не выбрана</div>
-                        <button id="sendBtn" class="pill-btn primary" type="button" disabled>Отправить</button>
+                        <div class="flex items-center gap-2">
+                            <button id="sendBtn" class="pill-btn primary" type="button" disabled>Отправить</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -744,11 +735,12 @@
         const newChatBtn = document.getElementById('newChatBtn');
         const composerHint = document.getElementById('composerHint');
         const puterSignInBtn = document.getElementById('puterSignInBtn');
+        const puterSignOutBtn = document.getElementById('puterSignOutBtn');
         const deleteChatModal = document.getElementById('deleteChatModal');
         const deleteChatCancelBtn = document.getElementById('deleteChatCancelBtn');
         const deleteChatConfirmBtn = document.getElementById('deleteChatConfirmBtn');
 
-        const CHAT_TEST_MODE = false;
+        const CHAT_TEST_MODE = true;
         const FALLBACK_MODELS = [
             { id: 'gpt-5-nano', provider: 'openai', name: 'GPT-5 nano', context: 0, max_tokens: 0 }
         ];
@@ -778,6 +770,10 @@
         let currentChatId = '';
         let pendingDeleteChatId = '';
         let modelSelectEnhanced = false;
+        let activeController = null;
+        let isStreaming = false;
+        let isCancelled = false;
+        let currentAssistantEl = null;
 
         function escapeHtml(str) {
             return String(str)
@@ -978,7 +974,34 @@
             }
         }
 
-        function scrollToBottom() {
+        function setCancelButton(el, active) {
+            if (!el) return;
+            let btn = el.querySelector('.msg-cancel');
+            if (active) {
+                if (!btn) {
+                    btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'msg-cancel';
+                    btn.title = 'Отменить';
+                    btn.innerHTML = '✕';
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        cancelRequest();
+                    });
+                    el.appendChild(btn);
+                }
+            } else if (btn) {
+                btn.remove();
+            }
+        }
+
+        function isUserAtBottom() {
+            const threshold = 24;
+            return (chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight) <= threshold;
+        }
+
+        function scrollToBottom(force = false) {
+            if (!force && !isUserAtBottom()) return;
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
@@ -993,7 +1016,7 @@
                 msg.appendChild(metaEl);
             }
             chatMessages.appendChild(msg);
-            scrollToBottom();
+            scrollToBottom(true);
             return msg;
         }
 
@@ -1170,7 +1193,10 @@
             const list = getChatMessages(currentChatId);
             chatMessages.innerHTML = '';
             if (!list.length) {
-                appendMessage('ai', 'Чат пуст. Напиши первое сообщение.', 'Система');
+                const empty = document.createElement('div');
+                empty.className = 'chat-empty';
+                empty.textContent = 'Чем я могу помочь?';
+                chatMessages.appendChild(empty);
                 return;
             }
             list.forEach((msg) => {
@@ -1248,33 +1274,50 @@
 
             const modelLabel = getSelectedModelLabel();
             const assistantEl = appendMessage('ai', '', modelLabel);
+            currentAssistantEl = assistantEl;
             setAssistantThinking(assistantEl, true);
+            setCancelButton(assistantEl, true);
             isSending = true;
+            isStreaming = false;
+            isCancelled = false;
+            activeController = new AbortController();
             updateComposerState();
 
             try {
-                const useTestMode = CHAT_TEST_MODE;
+                const useTestMode = !isPuterSignedIn;
                 const history = getChatMessages(currentChatId).map(msg => ({ role: msg.role, content: msg.content }));
-                const response = await puter.ai.chat(history, useTestMode, { model: modelId, stream: true });
+                const chatOptions = useTestMode
+                    ? { stream: true, signal: activeController.signal }
+                    : { model: modelId, stream: true, signal: activeController.signal };
+                const response = await puter.ai.chat(history, useTestMode, chatOptions);
                 let output = '';
 
                 if (response && response[Symbol.asyncIterator]) {
-                    assistantEl.innerHTML = '';
                     for await (const part of response) {
+                        if (isCancelled) break;
                         const chunk = extractPartText(part);
                         if (!chunk) continue;
+                        if (!isStreaming) {
+                            isStreaming = true;
+                            assistantEl.innerHTML = '';
+                        }
                         output += chunk;
                         assistantEl.innerHTML = renderMarkdown(output);
                         scrollToBottom();
                     }
                 } else {
+                    if (isCancelled) throw new Error('aborted');
                     output = extractResponseText(response);
-                    assistantEl.innerHTML = renderMarkdown(output || '');
+                    if (!isStreaming) {
+                        isStreaming = true;
+                        assistantEl.innerHTML = renderMarkdown(output || '');
+                    }
                 }
 
-                if (!output) {
+                if (!output && !isCancelled) {
                     assistantEl.innerHTML = renderMarkdown('Нет ответа. Попробуй другую модель или уточни вопрос.');
                 }
+                if (isCancelled) return;
 
                 const assistantMessage = {
                     id: `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -1291,12 +1334,32 @@
             } catch (err) {
                 const errText = err && err.message ? err.message : 'Не удалось получить ответ.';
                 const isAuthErr = /401|unauthorized/i.test(errText);
-                assistantEl.innerHTML = renderMarkdown(isAuthErr
-                    ? 'Ошибка 401: требуется вход в Puter. Нажми «Войти в Puter» в левом верхнем углу.'
-                    : `Ошибка: ${errText}`);
+                const isAbort = err && (err.name === 'AbortError' || /aborted/i.test(errText));
+                if (!isAbort && assistantEl && assistantEl.isConnected) {
+                    assistantEl.innerHTML = renderMarkdown(isAuthErr
+                        ? 'Ошибка 401: требуется вход в Puter. Нажми «Войти в Puter» в левом верхнем углу.'
+                        : `Ошибка: ${errText}`);
+                }
             } finally {
                 isSending = false;
+                isStreaming = false;
+                activeController = null;
+                isCancelled = false;
+                setCancelButton(assistantEl, false);
+                currentAssistantEl = null;
                 updateComposerState();
+            }
+        }
+
+        function cancelRequest() {
+            isCancelled = true;
+            if (currentAssistantEl && currentAssistantEl.isConnected) {
+                currentAssistantEl.remove();
+            }
+            isSending = false;
+            updateComposerState();
+            if (activeController) {
+                activeController.abort();
             }
         }
 
@@ -1306,11 +1369,13 @@
         }
 
         async function updateAuthUI() {
-            if (!puterSignInBtn) return;
+            if (!puterSignInBtn || !puterSignOutBtn) return;
             if (isPuterSignedIn) {
                 puterSignInBtn.style.display = 'none';
+                puterSignOutBtn.style.display = '';
             } else {
                 puterSignInBtn.style.display = '';
+                puterSignOutBtn.style.display = 'none';
             }
         }
 
@@ -1396,6 +1461,17 @@
                 const errText = err && err.message ? err.message : 'Вход не выполнен.';
                 appendMessage('ai', `Ошибка входа: ${errText}`, 'Система');
             }
+        }
+
+        async function signOutPuter() {
+            try {
+                if (window.puter && puter.auth && typeof puter.auth.signOut === 'function') {
+                    await puter.auth.signOut();
+                }
+            } catch (_) {}
+            isPuterSignedIn = false;
+            updateAuthUI();
+            await initModels();
         }
 
         function sendRealtime(data) {
@@ -1585,6 +1661,7 @@
             createNewChat();
         });
         puterSignInBtn.addEventListener('click', signInPuter);
+        puterSignOutBtn.addEventListener('click', signOutPuter);
         deleteChatCancelBtn.addEventListener('click', closeDeleteModal);
         deleteChatConfirmBtn.addEventListener('click', confirmDeleteChat);
         deleteChatModal.addEventListener('click', (e) => {

@@ -1066,9 +1066,56 @@ body.ks-page-planning-event .section-actions-dropdown > [data-delete-section] {
   body.ks-page-planning-event .quick-stats { margin-top: 0; }
 }
 
-body.ks-page-index #calendarSection { display: flex; flex-direction: column; align-items: stretch; }
+body.ks-page-index #calendarSection.is-active { display: flex !important; flex-direction: column; align-items: stretch; }
 body.ks-page-index :is(.calendar-left,.calendar-right) { width: 100%; min-width: 0; max-width: none; }
 body.ks-page-index .ks-calendar-card { padding: 14px; }
 @media (min-width: 1024px) {
-  body.ks-page-index.layout-sidebar #calendarSection { display: grid; grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr); }
+  body.ks-page-index.layout-sidebar #calendarSection.is-active {
+    display: grid !important;
+    grid-template-columns: minmax(0,.9fr) minmax(0,1.1fr);
+    grid-template-rows: 30px auto;
+    align-items: start;
+    align-content: start;
+  }
+}
+
+/* Include legacy modal markup in the same glass system as newer dialogs.
+   Only overlay surfaces blur; service/iframe ancestors remain untouched. */
+.ks-ui :is(.modal.fixed,.modal-overlay,.modal-backdrop,.playlist-modal-backdrop,.confirm-overlay,.fullscreen-overlay),
+body.ks-page-planning .modal,
+body.ks-page-planning-event .modal,
+body.ks-page-restaurants .confirm-modal,
+body.ks-page-pokaki :is(#poopModal,#poopGameModal,#poopExportModal,#confirmModal) {
+  background: rgba(5,7,11,.38) !important;
+  backdrop-filter: blur(24px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.08) !important;
+  padding: max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom));
+}
+body.ks-page-index .modal > div,
+body.ks-ui :is(.modal-card,.playlist-modal,.confirm-dialog,.fullscreen-card,.avatar-modal-card),
+body.ks-page-recipes .confirm-overlay > .confirm-modal,
+body.ks-page-pokaki #confirmModal > div {
+  border: 0 !important;
+  border-radius: 22px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  max-width: calc(100vw - 24px);
+  max-height: calc(var(--ks-vh,100dvh) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+body.ks-page-index .modal :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select),
+.ks-ui :is(.modal-card,.playlist-modal,.confirm-dialog,.confirm-overlay) :is(input,textarea,select) {
+  border: 0 !important;
+  border-radius: 12px;
+  background: rgba(30,36,47,.72) !important;
+  color: var(--ks-text);
+}
+.ks-ui :is(.modal.fixed,.modal-card,.playlist-modal,.confirm-dialog,.confirm-overlay) button {
+  border: 0 !important;
+  border-radius: 12px;
+  box-shadow: none !important;
 }

@@ -45,10 +45,7 @@ if (typeof window === "undefined") {
     if (event.data.type === "deregister") {
       self.registration
         .unregister()
-        .then(() => self.clients.matchAll())
-        .then((clients) => {
-          clients.forEach((client) => client.navigate(client.url));
-        });
+        .catch(() => {});
       return;
     }
     if (event.data.type === "coepCredentialless") {
@@ -98,13 +95,20 @@ if (typeof window === "undefined") {
     const shouldUseCoi = () => {
       return isHomm3IsolatedRoute(window.location.href);
     };
+    const reloadIfNeeded = () => {
+      if (!shouldUseCoi()) {
+        return false;
+      }
+      window.location.reload();
+      return true;
+    };
 
     const coi = {
       shouldRegister: () => shouldUseCoi(),
       shouldDeregister: () => !shouldUseCoi(),
       coepCredentialless: () => true,
       coepDegrade: () => true,
-      doReload: () => window.location.reload(),
+      doReload: () => reloadIfNeeded(),
       quiet: true,
       ...window.coi
     };
@@ -128,12 +132,13 @@ if (typeof window === "undefined") {
 
       if (reloadToDegrade) {
         window.sessionStorage.setItem("coiReloadedBySelf", "coepdegrade");
-        coi.doReload("coepdegrade");
+        if (!coi.doReload("coepdegrade")) {
+          window.sessionStorage.removeItem("coiReloadedBySelf");
+        }
         return;
       }
 
       if (coi.shouldDeregister()) {
-        n.serviceWorker.controller.postMessage({ type: "deregister" });
         return;
       }
     }
@@ -148,11 +153,15 @@ if (typeof window === "undefined") {
     n.serviceWorker.register(window.document.currentScript.src).then((registration) => {
       registration.addEventListener("updatefound", () => {
         window.sessionStorage.setItem("coiReloadedBySelf", "updatefound");
-        coi.doReload("updatefound");
+        if (!coi.doReload("updatefound")) {
+          window.sessionStorage.removeItem("coiReloadedBySelf");
+        }
       });
       if (registration.active && !n.serviceWorker.controller) {
         window.sessionStorage.setItem("coiReloadedBySelf", "notcontrolling");
-        coi.doReload("notcontrolling");
+        if (!coi.doReload("notcontrolling")) {
+          window.sessionStorage.removeItem("coiReloadedBySelf");
+        }
       }
     }).catch(() => {});
   })();

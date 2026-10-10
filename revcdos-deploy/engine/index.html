@@ -251,6 +251,42 @@
             text-align: center;
         }
 
+        .fullscreen-return-button {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 11000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border: 2px solid rgba(255, 65, 147, 0.95);
+            border-radius: 12px;
+            background: rgba(16, 7, 49, 0.78);
+            backdrop-filter: blur(12px);
+            color: #fff;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 30px rgba(0, 0, 0, 0.35);
+            cursor: pointer;
+        }
+
+        .fullscreen-return-button svg {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
+
+        .fullscreen-return-button:hover,
+        .fullscreen-return-button:focus {
+            background: rgba(255, 65, 147, 0.9);
+            outline: none;
+        }
+
+        .fullscreen-return-button[hidden] {
+            display: none !important;
+        }
+
         input {
             padding: .5em 1em;
             text-align: center;
@@ -621,6 +657,18 @@
     </div>
 
     <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <button id="fullscreenReturnButton" class="fullscreen-return-button" type="button" hidden aria-label="Вернуть полноэкранный режим" title="Вернуть полноэкранный режим">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3H3v6"></path>
+            <path d="M3 3l7 7"></path>
+            <path d="M15 3h6v6"></path>
+            <path d="M21 3l-7 7"></path>
+            <path d="M15 21h6v-6"></path>
+            <path d="M21 21l-7-7"></path>
+            <path d="M9 21H3v-6"></path>
+            <path d="M3 21l7-7"></path>
+        </svg>
+    </button>
 
     <div class="touch-controls-wrapper">
         <div id="move"></div>
@@ -645,11 +693,11 @@
         <div class="touch-control fireLeft"></div>
     </div>
 
-    <script type='text/javascript' src="GamepadEmulator.js?v=20260406-archivefix4"></script>
-    <script type='text/javascript' src="idbfs.js?v=20260406-archivefix4"></script>
-    <script type='text/javascript' src="vendor/zip.min.js?v=20260406-archivefix4"></script>
-    <script type='text/javascript' src="archive-cache.js?v=20260406-archivefix4"></script>
-    <script type='text/javascript' src="game.js?v=20260406-archivefix4"></script>
+    <script type='text/javascript' src="GamepadEmulator.js?v=20260407-fullscreen3"></script>
+    <script type='text/javascript' src="idbfs.js?v=20260407-fullscreen3"></script>
+    <script type='text/javascript' src="vendor/zip.min.js?v=20260407-fullscreen3"></script>
+    <script type='text/javascript' src="archive-cache.js?v=20260407-fullscreen3"></script>
+    <script type='text/javascript' src="game.js?v=20260407-fullscreen3"></script>
 </body>
 
 </html>

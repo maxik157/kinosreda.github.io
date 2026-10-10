@@ -2,7 +2,10 @@
   const cache = new Map();
   const pending = new Map();
   const normalize = (value) => String(value || '').trim().replace(/\s+/g, ' ');
-  const apiBase = () => String(window.BEER_DATA_API_BASE || location.origin).replace(/\/$/, '');
+  const apiBase = () => String(window.BEER_DATA_API_BASE ||
+    (['localhost', '127.0.0.1'].includes(location.hostname)
+      ? location.origin
+      : 'https://realtime.xn--80ahcljthqi.xn--p1ai')).replace(/\/$/, '');
 
   function prepareFiltrationSelect(select) {
     if (!select || [...select.options].some((option) => option.value === '')) return;
@@ -43,7 +46,8 @@
     node = document.createElement('span');
     node.className = 'beer-autofill-status';
     node.setAttribute('aria-live', 'polite');
-    input.closest('label')?.append(node);
+    if (input.closest('label')) input.closest('label').append(node);
+    else input.insertAdjacentElement('afterend', node);
     if (!document.getElementById('beerAutofillStyle')) {
       const style = document.createElement('style');
       style.id = 'beerAutofillStyle';
@@ -69,7 +73,8 @@
 
   function bind(fields = {}) {
     const name = fields.name;
-    if (!name || name.__beerAutofillBound) return;
+    if (!name) return;
+    if (name.__beerAutofillBound) return name.__beerAutofillController;
     name.__beerAutofillBound = true;
     const caloriesLabel = fields.calories?.closest('label');
     if (caloriesLabel) {
@@ -215,8 +220,8 @@
       }
       calculateCalories();
       fetchData(query).then((data) => {
-        if (current !== sequence || !data) return;
-        if (!data.ok) { setStatus('Поиск временно недоступен', 'muted'); return; }
+        if (current !== sequence) return;
+        if (!data?.ok) { setStatus('Поиск временно недоступен', 'muted'); return; }
         apply(data);
       }).catch((error) => {
         if (error?.name === 'AbortError' || current !== sequence) return;
@@ -240,7 +245,16 @@
     name.addEventListener('blur', () => {
       if (normalize(name.value).length >= 3) { clearTimeout(timer); lookup(); }
     });
+    const controller = { reset({ lookupInitial = true } = {}) {
+      clearTimeout(timer); ++sequence; lastLookupQuery = ''; nameChanged = false;
+      dirty.clear(); automatic.clear(); initialValues.clear();
+      controls.forEach(([key, control]) => initialValues.set(key, String(control.value || '')));
+      setStatus('');
+      if (lookupInitial && normalize(name.value).length >= 3) lookup();
+    } };
+    name.__beerAutofillController = controller;
     if (normalize(name.value).length >= 3) lookup();
+    return controller;
   }
 
   window.BeerDataAutofill = { bind, fetchData, prepareFiltrationSelect, prepareUnknownSelect, restoreSavedValue, prepareCalories };
