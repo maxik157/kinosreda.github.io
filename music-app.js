@@ -138,14 +138,16 @@
   function normalize(raw, firebaseKey = "") {
     const provider = String(raw.provider || "yandex").toLowerCase();
     if (!["truffled", "yandex"].includes(provider)) return null;
-    const id = String(raw.trackId || raw.id || "");
-    if (!id || (provider === "yandex" && !/^\d+$/.test(id))) return null;
+    const savedId = String(raw.trackId || raw.id || "").trim();
+    const yandexId = savedId.match(/^(\d+)(?::(\d+))?$/);
+    const id = provider === "yandex" ? yandexId?.[1] : savedId;
+    if (!id) return null;
     const artists = (
       Array.isArray(raw.artists)
         ? raw.artists.map((x) => (typeof x === "string" ? x : x.name))
         : [raw.artist]
     ).filter(Boolean);
-    const albumId = String(raw.albumId || raw.albums?.[0]?.id || "");
+    const albumId = String(raw.albumId || raw.albums?.[0]?.id || (provider === "yandex" ? yandexId?.[2] : "") || "").trim();
     return {
       key: firebaseKey,
       trackId: id,
@@ -192,9 +194,9 @@
       if (!response.headers.get("content-type")?.includes("application/json"))
         throw new Error("Источник вернул неверный ответ");
       const result = await response.json();
-      if (!response.ok || result.ok === false)
+      if (!response.ok || result.ok === false || result.error)
         throw new Error(
-          result.message || result.error || `HTTP ${response.status}`,
+          result.message || (typeof result.error === "string" ? result.error : result.error?.message || result.error?.name) || `HTTP ${response.status}`,
         );
       return result;
     } finally {
@@ -479,10 +481,8 @@
             .map((t) => normalize({ ...t, provider }))
             .filter(Boolean);
           const page = more ? Number(s.cursor) : 0;
-          if (
-            list.length &&
-            (page + 1) * list.length < Number(result.total || 0)
-          )
+          const pageSize = Number(result.perPage || 20);
+          if (list.length === pageSize && (page + 1) * pageSize < Number(result.total || 0))
             cursor = String(page + 1);
         }
       } else {
@@ -613,7 +613,12 @@
       }
     } catch (e) {
       if (seq === s.playSeq && e.name !== "AbortError") {
-        notice("Не удалось воспроизвести. Нажми ▶, чтобы повторить.", true);
+        notice(
+          e.message === "yandex_full_track_unavailable"
+            ? "Полный трек недоступен для аккаунта Яндекс Музыки."
+            : "Не удалось воспроизвести. Нажми ▶, чтобы повторить.",
+          true,
+        );
         syncPlayback();
       }
     }
