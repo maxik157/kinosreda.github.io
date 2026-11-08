@@ -17,17 +17,16 @@
   const blob = (canvas, type = 'image/png', quality) => new Promise((resolve, reject) => {
     canvas.toBlob((value) => value ? resolve(value) : reject(new Error('image_encode_failed')), type, quality);
   });
-  function pixels(image, maxSide = Infinity) {
+  function pixels(image) {
     const canvas = document.createElement('canvas');
-    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
-    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
     const context = canvas.getContext('2d', { willReadFrequently: true });
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0);
     return { canvas, context, data: context.getImageData(0, 0, canvas.width, canvas.height).data };
   }
   async function hasTransparency(url) {
-    const { data } = pixels(await load(url), 256);
+    const { data } = pixels(await load(url));
     let transparent = 0, foreground = 0;
     for (let index = 3; index < data.length; index += 4) {
       if (data[index] < 16) transparent++;
@@ -37,16 +36,13 @@
   }
   async function prepare(url) {
     const image = await load(url);
-    const scale = Math.min(1, 1200 / Math.max(image.naturalWidth, image.naturalHeight));
-    if (scale === 1 && url.length < 1024 * 1024) return url;
+    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+    if (scale === 1 && url.length < 12 * 1024 * 1024) return url;
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(image.naturalWidth * scale);
     canvas.height = Math.round(image.naturalHeight * scale);
     canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-    // Keep real alpha images lossless; opaque camera photos need a compact
-    // JPEG rather than a multi-megabyte PNG on mobile.
-    const transparent = /^data:image\/(?:png|webp)/i.test(url) && await hasTransparency(url);
-    return dataUrl(await blob(canvas, transparent ? 'image/png' : 'image/jpeg', 0.86));
+    return dataUrl(await blob(canvas, /^data:image\/png/i.test(url) ? 'image/png' : 'image/jpeg', 0.94));
   }
   async function request(endpoint, body, signal) {
     const controller = new AbortController();
@@ -75,7 +71,7 @@
     if (await hasTransparency(url)) return url;
     if (resultCache.has(url)) return resultCache.get(url);
     const endpoints = [`${apiBase(base)}/remove-bg`];
-    const body = JSON.stringify({ image_base64: (await prepare(url)).split(',')[1] });
+    const body = JSON.stringify({ image_base64: url.split(',')[1] });
     let lastError;
     for (const endpoint of endpoints) {
       for (let attempt = 0; attempt < 2; attempt++) {

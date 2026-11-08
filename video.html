@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Video Theater | Kinosreda</title>
+  <title>Кино — Киносреда</title>
+  <link rel="icon" type="image/svg+xml" href="assets/kinosreda-favicon.svg">
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261010mobile2">
+    <link rel="preload" as="style" href="kinosreda-shell.css?v=20261105movies">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="comfortaa.css" rel="stylesheet" />
@@ -52,7 +53,7 @@
       background-size: 3px 3px;
       opacity: 0.55;
       z-index: 0;
-      animation: grainShift 7s steps(8) infinite;
+      animation: none;
     }
 
     @keyframes grainShift {
@@ -70,7 +71,7 @@
       pointer-events: none;
       z-index: 0;
       opacity: 0.45;
-      animation: floatOrb 13s ease-in-out infinite;
+      animation: none;
     }
 
     .orb-a {
@@ -126,7 +127,8 @@
       min-height: 0;
       flex: 1;
       width: 100%;
-      transition: grid-template-columns 0.42s cubic-bezier(0.2, 0.9, 0.2, 1), gap 0.3s ease;
+      transition: grid-template-columns 0.36s cubic-bezier(0.22, 0.8, 0.22, 1), gap 0.28s ease;
+      contain: layout;
     }
 
     .layout.is-details-open {
@@ -136,9 +138,9 @@
 
     .panel {
       border-radius: var(--radius);
-      border: 1px solid var(--stroke);
+      border: 1px solid rgba(255, 255, 255, 0.075);
       background: var(--panel);
-      backdrop-filter: blur(14px);
+      backdrop-filter: none;
       box-shadow: var(--shadow);
       overflow: hidden;
       position: relative;
@@ -156,7 +158,7 @@
     }
 
     .discover-head {
-      display: none;
+      display: none !important;
       padding: 22px 22px 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -228,7 +230,230 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .catalog-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: nowrap;
+    }
+
+    .catalog-toolbar > .mode-switch { flex: 0 0 auto; flex-wrap: nowrap; }
+
+    .catalog-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin-left: auto;
+      flex-wrap: nowrap;
+    }
+
+    .toolbar-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 11px;
+      padding: 7px 11px;
+      background: rgba(255, 255, 255, 0.045);
+      color: #ebe7dc;
+      font: 700 0.74rem/1 "Comfortaa", cursive;
+      cursor: pointer;
+      transition: transform .22s ease, border-color .22s ease, background .22s ease, color .22s ease;
+    }
+
+    .toolbar-btn select,
+    select.toolbar-btn { appearance: none; -webkit-appearance: none; }
+
+    .toolbar-btn.icon-only { width: 34px; padding-inline: 8px; }
+
+    .custom-select { position: relative; min-width: 0; }
+    .custom-select > select { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .custom-select-trigger { min-width: 138px; justify-content: space-between; }
+    .custom-select-trigger::after { content: "⌄"; margin-left: 4px; font-size: .9rem; transition: transform .22s ease; }
+    .custom-select.is-open .custom-select-trigger::after { transform: rotate(180deg); }
+    .custom-select-menu { position: absolute; top: calc(100% + 7px); right: 0; z-index: 120; min-width: 100%; max-height: 260px; overflow: auto; padding: 5px; border: 1px solid rgba(245,190,80,.22); border-radius: 13px; background: rgba(14,17,18,.98); box-shadow: 0 18px 50px rgba(0,0,0,.42); opacity: 0; visibility: hidden; transform: translateY(-5px) scale(.98); transition: opacity .18s ease, transform .18s ease, visibility 0s linear .18s; }
+    .custom-select.is-open .custom-select-menu { opacity: 1; visibility: visible; transform: translateY(0) scale(1); transition-delay: 0s; }
+    .movie-select-portal { position: fixed; inset: auto; z-index: 260; min-width: 0; max-height: 320px; pointer-events: none; }
+    .movie-select-portal.is-open { pointer-events: auto; }
+    .movie-select-portal .custom-select-search { display: block; }
+    .movie-select-portal .select-empty { margin: 8px; color: rgba(247,244,234,.5); font-size: .72rem; }
+    .custom-select-option { display: block; width: 100%; padding: 9px 10px; border: 0; border-radius: 9px; background: transparent; color: rgba(247,244,234,.76); font: 600 .72rem/1.2 "Comfortaa", cursive; text-align: left; cursor: pointer; }
+    .custom-select-option:hover, .custom-select-option:focus-visible, .custom-select-option.is-selected { background: rgba(245,190,80,.13); color: #ffe6a8; outline: none; }
+    .custom-select-search { width: 100%; margin-bottom: 4px; padding: 8px 9px; border: 0; border-bottom: 1px solid rgba(255,255,255,.1); background: transparent; color: var(--text); font: 600 .72rem/1.2 "Comfortaa", cursive; outline: none; }
+
+    .toolbar-btn:hover,
+    .toolbar-btn:focus-visible {
+      border-color: rgba(245, 190, 80, .62);
+      background: rgba(245, 190, 80, .13);
+      color: #ffe6a8;
+      outline: none;
+      transform: translateY(-1px);
+    }
+
+    .toolbar-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    .filter-count {
+      display: none;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--accent);
+      color: #251b0b;
+      font-size: .66rem;
+      font-weight: 900;
+    }
+
+    .filter-count.visible { display: inline-grid; }
+
+    .collection-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .collection-tabs::-webkit-scrollbar { display: none; }
+
+    .collection-tab {
+      border: 0;
+      border-radius: 999px;
+      padding: 7px 10px;
+      white-space: nowrap;
+      background: transparent;
+      color: rgba(233, 229, 216, .62);
+      font: 700 .7rem/1 "Comfortaa", cursive;
+      cursor: pointer;
+      transition: background .2s ease, color .2s ease;
+    }
+
+    .collection-tab.active { background: rgba(245, 190, 80, .14); color: #ffe6a8; }
+
+    .active-filters {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding-top: 2px;
+    }
+
+    .active-filters.visible { display: flex; }
+
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid rgba(245, 190, 80, .28);
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: rgba(245, 190, 80, .09);
+      color: #f7dda0;
+      font-size: .67rem;
+    }
+
+    .filter-chip button { border: 0; padding: 0; background: transparent; color: inherit; cursor: pointer; font-size: .9rem; line-height: .8; }
+
+    .filter-panel {
+      position: fixed;
+      inset: 0 0 0 auto;
+      z-index: 80;
+      width: min(420px, 100vw);
+      display: flex;
+      flex-direction: column;
+      background: rgba(10, 12, 13, .98);
+      border-left: 1px solid rgba(245, 190, 80, .24);
+      box-shadow: -28px 0 80px rgba(0,0,0,.42);
+      transform: translateX(102%);
+      visibility: hidden;
+      transition: transform .34s cubic-bezier(.22,.8,.22,1), visibility 0s linear .34s;
+    }
+
+    .filter-panel.is-open { transform: translateX(0); visibility: visible; transition-delay: 0s; }
+
+    .filter-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 79;
+      background: rgba(2, 3, 4, .58);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s ease;
+    }
+
+    .filter-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+    .filter-head,
+    .filter-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px; flex: 0 0 auto; }
+    .filter-head .hero-action-btn { position: static; width: 34px; height: 34px; opacity: 1; pointer-events: auto; }
+    .filter-head { border-bottom: 1px solid rgba(255,255,255,.09); }
+    .filter-head h2 { margin: 0; font-size: 1rem; }
+    .filter-foot { border-top: 1px solid rgba(255,255,255,.09); }
+    .filter-scroll { min-height: 0; overflow-y: auto; padding: 18px; display: grid; gap: 16px; }
+    .filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .filter-field { display: grid; gap: 6px; min-width: 0; }
+    .filter-field.full { grid-column: 1 / -1; }
+    .filter-field label { color: rgba(240,235,220,.64); font-size: .68rem; }
+    .filter-field input,
+    .filter-field select { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(255,255,255,.045); color: var(--text); font: 500 .78rem/1.2 "Comfortaa", cursive; outline: none; }
+    .filter-field .custom-select { width: 100%; }
+    .filter-field .custom-select-trigger { width: 100%; min-height: 36px; justify-content: space-between; }
+    .filter-field .custom-select-menu { left: 0; right: auto; width: 100%; }
+    .filter-field input:focus, .filter-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(245,190,80,.13); }
+    .filter-checks { display: flex; flex-wrap: wrap; gap: 6px; }
+    .filter-check { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; background: rgba(255,255,255,.035); color: rgba(240,235,220,.8); font-size: .67rem; cursor: pointer; }
+    .filter-check:has(input:checked) { border-color: rgba(245,190,80,.56); background: rgba(245,190,80,.13); color: #ffe6a8; }
+    .filter-check input { accent-color: var(--accent); }
+
+    .kp-badge { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .rating-source-icon { width: 16px; height: 16px; display: block; object-fit: contain; flex: 0 0 auto; }
+    .rating-source-fallback { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; background: rgba(245,190,80,.2); color: #ffe6a8; font: 900 8px/1 Arial, sans-serif; }
+    .rating-source-icon.imdb { width: 20px; }
+
+    .fullscreen-film {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: grid;
+      grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
+      align-items: end;
+      gap: clamp(22px, 5vw, 76px);
+      padding: clamp(24px, 7vw, 92px);
+      overflow: auto;
+      background: #080a09;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(1.025);
+      transition: opacity .34s ease, transform .46s cubic-bezier(.22,.8,.22,1), visibility 0s linear .46s;
+    }
+
+    .fullscreen-film::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(4,7,6,.94) 0%, rgba(4,7,6,.68) 34%, rgba(4,7,6,.48) 68%, rgba(4,7,6,.8) 100%), linear-gradient(0deg, rgba(4,7,6,.96), transparent 55%); z-index: -1; }
+    .fullscreen-film.is-open { opacity: 1; visibility: visible; pointer-events: auto; transform: scale(1); transition-delay: 0s; }
+    .fullscreen-backdrop { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; filter: saturate(.72); opacity: .72; }
+    .fullscreen-poster { width: min(100%, 340px); aspect-ratio: 2 / 3; object-fit: cover; border-radius: 18px; box-shadow: 0 24px 80px rgba(0,0,0,.52); border: 1px solid rgba(255,255,255,.14); transform-origin: center; transition: transform .5s cubic-bezier(.22,.8,.22,1); }
+    .fullscreen-film.is-open .fullscreen-poster { transform: translateY(0) scale(1); }
+    .fullscreen-copy { align-self: end; max-width: 780px; padding-bottom: 2vh; }
+    .fullscreen-title { margin: 0; font-size: clamp(2rem, 5vw, 5.2rem); line-height: .98; letter-spacing: -.04em; }
+    .fullscreen-original { margin: 10px 0 18px; color: rgba(239,235,222,.62); font-size: clamp(.8rem, 1.2vw, 1.05rem); }
+    .fullscreen-meta { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+    .fullscreen-description { max-width: 70ch; color: rgba(246,243,233,.82); line-height: 1.6; font-size: .9rem; }
+    .fullscreen-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+    .fullscreen-close { position: absolute; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); }
+    .fullscreen-action.active { border-color: rgba(69,209,155,.68); background: rgba(69,209,155,.15); color: #d2faea; }
+    .fullscreen-extra { margin-top: 22px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; color: rgba(239,235,222,.66); font-size: .7rem; }
+    body.film-fullscreen-open { overflow: hidden; }
+    .fullscreen-extra strong { display: block; color: rgba(255,244,211,.92); font-size: .78rem; margin-top: 3px; }
+
     .search-row {
+      position: relative;
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 10px;
@@ -241,6 +466,7 @@
       color: var(--text);
       font-family: "Comfortaa", cursive;
       padding: 13px 14px;
+      padding-right: 44px;
       border-radius: 14px;
       outline: none;
       font-size: 0.97rem;
@@ -251,9 +477,47 @@
       font-family: "Comfortaa", cursive;
     }
 
+    .search-input::-webkit-search-cancel-button {
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
     .search-input:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 4px rgba(244, 190, 80, 0.15);
+    }
+
+    .search-clear {
+      position: absolute;
+      top: 50%;
+      right: 126px;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      transform: translateY(-50%);
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(248, 250, 252, 0.54);
+      font: 700 1rem/1 Arial, sans-serif;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, color 0.18s ease, background 0.18s ease;
+      z-index: 2;
+    }
+
+    .search-clear.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .search-clear:hover,
+    .search-clear:focus-visible {
+      color: #fff4cf;
+      background: rgba(245, 190, 80, 0.16);
+      outline: none;
     }
 
     .btn-main {
@@ -333,16 +597,17 @@
       position: relative;
       cursor: pointer;
       border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.085);
       background: rgba(255, 255, 255, 0.04);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      transform: translateY(8px) scale(0.985);
-      opacity: 0;
-      animation: cardIn 0.5s ease forwards;
+      transform: none;
+      opacity: 1;
+      animation: none;
       animation-delay: var(--stagger, 0ms);
-      transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+      transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.24s ease, box-shadow 0.32s ease;
+
     }
 
     .movie-card:hover {
@@ -373,6 +638,13 @@
       flex: 0 0 auto;
     }
 
+    .card-corner-actions { position: absolute; inset: 9px 9px auto auto; display: flex; align-items: center; gap: 6px; z-index: 2; }
+    .card-icon-btn, .card-watched { display: inline-grid; place-items: center; width: 29px; height: 29px; border: 1px solid rgba(255,255,255,.18); border-radius: 9px; background: rgba(4,7,6,.58); color: #fff3cc; font: 700 1rem/1 Arial,sans-serif; backdrop-filter: blur(8px); }
+    .card-icon-btn { cursor: pointer; transition: transform .2s ease, background .2s ease, color .2s ease; }
+    .card-icon-btn:hover, .card-icon-btn:focus-visible { transform: scale(1.08); background: rgba(245,190,80,.2); outline: none; }
+    .card-icon-btn.active { color: #ffcb58; }
+    .card-watched { color: #79e0b7; font-size: .85rem; }
+
     .movie-poster {
       width: 100%;
       height: 100%;
@@ -380,8 +652,13 @@
       display: block;
     }
 
+    .movie-poster.is-fallback {
+      object-fit: cover;
+    }
+
     .movie-meta {
-      padding: 9px 10px 11px;
+      min-height: 82px;
+      padding: 10px 11px 12px;
       background: linear-gradient(180deg, rgba(6, 6, 6, 0.96), rgba(12, 12, 12, 0.98));
       border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
@@ -392,7 +669,6 @@
       line-height: 1.3;
       font-weight: 700;
       color: #f8fafc;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
       min-height: 2.2em;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -401,7 +677,8 @@
     }
 
     .movie-sub {
-      margin: 6px 0 0;
+      min-height: 19px;
+      margin: 7px 0 0;
       color: #d3d8e3;
       font-size: 0.74rem;
       display: flex;
@@ -414,10 +691,7 @@
     .kind-pill {
       font-size: 0.67rem;
       letter-spacing: 0.03em;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 2px 6px;
-      border-radius: 999px;
+      color: rgba(245, 190, 80, .84);
       opacity: 0.9;
     }
 
@@ -446,8 +720,7 @@
       grid-template-rows: minmax(360px, 58%) auto minmax(0, 1fr);
       min-height: 0;
       height: 100%;
-      animation: reveal 1s ease both;
-      animation-delay: 0.18s;
+      animation: none;
       background: var(--panel-strong);
       transform: translateX(28px) scale(0.99);
       opacity: 0;
@@ -455,6 +728,9 @@
       transition: transform 0.42s cubic-bezier(0.2, 0.9, 0.2, 1), opacity 0.3s ease;
       min-width: 0;
       overflow: hidden;
+      contain: layout paint;
+      backface-visibility: hidden;
+      will-change: transform, opacity;
     }
 
     .layout:not(.is-details-open) .player-panel {
@@ -499,6 +775,17 @@
       opacity: 0.72;
       transform: scale(1.03);
       transition: opacity 0.35s ease;
+      backface-visibility: hidden;
+    }
+
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      background:
+        radial-gradient(circle at 76% 18%, rgba(245, 190, 80, 0.2), transparent 38%),
+        linear-gradient(135deg, #13231e 0%, #211a16 52%, #090b0a 100%);
     }
 
     .hero::after {
@@ -545,13 +832,24 @@
     }
 
     .hero-chip {
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      background: rgba(0, 0, 0, 0.34);
-      border-radius: 999px;
-      padding: 5px 10px;
+      position: relative;
+      padding: 2px 10px 2px 0;
       font-size: 0.76rem;
       color: #f8f2e4;
       line-height: 1;
+    }
+
+    .hero-chip + .hero-chip { padding-left: 10px; }
+    .hero-chip + .hero-chip::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: rgba(245, 190, 80, .7);
+      transform: translateY(-50%);
     }
 
     .hero-action-btn {
@@ -898,14 +1196,25 @@
 
     .results-empty {
       grid-column: 1 / -1;
-      border: 1px dashed rgba(245, 158, 11, 0.35);
-      border-radius: 14px;
-      padding: 24px 14px;
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      border: 0;
+      border-radius: 18px;
+      padding: 38px 20px;
       text-align: center;
-      color: var(--muted);
-      background: rgba(245, 158, 11, 0.06);
-      font-size: 0.92rem;
+      color: rgba(232,236,232,.72);
+      background: radial-gradient(circle at 18% 22%, rgba(108,139,129,.14), transparent 38%), linear-gradient(145deg, #11181a, #0c1114);
+      font-size: 0.88rem;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
     }
+    .results-empty::before { content: ''; width: 38px; height: 38px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #d8c79e 0 5%, transparent 6%), conic-gradient(from 210deg, rgba(216,199,158,.65), rgba(216,199,158,.08), rgba(216,199,158,.65)); opacity: .75; box-shadow: 0 0 28px rgba(216,199,158,.12); }
+    .results-empty strong { color: #ebe8df; font-weight: 600; }
+    .results-empty p { max-width: 360px; margin: 0; color: rgba(225,230,226,.5); font-size: .75rem; line-height: 1.55; }
 
     .status strong {
       display: block;
@@ -967,6 +1276,17 @@
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
       }
     }
 
@@ -1068,11 +1388,31 @@
       }
 
       .search-row {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
       }
 
+      .search-clear {
+        right: 92px;
+        top: 50%;
+      }
+
+      .catalog-toolbar { align-items: stretch; flex-direction: column; }
+      .catalog-actions { justify-content: flex-start; flex-wrap: wrap; row-gap: 7px; }
+      .collection-tabs { flex: 1 0 100%; max-width: 100%; }
+      .catalog-actions .custom-select { margin-left: auto; width: min(170px, 52vw); }
+      .catalog-actions .custom-select-trigger { min-width: 0; width: 100%; }
+      .filter-panel { width: 100%; border-left: 0; }
+      .fullscreen-film { display: flex; flex-direction: column; justify-content: flex-end; gap: 16px; padding: max(68px, env(safe-area-inset-top) + 42px) 18px max(22px, env(safe-area-inset-bottom)); }
+      .fullscreen-poster { position: absolute; top: max(72px, env(safe-area-inset-top) + 48px); left: 18px; width: 126px; border-radius: 13px; }
+      .fullscreen-copy { padding: 0; }
+      .fullscreen-title { padding-left: 144px; min-height: 88px; font-size: clamp(1.7rem, 8vw, 2.7rem); }
+      .fullscreen-original { padding-left: 144px; margin-top: 4px; }
+      .fullscreen-description { font-size: .8rem; line-height: 1.48; max-height: 20vh; overflow: auto; }
+      .fullscreen-extra { grid-template-columns: repeat(2, minmax(0,1fr)); }
+
       .btn-main {
-        padding: 12px 16px;
+        min-width: 82px;
+        padding: 10px 12px;
       }
 
       .discover {
@@ -1116,6 +1456,41 @@
         height: min(56vh, 440px);
         min-width: 96px;
         min-height: 54px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .search-wrap {
+        padding-top: 12px;
+        padding-bottom: 12px;
+      }
+
+      .search-row {
+        gap: 7px;
+      }
+
+      .search-input {
+        padding: 11px 40px 11px 12px;
+        font-size: 0.86rem;
+      }
+
+      .btn-main {
+        min-width: 68px;
+        padding-inline: 10px;
+        font-size: 0.78rem;
+      }
+
+      .search-clear {
+        right: 86px;
+      }
+
+      .mode-switch {
+        gap: 6px;
+      }
+
+      .mode-btn {
+        padding: 6px 9px;
+        font-size: 0.74rem;
       }
     }
 
@@ -1249,8 +1624,12 @@
       }
     }
   </style>
-    <link rel="stylesheet" href="kinosreda-shell.css?v=20261010mobile2">
-    <script src="kinosreda-shell.js?v=20261010perf" defer></script>
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261105movies">
+    <link rel="stylesheet" href="movie-catalog.css?v=20261108random2">
+    <script src="/vendor/firebase-9.22.0/firebase-app-compat.js"></script>
+    <script src="/vendor/firebase-9.22.0/firebase-database-compat.js"></script>
+    <script src="/firebase-rtdb-rf-bypass.js?v=20261105movies"></script>
+    <script src="kinosreda-shell.js?v=20261108random" defer></script>
 </head>
 <body class="ks-ui ks-page-video">
   <div class="orb orb-a"></div>
@@ -1268,6 +1647,7 @@
 
         <div class="search-wrap">
           <form class="search-row" id="searchForm" autocomplete="off">
+            <div class="search-field">
             <input
               class="search-input"
               id="searchInput"
@@ -1275,16 +1655,33 @@
               placeholder="Например: Интерстеллар, Дюна, Игра престолов"
               maxlength="120"
             />
+            <button class="search-clear" id="clearSearchBtn" type="button" aria-label="Очистить поиск" title="Очистить поиск">×</button>
+            </div>
             <button class="btn-main" id="searchBtn" type="submit">Найти</button>
           </form>
 
-          <div class="mode-switch" id="modeSwitch">
-            <button class="mode-btn active" type="button" data-mode="multi">Все</button>
-            <button class="mode-btn" type="button" data-mode="movie">Фильмы</button>
-            <button class="mode-btn" type="button" data-mode="tv">Сериалы</button>
+          <div class="catalog-toolbar">
+            <div class="mode-switch" id="modeSwitch" aria-hidden="true"></div>
+            <div class="catalog-actions">
+              <div class="collection-tabs" role="tablist" aria-label="Коллекции">
+                <button class="collection-tab active" type="button" data-collection="catalog" role="tab" aria-selected="true" title="Каталог">Каталог</button>
+                <button class="collection-tab" type="button" data-collection="favorites" role="tab" aria-selected="false" aria-label="Избранное" title="Избранное"><span aria-hidden="true">♡</span><span class="collection-label">Избранное</span></button>
+                <button class="collection-tab" type="button" data-collection="watched" role="tab" aria-selected="false" aria-label="Просмотренное" title="Просмотренное"><span aria-hidden="true">✓</span><span class="collection-label">Просмотренное</span></button>
+              </div>
+              <button class="toolbar-btn" id="filterToggleBtn" type="button" aria-label="Фильтры каталога" aria-expanded="false" aria-controls="filterPanel">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+                <span class="catalog-action-label">Фильтры</span><span class="filter-count" id="filterCount">0</span>
+              </button>
+              <button class="toolbar-btn randomizer-btn" id="randomizerOpenBtn" type="button" aria-label="Случайный фильм" aria-haspopup="dialog" aria-controls="randomizerDialog" title="Случайный фильм">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><g fill="currentColor" stroke="none"><circle cx="8.5" cy="8.5" r="1.15"/><circle cx="15.5" cy="8.5" r="1.15"/><circle cx="12" cy="12" r="1.15"/><circle cx="8.5" cy="15.5" r="1.15"/><circle cx="15.5" cy="15.5" r="1.15"/></g></svg>
+                <span class="catalog-action-label">Случайный фильм</span>
+              </button>
+            </div>
           </div>
+          <div class="active-filters" id="activeFilters" aria-live="polite"></div>
         </div>
 
+        <div class="catalog-summary" id="catalogSummary" role="status" aria-live="polite"></div>
         <div class="results" id="results"></div>
       </section>
 
@@ -1304,8 +1701,6 @@
           <div class="player-source-title">Источник</div>
           <div class="source-toggle" id="sourceSwitch" role="tablist" aria-label="Источник плеера">
             <button class="source-btn active" type="button" data-provider="alloha">Alloha</button>
-            <button class="source-btn" type="button" data-provider="collaps">Collaps</button>
-            <button class="source-btn" type="button" data-provider="kinobd">KinoBD</button>
           </div>
         </div>
 
@@ -1319,6 +1714,75 @@
     </main>
   </div>
 
+  <div class="filter-backdrop" id="filterBackdrop"></div>
+  <aside class="filter-panel" id="filterPanel" aria-label="Фильтры каталога" aria-hidden="true" role="dialog" aria-modal="true" inert>
+    <div class="filter-head"><h2>Фильтры каталога</h2><button class="hero-action-btn" id="filterCloseBtn" type="button" aria-label="Закрыть фильтры">×</button></div>
+    <div class="filter-scroll">
+      <div class="filter-field full"><label>Тип контента</label><div class="filter-checks"><label class="filter-check"><input type="checkbox" name="type" value="movie"> Фильмы</label><label class="filter-check"><input type="checkbox" name="type" value="tv"> Сериалы</label></div></div>
+      <div class="filter-field full"><label>Жанры</label><div class="custom-select"><select id="genreFilters" multiple data-placeholder="Все жанры" aria-label="Жанры"></select></div></div>
+      <div class="filter-field full"><label>Страны производства</label><div class="custom-select"><select id="countryFilters" multiple data-placeholder="Все страны" aria-label="Страны производства"></select></div></div>
+      <div class="filter-grid">
+        <div class="filter-field"><label for="yearFrom">Год от</label><input id="yearFrom" type="number" min="1888" max="2100" placeholder="1888"></div>
+        <div class="filter-field"><label for="yearTo">Год до</label><input id="yearTo" type="number" min="1888" max="2100" placeholder="2026"></div>
+        <div class="filter-field"><label for="kpFrom">Кинопоиск от</label><input id="kpFrom" type="number" min="0" max="10" step=".1" placeholder="0"></div>
+        <div class="filter-field"><label for="kpTo">Кинопоиск до</label><input id="kpTo" type="number" min="0" max="10" step=".1" placeholder="10"></div>
+        <div class="filter-field"><label for="imdbFrom">IMDb от</label><input id="imdbFrom" type="number" min="0" max="10" step=".1" placeholder="0"></div>
+        <div class="filter-field"><label for="imdbTo">IMDb до</label><input id="imdbTo" type="number" min="0" max="10" step=".1" placeholder="10"></div>
+        <div class="filter-field"><label for="ageRating">Возраст</label><div class="custom-select" data-select-for="ageRating"><select id="ageRating"><option value="">Любой</option><option value="0">0+</option><option value="6">6+</option><option value="12">12+</option><option value="16">16+</option><option value="18">18+</option></select></div></div>
+        <div class="filter-field"><label for="runtimeMax">До минут</label><input id="runtimeMax" type="number" min="0" placeholder="Любая длительность"></div>
+        <div class="filter-field"><label for="seasonsMin">Сезонов от</label><input id="seasonsMin" type="number" min="1" placeholder="Для сериалов"></div>
+        <div class="filter-field"><label for="watchStatus">Статус просмотра</label><div class="custom-select" data-select-for="watchStatus"><select id="watchStatus"><option value="all">Любой</option><option value="unwatched">Не просмотрено</option><option value="watched">Просмотрено</option></select></div></div>
+      </div>
+      <label class="filter-check"><input id="favoriteOnly" type="checkbox"> Только избранное</label>
+    </div>
+    <div class="filter-foot"><button class="toolbar-btn" id="filterResetBtn" type="button">Сбросить всё</button><button class="btn-main" id="filterApplyBtn" type="button">Показать результаты</button></div>
+  </aside>
+
+  <div class="randomizer-backdrop" id="randomizerBackdrop" hidden></div>
+  <section class="randomizer-dialog" id="randomizerDialog" role="dialog" aria-modal="true" aria-labelledby="randomizerTitle" hidden>
+    <button class="randomizer-close" id="randomizerCloseBtn" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    <header class="randomizer-copy"><h2 id="randomizerTitle">Случайный фильм</h2></header>
+    <div class="randomizer-workspace">
+      <div class="randomizer-result" id="randomizerResult" aria-live="polite" aria-busy="false"></div>
+      <form class="randomizer-controls" id="randomizerForm">
+        <details class="randomizer-filters" open>
+          <summary>Фильтры <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></summary>
+          <div class="randomizer-options">
+            <div class="randomizer-field"><label for="randomGenres">Жанры</label><div class="custom-select"><select id="randomGenres" multiple data-placeholder="Любой жанр" aria-label="Жанры случайного фильма"></select></div></div>
+            <div class="randomizer-field"><label for="randomCountry">Страна</label><div class="custom-select"><select id="randomCountry" aria-label="Страна случайного фильма"><option value="domestic">Отечественные</option><option value="foreign">Зарубежные</option><option value="" selected>Любая страна</option></select></div></div>
+            <label class="randomizer-field"><span>Рейтинг Кинопоиска от</span><input id="randomMinRating" type="number" min="0" max="10" step=".1" placeholder="Любой"></label>
+            <label class="randomizer-field"><span>Рейтинг Кинопоиска до</span><input id="randomMaxRating" type="number" min="0" max="10" step=".1" placeholder="Любой"></label>
+            <div class="randomizer-years"><label class="randomizer-field"><span>Год от</span><input id="randomYearFrom" type="number" min="1888" max="2100" placeholder="1888"></label><label class="randomizer-field"><span>Год до</span><input id="randomYearTo" type="number" min="1888" max="2100" placeholder="2026"></label></div>
+            <label class="randomizer-check"><input id="randomExcludeWatched" type="checkbox" checked> Исключить просмотренное</label>
+          </div>
+        </details>
+        <button class="btn-main randomizer-submit" id="randomizerSubmit" type="submit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3c4 0 6 10 10 10h3m-3-3 3 3-3 3M4 17h3c1.5 0 2.8-1.5 4-3.5M13 10.5C14.2 8.5 15.5 7 17 7h3m-3-3 3 3-3 3"/></svg><span>Подобрать фильм</span></button>
+        <p class="randomizer-hint" id="randomizerHint" role="status"></p>
+      </form>
+    </div>
+  </section>
+  <button class="results-top-btn" id="resultsTopBtn" type="button" aria-label="Вернуться к началу списка" title="В начало списка"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 14 6-6 6 6M12 8v10"/></svg></button>
+
+  <section class="fullscreen-film" id="fullscreenFilm" aria-hidden="true" aria-label="Подробности фильма" role="dialog" aria-modal="true" inert>
+    <img class="fullscreen-backdrop" id="fullscreenBackdrop" alt="">
+    <button class="toolbar-btn fullscreen-close" id="fullscreenCloseBtn" type="button" aria-label="Закрыть подробности"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <img class="fullscreen-poster" id="fullscreenPoster" alt="">
+    <div class="fullscreen-copy">
+      <div class="fullscreen-info" id="fullscreenInfo">
+      <header class="fullscreen-heading"><h1 class="fullscreen-title" id="fullscreenTitle"></h1>
+      <p class="fullscreen-original" id="fullscreenOriginal"></p></header>
+      <div class="fullscreen-meta" id="fullscreenMeta"></div>
+      <p class="fullscreen-description" id="fullscreenDescription"></p>
+      <div class="fullscreen-extra" id="fullscreenExtra"></div>
+      <section class="film-people" id="filmPeople" aria-label="Создатели и актёры"></section>
+      <div class="film-seasons" id="filmSeasons"></div>
+      </div>
+      <div class="film-player" id="filmPlayer"></div>
+      <div class="fullscreen-actions"><button class="toolbar-btn fullscreen-action" id="favoriteBtn" type="button">♡ В избранное</button><button class="toolbar-btn fullscreen-action" id="watchedBtn" type="button">○ В просмотренное</button><button class="toolbar-btn fullscreen-action" id="fullscreenPlayBtn" type="button"><svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5a1 1 0 0 1 1.5-.86l10 6.5a1 1 0 0 1 0 1.72l-10 6.5A1 1 0 0 1 8 18.5z" fill="currentColor"/></svg><span>Смотреть</span></button></div>
+    </div>
+  </section>
+
+  <script src="movie-select.js?v=20261105d"></script>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const DEFAULT_PROXY_BASE = "https://realtime.xn--80ahcljthqi.xn--p1ai";
@@ -1336,14 +1800,11 @@
     const effectiveProxyBase = (
       queryProxyBase && (!isLocalLikeOrigin(queryProxyBase) || pageIsLocal)
         ? queryProxyBase
-        : DEFAULT_PROXY_BASE
+        : pageIsLocal ? window.location.origin : DEFAULT_PROXY_BASE
     );
     const KINOPOISK_API = `${effectiveProxyBase}/ytm/kinopoisk`;
     const PROVIDERS = [
-      { id: "alloha", label: "Alloha" },
-      { id: "collaps", label: "Collaps" },
-      { id: "flixcdn", label: "FlixCDN" },
-      { id: "kinobd", label: "KinoBD" }
+      { id: "alloha", label: "Alloha" }
     ];
     const DIRECT_PROVIDER_CONFIG = {
       alloha: {
@@ -1400,7 +1861,112 @@
     const BALANCER_SOURCE_CACHE_TTL_MS = 10 * 60 * 1000;
     const balancerSourcesCache = new Map();
     const posterByFilmCache = new Map();
-    const posterImageWarmCache = new Set();
+    const RATING_FAVICONS = {
+      kp: "assets/ratings/kinopoisk.ico",
+      imdb: "assets/ratings/imdb.ico"
+    };
+
+    const MOVIE_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+      authDomain: "kinosreda-ce8ef.firebaseapp.com",
+      databaseURL: "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "kinosreda-ce8ef",
+      storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+      messagingSenderId: "889337905300",
+      appId: "1:889337905300:web:325aea2f3fb3c6b44a7481"
+    };
+    let movieDb = null;
+    let movieLibraryRef = null;
+
+    function getMovieUserKey() {
+      try {
+        const raw = localStorage.getItem("currentUser");
+        const user = raw ? JSON.parse(raw) : null;
+        const identity = String(user?.username || user?.name || "").trim().toLowerCase();
+        return identity ? identity.replace(/[^a-z0-9а-яё_-]+/gi, "_").slice(0, 80) : "";
+      } catch (_) { return ""; }
+    }
+
+    function getMovieLibraryRecord(card) {
+      if (!card) return null;
+      return {
+        id: String(card.id), mediaType: card.mediaType, title: card.title, originalTitle: card.originalTitle || card.title,
+        year: card.year, poster: card.poster || card.backdrop || "", backdrop: card.backdrop || card.poster || "",
+        kpRating: Number(card.kpRating || 0) || null, imdbRating: Number(card.imdbRating || 0) || null, imdbId: card.imdbId || "",
+        genres: card.genres || [], countries: card.countries || [], runtime: card.runtime || 0, seasons: card.seasons || 0, ageRating: card.ageRating || 0,
+        addedAt: Date.now()
+      };
+    }
+
+    async function initMovieLibrary() {
+      try {
+        if (!window.firebase) return;
+        const userKey = getMovieUserKey();
+        if (!userKey) return;
+        if (!firebase.apps.some(app => app.name === "movie-library")) firebase.initializeApp(MOVIE_FIREBASE_CONFIG, "movie-library");
+        movieDb = firebase.app("movie-library").database();
+        movieLibraryRef = movieDb.ref(`movieLibrary/${userKey}`);
+        movieLibraryRef.on("value", snapshot => {
+          const next = snapshot.val() || {};
+          state.library = { favorites: next.favorites || {}, watched: next.watched || {}, progress: next.progress || {} };
+          state.libraryReady = true;
+          refreshLibraryView();
+          if (state.selectedCard) renderFullscreenFilm(state.selectedCard);
+        });
+      } catch (error) {
+        console.warn("Movie library unavailable", error);
+        state.libraryReady = false;
+      }
+    }
+
+    function movieLibraryKey(card) { return `${card.mediaType}_${String(card.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`; }
+
+    async function toggleMovieLibrary(kind, card) {
+      if (!card) return;
+      const key = movieLibraryKey(card);
+      const bucket = state.library[kind] || {};
+      const next = { ...bucket };
+      if (next[key]) delete next[key]; else next[key] = getMovieLibraryRecord(card);
+      const nextLibrary = { ...state.library, [kind]: next };
+      if (kind === "watched" && next[key]) { const progress = { ...nextLibrary.progress }; delete progress[key]; nextLibrary.progress = progress; }
+      if (kind === "progress" && next[key]) { const watched = { ...nextLibrary.watched }; delete watched[key]; nextLibrary.watched = watched; }
+      state.library = nextLibrary;
+      refreshLibraryView();
+      renderFullscreenFilm(card);
+      if (movieLibraryRef) {
+        try { await movieLibraryRef.update({ favorites: nextLibrary.favorites || {}, watched: nextLibrary.watched || {}, progress: nextLibrary.progress || {} }); } catch (error) { console.warn("Movie library save failed", error); }
+      }
+    }
+
+    function hasMovieInLibrary(kind, card) { return Boolean(card && state.library[kind]?.[movieLibraryKey(card)]); }
+
+    function refreshLibraryView() {
+      if (state.collection !== "catalog" || state.filters.favoriteOnly || state.filters.watchStatus !== "all") {
+        renderActiveCollection();
+        return;
+      }
+      // Preserve loaded images and scroll when a collection changes.
+      const cards = new Map(state.rawCards.map(card => [movieLibraryKey(card), card]));
+      resultsEl.querySelectorAll(".movie-card").forEach(el => {
+        const card = cards.get(`${el.dataset.type}_${el.dataset.id}`);
+        if (!card) return;
+        const favorite = hasMovieInLibrary("favorites", card);
+        const button = el.querySelector('[data-card-action="favorite"]');
+        button.classList.toggle("active", favorite);
+        button.textContent = favorite ? "♥" : "♡";
+        button.setAttribute("aria-label", favorite ? "Убрать из избранного" : "Добавить в избранное");
+        const watched = hasMovieInLibrary("watched", card);
+        const watchedButton = el.querySelector('[data-card-action="watched"]');
+        if (watchedButton) {
+          watchedButton.classList.toggle("active", watched);
+          watchedButton.textContent = watched ? "✓" : "○";
+          watchedButton.setAttribute("aria-label", watched ? "Убрать из просмотренного" : "Добавить в просмотренное");
+          watchedButton.title = watched ? "Убрать из просмотренного" : "Добавить в просмотренное";
+        }
+      });
+    }
+
+    function initCustomSelects() { window.MovieSelect.init(); }
 
     function createProviderAvailabilityState() {
       const availability = {};
@@ -1424,8 +1990,26 @@
       lastQuery: "",
       pagesLoaded: 0,
       pagesTotal: 0,
-      loadingMore: false
+      hasMore: false,
+      totalExact: true,
+      totalResults: 0,
+      loadingMore: false,
+      collection: "catalog",
+      rawCards: [],
+      filteredCards: [],
+      filters: createDefaultFilters(),
+      library: { favorites: {}, watched: {}, progress: {} },
+      libraryReady: false,
+      filterOptions: { genres: [], countries: [] },
+      selectedCard: null
     };
+
+    function createDefaultFilters() {
+      return {
+        types: [], genres: [], countries: [], yearFrom: "", yearTo: "", kpFrom: "", kpTo: "",
+        imdbFrom: "", imdbTo: "", ageRating: "", runtimeMax: "", seasonsMin: "", watchStatus: "all", favoriteOnly: false
+      };
+    }
 
     const layoutRootEl = document.getElementById("layoutRoot");
     const resultsEl = document.getElementById("results");
@@ -1445,8 +2029,47 @@
     const detachBtnEl = document.getElementById("detachBtn");
     const searchFormEl = document.getElementById("searchForm");
     const searchInputEl = document.getElementById("searchInput");
+    const clearSearchBtnEl = document.getElementById("clearSearchBtn");
     const searchBtnEl = document.getElementById("searchBtn");
     const modeSwitchEl = document.getElementById("modeSwitch");
+    const filterToggleBtnEl = document.getElementById("filterToggleBtn");
+    const filterCloseBtnEl = document.getElementById("filterCloseBtn");
+    const filterPanelEl = document.getElementById("filterPanel");
+    const filterBackdropEl = document.getElementById("filterBackdrop");
+    const filterCountEl = document.getElementById("filterCount");
+    const filterResetBtnEl = document.getElementById("filterResetBtn");
+    const filterApplyBtnEl = document.getElementById("filterApplyBtn");
+    const activeFiltersEl = document.getElementById("activeFilters");
+    const randomizerOpenBtnEl = document.getElementById("randomizerOpenBtn");
+    const randomizerDialogEl = document.getElementById("randomizerDialog");
+    const randomizerBackdropEl = document.getElementById("randomizerBackdrop");
+    const randomizerCloseBtnEl = document.getElementById("randomizerCloseBtn");
+    const randomizerSubmitEl = document.getElementById("randomizerSubmit");
+    const randomizerResultEl = document.getElementById("randomizerResult");
+    const randomizerFormEl = document.getElementById("randomizerForm");
+    const randomizerGenresEl = document.getElementById("randomGenres");
+    const randomizerCountryEl = document.getElementById("randomCountry");
+    const randomizerHintEl = document.getElementById("randomizerHint");
+    const resultsTopBtnEl = document.getElementById("resultsTopBtn");
+
+    const genreFiltersEl = document.getElementById("genreFilters");
+    const countryFiltersEl = document.getElementById("countryFilters");
+    const collectionTabsEl = document.querySelector(".collection-tabs");
+    const fullscreenFilmEl = document.getElementById("fullscreenFilm");
+    const fullscreenCloseBtnEl = document.getElementById("fullscreenCloseBtn");
+    const fullscreenPosterEl = document.getElementById("fullscreenPoster");
+    const fullscreenBackdropEl = document.getElementById("fullscreenBackdrop");
+    const fullscreenTitleEl = document.getElementById("fullscreenTitle");
+    const fullscreenOriginalEl = document.getElementById("fullscreenOriginal");
+    const fullscreenMetaEl = document.getElementById("fullscreenMeta");
+    const fullscreenDescriptionEl = document.getElementById("fullscreenDescription");
+    const fullscreenExtraEl = document.getElementById("fullscreenExtra");
+    const filmPeopleEl = document.getElementById("filmPeople");
+    const favoriteBtnEl = document.getElementById("favoriteBtn");
+    const watchedBtnEl = document.getElementById("watchedBtn");
+    const fullscreenPlayBtnEl = document.getElementById("fullscreenPlayBtn");
+    const randomizerState = { result: null, busy: false, sequence: 0, controller: null, animation: null, pool: [], poolKey: '', used: new Set(), page: 0, hasMore: true, returnAfterFilm: false, scrollTop: 0 };
+    let resultsTopThreshold = Infinity;
     const TV_ARROW_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
     const TV_BACK_KEYS = new Set(["Escape", "Backspace", "BrowserBack", "GoBack"]);
     const TV_SELECT_KEYS = new Set(["Enter", "NumpadEnter", " ", "Spacebar"]);
@@ -1526,6 +2149,12 @@
     function handleTvBackAction(event = null) {
       let handled = false;
       const activeEl = document.activeElement;
+
+      // Backspace must stay a normal editing key while the search field is active.
+      // The TV back handler only owns it when focus is outside text inputs.
+      if (isTextEntryElement(activeEl) && getTvEventKey(event) === "Backspace") {
+        return false;
+      }
 
       if (isTextEntryElement(activeEl)) {
         if (typeof activeEl.blur === "function") {
@@ -1919,6 +2548,7 @@
     }
 
     function closeDetailsPanel() {
+      closeFullscreenFilm();
       const wasOpen = layoutRootEl.classList.contains("is-details-open");
       layoutRootEl.classList.remove("is-details-open");
       state.selectedId = null;
@@ -1943,7 +2573,9 @@
         detailsCloseTimer = null;
       };
       if (wasOpen) {
-        detailsCloseTimer = setTimeout(cleanup, 360);
+        // Let the panel finish its slide before removing the iframe. Removing it
+        // mid-transition was the source of a visible flash when switching titles.
+        detailsCloseTimer = setTimeout(cleanup, 460);
       } else {
         cleanup();
       }
@@ -2212,8 +2844,12 @@
     }
 
     function updateDiscoverState(isSearch) {
-      discoverHeadEl.classList.toggle("has-back", isSearch);
-      headBackBtnEl.classList.toggle("visible", isSearch);
+      // Keep the search field in the same compact toolbar. The old back-only row
+      // made the whole page jump as soon as a query was submitted.
+      discoverHeadEl.classList.remove("has-back");
+      headBackBtnEl.classList.remove("visible");
+      searchInputEl.classList.toggle("has-value", Boolean(searchInputEl.value));
+      clearSearchBtnEl.classList.toggle("visible", Boolean(searchInputEl.value));
     }
 
     function getKpRatingClass(rating) {
@@ -2246,7 +2882,7 @@
       return chips;
     }
 
-    async function kinopoiskRequest(path, params = {}) {
+    async function kinopoiskRequest(path, params = {}, options = {}) {
       const url = new URL(`${KINOPOISK_API}${path}`);
       Object.entries(params).forEach(([key, value]) => {
         if (value === undefined || value === null) return;
@@ -2265,7 +2901,8 @@
         method: "GET",
         mode: "cors",
         credentials: "omit",
-        cache: "no-store"
+        cache: "no-store",
+        signal: options.signal
       });
 
       if (!response.ok) {
@@ -2290,10 +2927,19 @@
     function normalizeKinopoiskCard(item) {
       const mediaType = String(item.type || "").includes("SERIES") ? "tv" : "movie";
       const title = item.nameRu || item.nameOriginal || item.nameEn || "Без названия";
-      const kpRatingValue = Number(item.rating || item.ratingKinopoisk);
+      const ratingObject = item.rating && typeof item.rating === "object" ? item.rating : {};
+      const firstRating = (...values) => {
+        for (const value of values) {
+          const number = Number(value);
+          if (Number.isFinite(number) && number > 0) return number;
+        }
+        return 0;
+      };
+      const kpRatingValue = firstRating(item.ratingKinopoisk, item.ratingKp, item.rating, ratingObject.kp, ratingObject.kinopoisk);
+      const imdbRatingValue = firstRating(item.ratingImdb, item.imdbRating, item.ratingIMDb, ratingObject.imdb);
       const cacheKey = String(item.filmId || item.kinopoiskId || "").trim();
       const cachedPoster = cacheKey ? posterByFilmCache.get(cacheKey) : null;
-      const poster = item.posterUrl || item.posterUrlPreview || cachedPoster?.poster || "";
+      const poster = item.posterUrlPreview || item.posterUrl || cachedPoster?.poster || "";
       const backdrop = item.posterUrl || item.posterUrlPreview || cachedPoster?.backdrop || "";
 
       if (cacheKey && (poster || backdrop)) {
@@ -2302,15 +2948,23 @@
 
       return {
         id: item.filmId || item.kinopoiskId,
+        imdbId: String(item.imdbId || ""),
         mediaType,
         title,
         originalTitle: item.nameOriginal || item.nameEn || title,
         overview: item.description || item.shortDescription || item.slogan || "Описание отсутствует.",
         year: item.year ? String(item.year) : "----",
+        genres: Array.isArray(item.genres) ? item.genres.map(g => typeof g === "string" ? g : g?.genre || g?.name).filter(Boolean) : String(item.genre || "").split(/[,•]/).map(v => v.trim()).filter(Boolean),
+        countries: Array.isArray(item.countries) ? item.countries.map(c => typeof c === "string" ? c : c?.country || c?.name).filter(Boolean) : String(item.country || item.countries || "").split(/[,•]/).map(v => v.trim()).filter(Boolean),
+        runtime: Number(item.filmLength || item.duration || item.runtime || 0) || 0,
+        seasons: Number(item.seasons || item.seasonCount || 0) || 0,
+        ageRating: Number(String(item.ratingAgeLimits || item.ageRating || "").replace(/\D/g, "")) || 0,
+        popularity: Number(item.ratingVoteCount || item.votes || item.popularity || 0) || 0,
         poster,
         backdrop,
         vote: Number.isFinite(kpRatingValue) && kpRatingValue > 0 ? kpRatingValue.toFixed(1) : "-",
         kpRating: Number.isFinite(kpRatingValue) && kpRatingValue > 0 ? kpRatingValue : null,
+        imdbRating: Number.isFinite(imdbRatingValue) && imdbRatingValue > 0 ? imdbRatingValue : null,
         details: {
           imdbId: String(item.imdbId || "").trim(),
           tmdbId: ""
@@ -2319,32 +2973,554 @@
     }
 
     function buildPosterFallback(title) {
-      const safeTitle = (title || "No poster").slice(0, 26).replace(/[<>&"]/g, " ");
+      const seed = Array.from(String(title || "poster")).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+      const palettes = [
+        ["#101e1b", "#4a281b", "#f5be50"],
+        ["#17172a", "#42201b", "#e7a85a"],
+        ["#101b2a", "#322018", "#f4cf74"],
+        ["#1c1915", "#243c35", "#e9b65d"]
+      ];
+      const [start, end, accent] = palettes[seed % palettes.length];
+      const angle = 118 + (seed % 40);
       return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600">
           <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#1b2a24"/>
-              <stop offset="100%" stop-color="#3f2419"/>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(${angle} .5 .5)">
+              <stop offset="0%" stop-color="${start}"/>
+              <stop offset="100%" stop-color="${end}"/>
             </linearGradient>
+            <radialGradient id="glow" cx="78%" cy="18%" r="62%"><stop offset="0" stop-color="${accent}" stop-opacity=".42"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient>
           </defs>
           <rect width="400" height="600" fill="url(#g)"/>
-          <g fill="#f4be50" opacity="0.85">
-            <circle cx="72" cy="78" r="4"/><circle cx="120" cy="104" r="3"/><circle cx="332" cy="94" r="4"/>
+          <rect width="400" height="600" fill="url(#glow)"/>
+          <g fill="none" stroke="${accent}" opacity=".22">
+            <circle cx="302" cy="132" r="124" stroke-width="2"/><circle cx="302" cy="132" r="88" stroke-width="1"/>
+            <path d="M-40 516 190 286 438 536" stroke-width="16" stroke-linecap="round"/>
+            <path d="M-12 558 160 386" stroke-width="2"/>
           </g>
-          <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
-                fill="#f7f4ea" font-size="28" font-family="Arial, sans-serif">${safeTitle}</text>
+          <circle cx="302" cy="132" r="5" fill="${accent}" opacity=".7"/>
+          <rect x="26" y="36" width="64" height="3" rx="2" fill="${accent}" opacity=".48"/>
         </svg>`
       )}`;
     }
 
-    function warmPosterImage(url) {
-      const source = String(url || "").trim();
-      if (!source || posterImageWarmCache.has(source)) return;
-      posterImageWarmCache.add(source);
-      const img = new Image();
-      img.decoding = "async";
-      img.src = source;
+
+
+    function getFilterValue(id) { return String(document.getElementById(id)?.value || "").trim(); }
+
+    function ratingBadge(source, value, card = {}) {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number <= 0) return "";
+      const label = source === "imdb" ? "IMDb" : "Кинопоиск";
+      const imdbId = card.imdbId || card.details?.imdbId;
+      const href = source === "imdb" ? (/^tt\d+$/.test(imdbId || "") ? `https://www.imdb.com/title/${imdbId}/` : "") : (/^\d+$/.test(String(card.id)) ? `https://www.kinopoisk.ru/${card.mediaType === "tv" ? "series" : "film"}/${card.id}/` : "");
+      const content = `<img class="rating-source-icon ${source}" src="${RATING_FAVICONS[source]}" alt="${label}" width="16" height="16" onerror="this.hidden=true"><span>${number.toFixed(1)}</span>`;
+      return href ? `<a class="kp-badge" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${label}: ${escapeHtml(card.title || "")}, ${number.toFixed(1)}">${content}</a>` : `<span class="kp-badge" title="${label}">${content}</span>`;
+    }
+
+    function readFiltersFromPanel() {
+      const selected = name => Array.from(filterPanelEl.querySelectorAll(`input[name="${name}"]:checked`)).map(input => input.value);
+      state.filters = {
+        types: selected("type"), genres: Array.from(genreFiltersEl.selectedOptions).map(option => option.value),
+        countries: Array.from(countryFiltersEl.selectedOptions).map(option => option.value),
+        yearFrom: getFilterValue("yearFrom"), yearTo: getFilterValue("yearTo"), kpFrom: getFilterValue("kpFrom"), kpTo: getFilterValue("kpTo"),
+        imdbFrom: getFilterValue("imdbFrom"), imdbTo: getFilterValue("imdbTo"), ageRating: getFilterValue("ageRating"), runtimeMax: getFilterValue("runtimeMax"),
+        seasonsMin: getFilterValue("seasonsMin"), watchStatus: getFilterValue("watchStatus"), favoriteOnly: Boolean(document.getElementById("favoriteOnly")?.checked)
+      };
+      return state.filters;
+    }
+
+    function populateFilterOptions(cards) {
+      const values = (key, known = []) => [...new Set([
+        ...known,
+        ...cards.flatMap(card => Array.isArray(card[key]) ? card[key] : [])
+      ])].filter(Boolean).sort((a,b) => a.localeCompare(b, "ru"));
+      const renderOptions = (select, options, selected) => {
+        if (select.dataset.optionsKey === options.join("|")) return;
+        select.dataset.optionsKey = options.join("|");
+        select.replaceChildren(...options.map(value => new Option(value ? value.charAt(0).toLocaleUpperCase("ru") + value.slice(1) : value, value, false, selected.includes(value))));
+        select.dispatchEvent(new Event("select:sync"));
+      };
+      renderOptions(genreFiltersEl, values("genres", state.filterOptions.genres), state.filters.genres);
+      renderOptions(countryFiltersEl, values("countries", state.filterOptions.countries), state.filters.countries);
+      if (randomizerGenresEl && state.filterOptions.genres.length) {
+        const selected = Array.from(randomizerGenresEl.selectedOptions).map(option => option.value);
+        randomizerGenresEl.replaceChildren(...state.filterOptions.genres.map(value => new Option(value.charAt(0).toLocaleUpperCase("ru") + value.slice(1), value, false, selected.includes(value))));
+        randomizerGenresEl.dispatchEvent(new Event("select:sync"));
+      }
+      if (randomizerCountryEl && state.filterOptions.countries.length) {
+        const selected = randomizerCountryEl.value;
+        randomizerCountryEl.replaceChildren(
+          new Option("Отечественные", "domestic", false, selected === "domestic"),
+          new Option("Зарубежные", "foreign", false, selected === "foreign"),
+          new Option("Любая страна", "", false, !selected),
+          ...state.filterOptions.countries.map(value => new Option(value.charAt(0).toLocaleUpperCase("ru") + value.slice(1), value, false, selected === value))
+        );
+        randomizerCountryEl.dispatchEvent(new Event("select:sync"));
+      }
+    }
+
+    let filterOptionsRequest;
+    function loadFilterOptions() {
+      if (state.filterOptions.genres.length) { populateFilterOptions([]); return Promise.resolve(); }
+      if (filterOptionsRequest) return filterOptionsRequest;
+      [genreFiltersEl, countryFiltersEl, randomizerGenresEl, randomizerCountryEl].forEach(select => { select.disabled = true; select.movieSelect?.update(); });
+      filterOptionsRequest = kinopoiskRequest("/catalog/filters").then(options => {
+        state.filterOptions = { genres: (options.genres || []).map(item => item.genre), countries: (options.countries || []).map(item => item.country) };
+        [genreFiltersEl, countryFiltersEl, randomizerGenresEl, randomizerCountryEl].forEach(select => { select.disabled = false; });
+        populateFilterOptions([]);
+      }).catch(() => {
+        [genreFiltersEl, countryFiltersEl, randomizerGenresEl, randomizerCountryEl].forEach(select => { select.dataset.placeholder = "Не удалось загрузить — откройте снова"; select.movieSelect?.update(); });
+      }).finally(() => { filterOptionsRequest = null; });
+      return filterOptionsRequest;
+    }
+
+    function filterCount(filters = state.filters) {
+      return filters.types.length + filters.genres.length + filters.countries.length + ["yearFrom","yearTo","kpFrom","kpTo","imdbFrom","imdbTo","ageRating","runtimeMax","seasonsMin"].filter(key => filters[key] !== "").length + (filters.watchStatus !== "all" ? 1 : 0) + (filters.favoriteOnly ? 1 : 0);
+    }
+
+    function matchesLibraryFilters(card) {
+      const f = state.filters;
+      return (f.watchStatus === "all" || cardStatus(card) === f.watchStatus)
+        && (!f.favoriteOnly || hasMovieInLibrary("favorites", card));
+    }
+
+    function cardStatus(card) {
+      const key = movieLibraryKey(card);
+      if (state.library.watched?.[key]) return "watched";
+      return "unwatched";
+    }
+
+    function matchesMovieFilters(card) {
+      const f = state.filters;
+      if (f.types.length && !f.types.includes(card.mediaType)) return false;
+      if (f.genres.length && !f.genres.some(value => card.genres.includes(value))) return false;
+      if (f.countries.length && !f.countries.some(value => card.countries.includes(value))) return false;
+      const year = Number(card.year), kp = Number(card.kpRating), imdb = Number(card.imdbRating);
+      if (f.yearFrom && (!year || year < Number(f.yearFrom))) return false;
+      if (f.yearTo && (!year || year > Number(f.yearTo))) return false;
+      if (f.kpFrom && (!kp || kp < Number(f.kpFrom))) return false;
+      if (f.kpTo && (!kp || kp > Number(f.kpTo))) return false;
+      if (f.imdbFrom && (!imdb || imdb < Number(f.imdbFrom))) return false;
+      if (f.imdbTo && (!imdb || imdb > Number(f.imdbTo))) return false;
+      if (f.ageRating && (!card.ageRating || card.ageRating !== Number(f.ageRating))) return false;
+      if (f.runtimeMax && card.runtime && card.runtime > Number(f.runtimeMax)) return false;
+      if (f.seasonsMin && (!card.seasons || card.seasons < Number(f.seasonsMin))) return false;
+      if (f.watchStatus !== "all" && cardStatus(card) !== f.watchStatus) return false;
+      if (f.favoriteOnly && !hasMovieInLibrary("favorites", card)) return false;
+      return true;
+    }
+
+    function buildCatalogParams(page) {
+      const f = state.filters;
+      const types = state.mode === "multi" ? f.types : [state.mode].filter(type => !f.types.length || f.types.includes(type));
+      const ids = kind => Object.values(state.library[kind] || {}).map(card => card.id).join(",");
+      return { ...f, types, page, keyword: state.lastQuery, sort: "relevance",
+        favoriteIds: ids("favorites"), watchedIds: ids("watched"), progressIds: ids("progress") };
+
+    }
+
+    function getCollectionCards() {
+      if (state.collection === "favorites") return Object.values(state.library.favorites || {}).map(item => normalizeKinopoiskCard({ ...item, filmId: item.id, type: item.mediaType === "tv" ? "TV_SERIES" : "FILM", posterUrl: item.poster, nameRu: item.title, nameOriginal: item.originalTitle, year: item.year, rating: item.kpRating })).filter(Boolean);
+      if (state.collection === "watched") return Object.values(state.library.watched || {}).map(item => normalizeKinopoiskCard({ ...item, filmId: item.id, type: item.mediaType === "tv" ? "TV_SERIES" : "FILM", posterUrl: item.poster, nameRu: item.title, nameOriginal: item.originalTitle, year: item.year, rating: item.kpRating })).filter(Boolean);
+      return state.rawCards;
+    }
+
+    function renderActiveCollection() {
+      const source = getCollectionCards();
+      const cards = state.collection === "catalog"
+        ? source.filter(card => matchesLibraryFilters(card))
+        : source.filter(card => matchesMovieFilters(card) && (!state.lastQuery || `${card.title} ${card.originalTitle}`.toLocaleLowerCase("ru").includes(state.lastQuery.toLocaleLowerCase("ru"))));
+      state.filteredCards = cards;
+      resultsEl.innerHTML = "";
+      resultsTopThreshold = Infinity;
+      updateResultsTopButton();
+      if (!cards.length) {
+        const emptyTitle = state.collection === "favorites" ? "Ваше избранное" : state.collection === "watched" ? "История просмотра" : "Ничего не найдено";
+        const emptyText = state.collection === "favorites" ? "Сохраняйте фильмы и сериалы, которые хочется посмотреть. Они появятся здесь." : state.collection === "watched" ? "Отмеченные произведения будут собраны здесь — ваша личная история кино." : "Попробуйте изменить запрос или ослабить фильтры.";
+        resultsEl.innerHTML = `<div class="results-empty" data-state="${state.collection}"><strong>${emptyTitle}</strong><p>${emptyText}</p></div>`;
+      } else appendCards(cards);
+
+      const resultCount = state.collection === "catalog" ? state.totalResults : cards.length;
+      document.getElementById("catalogSummary").textContent = state.collection === "catalog" ? (state.lastQuery || filterCount() ? `Найдено: ${resultCount.toLocaleString("ru-RU")}${state.totalExact === false ? "+" : ""}` : "") : `В коллекции: ${cards.length}`;
+
+      renderActiveFilterChips();
+    }
+
+    function setRandomizerOpen(open, restoreFocus = true, resume = false) {
+      window.MovieSelect.closeAll();
+      if (!open) {
+        randomizerState.scrollTop = randomizerDialogEl.scrollTop;
+        clearTimeout(randomizerWarmTimer);
+        randomizerState.sequence++;
+        for (const entry of randomizerBatches.values()) if (entry.pending) entry.controller.abort();
+        randomizerState.animation?.cancel();
+        randomizerState.busy = false;
+        randomizerSubmitEl.disabled = false;
+        randomizerSubmitEl.classList.remove("is-loading");
+        randomizerResultEl.setAttribute("aria-busy", "false");
+        if (randomizerState.result) renderRandomizerCard(randomizerState.result);
+      }
+      randomizerDialogEl.hidden = !open;
+      randomizerBackdropEl.hidden = !open;
+      document.querySelector(".page").inert = open;
+      document.body.classList.toggle("randomizer-open", open);
+      resultsEl.inert = open;
+      if (open && resume && randomizerState.result) renderRandomizerCard(randomizerState.result);
+      if (open) randomizerDialogEl.scrollTop = resume ? randomizerState.scrollTop : 0;
+      if (open) {
+        loadFilterOptions();
+        if (!randomizerDialogEl.dataset.initialized) {
+          randomizerDialogEl.querySelector("details").open = !matchMedia("(max-width:760px)").matches;
+          randomizerDialogEl.dataset.initialized = "true";
+        }
+        const focusTarget = resume ? randomizerResultEl.querySelector(".randomizer-details") || randomizerCloseBtnEl : randomizerCloseBtnEl;
+        focusTarget.focus({ preventScroll: true });
+        if (!randomizerState.result) pickRandomFilm();
+      } else if (restoreFocus) randomizerOpenBtnEl.focus({ preventScroll: true });
+    }
+
+    function randomizerParams(page = 1) {
+      const params = { page, types: (state.filters.types || []).slice(), sort: "relevance" };
+      for (const [id, key] of [["randomMinRating", "kpFrom"], ["randomMaxRating", "kpTo"], ["randomYearFrom", "yearFrom"], ["randomYearTo", "yearTo"]]) {
+        const value = getFilterValue(id);
+        if (value) params[key] = value;
+      }
+      const genres = Array.from(randomizerGenresEl.selectedOptions).map(option => option.value);
+      if (genres.length) params.genres = genres;
+      const country = randomizerCountryEl.value;
+      if (country === "domestic" || country === "foreign") params.countryGroup = country;
+      else if (country) params.countries = [country];
+      if (document.getElementById("randomExcludeWatched").checked) {
+        params.watchStatus = "unwatched";
+        params.watchedIds = Object.values(state.library.watched || {}).map(item => item.id).join(",");
+      }
+      return params;
+    }
+
+    const randomizerBatches = new Map();
+    let randomizerWarmTimer;
+    function prepareRandomizerBatch(params, refresh = false) {
+      const key = JSON.stringify(params);
+      const old = randomizerBatches.get(key);
+      if (!refresh && old && Date.now() - old.at < 120000) return old.promise;
+      const controller = new AbortController();
+      const entry = { at: Date.now(), controller, pending: true };
+      entry.promise = kinopoiskRequest("/catalog/random", params, { signal: controller.signal }).then(data => {
+        entry.pending = false;
+        return (data.items || []).map(normalizeKinopoiskCard).filter(Boolean);
+      }).catch(error => {
+        if (randomizerBatches.get(key) === entry) randomizerBatches.delete(key);
+        throw error;
+      });
+      randomizerBatches.set(key, entry);
+      if (randomizerBatches.size > 8) randomizerBatches.delete(randomizerBatches.keys().next().value);
+      return entry.promise;
+    }
+    function warmRandomizerBatch() {
+      clearTimeout(randomizerWarmTimer);
+      if (randomizerDialogEl.hidden) return;
+      randomizerWarmTimer = setTimeout(() => {
+        if (!randomizerDialogEl.hidden && randomizerFormEl.checkValidity()) prepareRandomizerBatch(randomizerParams()).catch(() => {});
+      }, 250);
+    }
+
+    function randomizerPoster(card) {
+      return `<img src="${escapeHtml(card.poster || card.backdrop || buildPosterFallback(card.title))}" alt="" width="240" height="360" decoding="async">`;
+    }
+
+    function randomizerRatings(card) {
+      const kp = ratingBadge("kp", card.kpRating, card);
+      const missingKp = `<span class="kp-badge randomizer-rating-empty" title="У фильма пока нет рейтинга Кинопоиска" aria-label="Кинопоиск: пока нет рейтинга"><img class="rating-source-icon kp" src="${RATING_FAVICONS.kp}" alt="" width="16" height="16" onerror="this.hidden=true"><span>—</span></span>`;
+      return `${kp || missingKp}${ratingBadge("imdb", card.imdbRating, card)}`;
+    }
+
+    const randomizerRatingRequests = new Map();
+    async function enrichRandomizerRating(card, sequence) {
+      if (Number(card.kpRating) > 0) return;
+      const key = String(card.id);
+      if (!randomizerRatingRequests.has(key)) {
+        randomizerRatingRequests.set(key, kinopoiskRequest(`/films/${card.id}`).catch(() => null));
+        if (randomizerRatingRequests.size > 80) randomizerRatingRequests.delete(randomizerRatingRequests.keys().next().value);
+      }
+      const details = await randomizerRatingRequests.get(key);
+      if (!details) return;
+      const ratings = normalizeKinopoiskCard(details);
+      card.kpRating = ratings.kpRating || card.kpRating;
+      card.imdbRating = ratings.imdbRating || card.imdbRating;
+      card.imdbId = ratings.imdbId || card.imdbId;
+      if (sequence !== randomizerState.sequence || randomizerState.result !== card || randomizerDialogEl.hidden) return;
+      const container = randomizerResultEl.querySelector(".randomizer-ratings");
+      if (container) container.innerHTML = randomizerRatings(card);
+    }
+
+    function renderRandomizerCard(card, reelCards = [card]) {
+      const meta = [mediaLabel(card.mediaType), card.year !== "----" ? card.year : "", card.countries?.slice(0, 2).join(", ")].filter(Boolean);
+      randomizerResultEl.innerHTML = `<article class="randomizer-card">
+        <button type="button" class="randomizer-poster-button" aria-label="Открыть ${escapeHtml(card.title)}"><span class="randomizer-reel" aria-hidden="true">${reelCards.map(item => `<span class="randomizer-reel-item">${randomizerPoster(item)}</span>`).join("")}</span></button>
+        <div class="randomizer-card-copy"><h3>${escapeHtml(card.title)}</h3>
+        <div class="randomizer-meta">${meta.map(value => `<span>${escapeHtml(value)}</span>`).join("")}</div>
+        <p>${escapeHtml(card.genres?.slice(0, 2).join(", ") || "")}</p>
+        <div class="randomizer-ratings">${randomizerRatings(card)}</div>
+        <button type="button" class="randomizer-details">Открыть фильм <span aria-hidden="true">↗</span></button></div></article>`;
+      randomizerResultEl.classList.add("is-visible");
+      randomizerResultEl.querySelectorAll("img").forEach(image => {
+        image.addEventListener("error", () => { image.src = buildPosterFallback(card.title); }, { once: true });
+      });
+    }
+
+    async function animateRandomizer(card, pool, sequence) {
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const poster = new Image();
+      poster.src = card.poster || card.backdrop || buildPosterFallback(card.title);
+      let timer;
+      await Promise.race([poster.decode().catch(() => {}), new Promise(resolve => { timer = setTimeout(resolve, 180); })]);
+      clearTimeout(timer);
+      if (sequence !== randomizerState.sequence) return;
+      // Only six posters move, on one composited strip. Nothing animates while idle.
+      const faces = reduced ? [card] : Array.from({ length: 5 }, (_, i) => pool[(i + Math.floor(Math.random() * pool.length)) % pool.length]).concat(card);
+      renderRandomizerCard(card, faces);
+      if (reduced) return;
+      randomizerResultEl.classList.add("is-rolling");
+      const reel = randomizerResultEl.querySelector(".randomizer-reel");
+      const height = reel.firstElementChild.getBoundingClientRect().height;
+      const animation = reel.animate([
+        { transform: "translateY(0)" },
+        { transform: `translateY(-${height * (faces.length - 1)}px)` }
+      ], { duration: 520, easing: "cubic-bezier(.12,.76,.18,1)", fill: "forwards" });
+      randomizerState.animation = animation;
+      try {
+        await animation.finished;
+        // Keep the winning image node, so the final frame doesn't get replaced.
+        reel.replaceChildren(reel.lastElementChild);
+        animation.cancel();
+      } catch (_) { /* Closing the dialog cancels the short transition. */ }
+      if (randomizerState.animation === animation) randomizerState.animation = null;
+      randomizerResultEl.classList.remove("is-rolling");
+    }
+
+    async function pickRandomFilm() {
+      if (randomizerState.busy || randomizerDialogEl.hidden || !randomizerFormEl.reportValidity()) return;
+      const from = getFilterValue("randomYearFrom"), to = getFilterValue("randomYearTo");
+      if (from && to && Number(from) > Number(to)) {
+        randomizerHintEl.textContent = "Год начала не должен быть больше года окончания.";
+        return;
+      }
+      const lowRating = getFilterValue("randomMinRating"), highRating = getFilterValue("randomMaxRating");
+      if (lowRating && highRating && Number(lowRating) > Number(highRating)) {
+        randomizerHintEl.textContent = "Нижняя граница рейтинга не должна быть больше верхней.";
+        return;
+      }
+      const sequence = ++randomizerState.sequence;
+      randomizerState.busy = true;
+      randomizerSubmitEl.disabled = true;
+      randomizerSubmitEl.classList.add("is-loading");
+      randomizerResultEl.setAttribute("aria-busy", "true");
+      randomizerHintEl.textContent = "Подбираем…";
+      if (!randomizerState.result) {
+        randomizerResultEl.innerHTML = '<div class="randomizer-preview-empty" aria-hidden="true"><span></span></div>';
+        randomizerResultEl.classList.add("is-visible");
+      }
+      try {
+        const params = randomizerParams();
+        const key = JSON.stringify(params);
+        if (key !== randomizerState.poolKey) {
+          randomizerState.pool = [];
+          randomizerState.poolKey = key;
+          randomizerState.used.clear();
+        }
+        let available = randomizerState.pool.filter(item => !randomizerState.used.has(movieLibraryKey(item)));
+        if (!available.length) {
+          const cards = await prepareRandomizerBatch(params, randomizerState.pool.length > 0);
+          if (sequence !== randomizerState.sequence) return;
+          randomizerState.pool = [...new Map(randomizerState.pool.concat(cards).map(item => [movieLibraryKey(item), item])).values()].slice(-160);
+          available = randomizerState.pool.filter(item => !randomizerState.used.has(movieLibraryKey(item)));
+        }
+        if (!available.length && randomizerState.pool.length) {
+          randomizerState.used.clear();
+          available = randomizerState.pool.filter(item => item.id !== randomizerState.result?.id);
+          if (!available.length) available = randomizerState.pool;
+        }
+        const card = available[Math.floor(Math.random() * available.length)];
+        if (!card) {
+          randomizerState.result = null;
+          randomizerResultEl.innerHTML = '<div class="randomizer-empty"><strong>Ничего не нашлось</strong><p>Попробуйте другой жанр, страну или диапазон лет.</p></div>';
+          randomizerHintEl.textContent = "";
+          return;
+        }
+        randomizerState.result = card;
+        randomizerState.used.add(movieLibraryKey(card));
+        enrichRandomizerRating(card, sequence);
+        await animateRandomizer(card, randomizerState.pool, sequence);
+        if (sequence !== randomizerState.sequence) return;
+        randomizerSubmitEl.querySelector("span").textContent = "Ещё вариант";
+        randomizerHintEl.textContent = "";
+      } catch (error) {
+        if (sequence !== randomizerState.sequence || error.name === "AbortError") return;
+        randomizerHintEl.textContent = "Не удалось загрузить фильмы. Попробуйте ещё раз.";
+        if (!randomizerState.result) randomizerResultEl.innerHTML = '<div class="randomizer-empty"><strong>Попробуем ещё раз?</strong><p>Каталог временно недоступен.</p></div>';
+      } finally {
+        if (sequence === randomizerState.sequence) {
+          randomizerState.busy = false;
+          randomizerSubmitEl.disabled = false;
+          randomizerSubmitEl.classList.remove("is-loading");
+          randomizerResultEl.setAttribute("aria-busy", "false");
+        }
+      }
+    }
+
+    function renderActiveFilterChips() {
+      const labels = [];
+      const f = state.filters;
+      f.types.forEach(value => labels.push({ key: "types", value, label: value === "tv" ? "Сериалы" : "Фильмы" }));
+      f.genres.forEach(value => labels.push({ key: "genres", value, label: value }));
+      f.countries.forEach(value => labels.push({ key: "countries", value, label: value }));
+      [["yearFrom", `Год от ${f.yearFrom}`], ["yearTo", `Год до ${f.yearTo}`], ["kpFrom", `Кинопоиск от ${f.kpFrom}`], ["kpTo", `Кинопоиск до ${f.kpTo}`], ["imdbFrom", `IMDb от ${f.imdbFrom}`], ["imdbTo", `IMDb до ${f.imdbTo}`], ["ageRating", `${f.ageRating}+`], ["runtimeMax", `До ${f.runtimeMax} мин`], ["seasonsMin", `Сезонов от ${f.seasonsMin}`], ["watchStatus", f.watchStatus === "watched" ? "Просмотрено" : "В процессе"], ["favoriteOnly", "Избранное"]].forEach(([key, label]) => { if (f[key] && f[key] !== "all" && f[key] !== false) labels.push({ key, value: f[key], label }); });
+      activeFiltersEl.innerHTML = labels.map((item, index) => `<span class="filter-chip">${escapeHtml(item.label)}<button type="button" data-chip-index="${index}" aria-label="Удалить фильтр">×</button></span>`).join("");
+      activeFiltersEl.classList.toggle("visible", labels.length > 0);
+      filterCountEl.textContent = String(labels.length);
+      filterCountEl.classList.toggle("visible", labels.length > 0);
+    }
+
+    function syncFilterPanel() {
+      const f = state.filters;
+      filterPanelEl.querySelectorAll('input[name="type"]').forEach(input => { input.checked = f.types.includes(input.value); });
+      ["yearFrom","yearTo","kpFrom","kpTo","imdbFrom","imdbTo","ageRating","runtimeMax","seasonsMin","watchStatus"].forEach(id => { const el = document.getElementById(id); if (el) { el.value = f[id]; el.dispatchEvent(new Event("select:sync")); } });
+      [genreFiltersEl, countryFiltersEl].forEach(select => {
+        const selected = select === genreFiltersEl ? f.genres : f.countries;
+        Array.from(select.options).forEach(option => { option.selected = selected.includes(option.value); });
+        select.dispatchEvent(new Event("select:sync"));
+      });
+      const favorite = document.getElementById("favoriteOnly"); if (favorite) favorite.checked = f.favoriteOnly;
+    }
+
+    function setFilterPanelOpen(open) {
+      document.querySelector(".page").inert = open;
+      filterPanelEl.classList.toggle("is-open", open); filterBackdropEl.classList.toggle("is-open", open); filterPanelEl.setAttribute("aria-hidden", String(!open)); filterPanelEl.inert = !open; filterToggleBtnEl.setAttribute("aria-expanded", String(open));
+      if (!open) window.MovieSelect.closeAll();
+      if (open) { syncFilterPanel(); loadFilterOptions(); filterCloseBtnEl.focus({ preventScroll: true }); } else filterToggleBtnEl.focus({ preventScroll: true });
+    }
+
+    function renderFullscreenFilm(card) {
+      if (!card) return;
+      const favorite = hasMovieInLibrary("favorites", card);
+      const watched = hasMovieInLibrary("watched", card);
+      fullscreenTitleEl.textContent = card.title || "Без названия";
+      fullscreenOriginalEl.textContent = card.originalTitle && card.originalTitle !== card.title ? card.originalTitle : "";
+      const posterSource = filmArtwork?.poster || card.poster || card.backdrop || buildPosterFallback(card.title);
+      if (fullscreenPosterEl.getAttribute("src") !== posterSource) fullscreenPosterEl.src = posterSource;
+      fullscreenPosterEl.alt = card.title || "";
+      const backdropSource = filmArtwork?.backdrop || card.backdrop || card.poster || "";
+      if (backdropSource && fullscreenBackdropEl.getAttribute("src") !== backdropSource) fullscreenBackdropEl.src = backdropSource;
+      if (!backdropSource) fullscreenBackdropEl.removeAttribute("src");
+      fullscreenPosterEl.onerror = () => { fullscreenPosterEl.onerror = null; fullscreenPosterEl.src = buildPosterFallback(card.title); };
+      fullscreenBackdropEl.onerror = () => { fullscreenBackdropEl.removeAttribute("src"); };
+      fullscreenMetaEl.innerHTML = [mediaLabel(card.mediaType), card.year !== "----" ? card.year : "", card.countries?.slice(0, 2).join(", "), card.genres?.slice(0, 3).join(", "), card.runtime ? `${card.runtime} мин` : "", card.seasons ? `${card.seasons} сез.` : "", card.ageRating ? `${card.ageRating}+` : "", ratingBadge("kp", card.kpRating, card), ratingBadge("imdb", card.imdbRating, card)].filter(Boolean).map(value => `<span class="hero-chip">${typeof value === "string" && value.includes("rating-source-icon") ? value : escapeHtml(value)}</span>`).join("");
+      fullscreenDescriptionEl.textContent = card.details?.overview || card.overview || "Описание отсутствует.";
+      fullscreenExtraEl.innerHTML = card.mediaType === "tv" && card.details?.seasons ? `<div>Сезоны и эпизоды<strong>${card.details.seasons} сез. · ${card.details.episodes || "—"} эп.</strong></div>` : "";
+      renderFilmPeople(card);
+      favoriteBtnEl.classList.toggle("active", favorite); favoriteBtnEl.textContent = favorite ? "♥ В избранном" : "♡ В избранное";
+      if (watchedBtnEl) {
+        watchedBtnEl.classList.toggle("active", watched);
+        watchedBtnEl.textContent = watched ? "✓ Просмотрено" : "○ В просмотренное";
+        watchedBtnEl.setAttribute("aria-pressed", String(watched));
+        watchedBtnEl.setAttribute("aria-label", watched ? "Убрать из просмотренного" : "Добавить в просмотренное");
+        watchedBtnEl.title = watched ? "Убрать из просмотренного" : "Добавить в просмотренное";
+      }
+    }
+
+    function renderFilmPeople(card) {
+      const groups = [["Режиссура", card.details?.directorPeople || [], "directors"], ["В ролях", card.details?.castPeople || [], "cast"]];
+      const key = JSON.stringify([card.id, groups]);
+      if (filmPeopleEl.dataset.contentKey === key) return;
+      filmPeopleEl.dataset.contentKey = key;
+      filmPeopleEl.innerHTML = groups.filter(([,people]) => people.length).map(([label, people, kind]) => `<section class="people-group" data-people="${kind}"><h2 class="people-heading">${label}<span>${people.length}</span></h2><div class="people-rail" tabindex="0" role="region" aria-label="${label}. Прокрутите для просмотра всех участников">${people.map(person => {
+        const initials = person.name.split(/\s+/).filter(Boolean).slice(0,2).map(name => name[0]).join("");
+        return `<article class="person-card"><div class="person-photo"><span class="person-initials" aria-hidden="true">${escapeHtml(initials)}</span>${person.photo ? `<img src="${escapeHtml(person.photo)}" alt="" width="160" height="200" loading="lazy" decoding="async">` : ""}</div><h3 class="person-name">${escapeHtml(person.name)}</h3><p class="person-role" title="${escapeHtml(person.role || label)}">${escapeHtml(person.role || label)}</p></article>`;
+      }).join("")}</div></section>`).join("");
+      filmPeopleEl.querySelectorAll("img").forEach(img => img.addEventListener("error", () => img.remove(), { once:true }));
+      filmPeopleEl.querySelectorAll(".people-rail").forEach(rail => rail.addEventListener("keydown", event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault(); event.stopPropagation();
+        const left = event.key === "Home" ? 0 : event.key === "End" ? rail.scrollWidth : rail.scrollLeft + (event.key === "ArrowLeft" ? -1 : 1) * (rail.firstElementChild?.offsetWidth + 14 || 114);
+        rail.scrollTo({ left, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+      }));
+      filmPeopleEl.querySelectorAll(".people-rail").forEach(rail => rail.addEventListener("wheel", event => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || rail.scrollWidth <= rail.clientWidth) return;
+        rail.scrollLeft += event.deltaY;
+        event.preventDefault();
+      }, { passive: false, capture: true }));
+    }
+
+    let filmOrigin = null;
+    let filmArtwork = null;
+    let posterFlight = null;
+    let detailSelection = 0;
+    let playerRequestSeq = 0;
+    const PLAY_BUTTON_HTML = fullscreenPlayBtnEl.innerHTML;
+    function animatePoster(from, to, source, onFinish) {
+      if (!from || !to || !from.width || !to.width || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        onFinish?.();
+        return;
+      }
+      posterFlight?.remove();
+      const clone = new Image(); clone.src = source; clone.className = "flying-poster";
+      Object.assign(clone.style, {left:`${from.left}px`,top:`${from.top}px`,width:`${from.width}px`,height:`${from.height}px`});
+      document.body.append(clone); posterFlight = clone;
+      const animation = clone.animate([{transform:"translate(0,0) scale(1,1)"},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width},${to.height/from.height})`}], {duration:560,easing:"cubic-bezier(.16,1,.3,1)",fill:"forwards"});
+      animation.finished.then(() => {
+        if (posterFlight !== clone) return;
+        onFinish?.();
+        clone.remove(); posterFlight = null;
+      }).catch(() => { clone.remove(); });
+    }
+    function openFullscreenFilm(card, origin) {
+      playerRequestSeq++;
+      fullscreenPlayBtnEl.disabled = false;
+      fullscreenPlayBtnEl.innerHTML = PLAY_BUTTON_HTML;
+      fullscreenFilmEl.classList.remove("is-playing");
+      document.getElementById("fullscreenInfo").inert = false;
+      state.selectedCard = card; filmOrigin = origin;
+      const originPoster = origin?.querySelector(".movie-poster");
+      filmArtwork = { poster: originPoster?.currentSrc || originPoster?.src || card.poster || buildPosterFallback(card.title), backdrop: card.backdrop || card.poster || "" };
+      renderFullscreenFilm(card);
+      fullscreenFilmEl.scrollTop = 0;
+      fullscreenFilmEl.classList.add("is-open");
+      fullscreenFilmEl.setAttribute("aria-hidden", "false");
+      fullscreenFilmEl.inert = false;
+      document.querySelector(".page").inert = true;
+      document.body.classList.add("film-fullscreen-open");
+      const source = origin?.querySelector(".movie-poster");
+      if (source) {
+        fullscreenPosterEl.style.opacity = "0";
+        animatePoster(source.getBoundingClientRect(), fullscreenPosterEl.getBoundingClientRect(), source.currentSrc || source.src, () => { fullscreenPosterEl.style.opacity = "1"; });
+      } else fullscreenPosterEl.style.opacity = "1";
+      requestAnimationFrame(() => fullscreenCloseBtnEl.focus({ preventScroll: true }));
+    }
+    function closeFullscreenFilm() {
+      if (!fullscreenFilmEl.classList.contains("is-open")) return;
+      detailSelection++;
+      playerRequestSeq++;
+      const source = filmOrigin?.querySelector(".movie-poster");
+      if (source?.isConnected) {
+        const target = source.getBoundingClientRect();
+        if (target.bottom > 0 && target.top < innerHeight) {
+          const from = posterFlight?.getBoundingClientRect() || fullscreenPosterEl.getBoundingClientRect();
+          animatePoster(from,target,fullscreenPosterEl.src);
+        }
+      }
+      fullscreenPosterEl.style.opacity = "0";
+      fullscreenFilmEl.classList.remove("is-open"); fullscreenFilmEl.setAttribute("aria-hidden", "true"); fullscreenFilmEl.inert = true;
+      document.querySelector(".page").inert = false;
+      document.body.classList.remove("film-fullscreen-open");
+      if (!state.playerDetached) { playerHostEl.replaceChildren(); state.selectedSourceUrl=""; }
+      const playerPanel = document.querySelector(".player-panel");
+      if (playerPanel?.parentElement?.id === "filmPlayer") layoutRootEl.append(playerPanel);
+      if (filmOrigin?.isConnected) filmOrigin.focus({preventScroll:true});
+      if (randomizerState.returnAfterFilm) {
+        randomizerState.returnAfterFilm = false;
+        setRandomizerOpen(true, false, true);
+      }
     }
 
     function setHero(card) {
@@ -2367,6 +3543,10 @@
       heroMetaEl.innerHTML = chips.map((chip) => `<span class="hero-chip">${escapeHtml(chip)}</span>`).join("");
       heroTextEl.textContent = textParts.join(" ");
 
+      heroBackdropEl.onerror = () => {
+        heroBackdropEl.removeAttribute("src");
+        heroBackdropEl.style.opacity = "0";
+      };
       if (card.backdrop) {
         heroBackdropEl.src = card.backdrop;
         heroBackdropEl.style.opacity = "0.72";
@@ -2378,6 +3558,8 @@
 
     function renderSkeletons(count = 10) {
       resultsEl.innerHTML = "";
+      resultsTopThreshold = Infinity;
+      updateResultsTopButton();
       for (let i = 0; i < count; i += 1) {
         const sk = document.createElement("div");
         sk.className = "skeleton";
@@ -2387,6 +3569,8 @@
 
     function renderCards(cards) {
       resultsEl.innerHTML = "";
+      resultsTopThreshold = Infinity;
+      updateResultsTopButton();
       appendCards(cards);
     }
 
@@ -2400,28 +3584,43 @@
         cardEl.dataset.id = String(card.id);
         cardEl.dataset.type = card.mediaType;
         cardEl.tabIndex = 0;
-        cardEl.setAttribute("role", "button");
+        cardEl.setAttribute("role", "group");
         cardEl.setAttribute("aria-label", `${card.title} (${card.year})`);
 
         const imgSrc = card.poster || card.backdrop || buildPosterFallback(card.title);
-        warmPosterImage(imgSrc);
+
         const kpClass = getKpRatingClass(card.kpRating);
         const kpText = formatKpRating(card.kpRating);
+        const hasRating = Number.isFinite(Number(card.kpRating)) && Number(card.kpRating) > 0;
+        const favorite = hasMovieInLibrary("favorites", card);
+        const watched = hasMovieInLibrary("watched", card);
         cardEl.innerHTML = `
+          <button class="card-open" type="button" tabindex="-1" aria-label="Подробнее: ${escapeHtml(card.title)}"></button>
           <div class="movie-poster-wrap">
             <img class="movie-poster" src="${escapeHtml(imgSrc)}" alt="${escapeHtml(card.title)}" loading="lazy" />
+            <div class="card-corner-actions"><button class="card-icon-btn ${favorite ? "active" : ""}" type="button" data-card-action="favorite" aria-label="${favorite ? "Убрать из избранного" : "Добавить в избранное"}">${favorite ? "♥" : "♡"}</button><button class="card-icon-btn ${watched ? "active" : ""}" type="button" data-card-action="watched" aria-label="${watched ? "Убрать из просмотренного" : "Добавить в просмотренное"}" title="${watched ? "Убрать из просмотренного" : "Добавить в просмотренное"}">${watched ? "✓" : "○"}</button></div>
           </div>
           <div class="movie-meta">
             <h4 class="movie-title">${escapeHtml(card.title)}</h4>
-            <div class="movie-sub">
-              <span>${escapeHtml(card.year)} · <span class="kp-rating ${kpClass}">КП ${escapeHtml(kpText)}</span></span>
-              <span class="kind-pill">${escapeHtml(mediaLabel(card.mediaType))}</span>
-            </div>
+            <div class="movie-facts">${[card.year !== "----" ? card.year : "", card.countries?.slice(0, 1).join(", "), mediaLabel(card.mediaType)].filter(Boolean).map(value => `<span>${escapeHtml(value)}</span>`).join("")}</div>
+            <div class="movie-genres">${escapeHtml((card.genres || []).slice(0, 2).join(", "))}</div>
+            <div class="movie-ratings">${ratingBadge("kp", card.kpRating, card)}${ratingBadge("imdb", card.imdbRating, card)}</div>
           </div>
         `;
 
-        cardEl.addEventListener("click", () => onSelectCard(card, cardEl));
+        const posterEl = cardEl.querySelector(".movie-poster");
+        posterEl.addEventListener("error", () => {
+          if (posterEl.dataset.fallbackApplied === "true") return;
+          posterEl.dataset.fallbackApplied = "true";
+          posterEl.src = buildPosterFallback(card.title);
+          posterEl.classList.add("is-fallback");
+        }, { once: true });
+
+        cardEl.querySelector('[data-card-action="favorite"]').addEventListener("click", (event) => { event.stopPropagation(); toggleMovieLibrary("favorites", card); });
+        cardEl.querySelector('[data-card-action="watched"]').addEventListener("click", (event) => { event.stopPropagation(); toggleMovieLibrary("watched", card); });
+        cardEl.addEventListener("click", event => { if (!event.target.closest("a, [data-card-action]")) onSelectCard(card, cardEl); });
         cardEl.addEventListener("keydown", (event) => {
+          if (event.target !== cardEl) return;
           const key = getTvEventKey(event);
           if (!TV_SELECT_KEYS.has(key)) return;
           event.preventDefault();
@@ -2429,17 +3628,15 @@
         });
         resultsEl.appendChild(cardEl);
       });
+      requestAnimationFrame(() => updateResultsTopButton(true));
     }
 
     function hasMorePages() {
-      const total = Number(state.pagesTotal || 0);
-      const loaded = Number(state.pagesLoaded || 0);
-      if (!total) return false;
-      return loaded < total;
+      return state.hasMore;
     }
 
     async function loadNextPage() {
-      if (state.loadingMore || !hasMorePages()) return;
+      if (document.body.classList.contains("randomizer-open") || state.collection !== "catalog" || state.loadingMore || !hasMorePages()) return;
       const nextPage = state.pagesLoaded + 1;
       const seq = state.searchSeq;
       state.loadingMore = true;
@@ -2447,8 +3644,12 @@
       try {
         const cards = await fetchCardsPage(state.lastQuery, nextPage, seq);
         if (seq !== state.searchSeq) return;
-        appendCards(cards);
+        const previousKeys = new Set(state.rawCards.map(movieLibraryKey));
+        state.rawCards = [...new Map(state.rawCards.concat(cards).map(card => [movieLibraryKey(card), card])).values()];
         state.pagesLoaded = nextPage;
+        const added = cards.filter(card => !previousKeys.has(movieLibraryKey(card)));
+        state.filteredCards.push(...added);
+        appendCards(added);
       } catch (error) {
         console.warn("Load next page failed:", error);
       } finally {
@@ -2457,35 +3658,25 @@
     }
 
     async function fetchCardsPage(query, page, seq) {
-      const trimmed = String(query || "").trim();
-      const params = { page };
-
-      if (trimmed) {
-        params.keyword = trimmed;
-        const data = await kinopoiskRequest("/films/search-by-keyword", params);
-        if (seq !== state.searchSeq) return [];
-        const pagesCount = Number(data?.pagesCount || 0);
-        state.pagesTotal = Number.isFinite(pagesCount) && pagesCount > 0 ? pagesCount : state.pagesLoaded;
-        const cards = (data.films || [])
-          .filter((item) => state.mode === "multi" || (state.mode === "movie"
-            ? !String(item.type || "").includes("SERIES")
-            : String(item.type || "").includes("SERIES")))
-          .map((item) => normalizeKinopoiskCard(item));
-        return cards;
+      if (state.mode !== "multi" && state.filters.types.length && !state.filters.types.includes(state.mode)) {
+        state.pagesTotal = 0;
+        state.totalResults = 0;
+        return [];
       }
-
-      params.order = "NUM_VOTE";
-      params.type = state.mode === "movie" ? "FILM" : (state.mode === "tv" ? "TV_SERIES" : "ALL");
-      const data = await kinopoiskRequest("/films", params);
+      const params = buildCatalogParams(page);
+      params.keyword = String(query || "").trim();
+      const data = await kinopoiskRequest("/catalog", params);
       if (seq !== state.searchSeq) return [];
-      const pagesCount = Number(data?.totalPages || data?.pagesCount || 0);
-      state.pagesTotal = Number.isFinite(pagesCount) && pagesCount > 0 ? pagesCount : state.pagesLoaded;
-      return (data.items || []).map((item) => normalizeKinopoiskCard(item));
+      state.pagesTotal = Number(data.totalPages) || 0;
+      state.hasMore = typeof data.hasMore === "boolean" ? data.hasMore : page < state.pagesTotal;
+      state.totalExact = data.totalExact !== false;
+      state.totalResults = data.total == null ? page * 20 : Number(data.total) || 0;
+      return (data.items || []).map(normalizeKinopoiskCard);
     }
 
     function markActiveCard(target) {
       resultsEl.querySelectorAll(".movie-card.active").forEach((el) => el.classList.remove("active"));
-      target.classList.add("active");
+      target?.classList.add("active");
     }
 
     function providerLabel(providerId) {
@@ -2956,6 +4147,8 @@
         return;
       }
 
+      const requestSeq = ++playerRequestSeq;
+      const isCurrent = () => requestSeq === playerRequestSeq;
       const force = Boolean(options.force);
       const allowFallback = options.allowFallback !== false;
       const requestedProvider = isProviderId(options.providerId)
@@ -2968,6 +4161,7 @@
       let lastError = null;
 
       for (const providerId of attemptProviders) {
+        if (!isCurrent()) return;
         state.selectedProvider = providerId;
         renderProviderSwitch(providerId);
 
@@ -2986,6 +4180,7 @@
         showStatus("Loading", `Загружаю источники ${providerLabel(providerId)}...`, true);
         try {
           const sources = await requestProviderSources(providerId, kpId);
+          if (!isCurrent()) return;
           if (sources.length) {
             setProviderAvailability(providerId, true);
             state.selectedSources = sources;
@@ -2999,11 +4194,13 @@
           setProviderAvailability(providerId, false);
           lastError = new Error(`${providerId.toUpperCase()}_NO_SOURCES`);
         } catch (error) {
+          if (!isCurrent()) return;
           setProviderAvailability(providerId, false);
           lastError = error;
         }
       }
 
+      if (!isCurrent()) return;
       renderProviderSwitch();
       const message = String(lastError?.message || "");
       if (message.includes("PROXY_RETURNS_OK")) {
@@ -3023,23 +4220,63 @@
 
     async function fetchDetails(card) {
       const details = await kinopoiskRequest(`/films/${card.id}`);
+      let staff = [];
+      try {
+        const staffPayload = await kinopoiskRequest("/staff", { filmId: card.id });
+        staff = Array.isArray(staffPayload) ? staffPayload : (Array.isArray(staffPayload?.items) ? staffPayload.items : []);
+      } catch (_) {
+        // Older API deployments may omit the staff route; the film payload is
+        // still rendered with the data it contains.
+      }
+      let seasonItems = [];
+      if (card.mediaType === "tv") {
+        try {
+          const seasonsPayload = await kinopoiskRequest(`/films/${card.id}/seasons`);
+          seasonItems = Array.isArray(seasonsPayload?.items) ? seasonsPayload.items : [];
+        } catch (_) {}
+      }
       const genres = Array.isArray(details?.genres)
-        ? details.genres.map((genre) => genre?.name).filter(Boolean).slice(0, 3)
+        ? details.genres.map((genre) => genre?.genre || genre?.name).filter(Boolean).slice(0, 3)
         : [];
       const countries = Array.isArray(details?.countries)
-        ? details.countries.map((country) => country?.name).filter(Boolean).slice(0, 2)
+        ? details.countries.map((country) => country?.country || country?.name).filter(Boolean).slice(0, 2)
         : [];
+      const persons = [
+        ...(Array.isArray(details?.persons) ? details.persons : []),
+        ...staff
+      ];
+      const directorPeople = [
+        ...(Array.isArray(details?.directors) ? details.directors : []),
+        ...persons.filter(person => person?.professionKey ? person.professionKey === "DIRECTOR" : /режисс/i.test(person?.professionText || "") && !/дубляж/i.test(person?.professionText || ""))
+      ].map(person => typeof person === "string" ? { name: person } : { name: person?.nameRu || person?.nameEn || person?.name, photo: person?.posterUrl || person?.imageUrl || "", role: "Режиссёр" }).filter(person => person.name).filter((person, index, list) => list.findIndex(item => item.name === person.name) === index);
+      const castPeople = [
+        ...(Array.isArray(details?.actors) ? details.actors : []),
+        ...persons.filter(person => person?.professionKey ? person.professionKey === "ACTOR" : /актёр|актер/i.test(person?.professionText || "") && !/дубляж/i.test(person?.professionText || ""))
+      ].map(person => typeof person === "string" ? { name: person } : { name: person?.nameRu || person?.nameEn || person?.name, photo: person?.posterUrl || person?.imageUrl || "", role: person?.description || "Актёр" }).filter(person => person.name).filter((person, index, list) => list.findIndex(item => item.name === person.name) === index);
 
       const runtimeMinutes = Number(details?.filmLength) || 0;
       const imdbId = String(details?.imdbId || "").trim();
 
       return {
         imdbId,
+        runtime: runtimeMinutes,
+        backdrop: details.coverUrl || card.backdrop,
+        poster: details.posterUrl || card.poster,
         tmdbId: "",
         runtimeLabel: runtimeMinutes > 0 ? `${runtimeMinutes} мин` : "",
         seasonsLabel: details?.serial ? "Сериал" : "",
         genreLabel: genres.join(" • "),
         countryLabel: countries.join(", "),
+        director: directorPeople.map(person => person.name).join(", "),
+        cast: castPeople.map(person => person.name).join(", "),
+        directorPeople,
+        castPeople,
+        seasons: Number(details?.seasons || details?.seasonCount || 0) || seasonItems.length || card.seasons || 0,
+        episodes: Number(details?.episodes || details?.episodeCount || 0) || seasonItems.reduce((sum, season) => sum + (Array.isArray(season?.episodes) ? season.episodes.length : 0), 0),
+        ageRating: Number(String(details?.ratingAgeLimits || details?.ageRating || "").replace(/\D/g, "")) || card.ageRating || 0,
+        imdbRating: Number(details?.ratingImdb || details?.imdbRating || 0) || card.imdbRating || null,
+        kpRating: Number(details?.ratingKinopoisk || details?.rating || 0) || card.kpRating || null,
+        originalTitle: details?.nameOriginal || details?.nameEn || card.originalTitle || card.title,
         tagline: String(details?.slogan || "").trim(),
         overview: String(details?.description || details?.shortDescription || "").trim()
       };
@@ -3051,57 +4288,57 @@
       resetProviderAvailability();
       renderProviderSwitch();
       markActiveCard(cardEl);
-      openDetailsPanel();
-      if (isAndroidTv) {
-        requestAnimationFrame(() => focusTvDetailsPanelDefault());
-      }
+      const selection = ++detailSelection;
+      openFullscreenFilm(card, cardEl);
       setHero(card);
-
-      showStatus("Loading", "Подготавливаю карточку...", true);
 
       let detailsResolved = false;
       try {
         const details = await fetchDetails(card);
-        setHero({ ...card, details });
+        if (selection !== detailSelection || !fullscreenFilmEl.classList.contains("is-open")) return;
+        const enrichedCard = { ...card, ...details, details, genres: card.genres?.length ? card.genres : String(details.genreLabel || "").split(" • ").filter(Boolean), countries: card.countries?.length ? card.countries : String(details.countryLabel || "").split(", ").filter(Boolean), seasons: details.seasons || card.seasons };
+        state.selectedCard = enrichedCard;
+        setHero(enrichedCard);
+        renderFullscreenFilm(enrichedCard);
         detailsResolved = true;
       } catch (error) {
         console.warn("Details request failed:", error);
       }
 
-      try {
-        await loadBalancerSources(card.id);
-      } catch (error) {
-        showStatus("Error", "Не удалось подключить встроенный плеер.");
-      }
-
-      if (!detailsResolved && !state.selectedSourceUrl) {
-        showStatus("Error", "Не удалось загрузить фильм во встроенных плеерах.");
-      }
+      if (!detailsResolved && selection === detailSelection) renderFullscreenFilm(card);
     }
 
     async function search(query) {
+      if (state.collection !== "catalog") {
+        state.lastQuery = String(query || "").trim();
+        renderActiveCollection();
+        return;
+      }
       const seq = ++state.searchSeq;
       const trimmed = query.trim();
       state.lastQuery = trimmed;
       state.pagesLoaded = 0;
       state.pagesTotal = 0;
+      state.hasMore = false;
+      state.totalResults = 0;
       state.loadingMore = false;
       updateDiscoverState(Boolean(trimmed));
       resultsEl.dataset.view = trimmed ? "search" : "home";
       closeDetailsPanel();
+      renderActiveFilterChips();
+      resultsEl.scrollTop = 0;
+      resultsEl.setAttribute("aria-busy", "true");
+      document.getElementById("catalogSummary").textContent = trimmed || filterCount() ? "Ищем в каталоге…" : "";
+
       renderSkeletons();
       hideStatus();
 
       try {
         const cards = await fetchCardsPage(trimmed, 1, seq);
         if (seq !== state.searchSeq) return;
-        resultsEl.innerHTML = "";
-        if (!cards.length) {
-          resultsEl.innerHTML = '<div class="results-empty">Ничего не найдено.</div>';
-          return;
-        }
-        appendCards(cards);
+        state.rawCards = cards;
         state.pagesLoaded = 1;
+        renderActiveCollection();
       } catch (error) {
         if (seq !== state.searchSeq) return;
         const message = String(error?.message || "");
@@ -3117,7 +4354,11 @@
           resultsEl.innerHTML = '<div class="results-empty">Ошибка авторизации в API Kinopoisk Unofficial. Проверьте токен на backend.</div>';
           return;
         }
-        resultsEl.innerHTML = '<div class="results-empty">Не удалось загрузить список.</div>';
+        resultsEl.innerHTML = '<div class="results-empty"><strong>Не удалось загрузить каталог</strong><p>Попробуйте ещё раз через несколько секунд.</p><button class="toolbar-btn" id="retryCatalogBtn" type="button">Повторить</button></div>';
+        document.getElementById("retryCatalogBtn")?.addEventListener("click", () => search(state.lastQuery));
+        document.getElementById("catalogSummary").textContent = "Каталог временно недоступен";
+      } finally {
+        if (seq === state.searchSeq) resultsEl.setAttribute("aria-busy", "false");
       }
     }
 
@@ -3178,6 +4419,109 @@
       setMode(mode);
     });
 
+    filterToggleBtnEl.addEventListener("click", () => setFilterPanelOpen(true));
+    filterCloseBtnEl.addEventListener("click", () => setFilterPanelOpen(false));
+    filterBackdropEl.addEventListener("click", () => setFilterPanelOpen(false));
+    filterApplyBtnEl.addEventListener("click", () => {
+      readFiltersFromPanel();
+      setFilterPanelOpen(false);
+      if (state.collection === "catalog") search(state.lastQuery);
+      else renderActiveCollection();
+    });
+    filterResetBtnEl.addEventListener("click", () => {
+      state.filters = createDefaultFilters();
+      syncFilterPanel();
+      if (state.collection === "catalog") search(state.lastQuery);
+      else renderActiveCollection();
+    });
+    randomizerOpenBtnEl?.addEventListener("click", () => setRandomizerOpen(true));
+    randomizerOpenBtnEl?.addEventListener("pointerenter", () => { if (randomizerDialogEl.hidden) prepareRandomizerBatch(randomizerParams()).catch(() => {}); }, { passive: true });
+    randomizerOpenBtnEl?.addEventListener("focusin", () => { if (randomizerDialogEl.hidden) prepareRandomizerBatch(randomizerParams()).catch(() => {}); });
+    randomizerCloseBtnEl?.addEventListener("click", () => setRandomizerOpen(false));
+    randomizerBackdropEl?.addEventListener("click", () => setRandomizerOpen(false));
+    randomizerFormEl?.addEventListener("submit", event => { event.preventDefault(); pickRandomFilm(); });
+    randomizerResultEl?.addEventListener("click", event => {
+      if (!event.target.closest(".randomizer-poster-button, .randomizer-details")) return;
+      if (!randomizerState.result || randomizerState.busy) return;
+      randomizerState.returnAfterFilm = true;
+      setRandomizerOpen(false, false);
+      onSelectCard(randomizerState.result, null);
+    });
+    randomizerFormEl.addEventListener("input", warmRandomizerBatch);
+    randomizerFormEl.addEventListener("change", () => {
+      if (randomizerState.busy) {
+        randomizerState.sequence++;
+        for (const entry of randomizerBatches.values()) if (entry.pending) entry.controller.abort();
+        randomizerState.animation?.cancel();
+        randomizerState.busy = false;
+        randomizerSubmitEl.disabled = false;
+        randomizerSubmitEl.classList.remove("is-loading");
+        randomizerResultEl.setAttribute("aria-busy", "false");
+        if (randomizerState.result) renderRandomizerCard(randomizerState.result);
+      }
+      randomizerSubmitEl.querySelector("span").textContent = "Подобрать фильм";
+      randomizerHintEl.textContent = "";
+      warmRandomizerBatch();
+    });
+    randomizerDialogEl.addEventListener("keydown", event => {
+      if (event.key !== "Tab" || document.querySelector(".movie-select-portal.is-open")) return;
+      const focusable = [...randomizerDialogEl.querySelectorAll('button:not(:disabled), input:not(:disabled), a[href], summary')].filter(el => el.getClientRects().length);
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    collectionTabsEl.addEventListener("click", (event) => {
+      const tab = event.target.closest("[data-collection]");
+      if (!tab) return;
+      state.collection = tab.dataset.collection || "catalog";
+      collectionTabsEl.querySelectorAll(".collection-tab").forEach(item => { item.classList.toggle("active", item === tab); item.setAttribute("aria-selected", String(item === tab)); });
+      if (state.collection === "catalog") search(state.lastQuery); else renderActiveCollection();
+    });
+    activeFiltersEl.addEventListener("click", event => {
+      const button = event.target.closest("[data-chip-index]");
+      if (!button) return;
+      const index = Number(button.dataset.chipIndex);
+      const f = state.filters;
+      const entries = [];
+      f.types.forEach(value => entries.push({ key: "types", value })); f.genres.forEach(value => entries.push({ key: "genres", value })); f.countries.forEach(value => entries.push({ key: "countries", value }));
+      ["yearFrom","yearTo","kpFrom","kpTo","imdbFrom","imdbTo","ageRating","runtimeMax","seasonsMin","watchStatus","favoriteOnly"].forEach(key => { if (f[key] && f[key] !== "all" && f[key] !== false) entries.push({ key, value: f[key] }); });
+      const item = entries[index]; if (!item) return;
+      if (Array.isArray(f[item.key])) f[item.key] = f[item.key].filter(value => value !== item.value); else f[item.key] = item.key === "watchStatus" ? "all" : item.key === "favoriteOnly" ? false : "";
+      syncFilterPanel();
+      if (state.collection === "catalog") search(state.lastQuery);
+      else renderActiveCollection();
+    });
+
+    fullscreenCloseBtnEl.addEventListener("click", closeFullscreenFilm);
+    favoriteBtnEl.addEventListener("click", () => toggleMovieLibrary("favorites", state.selectedCard));
+    watchedBtnEl?.addEventListener("click", () => toggleMovieLibrary("watched", state.selectedCard));
+    fullscreenPlayBtnEl.addEventListener("click", async () => {
+      if (fullscreenFilmEl.classList.contains("is-playing")) {
+        playerRequestSeq++;
+        playerHostEl.replaceChildren();
+        state.selectedSourceUrl = "";
+        fullscreenFilmEl.classList.remove("is-playing");
+        document.getElementById("fullscreenInfo").inert = false;
+        fullscreenPlayBtnEl.innerHTML = PLAY_BUTTON_HTML;
+        return;
+      }
+      const card = state.selectedCard;
+      if (!card) return;
+      const selection = detailSelection;
+      document.getElementById("filmPlayer").append(document.querySelector(".player-panel"));
+      fullscreenFilmEl.classList.add("is-playing");
+      document.getElementById("fullscreenInfo").inert = true;
+      fullscreenFilmEl.scrollTop = 0;
+      fullscreenPlayBtnEl.innerHTML = '<span aria-hidden="true">←</span><span>О фильме</span>';
+      showStatus("Подключаем плеер", "Это займёт несколько секунд", true);
+      try { await loadBalancerSources(card.id, { providerId: "alloha", allowFallback: false }); }
+      catch (_) {
+        if (selection === detailSelection && fullscreenFilmEl.classList.contains("is-playing"))
+          showStatus("Плеер недоступен", "Попробуйте открыть фильм ещё раз.");
+      }
+    });
+    fullscreenFilmEl.addEventListener("click", event => { if (event.target === fullscreenFilmEl) closeFullscreenFilm(); });
+
     sourceSwitchEl.addEventListener("click", (event) => {
       const button = event.target.closest(".source-btn");
       if (!button) return;
@@ -3194,6 +4538,12 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        if (document.querySelector(".movie-select-portal.is-open")) { window.MovieSelect.closeAll(); event.preventDefault(); return; }
+        if (!randomizerDialogEl?.hidden) { setRandomizerOpen(false); event.preventDefault(); return; }
+        if (filterPanelEl.classList.contains("is-open")) { setFilterPanelOpen(false); event.preventDefault(); return; }
+        if (fullscreenFilmEl.classList.contains("is-open")) { closeFullscreenFilm(); event.preventDefault(); return; }
+      }
       const key = getTvEventKey(event);
       if (!TV_BACK_KEYS.has(key)) return;
       handleTvBackAction(event);
@@ -3212,14 +4562,25 @@
       }
     });
 
+
+    function updateResultsTopButton(measure = false) {
+      if (measure) {
+        const nextCard = resultsEl.querySelector(".movie-card:nth-child(21)");
+        resultsTopThreshold = nextCard ? nextCard.getBoundingClientRect().top - resultsEl.getBoundingClientRect().top + resultsEl.scrollTop : Infinity;
+      }
+      resultsTopBtnEl.classList.toggle("is-visible", resultsEl.scrollTop >= resultsTopThreshold - 32);
+    }
+    window.addEventListener("resize", () => updateResultsTopButton(true), { passive: true });
     resultsEl.addEventListener("scroll", () => {
-      if (state.loadingMore || !hasMorePages()) return;
+      updateResultsTopButton();
+      if (document.body.classList.contains("randomizer-open") || state.collection !== "catalog" || state.loadingMore || !hasMorePages()) return;
       const threshold = 420;
       const distanceToBottom = resultsEl.scrollHeight - (resultsEl.scrollTop + resultsEl.clientHeight);
       if (distanceToBottom <= threshold) {
         loadNextPage();
       }
-    });
+    }, { passive: true });
+    resultsTopBtnEl.addEventListener("click", () => resultsEl.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }));
 
     window.addEventListener("message", (event) => {
       const data = event && event.data ? event.data : null;
@@ -3238,6 +4599,17 @@
     searchFormEl.addEventListener("submit", (event) => {
       event.preventDefault();
       search(searchInputEl.value);
+    });
+
+    searchInputEl.addEventListener("input", () => {
+      clearSearchBtnEl.classList.toggle("visible", Boolean(searchInputEl.value));
+    });
+
+    clearSearchBtnEl.addEventListener("click", () => {
+      searchInputEl.value = "";
+      updateDiscoverState(false);
+      search("");
+      searchInputEl.focus({ preventScroll: true });
     });
 
     headBackBtnEl.addEventListener("click", () => {
@@ -3282,6 +4654,9 @@
     updatePlayerEnterButtonState();
     initTvTextInputActivation();
     ensureTvBackHistoryGuard();
+    initCustomSelects();
+    initMovieLibrary();
+    loadFilterOptions();
 
     search("");
     requestAnimationFrame(() => {

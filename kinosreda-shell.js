@@ -114,7 +114,13 @@
     };
     const update = () => {
       pending = false;
-      const modal = Array.from(document.querySelectorAll(modalSelector)).some(el => !el.closest('.ks-drawer') && visible(el));
+      const modal = Array.from(document.querySelectorAll(modalSelector)).some(el => {
+        if (el.closest('.ks-drawer')) return false;
+        // The movie picker leaves desktop navigation available. On mobile the
+        // same button overlaps its title and is suspended until it closes.
+        if (el.id === 'randomizerDialog' && !matchMedia('(max-width:760px)').matches) return false;
+        return visible(el);
+      });
       report({ covered: !!modal, position: null });
     };
     const schedule = () => { if (!pending) { pending = true; requestAnimationFrame(update); } };

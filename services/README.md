@@ -69,6 +69,32 @@ node --test tests/beer-recognition.test.js
 
 An isolated FastAPI service exposing `POST /remove-bg` for background removal.
 
+Production Nginx owns the CORS policy for `/remove-bg`, including preflight,
+upstream failures and its own 413/502/504 responses. A `map` at HTTP scope is
+intentional: location rewrite variables are not initialized when Nginx rejects
+a body as too large. Upstream CORS headers are hidden to prevent duplicates.
+Only the listed site origins and local development origins receive access.
+The 21 MiB JSON limit accommodates a 15 MiB image after base64 expansion.
+
+`kinosreda-rembg.service` starts even if optional swap preparation fails.
+`ensure_rembg_swap.sh` initializes compressed swap without resetting the device
+during boot or disabling active swap during upgrades. The health timer checks
+the worker every minute and restores an inactive or unresponsive service.
+Use `scripts/realtime/install_rembg.sh` to install these units together.
+
+Regression checks (the Nginx suite uses isolated loopback ports):
+
+```sh
+python3 -m unittest discover -s tests -p test_rembg_nginx.py -v
+python3 scripts/realtime/verify_rembg.py
+```
+
+The first command requires Nginx. It tests success, 400/413/422/500/503 responses,
+gateway disconnects, gateway timeouts, oversized bodies, preflight independence
+and rejection of untrusted origins. The second checks the published endpoint
+without loading an inference model or uploading photographs, and runs after
+installation reloads Nginx.
+
 ## Runtime
 
 Requires-Python: >=3.11

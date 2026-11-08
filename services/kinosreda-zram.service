@@ -5,8 +5,8 @@ Before=kinosreda-rembg.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/sh -c 'if ! /sbin/swapon --noheadings --show=NAME | /bin/grep -qx /dev/zram0; then /sbin/modprobe zram num_devices=1; /usr/sbin/zramctl /dev/zram0 --algorithm lz4 --size 512M; /usr/sbin/mkswap -f /dev/zram0; /sbin/swapon -p 100 /dev/zram0; fi'
-ExecStop=/sbin/swapoff /dev/zram0
+ExecStart=/bin/sh /opt/kinosreda-realtime/scripts/realtime/ensure_rembg_swap.sh
+# Keep swap available when this oneshot unit is stopped or upgraded.
 
 [Install]
 WantedBy=multi-user.target

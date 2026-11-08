@@ -38,9 +38,8 @@ MAX_IMAGE_BYTES = 15 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 REMBG_MODEL = os.environ.get("REMBG_MODEL", "u2net")
 REMBG_QUEUE_TIMEOUT = max(0.0, float(os.environ.get("REMBG_QUEUE_TIMEOUT", "8")))
-# The small production host only needs a clean alpha mask. Running inference
-# on a compact source and scaling the mask back preserves the original detail
-# while cutting iPhone uploads and CPU time substantially.
+# Segmentation quality remains stable at this size for a single bottle, while
+# inference on a 2K+ source takes disproportionately longer on the 1-core host.
 REMBG_INFERENCE_MAX_SIDE = max(640, min(2048, int(os.environ.get("REMBG_INFERENCE_MAX_SIDE", "768"))))
 
 
@@ -88,15 +87,8 @@ def get_session() -> Any:
         with _session_lock:
             if _session is None:
                 from rembg import new_session
-                import onnxruntime as ort
 
-                options = ort.SessionOptions()
-                options.intra_op_num_threads = 1
-                options.inter_op_num_threads = 1
-                options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-                options.enable_cpu_mem_arena = False
-                options.enable_mem_pattern = False
-                _session = new_session(REMBG_MODEL, sess_opts=options, providers=["CPUExecutionProvider"])
+                _session = new_session(REMBG_MODEL)
     return _session
 
 
@@ -104,14 +96,15 @@ def remove_background(image: Image.Image) -> Image.Image:
     """Run rembg on a compact mask source and retain the original detail."""
     from rembg import remove
 
+    session = get_session()
     if not _inference_semaphore.acquire(timeout=REMBG_QUEUE_TIMEOUT):
         raise BackgroundRemovalBusyError
     try:
-        session = get_session()
         width, height = image.size
         longest_side = max(width, height)
         if longest_side <= REMBG_INFERENCE_MAX_SIDE:
             return remove(image, session=session)
+
         scale = REMBG_INFERENCE_MAX_SIDE / longest_side
         mask_source = image.resize(
             (max(1, round(width * scale)), max(1, round(height * scale))),
@@ -129,8 +122,6 @@ def remove_background(image: Image.Image) -> Image.Image:
 def decode_image(image_base64: str) -> Image.Image:
     """Decode and fully validate a base64-encoded image."""
     try:
-        if len(image_base64) > MAX_IMAGE_BYTES * 4 // 3 + 4:
-            raise ImageTooLargeError
         raw_image = base64.b64decode(image_base64, validate=True)
         if len(raw_image) > MAX_IMAGE_BYTES:
             raise ImageTooLargeError
@@ -155,9 +146,6 @@ def health() -> dict[str, str | bool]:
 @app.post("/remove-bg")
 def remove_bg(payload: RemoveBackgroundRequest) -> dict[str, str]:
     cache_key = hashlib.sha256(payload.image_base64.encode("ascii", "ignore")).hexdigest()
-    cached = get_cached_result(cache_key)
-    if cached:
-        return {"result_base64": cached}
     try:
         image = decode_image(payload.image_base64)
     except ImageTooLargeError as exc:
@@ -165,10 +153,14 @@ def remove_bg(payload: RemoveBackgroundRequest) -> dict[str, str]:
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="invalid_image") from exc
     use_cache = image.width * image.height > 4096
+    cached = get_cached_result(cache_key) if use_cache else None
+    if cached:
+        return {"result_base64": cached}
 
     try:
         result = remove_background(image).convert("RGBA")
         buffer = BytesIO()
+        # Low compression is materially faster on the small production CPU.
         result.save(buffer, format="PNG", compress_level=1)
     except BackgroundRemovalBusyError as exc:
         raise HTTPException(

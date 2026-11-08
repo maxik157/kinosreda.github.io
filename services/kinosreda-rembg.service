@@ -2,8 +2,10 @@
 Description=Kinosreda rembg service
 After=network-online.target
 Wants=network-online.target
-Requires=kinosreda-zram.service
+# A swap setup failure must not prevent the HTTP service from starting.
+Wants=kinosreda-zram.service
 After=kinosreda-zram.service
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Звонки | КИНОСРЕДА</title>
     <style id="ks-shell-preboot-style">html:not(.ks-shell-ready) body { visibility: hidden !important; }</style>
-    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010mobile2">
+    <link rel="preload" as="style" href="/kinosreda-shell.css?v=20261010perf">
   <script>
     (function () {
       try {
@@ -3038,7 +3038,7 @@
       }
     }
   </style>
-    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010mobile2">
+    <link rel="stylesheet" href="/kinosreda-shell.css?v=20261010perf">
     <script src="/kinosreda-shell.js?v=20261010perf" defer></script>
 </head>
 <body class="ks-ui ks-page-call">
@@ -3488,9 +3488,6 @@
         roomReady: initialRoomSlug !== null,
         roomPickerOpen: initialRoomSlug === null,
         joined: false,
-        mediaEpoch: 0,
-        pageDeparted: false,
-        pendingSockets: new Set(),
         ws: null,
         wsUrl: '',
         reconnectAttempt: 0,
@@ -4043,17 +4040,36 @@
       function activateRoom(slug) {
         const normalizedSlug = normalizeRoomSlug(slug);
         const nextRoom = resolveRoomMeta(normalizedSlug);
+        const parentUrl = buildSidebarCallUrl(nextRoom.slug);
         setCustomRoomError('');
-        activateRoomLocally(nextRoom.slug);
+
         try {
           if (window.parent && window.parent !== window) {
+            let parentHref = '';
+            try {
+              parentHref = String(window.parent.location && window.parent.location.href || '').trim();
+            } catch (_) {}
+
             window.parent.postMessage({
               type: 'call:route',
-              roomSlug: nextRoom.slug,
-              inPlace: true
+              roomSlug: nextRoom.slug
             }, '*');
+
+            if (parentHref && parentHref === parentUrl) {
+              activateRoomLocally(nextRoom.slug);
+              return;
+            }
+
+            try {
+              if (window.top && window.top.location) {
+                window.top.location.href = parentUrl;
+                return;
+              }
+            } catch (_) {}
           }
         } catch (_) {}
+
+        activateRoomLocally(nextRoom.slug);
       }
 
       async function copyRoomLink(slug) {
@@ -4102,7 +4118,25 @@
         if (dom.openDefaultRoomBtn) {
           dom.openDefaultRoomBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            activateRoom(COMMON_ROOM_SLUG);
+            const targetHref = String(dom.openDefaultRoomBtn.getAttribute('href') || '').trim();
+            const currentTopHref = getTopHrefSafe();
+            if (targetHref && currentTopHref) {
+              try {
+                const currentUrl = new URL(currentTopHref, window.location.href);
+                const targetUrl = new URL(targetHref, window.location.href);
+                const sameTarget = currentUrl.pathname === targetUrl.pathname && currentUrl.search === targetUrl.search;
+                if (sameTarget) {
+                  try {
+                    if (window.parent && window.parent !== window) {
+                      window.parent.postMessage({ type: 'call:route', roomSlug: COMMON_ROOM_SLUG }, '*');
+                    }
+                  } catch (_) {}
+                  activateRoomLocally('');
+                  return;
+                }
+              } catch (_) {}
+            }
+            openTopHrefFromElement(dom.openDefaultRoomBtn);
           });
         }
 
@@ -4125,6 +4159,9 @@
               if (dom.customRoomInput) dom.customRoomInput.focus();
               return;
             }
+            if (openTopHrefFromElement(dom.openCustomRoomBtn)) {
+              return;
+            }
             activateRoom(slug);
           });
         }
@@ -4139,7 +4176,7 @@
               return;
             }
             updateRoomPickerPreview();
-            activateRoom(slug);
+            openTopHrefFromElement(dom.openCustomRoomBtn);
           });
         }
 
@@ -4499,7 +4536,10 @@
 
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'hidden') {
-            stopCallForNavigation();
+            if (state.mode === 'vad' && state.transmitting) {
+              state.hiddenTransmitUntil = Date.now() + 6500;
+            }
+            openControlPipIfNeeded();
           } else {
             state.hiddenTransmitUntil = 0;
             tryResumeAudioContexts();
@@ -4536,12 +4576,9 @@
           }
         });
 
-        window.stopCallForNavigation = stopCallForNavigation;
-        window.addEventListener('pagehide', stopCallForNavigation);
-        window.addEventListener('beforeunload', stopCallForNavigation);
-        window.addEventListener('message', event => {
-          if (event.source !== window.parent || event.origin !== location.origin) return;
-          if (event.data?.type === 'call:deactivate') stopCallForNavigation();
+        window.addEventListener('beforeunload', () => {
+          closeControlPip(true);
+          shutdownAll(true);
         });
 
         if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
@@ -4553,17 +4590,13 @@
       }
 
       async function joinRoom() {
-        if (state.joined || document.hidden) return;
-        state.pageDeparted = false;
-        const epoch = ++state.mediaEpoch;
+        if (state.joined) return;
         if (!state.roomReady) {
           state.roomPickerOpen = true;
           syncRoomPicker();
           return;
         }
         state.joined = true;
-        startVadLoop();
-        startPruneLoop();
         state.reconnectAttempt = 0;
         state.hiddenTransmitUntil = 0;
         ensureRemoteAudioContext();
@@ -4574,19 +4607,16 @@
         try {
           await ensureLocalAudio({ force: false });
         } catch (_) {
-          if (!state.joined || state.pageDeparted || epoch !== state.mediaEpoch) return;
           state.masterMicEnabled = false;
           saveStorage('callMasterMic', '0');
           updateMicButton();
           showToast('Доступ к микрофону не получен. Вы вошли как слушатель');
         }
 
-        if (!state.joined || state.pageDeparted || epoch !== state.mediaEpoch) return;
         refreshDevices().catch(() => {});
         applyTrackConstraintsForMode();
         tryResumeAudioContexts();
         await refreshSelfAvatarFromDirectory().catch(() => {});
-        if (!state.joined || state.pageDeparted || epoch !== state.mediaEpoch) return;
         if (!state.ws || state.ws.readyState > WS_OPEN) {
           connectRealtime();
         } else {
@@ -4603,7 +4633,6 @@
       function leaveRoom() {
         if (!state.joined) return;
         state.joined = false;
-        state.mediaEpoch++;
         state.toggleTalkEnabled = false;
         state.pttPressed = false;
         stopCameraShare();
@@ -4627,8 +4656,6 @@
       }
 
       function connectRealtime() {
-        if (state.pageDeparted) return;
-        const epoch = state.mediaEpoch;
         if (!state.roomReady || !state.roomKey) return;
         if (state.ws && (state.ws.readyState === WS_OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
           return;
@@ -4643,10 +4670,6 @@
         }
 
         attemptSocketCandidates(candidates).then((socketResult) => {
-          if (state.pageDeparted || epoch !== state.mediaEpoch) {
-            socketResult?.socket?.close();
-            return;
-          }
           if (!socketResult || !socketResult.socket) {
             updateTransportBadge('offline', 'Нет соединения');
             scheduleReconnect();
@@ -4661,7 +4684,6 @@
 
       async function attemptSocketCandidates(candidates) {
         for (let i = 0; i < candidates.length; i += 1) {
-          if (state.pageDeparted || !state.joined) return null;
           const url = candidates[i];
           const socket = await openSocket(url, i === 0 ? 3600 : 2600);
           if (socket) return { socket, url };
@@ -4678,7 +4700,6 @@
           const cleanup = () => {
             if (timer) clearTimeout(timer);
             if (!socket) return;
-            state.pendingSockets.delete(socket);
             socket.removeEventListener('open', onOpen);
             socket.removeEventListener('error', onFail);
             socket.removeEventListener('close', onFail);
@@ -4703,7 +4724,6 @@
 
           try {
             socket = new WebSocket(url);
-            state.pendingSockets.add(socket);
           } catch (_) {
             resolve(null);
             return;
@@ -4779,7 +4799,6 @@
       }
 
       function scheduleReconnect() {
-        if (state.pageDeparted || !state.joined) return;
         if (state.reconnectTimer) return;
         const delayBase = Math.min(15000, Math.round(900 * Math.pow(1.65, state.reconnectAttempt)));
         const jitter = Math.round(delayBase * (0.15 + Math.random() * 0.2));
@@ -5807,12 +5826,7 @@
           constraints.deviceId = { exact: state.selectedInputId };
         }
 
-        const epoch = state.mediaEpoch;
         state.voiceInitPromise = navigator.mediaDevices.getUserMedia({ audio: constraints }).then((stream) => {
-          if (state.pageDeparted || !state.joined || epoch !== state.mediaEpoch) {
-            stream.getTracks().forEach(track => track.stop());
-            throw new Error('call_cancelled');
-          }
           applyLocalStream(stream);
           return stream;
         }).finally(() => {
@@ -6172,11 +6186,6 @@
         const instance = state.mlVad;
         state.mlVad = null;
         state.mlVadReady = false;
-        const monitorStream = state.mlVadMonitorStream;
-        state.mlVadMonitorStream = null;
-        monitorStream?.getTracks().forEach(track => {
-          try { track.stop(); } catch (_) {}
-        });
 
         if (instance) {
           try {
@@ -6189,6 +6198,13 @@
               await instance.destroy();
             }
           } catch (_) {}
+        }
+
+        if (state.mlVadMonitorStream) {
+          state.mlVadMonitorStream.getTracks().forEach((track) => {
+            try { track.stop(); } catch (_) {}
+          });
+          state.mlVadMonitorStream = null;
         }
 
         if (resetState) {
@@ -6213,11 +6229,8 @@
         if (!state.captureTrack || state.captureTrack.readyState !== 'live') return;
         if (state.mlVadInitPromise) return state.mlVadInitPromise;
 
-        const epoch = state.mediaEpoch;
-        const cancelled = () => state.pageDeparted || !state.joined || epoch !== state.mediaEpoch;
         state.mlVadInitPromise = (async () => {
           const runtimeReady = await ensureMlVadRuntime();
-          if (cancelled()) return;
           if (!runtimeReady || !window.vad || !window.vad.MicVAD) {
             if (!state.mlVadErrorNotified) {
               state.mlVadErrorNotified = true;
@@ -6227,7 +6240,6 @@
           }
 
           await stopMlVad(false);
-          if (cancelled()) return;
 
           const monitorStream = buildVadMonitorStream();
           if (!monitorStream) return;
@@ -6277,12 +6289,6 @@
             onSpeechEnd: () => {}
           });
 
-          if (cancelled()) {
-            monitorStream.getTracks().forEach(track => track.stop());
-            try { await instance.pause?.(); } catch (_) {}
-            try { await instance.destroy?.(); } catch (_) {}
-            return;
-          }
           state.mlVad = instance;
           state.mlVadReady = true;
           state.mlVadErrorNotified = false;
@@ -7373,7 +7379,6 @@
           showToast('Этот браузер не поддерживает вебкамеру');
           return;
         }
-        const epoch = state.mediaEpoch;
         const profile = getCameraQualityProfile();
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
@@ -7385,10 +7390,6 @@
             },
             audio: false
           });
-          if (state.pageDeparted || !state.joined || epoch !== state.mediaEpoch) {
-            stream.getTracks().forEach(track => track.stop());
-            return;
-          }
           const track = stream.getVideoTracks()[0] || null;
           if (!track) {
             stream.getTracks().forEach((item) => {
@@ -7486,7 +7487,6 @@
           showToast('Этот браузер не поддерживает показ экрана');
           return;
         }
-        const epoch = state.mediaEpoch;
         const profile = getScreenQualityProfile();
         try {
           const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -7498,10 +7498,6 @@
             },
             audio: false
           });
-          if (state.pageDeparted || !state.joined || epoch !== state.mediaEpoch) {
-            stream.getTracks().forEach(track => track.stop());
-            return;
-          }
           const track = stream.getVideoTracks()[0] || null;
           if (!track) {
             stream.getTracks().forEach((item) => {
@@ -8535,10 +8531,7 @@
       }
 
       function shutdownAll(silent = false) {
-        state.mediaEpoch++;
         state.joined = false;
-        state.toggleTalkEnabled = false;
-        state.pttPressed = false;
         stopCameraShare();
         stopScreenShare();
         closeControlPip(true);
@@ -8559,26 +8552,9 @@
         }
 
         closeSocket();
-        for (const socket of state.pendingSockets || []) {
-          try { socket.close(); } catch (_) {}
-        }
-        state.pendingSockets?.clear();
         closeAllPeers();
         stopLocalAudio();
         stopVadLoop();
-        for (const key of ['localAudioContext', 'remoteAudioContext']) {
-          const context = state[key];
-          state[key] = null;
-          if (context && context.state !== 'closed') context.close().catch(() => {});
-        }
-      }
-
-      function stopCallForNavigation() {
-        state.pageDeparted = true;
-        shutdownAll(true);
-        updateConnectButton();
-        updateTransportBadge('offline', 'Оффлайн');
-        updateDockStatus('Звонок завершён', 'Нажмите «Войти», чтобы начать новый звонок');
       }
 
       function showToast(text) {

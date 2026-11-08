@@ -4,3 +4,6 @@ withoutbg
 pillow
 pydantic
 requests
+python-multipart
+ytmusicapi
+yt-dlp
