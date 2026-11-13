@@ -1,0 +1,2360 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>3D-бар «Киносреда»</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='20' y='30' width='45' height='55' rx='5' fill='none' stroke='%23b45309' stroke-width='4'/%3E%3Crect x='22' y='45' width='41' height='38' rx='3' fill='%23f59e0b'/%3E%3Cellipse cx='42' cy='35' rx='24' ry='8' fill='%23fff'/%3E%3Ccircle cx='30' cy='33' r='5' fill='%23fff'/%3E%3Ccircle cx='45' cy='31' r='4' fill='%23fff'/%3E%3Ccircle cx='55' cy='34' r='4' fill='%23fff'/%3E%3Cpath d='M65 38 Q85 38 85 55 Q85 72 65 72' fill='none' stroke='%23b45309' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261113barplanet" />
+    <script src="kinosreda-shell.js?v=20261113barplanet" defer></script>
+    <style>
+      @font-face {
+        font-family: RoomComfortaa;
+        src: url("./comfortaa-400.ttf");
+      }
+      @font-face {
+        font-family: RoomComfortaa;
+        src: url("./comfortaa-700.ttf");
+        font-weight: 700;
+      }
+      :root {
+        --gold: #f4b941;
+        --cream: #fff2c8;
+        --glass: rgba(8, 10, 14, 0.72);
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #07080b;
+        color: #f8f1df;
+        font-family: RoomComfortaa, system-ui, sans-serif;
+      }
+      body.ks-ui {
+        background: #07080b;
+      }
+      .room-app {
+        position: fixed;
+        inset: 0;
+        isolation: isolate;
+        background: #07080b;
+      }
+      .room-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      .room-vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at 50% 46%,
+          transparent 35%,
+          rgba(0, 0, 0, 0.18) 68%,
+          rgba(0, 0, 0, 0.72) 100%
+        );
+      }
+      .room-hud {
+        position: absolute;
+        z-index: 5;
+        inset: 0;
+        pointer-events: none;
+      }
+      .room-brand {
+        position: absolute;
+        top: clamp(18px, 4vh, 38px);
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        font-family: var(--logo-font, var(--ks-font));
+        letter-spacing: 0.16em;
+        color: rgba(255, 240, 197, 0.9);
+        text-shadow: 0 0 18px rgba(244, 185, 65, 0.45);
+        font-size: clamp(18px, 2vw, 31px);
+        font-weight: 700;
+      }
+      .room-brand small {
+        display: block;
+        margin-top: 6px;
+        letter-spacing: 0.2em;
+        color: rgba(239, 205, 130, 0.58);
+        font-size: 9px;
+        font-weight: 400;
+      }
+      .room-scene-sign {
+        position: absolute;
+        top: 22%;
+        left: 50%;
+        transform: translateX(-50%) perspective(500px) rotateX(1deg);
+        padding: 9px 24px;
+        color: #fff2bc;
+        font-family: var(--logo-font, var(--ks-font));
+        font-size: clamp(20px, 3vw, 38px);
+        font-weight: 700;
+        letter-spacing: 0.17em;
+        white-space: nowrap;
+        text-shadow:
+          0 0 5px #fff1b0,
+          0 0 18px #f4a33d,
+          0 0 40px rgba(244, 151, 35, 0.72);
+        opacity: 0.82;
+        filter: drop-shadow(0 9px 10px rgba(0, 0, 0, 0.72));
+        pointer-events: none;
+      }
+      .room-scene-sign:before {
+        content: "";
+        position: absolute;
+        inset: 0 -16px;
+        border: 1px solid rgba(244, 185, 65, 0.44);
+        border-radius: 7px;
+        box-shadow:
+          inset 0 0 20px rgba(244, 145, 38, 0.12),
+          0 0 28px rgba(244, 145, 38, 0.18);
+        z-index: -1;
+      }
+      .room-help {
+        position: absolute;
+        left: clamp(18px, 4vw, 58px);
+        bottom: clamp(20px, 4vh, 38px);
+        max-width: 320px;
+        padding: 12px 16px;
+        border: 1px solid rgba(244, 185, 65, 0.22);
+        border-radius: 14px;
+        background: rgba(9, 11, 15, 0.52);
+        backdrop-filter: blur(12px);
+        color: rgba(255, 245, 220, 0.78);
+        font-size: 11px;
+        line-height: 1.55;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .room-app.is-active .room-help {
+        opacity: 1;
+        transform: none;
+      }
+      .room-help b {
+        color: var(--gold);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .room-help kbd {
+        display: inline-grid;
+        place-items: center;
+        min-width: 20px;
+        height: 19px;
+        margin: 0 2px;
+        border: 1px solid rgba(255, 239, 194, 0.25);
+        border-radius: 5px;
+        color: var(--cream);
+        font-size: 9px;
+      }
+      .room-touch-controls {
+        display: none;
+        position: absolute;
+        inset: auto 18px 22px;
+        z-index: 7;
+        align-items: end;
+        justify-content: space-between;
+        pointer-events: none;
+      }
+      .move-joystick {
+        width: 116px;
+        height: 116px;
+        border: 1px solid rgba(244, 185, 65, 0.35);
+        border-radius: 50%;
+        background: rgba(13, 18, 19, 0.5);
+        display: grid;
+        place-items: center;
+        touch-action: none;
+        pointer-events: auto;
+      }
+      .move-joystick span {
+        width: 48px;
+        height: 48px;
+        border: 1px solid #c3a56e;
+        border-radius: 50%;
+        background: rgba(230, 191, 115, 0.38);
+        pointer-events: none;
+      }
+      .touch-actions {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+        flex-direction: column;
+        pointer-events: auto;
+      }
+      .touch-actions button {
+        min-height: 42px;
+        padding: 10px 15px;
+        border: 1px solid #b38b50;
+        border-radius: 15px;
+        background: rgba(17, 26, 25, 0.85);
+        color: #ffe8b9;
+        font: 11px RoomComfortaa;
+        touch-action: none;
+      }
+      .touch-actions .touch-interact {
+        background: #ddbd7f;
+        color: #24251f;
+      }
+      .touch-actions [aria-pressed="true"] {
+        background: #856331;
+      }
+      .room-help button {
+        display: block;
+        margin-top: 9px;
+        padding: 7px 10px;
+        border: 1px solid #776343;
+        border-radius: 8px;
+        background: #202824;
+        color: #e5cf9e;
+        font: 10px RoomComfortaa;
+        pointer-events: auto;
+        cursor: pointer;
+      }
+      .room-interact-hint {
+        display: none;
+      }
+      .room-panel {
+        left: 24px;
+        right: auto;
+        width: 270px;
+      }
+      .room-panel.is-open {
+        transform: translate(0, -50%);
+      }
+      @media (pointer: coarse) {
+        .room-app.is-active .room-touch-controls {
+          display: flex;
+        }
+        .room-help {
+          display: none;
+        }
+        .room-status {
+          bottom: 155px;
+        }
+        .room-panel {
+          left: 14px;
+          top: 110px;
+          bottom: auto;
+          width: 210px;
+          transform: translateX(-20px);
+        }
+        .room-panel.is-open {
+          transform: none;
+        }
+        .room-panel h2 {
+          font-size: 17px;
+        }
+        .room-details {
+          gap: 6px;
+        }
+        .room-description {
+          display: none;
+        }
+        .room-interact-hint {
+          top: 57%;
+        }
+      }
+      .room-crosshair {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .room-app.is-active .room-crosshair {
+        opacity: 0.72;
+      }
+      .room-crosshair:before,
+      .room-crosshair:after {
+        content: "";
+        position: absolute;
+        background: #ffeab1;
+        box-shadow: 0 0 8px #f4b941;
+      }
+      .room-crosshair:before {
+        left: 7px;
+        top: 0;
+        width: 1px;
+        height: 16px;
+      }
+      .room-crosshair:after {
+        top: 7px;
+        left: 0;
+        width: 16px;
+        height: 1px;
+      }
+      .room-status {
+        position: absolute;
+        right: clamp(18px, 4vw, 58px);
+        bottom: clamp(20px, 4vh, 38px);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        color: rgba(255, 242, 202, 0.64);
+        font-size: 10px;
+      }
+      .room-status i {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #f4b941;
+        box-shadow: 0 0 12px #f4b941;
+      }
+      .room-status.is-ready i {
+        background: #75d08a;
+        box-shadow: 0 0 12px #75d08a;
+      }
+      .room-online-status {
+        position: absolute;
+        right: clamp(18px, 4vw, 58px);
+        top: clamp(18px, 4vh, 38px);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border: 1px solid rgba(244, 185, 65, 0.2);
+        border-radius: 999px;
+        background: rgba(7, 8, 11, 0.45);
+        color: rgba(255, 242, 202, 0.7);
+        font-size: 9px;
+        backdrop-filter: blur(8px);
+      }
+      .room-online-status i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #d69a3f;
+        box-shadow: 0 0 9px #d69a3f;
+      }
+      .room-online-status.is-connected i {
+        background: #75d08a;
+        box-shadow: 0 0 9px #75d08a;
+      }
+      .room-menu {
+        position: absolute;
+        z-index: 10;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(
+          ellipse at 50% 42%,
+          rgba(62, 32, 13, 0.22),
+          rgba(2, 3, 5, 0.94) 72%
+        );
+        transition:
+          opacity 0.75s,
+          visibility 0.75s;
+      }
+      .room-menu.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .room-menu-card {
+        width: min(570px, calc(100vw - 40px));
+        padding: clamp(30px, 6vw, 64px) 30px 32px;
+        text-align: center;
+      }
+      .room-menu-kicker {
+        color: #f4b941;
+        letter-spacing: 0.42em;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+      .room-menu h1 {
+        margin: 18px 0 10px;
+        color: #fff5d4;
+        font-size: clamp(42px, 8vw, 84px);
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        line-height: 0.95;
+        text-shadow:
+          0 0 18px rgba(244, 185, 65, 0.7),
+          0 5px 25px rgba(0, 0, 0, 0.9);
+      }
+      .room-menu p {
+        margin: 0 auto 30px;
+        max-width: 400px;
+        color: rgba(255, 240, 209, 0.72);
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .room-enter {
+        position: relative;
+        min-width: 206px;
+        padding: 14px 25px;
+        border: 1px solid rgba(244, 185, 65, 0.7);
+        border-radius: 999px;
+        background: linear-gradient(135deg, #f7cd70, #bc741d);
+        box-shadow:
+          0 0 26px rgba(244, 185, 65, 0.25),
+          inset 0 1px rgba(255, 255, 255, 0.55);
+        color: #291707;
+        font: 700 11px RoomComfortaa;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: 0.25s;
+      }
+      .room-enter:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 40px rgba(244, 185, 65, 0.44),
+          inset 0 1px rgba(255, 255, 255, 0.55);
+      }
+      .room-menu-note {
+        margin-top: 18px;
+        color: rgba(255, 239, 200, 0.4);
+        font-size: 10px;
+      }
+      .room-panel {
+        position: absolute;
+        z-index: 7;
+        top: 50%;
+        right: clamp(16px, 4vw, 62px);
+        width: min(310px, calc(100vw - 32px));
+        padding: 21px 20px 18px;
+        border: 1px solid rgba(244, 185, 65, 0.38);
+        border-radius: 18px;
+        background: linear-gradient(
+          145deg,
+          rgba(24, 20, 16, 0.9),
+          rgba(6, 9, 13, 0.84)
+        );
+        box-shadow:
+          0 20px 60px rgba(0, 0, 0, 0.5),
+          0 0 25px rgba(244, 185, 65, 0.12);
+        backdrop-filter: blur(18px);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(22px, -50%) scale(0.96);
+        transition: 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .room-panel.is-open {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(0, -50%) scale(1);
+      }
+      .room-panel .panel-label {
+        margin-bottom: 8px;
+        color: #d8ad54;
+        font-size: 9px;
+        letter-spacing: 0.19em;
+        text-transform: uppercase;
+      }
+      .room-panel h2 {
+        margin: 0 22px 16px 0;
+        color: #fff4d2;
+        font-size: 22px;
+        line-height: 1.15;
+      }
+      .room-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 14px;
+        margin: 0 0 12px;
+      }
+      .room-details div {
+        min-width: 0;
+      }
+      .room-details dt {
+        color: rgba(255, 224, 159, 0.55);
+        font-size: 8px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .room-details dd {
+        margin: 3px 0 0;
+        color: #fff0c2;
+        font-size: 11px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .room-description {
+        margin: 0 0 15px;
+        color: rgba(255, 239, 203, 0.68);
+        font-size: 10px;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .room-panel-close {
+        position: absolute;
+        right: 13px;
+        top: 11px;
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+        color: #ffe7a9;
+        font-size: 19px;
+        cursor: pointer;
+      }
+      .room-panel-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .room-panel-actions button {
+        flex: 1;
+        padding: 10px 8px;
+        border: 1px solid rgba(244, 185, 65, 0.35);
+        border-radius: 10px;
+        background: rgba(244, 185, 65, 0.12);
+        color: #ffe9af;
+        font: 700 9px RoomComfortaa;
+        cursor: pointer;
+      }
+      .room-panel-actions button:hover {
+        background: rgba(244, 185, 65, 0.25);
+      }
+      .room-toast {
+        position: absolute;
+        z-index: 8;
+        left: 50%;
+        top: 67%;
+        padding: 10px 15px;
+        border: 1px solid rgba(244, 185, 65, 0.25);
+        border-radius: 999px;
+        background: rgba(7, 8, 11, 0.72);
+        color: #ffe8ae;
+        font-size: 10px;
+        opacity: 0;
+        transform: translate(-50%, 10px);
+        pointer-events: none;
+        transition: 0.3s;
+      }
+      .room-toast.is-visible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      .room-app:not(.is-ready) > :not(.room-loader) {
+        visibility: hidden;
+      }
+      .room-loader {
+        position: absolute;
+        z-index: 100;
+        pointer-events: auto;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #07080b;
+      }
+      .room-loader.is-done {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .room-loader-inner {
+        text-align: center;
+      }
+      .room-loader-mark {
+        width: 38px;
+        height: 38px;
+        margin: 0 auto 15px;
+        border: 2px solid rgba(244, 185, 65, 0.22);
+        border-top-color: #f4b941;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      .room-loader p {
+        margin: 0;
+        color: rgba(255, 239, 202, 0.65);
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (max-width: 700px) {
+        .room-brand {
+          top: 15px;
+        }
+        .room-help {
+          font-size: 9px;
+          max-width: 230px;
+        }
+        .room-panel {
+          top: 85px;
+          right: auto;
+          left: 12px;
+          bottom: auto;
+          max-height: 40vh;
+          overflow: auto;
+          transform: translateX(-20px);
+        }
+        .room-panel.is-open {
+          transform: none;
+        }
+        .room-status {
+          right: 16px;
+          bottom: 22px;
+        }
+        .room-menu h1 {
+          letter-spacing: 0.1em;
+        }
+      }
+      @media (pointer: coarse) {
+        .room-app.is-active .room-touch-controls {
+          display: flex;
+        }
+        .room-panel {
+          left: 12px;
+          right: auto;
+          top: 85px;
+          bottom: auto;
+          width: 210px;
+          max-height: 40vh;
+          overflow: auto;
+          transform: translateX(-20px);
+        }
+        .room-panel.is-open {
+          transform: none;
+        }
+        .room-panel h2 {
+          font-size: 17px;
+        }
+        .room-details {
+          gap: 6px;
+        }
+        .room-description {
+          display: none;
+        }
+        .room-status {
+          bottom: 155px;
+          font-size: 9px;
+        }
+        .room-status.is-ready {
+          display: none;
+        }
+        .room-toast {
+          top: auto;
+          bottom: 180px;
+          max-width: 230px;
+          border-radius: 12px;
+        }
+        .room-interact-hint {
+          max-width: 200px;
+          top: 54%;
+        }
+      }
+      .glass-actions {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 8;
+        display: flex;
+        gap: 10px;
+      }
+      .glass-actions[hidden] {
+        display: none;
+      }
+      .glass-actions button {
+        padding: 12px 22px;
+        border: 1px solid #b38b50;
+        border-radius: 22px;
+        background: rgba(17, 26, 25, 0.9);
+        color: #ffe8b9;
+        font: 12px RoomComfortaa;
+        cursor: pointer;
+      }
+      .glass-actions button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .avatar-button {
+        position: absolute;
+        right: clamp(18px, 4vw, 58px);
+        top: 70px;
+        pointer-events: auto;
+        border: 1px solid #b5945a66;
+        border-radius: 20px;
+        padding: 8px 13px;
+        background: #101917d9;
+        color: #f5e1b6;
+        font: 11px RoomComfortaa;
+        cursor: pointer;
+      }
+      .avatar-dialog {
+        width: min(680px, calc(100vw - 40px));
+        max-height: 90vh;
+        overflow: auto;
+        box-sizing: border-box;
+        border: 1px solid #b5945a80;
+        border-radius: 22px;
+        padding: 24px;
+        background: #15201e;
+        color: #f5e1b6;
+        font-family: RoomComfortaa;
+      }
+      .avatar-dialog::backdrop {
+        background: #030706c9;
+        backdrop-filter: blur(7px);
+      }
+      .avatar-dialog h2 {
+        margin: 0 0 18px;
+        font-size: 20px;
+      }
+      .avatar-dialog-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .avatar-preview {
+        height: 360px;
+        min-width: 0;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .avatar-preview canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .avatar-choices {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 10px;
+      }
+      .avatar-choices button,
+      .avatar-save {
+        border: 1px solid #b5945a66;
+        border-radius: 12px;
+        padding: 13px;
+        text-align: left;
+        background: #23332f;
+        color: #f5e1b6;
+        font: 12px RoomComfortaa;
+        cursor: pointer;
+      }
+      .avatar-choices button[aria-checked="true"] {
+        border-color: #e2bb70;
+        background: #4a4934;
+        box-shadow: inset 3px 0 #e2bb70;
+      }
+      .avatar-save {
+        display: block;
+        margin: 18px 0 0 auto;
+        background: #dab677;
+        color: #222a22;
+        font-weight: 700;
+        text-align: center;
+      }
+      .avatar-close {
+        float: right;
+        border: 0;
+        background: transparent;
+        color: #f5e1b6;
+        font-size: 25px;
+        cursor: pointer;
+      }
+      .avatar-choices button:focus-visible,
+      .avatar-save:focus-visible {
+        outline: 2px solid #ffe5ad;
+        outline-offset: 3px;
+      }
+      @media (max-width: 560px) {
+        .avatar-dialog {
+          padding: 18px;
+        }
+        .avatar-dialog-layout {
+          grid-template-columns: 1fr;
+        }
+        .avatar-preview {
+          height: 270px;
+        }
+        .avatar-choices {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+        .avatar-choices button {
+          font-size: 10px;
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body class="ks-ui ks-page-beer-room">
+    <main class="room-app" id="roomApp">
+      <canvas
+        id="roomCanvas"
+        class="room-canvas"
+        tabindex="0"
+        aria-label="Интерактивный 3D-бар Киносреда"
+      ></canvas>
+      <div class="room-vignette" aria-hidden="true"></div>
+      <div class="room-hud">
+        <div class="room-online-status" id="roomOnline">
+          <i></i><span>Подключение…</span>
+        </div>
+        <button
+          class="avatar-button"
+          id="chooseAvatar"
+          type="button"
+          aria-haspopup="dialog"
+        >
+          Персонаж
+        </button>
+        <div class="room-crosshair" aria-hidden="true"></div>
+        <div
+          class="room-interact-hint"
+          id="interactHint"
+          aria-live="polite"
+        ></div>
+        <div class="room-touch-controls" id="touchControls">
+          <div
+            class="move-joystick"
+            id="moveJoystick"
+            role="group"
+            aria-label="Джойстик движения"
+          >
+            <span id="joystickKnob"></span>
+          </div>
+          <div class="touch-actions">
+            <button id="touchJump" aria-label="Прыгнуть">Прыжок</button
+            ><button id="touchCrouch" aria-pressed="false">Присесть</button
+            ><button class="touch-interact" id="touchInteract">
+              Взять напиток
+            </button>
+          </div>
+        </div>
+        <div id="roomStatus" style="display: none"><i></i><span></span></div>
+      </div>
+      <aside class="room-panel" id="beerPanel" aria-live="polite">
+        <button class="room-panel-close" id="closeBeer" aria-label="Закрыть">
+          ×
+        </button>
+        <div class="panel-label">вы выбрали напиток</div>
+        <h2 id="beerName">Пиво</h2>
+        <dl class="room-details" id="beerDetails"></dl>
+        <p class="room-description" id="beerDescription"></p>
+        <div class="room-panel-actions">
+          <button id="returnBeer">Убрать напиток</button
+          ><button id="focusBeer">Повернуть напиток</button>
+        </div>
+      </aside>
+      <div class="room-toast" id="roomToast"></div>
+      <div class="glass-actions" id="glassActions" hidden>
+        <button id="sipGlass">Глоток</button
+        ><button id="placeGlass">Поставить</button>
+      </div>
+      <div class="room-loader" id="roomLoader">
+        <div class="room-loader-inner">
+          <div class="room-loader-mark"></div>
+          <p>Загрузка…</p>
+        </div>
+      </div>
+    </main>
+    <dialog
+      id="avatarDialog"
+      class="avatar-dialog"
+      aria-labelledby="avatarTitle"
+    >
+      <button
+        type="button"
+        class="avatar-close"
+        id="closeAvatar"
+        aria-label="Закрыть выбор персонажа"
+      >
+        ×
+      </button>
+      <h2 id="avatarTitle">Ваш персонаж</h2>
+      <div class="avatar-dialog-layout">
+        <div
+          id="avatarPreview"
+          class="avatar-preview"
+          aria-label="Предпросмотр персонажа"
+        ></div>
+        <div
+          id="avatarChoices"
+          class="avatar-choices"
+          role="radiogroup"
+          aria-label="Внешность персонажа"
+        ></div>
+      </div>
+      <button type="button" id="saveAvatar" class="avatar-save">Выбрать</button>
+    </dialog>
+    <script src="./vendor/firebase-9.22.0/firebase-app-compat.js"></script>
+    <script src="./vendor/firebase-9.22.0/firebase-database-compat.js"></script>
+    <script type="module">
+      import * as THREE from "./three.module.js";
+      import { barSite } from "./beer-room-site.mjs";
+      import { buildInterior, shelfSlot } from "./beer-room-interior.mjs";
+      import { createRoomControls, bodyPresence } from "./beer-room-controls.mjs";
+      import { DrinkHand } from "./beer-room-hand.mjs";
+      import { BeerPouring } from "./beer-room-pouring.mjs";
+      import {
+        createPackageModel,
+        disposePackageInstance,
+      } from "./beer-package-model.mjs";
+      import { loadCachedPackage } from "./beer-package-cache.mjs";
+      import {
+        createHumanAvatar,
+        updateHumanAvatar,
+        updateAvatarAppearance,
+        prepareFirstPersonBody,
+      } from "./beer-room-avatar.mjs";
+      import { BeerRoomOnline } from "./beer-room-online.mjs";
+      import { createEnvironment } from "./beer-room-environment.mjs";
+      import { createWorldEditor } from "./beer-room-world-editor.mjs";
+      import { createCampSettings } from "./beer-room-camp-settings.mjs";
+      import { createToiletFlow } from "./beer-room-toilet-flow.mjs";
+      import { createAvatarPicker } from "./beer-room-avatar-picker.mjs";
+      import { createPlayerSave } from "./beer-room-player-save.mjs";
+      import {
+        createSceneStartup,
+        trackSceneLoads,
+      } from "./beer-room-startup.mjs";
+      import {createShelfDetail} from "./beer-room-shelf-detail.mjs";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBwp4ZNbJuUM5sY0qMffvZTHr2PDvc2iLc",
+        authDomain: "kinosreda-ce8ef.firebaseapp.com",
+        databaseURL:
+          "https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "kinosreda-ce8ef",
+        storageBucket: "kinosreda-ce8ef.firebasestorage.app",
+        messagingSenderId: "889337905300",
+        appId: "1:889337905300:web:325aea2f3fb3c6b44a7481",
+      };
+      const $ = (id) => document.getElementById(id),
+        app = $("roomApp"),
+        canvas = $("roomCanvas"),
+        menu = $("roomMenu"),
+        panel = $("beerPanel"),
+        status = $("roomStatus"),
+        loader = $("roomLoader"),
+        toast = $("roomToast"),
+        onlineStatus = $("roomOnline");
+      const sceneLoads = trackSceneLoads(THREE.DefaultLoadingManager),
+        startupFlags = { worldReady: false, catalogueReady: false };
+      let startup,
+        playerSave,
+        retryPending = 0;
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x08090d);
+      scene.fog = new THREE.Fog(0x181918, 16, 36);
+      const camera = new THREE.PerspectiveCamera(
+        64,
+        innerWidth / innerHeight,
+        0.08,
+        60,
+      );
+      camera.position.set(0, 1.64, barSite.z + 3.9);
+      scene.add(camera);
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance",
+      });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+      const clock = new THREE.Clock(),
+        raycaster = new THREE.Raycaster(),
+        pointer = new THREE.Vector2(),
+        textureLoader = new THREE.TextureLoader();
+      const textureQueue = [];
+      let activeTextureLoads = 0;
+      const beerModels = new Map(),
+        beers = new Map();
+      let pendingTextures = 0,
+        selected = null,
+        entered = true,
+        toastTimer = 0,
+        hovered = null;
+      const homePositions = new Map();
+      const interior = buildInterior(scene, renderer);
+      const controls = createRoomControls({
+        camera,
+        canvas,
+        colliders: interior.colliders,
+        surfaces: interior.surfaces,
+        onInteract: () => interactAtCenter(),
+        onPointerInteract: (x, y) => interactAt(x, y),
+        onSecondary: () => hand.putHeld(),
+        onSeat: () => {
+          const object = findHit(new THREE.Vector2(0, 0));
+          if (
+            ["seat", "lie", "sup-board", "toilet", "toilet-use"].includes(
+              object?.userData.action,
+            )
+          )
+            activate(object);
+        },
+        fps: true,
+        onMode: (mode) => (app.dataset.input = mode),
+      });
+      const player = controls.state;
+      const environment = createEnvironment({
+        scene,
+        renderer,
+        camera,
+        interior,
+        controls,
+        onChange: (open) => online.sendWorld(open),
+      });
+      const campSettings = createCampSettings(environment, controls, camera);
+      const hand = new DrinkHand({
+        scene,
+        camera,
+        onReturned: (source) => {
+          if (source?.userData.placed && !source.userData.held)
+            online.placed(source);
+          selected = null;
+          $("touchInteract").textContent = "Взять напиток";
+          panel.classList.remove("is-open");
+          infoBillboard.visible = false;
+        },
+        onPlaced: (item) => {
+          if (item?.model) online.placed(item.model);
+        },
+      });
+      const pouring = new BeerPouring(scene, hand, {
+        barZ: interior.bar.position.z,
+      });
+      const online = new BeerRoomOnline({
+        scene,
+        onStateReady: () => {
+          environment.prepareOutdoors();
+          worldEditor.update(0);
+          playerSave.restore();
+          startupFlags.worldReady = true;
+          online.sendPresence(true);
+        },
+        onWorldLayout: (s) => worldEditor.receive(s),
+        onWorldPatch: (s) => worldEditor.patch(s),
+        onWorldEditDenied: (s) => worldEditor.denied(s),
+        getToilet: () => environment.outdoors?.utilities,
+        onToilet: (s) => toiletFlow.receive(s),
+        onToiletDenied: (reason) => toiletFlow.denied(reason),
+        getSup: () => environment.outdoors?.sup,
+        onSup: (states) => {
+          const sup = environment.outdoors?.sup;
+          if (!sup) return;
+          sup.setNetwork(online);
+          if (!sup.networkBound) {
+            sup.networkBound = true;
+            for (const model of online.items.values())
+              sup.attach(model, model.userData.supAnchor);
+          }
+          sup.onMount = (b) => {
+            if (controls.mountSup(b, true))
+              showToast("Гребля: W/S · поворот: A/D · сойти: F / прыжок");
+          };
+          sup.onLost = () => controls.stand();
+          sup.receive(states);
+        },
+        onSupDenied: (data) => showToast(data.reason),
+        onItem: (model, anchor) => {
+          environment.outdoors?.sup.attach(model, anchor);
+          if (
+            model.userData.action === "glass" &&
+            !pouring.glasses.includes(model)
+          )
+            pouring.glasses.push(model);
+        },
+        onItemRemoved: (model) => {
+          environment.outdoors?.sup.attach(model, null);
+          const i = pouring.glasses.indexOf(model);
+          if (i >= 0) pouring.glasses.splice(i, 1);
+        },
+        onWorld: (open) => environment.setOpen(open, { broadcast: false }),
+        getBeerModel: (key) => beerModels.get(String(key)),
+        getLocalState: () => {
+          if (!playerSave?.restored) return null;
+          const state = worldEditor?.active
+              ? worldEditor.saved.state
+              : controls.state,
+            h = hand;
+          const presence = bodyPresence(state, worldEditor?.active ? worldEditor.saved.position : camera.position);
+          let kind = "idle";
+          if (state.toilet)
+            kind = toiletFlow.state.mode === "pee" ? "urinating" : "defecating";
+          else if (state.sup) kind = "paddling";
+          else if (state.swimming) kind = "swimming";
+          else if (state.seated)
+            kind = state.seated.kind === "hammock" ? "lying" : "seated";
+          else if (!state.grounded) kind = "jump";
+          else if (state.crouched) kind = Math.hypot(state.velocity?.x||0,state.velocity?.z||0)>.12 ? "crouch-walk" : "crouching";
+          else if (h.state === "DRINKING") kind = "drinking";
+          else if (h.state === "POURING") kind = "pouring";
+          else if (h.state === "BEER_PLACING" || h.state === "GLASS_PLACING")
+            kind = "placing";
+          else if (h.state === "RUNNING_WITH_DRINK") kind = "running";
+          else if (h.state === "WALKING_WITH_DRINK") kind = "walking";
+          else if (
+            Math.hypot(state.velocity?.x || 0, state.velocity?.z || 0) > 0.12
+          )
+            kind =
+              Math.hypot(state.velocity?.x || 0, state.velocity?.z || 0) > 4.8
+                ? "running"
+                : "walking";
+          else if (h.heldKind === "beer") kind = "beer";
+          else if (h.heldKind === "glass") kind = "glass";
+          return {
+            x: presence.x,
+            y: state.feetY,
+            z: presence.z,
+            yaw: presence.yaw,
+            pitch: state.pitch,
+            action: {
+              kind,
+              seatKind: state.seated?.seatKind || state.seated?.kind || null,
+              seatHeight: state.seatHeight,
+              gesture: h.state === "DRINKING" ? "drinking" : h.state === "POURING" ? "pouring" : null,
+              startedAt: state.toilet ? toiletFlow.state.startedAt : null,
+              supId: state.sup?.userData.id || null,
+              stroke: state.sup?.userData.state.phase || 0,
+              held: h.heldKind || null,
+              beerKey: h.model?.userData?.beerKey || null,
+              fill: h.model?.userData?.fill ?? null,
+            },
+          };
+        },
+      });
+      const toiletFlow = createToiletFlow({
+        controls,
+        online,
+        getUtilities: () => environment.outdoors?.utilities,
+        hand,
+        showToast,
+      });
+      const avatarPicker = createAvatarPicker({ online, controls });
+      const worldEditor = createWorldEditor({
+        scene,
+        camera,
+        canvas,
+        controls,
+        environment,
+        interior,
+        online,
+        hand,
+        getBeerModels: () => beerModels,
+        getHomePositions: () => homePositions,
+        getGlasses: () => pouring.glasses,
+        showToast,
+      });
+      playerSave = createPlayerSave({
+        camera,
+        controls,
+        environment,
+        interior,
+        getEditor: () => worldEditor,
+      });
+      addEventListener("pagehide", () => playerSave.save());
+      addEventListener("beforeunload", () => playerSave.save());
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) playerSave.save();
+      });
+      let placementFrame = 0,
+        placementCachedFrame = -1,
+        placementCached = null;
+      function findPlacement() {
+        if (placementCachedFrame === placementFrame) return placementCached;
+        placementCachedFrame = placementFrame;
+        return (placementCached = computePlacement());
+      }
+      function computePlacement() {
+        camera.updateMatrixWorld(true);
+        raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        raycaster.far = 2.35;
+        const objects = interactionRoots();
+        for (const hit of raycaster.intersectObjects(objects, true)) {
+          if (!hit.object.isMesh || hit.object.userData.placementOverlay)
+            continue;
+          let visible = true;
+          for (let a = hit.object; a; a = a.parent)
+            if (!a.visible) visible = false;
+          if (
+            !visible ||
+            hit.object.userData.water ||
+            (hit.object.material?.transparent &&
+              hit.object.material.opacity < 0.2)
+          )
+            continue;
+          if (hit.distance > 2.35) return null;
+          const surface = hit.object.userData.surface;
+          if (hit.object.userData.environmentGround) {
+            if (
+              hit.face.normal
+                .clone()
+                .applyNormalMatrix(
+                  new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld),
+                ).y < 0.8
+            )
+              return null;
+            const p = hit.point.clone();
+            p.y += 0.005;
+            return p;
+          }
+          if (surface?.kind === "sup-board") {
+            const b = surface.board,
+              p = hit.point.clone(),
+              local = b.worldToLocal(p.clone());
+            if (
+              !surface.contains(p.x, p.z, 0.08) ||
+              (Math.abs(local.z) < 0.4 && Math.abs(local.x) < 0.22)
+            )
+              return null;
+            local.y = 0.082 + 0.045 * Math.pow(1 - (local.z / 3.2004 + 0.5), 8);
+            p.copy(b.localToWorld(local));
+            p.supAnchor = environment.outdoors.sup.anchorAt(
+              b,
+              p,
+              new THREE.Quaternion().setFromAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                camera.rotation.y,
+              ),
+            );
+            if (
+              [...online.items.values(), ...pouring.glasses].some(
+                (g) =>
+                  g !== hand.model &&
+                  !g.userData.held &&
+                  g.position.distanceTo(p) < 0.14,
+              )
+            )
+              return null;
+            return p;
+          }
+          if (
+            !surface ||
+            hit.face.normal
+              .clone()
+              .applyNormalMatrix(
+                new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld),
+              ).y < 0.8
+          )
+            return null;
+          const p = hit.point.clone(),
+            r = hand.model?.userData.rTop || 0.061,
+            b = surface.bounds;
+          if (
+            p.x < b.min.x + r ||
+            p.x > b.max.x - r ||
+            p.z < b.min.z + r ||
+            p.z > b.max.z - r
+          )
+            return null;
+          p.y = hit.point.y + 0.002;
+          if (
+            pouring.glasses.some(
+              (g) =>
+                g !== hand.model &&
+                !g.userData.held &&
+                Math.abs(g.position.y - p.y) < 0.1 &&
+                Math.hypot(g.position.x - p.x, g.position.z - p.z) < 0.14,
+            )
+          )
+            return null;
+          return p;
+        }
+        return null;
+      }
+      hand.findPlacement = findPlacement;
+      hand.onRelease = (model) =>
+        environment.outdoors?.sup.attach(model, model.userData.homeAnchor);
+      hand.onTake = (model) => {
+        environment.outdoors?.sup.attach(model, null);
+        model.userData.movingSurface = null;
+      };
+      hand.resolveHome = (model) => {
+        const a = model.userData.homeAnchor,
+          sup = environment.outdoors?.sup,
+          b = sup?.boards.find((b) => b.userData.id === a?.boardId);
+        if (!b) return;
+        model.userData.homePosition.copy(
+          b.localToWorld(new THREE.Vector3().fromArray(a.local)),
+        );
+        model.userData.homeQuaternion
+          .copy(b.getWorldQuaternion(new THREE.Quaternion()))
+          .multiply(new THREE.Quaternion().fromArray(a.rotation));
+        model.userData.supAnchor = a;
+        if (hand.putQ) hand.putQ.copy(model.userData.homeQuaternion);
+      };
+      const paddler = createHumanAvatar(online.avatar);
+      paddler.name = "Local paddling body";
+      paddler.visible = false;
+      scene.add(paddler);
+      function updateLocalPaddler(dt) {
+        if (paddler.userData.requestedModel !== online.avatar.model)
+          updateAvatarAppearance(paddler, online.avatar);
+        const b = player.sup;
+        paddler.visible =
+          !worldEditor.active &&
+          (!!b ||
+            player.swimming ||
+            !!player.toilet ||
+            !!player.seated || player.crouched);
+        if (!paddler.visible) return;
+        paddler.position.set(
+          camera.position.x,
+          player.feetY,
+          camera.position.z,
+        );
+        paddler.rotation.y = player.yaw;
+        if (player.seated) {
+          paddler.position.copy(player.seated.seatPosition);
+          paddler.rotation.y = player.seatYaw;
+        }
+        if (player.toilet) {
+          paddler.position.copy(player.toilet.position);
+          paddler.rotation.y = player.toilet.yaw;
+        }
+        if (b) {
+          paddler.position.copy(b.position);
+          paddler.position.y = b.userData.surface.topY;
+          paddler.rotation.y = b.rotation.y;
+        }
+        updateHumanAvatar(
+          paddler,
+          {
+            kind:
+              player.seated?.kind === "hammock"
+                ? "lying"
+                : player.toilet
+                  ? toiletFlow.state.mode === "pee"
+                    ? "urinating"
+                    : "defecating"
+                  : b
+                    ? "paddling"
+                    : player.seated ? "seated" : player.crouched ? Math.hypot(player.velocity.x,player.velocity.z)>.12 ? "crouch-walk" : "crouching" : "swimming",
+            seatKind: player.seated?.seatKind || player.seated?.kind,
+            seatHeight: player.seatHeight,
+            startedAt: toiletFlow.state.startedAt,
+            held: null,
+            stroke: b?.userData.state.phase || 0,
+            paddle: b?.userData.paddleHands,
+          },
+          dt,
+          player.distance,
+        );
+        const model = paddler.userData.humanoidModel;
+        if (model) {
+          model
+            .getObjectByName("RightArm")
+            ?.scale.setScalar(hand.heldKind ? 0.001 : 1);
+          if (
+            paddler.userData.headHiddenModel !== paddler.userData.activeModel
+          ) {
+            prepareFirstPersonBody(paddler);
+            paddler.userData.headHiddenModel = paddler.userData.activeModel;
+          }
+        }
+      }
+
+      scene.traverse((o) => {
+        if (o.isLight) o.layers.enable(1);
+      });
+      hand.ready.catch((error) => {
+        showToast("Не удалось загрузить руку. Обновите страницу.");
+        console.error(error);
+      });
+      const infoBillboard = new THREE.Mesh(
+        new THREE.BoxGeometry(0.62, 0.325, 0.012),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.93,
+        }),
+      );
+      infoBillboard.visible = false;
+      infoBillboard.position.set(-0.43, 0.18, -1.5);
+      camera.add(infoBillboard);
+      function makeSignTexture() {
+        const c = document.createElement("canvas");
+        c.width = 1400;
+        c.height = 190;
+        const x = c.getContext("2d");
+        x.clearRect(0, 0, c.width, c.height);
+        const family =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--logo-font")
+            .trim() || "RoomComfortaa";
+        x.font = "700 118px " + family + ", RoomComfortaa, sans-serif";
+        x.textAlign = "center";
+        x.textBaseline = "middle";
+        x.shadowColor = "rgba(244,151,35,.95)";
+        x.shadowBlur = 28;
+        x.fillStyle = "#ffe6a0";
+        x.fillText("БАР", 700, 100);
+        return new THREE.CanvasTexture(c);
+      }
+      const signFace = new THREE.Mesh(
+        new THREE.PlaneGeometry(7.15, 0.97),
+        new THREE.MeshBasicMaterial({
+          map: makeSignTexture(),
+          transparent: true,
+        }),
+      );
+      signFace.position.set(0, 3.15, barSite.z - 8.0);
+      signFace.userData.barBuilding = true;
+      scene.add(signFace);
+      // A timber frame keeps the bar sign physically supported in Open Space.
+      const signWood = new THREE.MeshStandardMaterial({
+        color: 0x665038,
+        roughness: 0.85,
+      });
+      for (const x of [-3.8, 3.8]) {
+        const p = new THREE.Mesh(
+          new THREE.BoxGeometry(0.14, 3.7, 0.14),
+          signWood,
+        );
+        p.position.set(x, 1.85, barSite.z - 8.03);
+        p.castShadow = true;
+        p.userData.barBuilding = true;
+        scene.add(p);
+      }
+      const signBeam = new THREE.Mesh(
+        new THREE.BoxGeometry(7.75, 0.13, 0.15),
+        signWood,
+      );
+      signBeam.position.set(0, 3.6, barSite.z - 8.03);
+      signBeam.userData.barBuilding = true;
+      scene.add(signBeam);
+      let lastLogoFont = "";
+      async function refreshSign() {
+        const family =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--logo-font")
+            .trim() || "RoomComfortaa";
+        if (lastLogoFont === family) return;
+        lastLogoFont = family;
+        await document.fonts.load("118px " + family, "БАР").catch(() => {});
+        signFace.material.map.dispose();
+        signFace.material.map = makeSignTexture();
+        signFace.material.needsUpdate = true;
+      }
+      new MutationObserver(refreshSign).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class", "style"],
+      });
+      document.fonts.addEventListener("loadingdone", () => {
+        lastLogoFont = "";
+        refreshSign();
+      });
+      refreshSign();
+
+      function textureProxyBase() {
+        return /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+          ? location.origin
+          : "https://realtime.xn--80ahcljthqi.xn--p1ai";
+      }
+      const packageRequests = new Map();
+      let packageGeneration = 0;
+      function disposeModel(model) {
+        if (model.userData.packageAsset) disposePackageInstance(model);
+        else
+          model.traverse((o) => {
+            o.geometry?.dispose();
+            o.material?.dispose();
+          });
+      }
+      async function loadPackage(beer) {
+        if (!beer.imageUrl) throw new Error("Нет изображения упаковки");
+        if (packageRequests.has(beer.imageUrl))
+          return packageRequests.get(beer.imageUrl);
+        const request = (async () => {
+          const url = /^data:image\//i.test(beer.imageUrl)
+            ? beer.imageUrl
+            : `${textureProxyBase()}/fetch-image?url=${encodeURIComponent(beer.imageUrl)}`;
+          return loadCachedPackage(
+            beer.imageUrl,
+            url,
+            Math.min(renderer.capabilities.getMaxAnisotropy(), 8),
+          );
+        })();
+        packageRequests.set(beer.imageUrl, request);
+        try {
+          return await request;
+        } catch (error) {
+          packageRequests.delete(beer.imageUrl);
+          throw error;
+        }
+      }
+      function makeBeerModel(beer, index, asset = null) {
+        const group = asset ? createPackageModel(asset) : new THREE.Group();
+        group.userData.beerKey = beer.key;
+        group.userData.beer = beer;
+        group.userData.catalogIndex = index;
+        // Shelf packages are small, dense silhouette meshes. Keep their lit
+        // artwork, but avoid redrawing the whole catalogue into 19 shadow faces
+        // every frame. Furniture and carried/placed objects supply the shadows.
+        group.traverse((o) => {
+          o.userData.beerKey = beer.key;
+          o.userData.beer = beer;
+          if (o.isMesh) o.castShadow = false;
+        });
+        const height = beer.profile?.kind?.includes("bottle") ? 0.3 : 0.205;
+        group.scale.setScalar(
+          asset
+            ? (asset.profile.kind.includes("bottle") ? 0.3 : 0.205) /
+                asset.profile.modelHeight
+            : 1,
+        );
+        return group;
+      }
+      function replaceBeerGeometry(model, beer, index, asset) {
+        if (beerModels.get(beer.key) !== model) return;
+        const next = makeBeerModel(beer, index, asset);
+        next.position.copy(model.position);
+        next.quaternion.copy(model.quaternion);
+        next.userData.shelfSlot = model.userData.shelfSlot;
+        scene.add(next);
+        beerModels.set(beer.key, next);
+        worldEditor.registry?.syncContents();
+        beer.profile = asset.profile;
+        if (selected === model) selected = next;
+        scene.remove(model);
+        disposeModel(model);
+        renderer.shadowMap.needsUpdate = true;
+      }
+      function textureJobDone(generation) {
+        if (generation !== packageGeneration) return;
+        pendingTextures = Math.max(0, pendingTextures - 1);
+      }
+      function drainTextureQueue() {
+        while (activeTextureLoads < 6 && textureQueue.length) {
+          const job = textureQueue.shift();
+          if (job.generation !== packageGeneration) continue;
+          activeTextureLoads++;
+          loadPackage(job.beer)
+            .then((asset) => {
+              if (job.generation === packageGeneration) {
+                delete job.beer.packageError;
+                job.beer.loadAttempts = 0;
+                replaceBeerGeometry(
+                  job.model,
+                  beers.get(job.beer.key) || job.beer,
+                  job.index,
+                  asset,
+                );
+              }
+            })
+            .catch((error) => {
+              if (job.generation === packageGeneration) {
+                job.beer.packageError = error.message;
+                status.querySelector("span").textContent =
+                  `Не загружено: ${job.beer.name}`;
+                const attempt = (job.beer.loadAttempts || 0) + 1;
+                job.beer.loadAttempts = attempt;
+                if (attempt <= 5) {
+                  retryPending++;
+                  setTimeout(
+                    () => {
+                      retryPending--;
+                      if (
+                        job.generation === packageGeneration &&
+                        beerModels.get(job.beer.key) === job.model
+                      ) {
+                        pendingTextures++;
+                        enqueueBeerTexture(job.beer, job.model, job.index);
+                      }
+                    },
+                    Math.min(30000, 500 * 2 ** attempt),
+                  );
+                }
+              }
+            })
+            .finally(() => {
+              activeTextureLoads--;
+              textureJobDone(job.generation);
+              drainTextureQueue();
+            });
+        }
+      }
+      function enqueueBeerTexture(beer, model, index) {
+        if (!beer.imageUrl) return;
+        textureQueue.push({
+          beer,
+          model,
+          index,
+          generation: packageGeneration,
+        });
+        drainTextureQueue();
+      }
+      function placeBeer(beer, index) {
+        const slot = shelfSlot(index);
+        const model = makeBeerModel(beer, index);
+        model.position.set(slot.x, slot.y, slot.z);
+        model.rotation.set(0, slot.yaw, 0);
+        model.userData.shelfSlot = slot;
+        scene.add(model);
+        beerModels.set(beer.key, model);
+        homePositions.set(beer.key, {
+          position: model.position.clone(),
+          rotation: model.rotation.clone(),
+        });
+        enqueueBeerTexture(beer, model, index);
+        worldEditor.registry?.syncContents();
+      }
+      function renderBeers(list) {
+        const wanted = new Set(list.map((b) => b.key));
+        for (const [key, model] of beerModels) {
+          const next = list.find((b) => b.key === key);
+          if (
+            !wanted.has(key) ||
+            next.imageUrl !== model.userData.beer?.imageUrl
+          ) {
+            if (selected === model) returnSelected(true);
+            scene.remove(model);
+            disposeModel(model);
+            beerModels.delete(key);
+            homePositions.delete(key);
+          }
+        }
+        for (const [index, beer] of list.entries()) {
+          const model = beerModels.get(beer.key);
+          if (model) {
+            model.userData.beer = beer;
+            beer.profile = model.userData.packageProfile;
+            model.traverse((o) => {
+              if (o.userData.beerKey) o.userData.beer = beer;
+            });
+          } else {
+            if (beer.imageUrl) pendingTextures++;
+            placeBeer(beer, index);
+          }
+        }
+        status.classList.add("is-ready");
+        status.querySelector("span").textContent =
+          `${list.length} ${list.length === 1 ? "напиток" : "напитков"} на полке`;
+      }
+      function normalize(raw, index, key) {
+        const r = raw || {};
+        return {
+          key: String(key),
+          name: String(r.name || `Напиток ${index + 1}`),
+          imageUrl: String(r.imageUrl || r.image || r.img || ""),
+          alcohol: String(r.alcohol || ""),
+          calories: String(r.calories || ""),
+          type: String(r.type || ""),
+          style: String(r.style || ""),
+          filtered: String(r.filtered || ""),
+          volume: String(r.volume || ""),
+          country: String(r.country || ""),
+          brewery: String(r.brewery || r.producer || r.manufacturer || ""),
+          ibu: String(r.ibu || ""),
+          gravity: String(r.gravity || r.density || ""),
+          description: String(r.description || r.notes || ""),
+          rating: averageRating(r.ratings),
+        };
+      }
+      function averageRating(r) {
+        const vals = Object.values(r || {})
+          .map(Number)
+          .filter((v) => Number.isFinite(v) && v > 0);
+        return vals.length
+          ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1)
+          : "";
+      }
+      let catalogSignature = "";
+      function syncSnapshot(raw) {
+        try {
+          localStorage.setItem("kinosreda-room-catalog", JSON.stringify(raw));
+        } catch {}
+        const entries = Array.isArray(raw)
+          ? raw.map((v, i) => [i, v])
+          : Object.entries(raw || {});
+        const next = entries.map(([k, v], i) => normalize(v, i, k)),
+          signature = JSON.stringify(next);
+        if (signature === catalogSignature) return;
+        catalogSignature = signature;
+        beers.clear();
+        next.forEach((b) => beers.set(b.key, b));
+        renderBeers(next);
+      }
+      function retryMissing() {
+        for (const model of beerModels.values()) {
+          const beer = beers.get(model.userData.beerKey);
+          if (beer?.packageError) {
+            beer.loadAttempts = 0;
+            pendingTextures++;
+            enqueueBeerTexture(beer, model, model.userData.catalogIndex);
+          }
+        }
+      }
+      addEventListener("online", retryMissing);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) retryMissing();
+      });
+      function details(beer) {
+        $("beerDescription").textContent = beer.description || "";
+        $("beerDescription").hidden = !beer.description;
+        const fields = [
+          ["Производитель", beer.brewery],
+          ["Страна", beer.country],
+          ["Стиль", beer.style],
+          ["Тип", beer.type],
+          ["Крепость", beer.alcohol ? `${beer.alcohol}%` : ""],
+          ["Горечь", beer.ibu ? `${beer.ibu} IBU` : ""],
+          ["Плотность", beer.gravity],
+          ["Калории", beer.calories ? `${beer.calories} ккал` : ""],
+          ["Фильтрация", beer.filtered],
+          ["Объём", beer.volume ? `${beer.volume} л` : ""],
+          ["Рейтинг", beer.rating],
+        ].filter(([, value]) => String(value || "").trim());
+        $("beerDetails").innerHTML = fields
+          .map(([a, b]) => `<div><dt>${a}</dt><dd>${escapeHtml(b)}</dd></div>`)
+          .join("");
+      }
+      function escapeHtml(v) {
+        return String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      function showToast(text) {
+        toast.textContent = text;
+        toast.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(
+          () => toast.classList.remove("is-visible"),
+          2400,
+        );
+      }
+      function makeInfoTexture(beer) {
+        const c = document.createElement("canvas");
+        c.width = 900;
+        c.height = 470;
+        const x = c.getContext("2d");
+        x.fillStyle = "#141014";
+        x.fillRect(0, 0, c.width, c.height);
+        x.strokeStyle = "#d49b45";
+        x.lineWidth = 8;
+        x.strokeRect(18, 18, c.width - 36, c.height - 36);
+        x.fillStyle = "#f5d38b";
+        x.font = "700 44px RoomComfortaa,sans-serif";
+        x.fillText(String(beer.name || "Пиво").slice(0, 28), 48, 100);
+        x.fillStyle = "#c49a58";
+        x.font = "24px RoomComfortaa,sans-serif";
+        x.fillText(
+          [beer.style, beer.alcohol && `${beer.alcohol}%`, beer.country]
+            .filter(Boolean)
+            .join(" · ")
+            .slice(0, 52),
+          48,
+          156,
+        );
+        x.fillStyle = "#fff0c4";
+        x.font = "20px RoomComfortaa,sans-serif";
+        x.fillText("КИНОСРЕДА / BEER ROOM", 48, 405);
+        return new THREE.CanvasTexture(c);
+      }
+      function selectBeer(model) {
+        if (selected || !model.userData.packageAsset) return;
+        if (!hand.loaded) {
+          showToast("Рука загружается…");
+          return;
+        }
+        const beer = beers.get(model.userData.beerKey);
+        if (!beer) return;
+        setHovered(null);
+        const wasPlaced = !!model.userData.placed,
+          placedItemId = model.userData.onlineItemId;
+        if (!hand.take(model)) return;
+        selected = model;
+        if (wasPlaced && placedItemId)
+          online.sendAction({
+            kind: "picked",
+            beerKey: model.userData.beerKey,
+            itemId: placedItemId,
+          });
+        $("beerName").textContent = beer.name;
+        details(beer);
+        panel.classList.add("is-open");
+        $("touchInteract").textContent = "Поставить пиво";
+        $("focusBeer").textContent = "Осмотреть";
+      }
+      function returnSelected(immediate = false) {
+        if (hand.heldKind === "glass") {
+          hand.returnToShelf(immediate);
+          return;
+        }
+        if (!selected) return;
+        if (hand.returnToShelf(immediate)) {
+          panel.classList.remove("is-open");
+          infoBillboard.visible = false;
+        }
+      }
+      function setHovered(object) {
+        if (hovered === object) return;
+        for (const [root, value] of [
+          [hovered, 0],
+          [object, 0.09],
+        ])
+          if (root?.userData.beerKey)
+            root.traverse((o) => {
+              if (o.isMesh && o.material.emissive) {
+                o.material.emissive.setHex(0xd9a754);
+                o.material.emissiveIntensity = value;
+              }
+            });
+        hovered = object;
+        $("interactHint").style.display = [
+          "open-space-toggle",
+          "seat",
+          "lie",
+          "sup-board",
+          "toilet",
+          "toilet-use",
+        ].includes(object?.userData.action)
+          ? "block"
+          : "";
+        if (object?.userData.action === "open-space-toggle") {
+          $("interactHint").textContent = "";
+          $("interactHint").style.display = "none";
+          return;
+        }
+        if (["toilet", "toilet-use"].includes(object?.userData.action)) {
+          $("interactHint").textContent = toiletFlow.state.owner
+            ? "Занято"
+            : "Туалет · E / F";
+          return;
+        }
+        if (object?.userData.action === "sup-board") {
+          $("interactHint").textContent =
+            player.sup === object
+              ? "Сойти · F / прыжок"
+              : object.userData.owner && object.userData.owner !== online.id
+                ? "Сапборд занят"
+                : "Сесть на сапборд · E / F";
+          return;
+        }
+        if (object?.userData.action === "lie") {
+          $("interactHint").textContent = "Лечь в гамак · E / F";
+          return;
+        }
+        if (object?.userData.action === "seat") {
+          $("interactHint").textContent = "Сесть · E / F";
+          return;
+        }
+        if (object?.userData.action === "glass")
+          $("interactHint").textContent = selected
+            ? pouring.available(object, camera)
+              ? "Налить пиво · E / нажать"
+              : object.userData.fill > 0.03
+                ? "Бокал уже наполнен"
+                : "Подойдите к бокалу со стороны бармена"
+            : "Сначала выберите пиво на полке";
+        else
+          $("interactHint").textContent =
+            object?.userData.beerKey && !selected
+              ? `${object.userData.beer?.name || beers.get(object.userData.beerKey)?.name || "Пиво"} · E / нажать, чтобы выбрать`
+              : "";
+      }
+      function interactionRoots() {
+        const outside = environment.outdoors,
+          added = outside?.editorProps;
+        const roots = scene.children.filter(
+          (o) =>
+            o !== camera &&
+            o !== hand.rig &&
+            o !== outside?.group &&
+            o !== paddler &&
+            o !== added,
+        );
+        if (added)
+          for (const child of added.children) {
+            const b = child.userData.interactionBounds;
+            if (!b || b.distanceToPoint(camera.position) < 3.7)
+              roots.push(child);
+          }
+        if (environment.open && outside)
+          roots.push(
+            outside.camp.gazebo,
+            outside.camp.fire,
+            outside.camp.bench,
+            outside.camp.decorations,
+            ...outside.camp.fireBenches,
+            outside.utilities.group,
+            outside.sup.group,
+            outside.landscape.ground,
+          );
+        return roots;
+      }
+      function findHit(ndc) {
+        camera.updateMatrixWorld(true);
+        raycaster.setFromCamera(ndc, camera);
+        const world = interactionRoots();
+        const reach = controls?.state?.seated ? 3.6 : 2.35;
+        raycaster.far = reach;
+        for (const hit of raycaster.intersectObjects(world, true)) {
+          if (!hit.object.isMesh) continue;
+          if (hit.distance > reach) return null;
+          let object = hit.object;
+          let ancestor = object,
+            visible = true;
+          while (ancestor) {
+            if (!ancestor.visible) visible = false;
+            ancestor = ancestor.parent;
+          }
+          if (!visible) continue;
+          while (
+            object &&
+            !object.userData.beerKey &&
+            !object.userData.action &&
+            !object.userData.surface
+          )
+            object = object.parent;
+          if (object?.userData.surface?.board)
+            return object.userData.surface.board;
+          if (object) {
+            if (object.userData.action) return object;
+            while (
+              object.parent &&
+              object.parent !== scene &&
+              object.parent !== hand.rig &&
+              !object.userData.packageAsset
+            )
+              object = object.parent;
+            return object.userData.packageAsset
+              ? object
+              : beerModels.get(object.userData.beerKey);
+          }
+          if (
+            hit.object.material?.transparent &&
+            hit.object.material.opacity < 0.2
+          )
+            continue;
+          return null;
+        }
+        return null;
+      }
+      function activate(object) {
+        if (object?.userData.action === "open-space-toggle") {
+          environment.toggle();
+          return;
+        }
+        if (object?.userData.action === "toilet") {
+          toiletFlow.open();
+          return;
+        }
+        if (object?.userData.action === "toilet-use") {
+          toiletFlow.request(object.userData.toiletMode);
+          return;
+        }
+        if (object?.userData.action === "sup-board") {
+          if (player.sup !== object && !controls.mountSup(object))
+            showToast(
+              object.userData.owner
+                ? "Сапборд занят"
+                : "Подойдите к доске или дождитесь подключения",
+            );
+          return;
+        }
+        if (
+          object?.userData.action === "seat" ||
+          object?.userData.action === "lie"
+        ) {
+          if (controls.sit(object.userData.surface))
+            showToast(
+              object.userData.action === "lie"
+                ? "Вы легли в гамак. F — встать"
+                : "Вы сели. F — встать",
+            );
+          return;
+        }
+        if (object?.userData.action === "glass") {
+          if (hand.heldKind === "glass") return;
+          if (selected && hand.canPour() && object.userData.fill < 0.03) {
+            if (
+              pouring.start(
+                object,
+                camera,
+                beers.get(selected.userData.beerKey),
+              )
+            ) {
+              setHovered(null);
+              showToast("Наливаем пиво…");
+            } else showToast("Подойдите к пустому бокалу со стороны бармена");
+            return;
+          }
+          if (
+            (hand.state === "IDLE" || hand.state === "POUR_COMPLETE") &&
+            pouring.reachable(object, camera)
+          ) {
+            if (hand.takeGlass(object)) {
+              if (object.userData.onlineItemId)
+                online.sendAction({
+                  kind: "picked",
+                  itemId: object.userData.onlineItemId,
+                });
+              $("touchInteract").textContent = "Пить / поставить";
+              selected = null;
+              panel.classList.remove("is-open");
+            }
+            return;
+          }
+          if (!selected) {
+            showToast("Выберите пиво на полке");
+            return;
+          }
+          if (
+            pouring.start(object, camera, beers.get(selected.userData.beerKey))
+          ) {
+            setHovered(null);
+            showToast("Наливаем пиво…");
+          } else
+            showToast(
+              hand.served
+                ? "Упаковка уже использована · выберите напиток снова"
+                : "Подойдите к пустому бокалу со стороны бармена",
+            );
+        } else if (object?.userData.action === "fridge")
+          object.userData.open = !object.userData.open;
+        else if (object?.userData.beerKey && !selected) selectBeer(object);
+        else if (selected) returnSelected();
+      }
+      function interactAtCenter() {
+        if (worldEditor.active) return;
+        if (!entered) return;
+        if (player.toilet) {
+          toiletFlow.exit();
+          return;
+        }
+        const object = findHit(new THREE.Vector2(0, 0));
+        if (
+          [
+            "open-space-toggle",
+            "seat",
+            "lie",
+            "sup-board",
+            "toilet",
+            "toilet-use",
+          ].includes(object?.userData.action) &&
+          !(object?.userData.action === "sup-board" && player.sup === object)
+        ) {
+          activate(object);
+          return;
+        }
+        if (hand.heldKind === "glass") {
+          hand.beginDrink();
+          return;
+        }
+        if (
+          hand.heldKind === "beer" &&
+          hand.canPutBeer() &&
+          object?.userData.action !== "glass"
+        ) {
+          hand.putBeer();
+          return;
+        }
+        activate(object);
+      }
+      function interactAt(x, y) {
+        if (worldEditor.active) return;
+        if (!entered) return;
+        if (player.toilet) {
+          toiletFlow.exit();
+          return;
+        }
+        const rect = canvas.getBoundingClientRect();
+        pointer.set(
+          ((x - rect.left) / rect.width) * 2 - 1,
+          (-(y - rect.top) / rect.height) * 2 + 1,
+        );
+        const object = findHit(pointer);
+        if (
+          [
+            "open-space-toggle",
+            "seat",
+            "lie",
+            "sup-board",
+            "toilet",
+            "toilet-use",
+          ].includes(object?.userData.action) &&
+          !(object?.userData.action === "sup-board" && player.sup === object)
+        ) {
+          activate(object);
+          return;
+        }
+        if (hand.heldKind === "glass") {
+          hand.beginDrink();
+          return;
+        }
+        if (
+          hand.heldKind === "beer" &&
+          hand.canPutBeer() &&
+          object?.userData.action !== "glass"
+        ) {
+          hand.putBeer();
+          return;
+        }
+        activate(object);
+      }
+      function setHidden(element, value) {
+        if (element.hidden !== value) element.hidden = value;
+      }
+      const shelfDetail=createShelfDetail({camera,getModels:()=>beerModels});
+      let hoverTick = 0,
+        shadowTick = 0;
+      function animate() {
+        requestAnimationFrame(animate);
+        placementFrame++;
+        const dt = Math.min(clock.getDelta(), 0.05);
+        player.movementLocked = [
+          "POURING",
+          "GLASS_PLACING",
+          "BEER_PLACING",
+        ].includes(hand.state);
+        if (player.sup && !online.connected) controls.stand();
+        environment.outdoors?.sup.update(dt);
+        toiletFlow.update();
+        controls.update(dt);
+        worldEditor.update(dt);
+        updateLocalPaddler(dt);
+        interior.update(dt);
+        shelfDetail.update(dt);
+        camera.updateMatrixWorld(true);
+        hand.update(dt, player);
+        pouring.update(dt, player);
+        online.update(dt);
+        avatarPicker.update(dt);
+        onlineStatus.classList.toggle("is-connected", online.connected);
+        const onlineText = online.connected
+          ? `Онлайн · ${online.users.size + 1}`
+          : "Подключение…";
+        if (onlineStatus.querySelector("span").textContent !== onlineText)
+          onlineStatus.querySelector("span").textContent = onlineText;
+        if (entered && !worldEditor.active && (hoverTick += dt) > 0.1) {
+          hoverTick = 0;
+          const object = findHit(new THREE.Vector2(0, 0));
+          setHovered(object);
+          if (
+            selected &&
+            hand.canPour() &&
+            object?.userData.action === "glass" &&
+            pouring.available(object, camera)
+          )
+            hand.state = "POUR_READY";
+          else if (hand.state === "POUR_READY") hand.state = "HOLDING";
+        }
+        infoBillboard.visible = false;
+        const holdingGlass = hand.heldKind === "glass",
+          holdingBeer = hand.heldKind === "beer";
+        setHidden($("glassActions"), !(holdingGlass || holdingBeer));
+        setHidden($("sipGlass"), !holdingGlass);
+        $("sipGlass").disabled = !hand.canDrink();
+        const placeText = holdingBeer ? "Поставить пиво" : "Поставить";
+        if ($("placeGlass").textContent !== placeText)
+          $("placeGlass").textContent = placeText;
+        $("placeGlass").disabled = holdingGlass
+          ? !hand.canPutGlass()
+          : !hand.canPutBeer();
+        const inView =
+          !worldEditor.active &&
+          !!hand.model &&
+          !["POURING", "GLASS_PLACING"].includes(hand.state);
+        hand.rig.traverse((o) => o.layers.set(inView ? 1 : 0));
+        shadowTick += dt;
+        if (
+          renderer.shadowMap.enabled &&
+          (scene.userData.shadowsDirty ||
+            ((scene.userData.dynamicShadows ||
+              player.sup ||
+              player.swimming ||
+              player.toilet) &&
+              shadowTick >= 1 / 20))
+        ) {
+          renderer.shadowMap.needsUpdate = true;
+          scene.userData.shadowsDirty = scene.userData.dynamicShadows = false;
+          shadowTick = 0;
+        }
+        camera.layers.set(0);
+        environment.update(dt);
+        campSettings.update(dt);
+        startup?.update();
+        if (startup?.state.revealed) playerSave.update(dt);
+        renderer.autoClear = true;
+        renderer.render(scene, camera);
+        if (inView) {
+          const background = scene.background;
+          scene.background = null;
+          renderer.autoClear = false;
+          renderer.clearDepth();
+          camera.layers.set(1);
+          renderer.render(scene, camera);
+          camera.layers.set(0);
+          scene.background = background;
+          renderer.autoClear = true;
+        }
+      }
+      addEventListener("resize", () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+        environment.applyQuality(environment.quality);
+      });
+      canvas.addEventListener("webglcontextlost", (e) => {
+        e.preventDefault();
+        controls.pause();
+        showToast("Восстанавливаем изображение…");
+      });
+      canvas.addEventListener("webglcontextrestored", () => {
+        environment.outdoors?.lake.invalidateReflection();
+        scene.userData.shadowsDirty = true;
+        controls.enable();
+      });
+      controls.bindJoystick($("moveJoystick"), $("joystickKnob"));
+      $("touchInteract").addEventListener("click", interactAtCenter);
+      $("touchJump").addEventListener("click", () => controls.jump());
+      $("touchCrouch").addEventListener("click", () => {
+        const pressed = !controls.keys.has("KeyC");
+        controls.keys[pressed ? "add" : "delete"]("KeyC");
+        $("touchCrouch").setAttribute("aria-pressed", String(pressed));
+      });
+      $("sipGlass").addEventListener("click", () => hand.beginDrink());
+      $("placeGlass").addEventListener("click", () => hand.putHeld());
+      controls.pause();
+      startup = createSceneStartup({
+        app,
+        loader,
+        renderer,
+        scene,
+        camera,
+        ready: () =>
+          startupFlags.worldReady &&
+          startupFlags.catalogueReady &&
+          hand.loaded &&
+          sceneLoads.pending === 0 &&
+          pendingTextures === 0 &&
+          activeTextureLoads === 0 &&
+          textureQueue.length === 0 &&
+          retryPending === 0 &&
+          Math.abs(environment.progress - (environment.open ? 1 : 0)) <
+            0.0001 &&
+          (!environment.open || environment.outdoors.lake.stats.bakeCount > 0),
+        onReveal: () => {
+          controls.enable();
+          playerSave.save();
+          online.sendPresence(true);
+        },
+      });
+      $("closeBeer").addEventListener("click", () => returnSelected());
+      $("returnBeer").addEventListener("click", () => returnSelected());
+      $("focusBeer").addEventListener("click", () => {
+        if (selected && hand.canPour()) {
+          hand.examine = !hand.examine;
+          $("focusBeer").textContent = hand.examine
+            ? "Зафиксировать"
+            : "Повернуть напиток";
+        }
+      });
+      window.__kinosredaRoom = {
+        camera,
+        scene,
+        renderer,
+        beerModels,
+        beers,
+        player,
+        controls,
+        hand,
+        pouring,
+        online,
+        interior,
+        environment,
+        campSettings,
+        toiletFlow,
+        worldEditor,
+        paddler,
+        startup,
+        sceneLoads,
+        playerSave,
+        findPlacement,
+        signFace,
+        selectBeer,
+        returnSelected,
+        interactAtCenter,
+        interactAt,
+        findHit,
+        activate,
+        audit: () =>
+          [...beers.values()].map((beer) => ({
+            key: beer.key,
+            name: beer.name,
+            profile: beer.profile,
+            imageUrl: beer.imageUrl,
+          })),
+      };
+      animate();
+      let cachedCatalog = false;
+      try {
+        const saved = localStorage.getItem("kinosreda-room-catalog");
+        if (saved) {
+          syncSnapshot(JSON.parse(saved));
+          cachedCatalog = true;
+        }
+      } catch {}
+      function catalogFallback() {
+        if (!cachedCatalog && !catalogSignature) syncSnapshot({});
+        startupFlags.catalogueReady = true;
+      }
+      try {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        firebase
+          .database()
+          .ref("beerRating")
+          .on(
+            "value",
+            (snap) => {
+              syncSnapshot(snap.val());
+              startupFlags.catalogueReady = true;
+            },
+            catalogFallback,
+          );
+      } catch {
+        catalogFallback();
+      }
+      if (cachedCatalog)
+        setTimeout(() => {
+          if (!startupFlags.catalogueReady) catalogFallback();
+        }, 4000);
+    </script>
+  </body>
+</html>

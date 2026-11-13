@@ -1,0 +1,335 @@
+@font-face {
+  font-family: Comfortaa;
+  src: url("../comfortaa-400.ttf");
+}
+:root {
+  color-scheme: dark;
+  --ink: #050b13;
+  --text: #f4f0e7;
+  --muted: #92a1ad;
+  --gold: #e7bc7a;
+  --line: rgba(206, 221, 233, 0.16);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--text);
+  font-family: Comfortaa, system-ui, sans-serif;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button:focus-visible,
+a:focus-visible,
+canvas:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 5px;
+}
+#world {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+}
+#universe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  outline-offset: -5px;
+}
+#universe.dragging {
+  cursor: grabbing;
+}
+#universe.over-object {
+  cursor: pointer;
+}
+#tooltip {
+  position: absolute;
+  z-index: 4;
+  max-width: min(260px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border: 1px solid rgba(231, 188, 122, 0.22);
+  border-radius: 10px;
+  background: rgba(9, 16, 24, 0.88);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px #0003;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+}
+#tooltip strong {
+  font-weight: 400;
+}
+/* Destinations remain available to assistive technology without visible text. */
+.accessible-places {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.accessible-places a {
+  display: block;
+}
+#loading {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--ink);
+  display: grid;
+  place-items: center;
+  transition: opacity 0.8s;
+}
+#loading.done {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-orbit {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e7bc7a2a;
+  border-radius: 50%;
+  position: relative;
+}
+.loading-orbit:before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border: 1px solid #e7bc7a90;
+  border-radius: 50%;
+}
+.loading-orbit i {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: orbit 1.2s linear infinite;
+}
+#portal {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--text);
+  overflow: hidden;
+  box-shadow: none;
+}
+#portal::backdrop {
+  background: #02070d66;
+}
+#portal:not([open]) {
+  display: none;
+}
+.portal-content {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+}
+#section-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--ink);
+  visibility: hidden;
+}
+#section-frame.ready {
+  visibility: visible;
+}
+#section-frame[hidden] {
+  display: none;
+}
+#portal-close {
+  position: absolute;
+  z-index: 5;
+  top: max(10px, env(safe-area-inset-top, 0px));
+  left: max(10px, env(safe-area-inset-left, 0px));
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(22, 25, 30, 0.48);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.12);
+  color: var(--gold);
+  touch-action: manipulation;
+  transition:
+    background 0.22s,
+    transform 0.28s;
+}
+#portal-close:hover {
+  background: rgba(46, 51, 59, 0.8);
+}
+#portal-close:active {
+  transform: scale(0.94);
+}
+#portal-close:focus-visible {
+  outline-offset: 3px;
+}
+#portal-close svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (pointer: coarse) {
+  #portal-close::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+}
+#portal-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+#portal-status[hidden] {
+  display: none;
+}
+#portal-special {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: clamp(30px, 8vw, 120px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  background: radial-gradient(ellipse at 80% 40%, #20344766, transparent 65%);
+}
+#portal-special[hidden] {
+  display: none;
+}
+.eyebrow {
+  font-size: 8px;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+#portal-special h2 {
+  font-weight: 400;
+  font-size: clamp(24px, 4vw, 48px);
+}
+#portal-special p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.9;
+  max-width: 560px;
+}
+#portal-special a,
+#portal-special button {
+  display: inline-block;
+  border: 1px solid #e7bc7a55;
+  border-radius: 30px;
+  background: #e7bc7a13;
+  padding: 15px 25px;
+  color: var(--gold);
+  font-size: 12px;
+  margin-top: 20px;
+}
+#fallback {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  padding: 8vh max(24px, 8vw);
+  background: #080e18;
+  overflow: auto;
+}
+#fallback[hidden] {
+  display: none;
+}
+#fallback h1 {
+  font-size: 32px;
+  font-weight: 400;
+}
+#fallback p {
+  color: var(--muted);
+  line-height: 1.8;
+  max-width: 640px;
+}
+#fallback-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin: 30px 0;
+}
+#fallback-links a {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 12px;
+}
+#retry-world {
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: var(--gold);
+  color: #101820;
+  padding: 13px 20px;
+  margin-right: 20px;
+}
+#fallback > a {
+  font-size: 12px;
+}
+.no-script {
+  position: fixed;
+  inset: 35% 15%;
+  z-index: 100;
+  background: var(--ink);
+  padding: 40px;
+  line-height: 2;
+}
+.no-script a {
+  color: var(--gold);
+}
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *:before,
+  *:after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

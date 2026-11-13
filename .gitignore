@@ -1,1 +1,8 @@
 .venv-beer/
+
+node_modules/
+.cache
+.codex-artifacts/
+.env
+.env.*
+.DS_Store

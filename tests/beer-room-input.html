@@ -1,0 +1,5 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><style>body{margin:0}canvas{width:100vw;height:70vh;touch-action:none;background:#222}#pad{position:absolute;bottom:10px;left:10px;width:120px;height:120px;background:#aaa;touch-action:none;display:grid;place-items:center}#knob{width:30px;height:30px;background:#555;border-radius:50%}</style><canvas id="canvas" tabindex="0"></canvas><div id="pad"><span id="knob"></span></div><script type="module">
+import*as THREE from '../three.module.js';import{createRoomControls}from '../beer-room-controls.mjs';
+const camera=new THREE.PerspectiveCamera();camera.position.set(0,1.64,2);let interactions=0;
+const controls=createRoomControls({camera,canvas:document.querySelector('canvas'),colliders:[],onInteract:()=>interactions++,onPointerInteract:()=>interactions++});controls.bindJoystick(document.querySelector('#pad'),document.querySelector('#knob'));controls.enable();window.fixture={camera,controls,get interactions(){return interactions},step(n=60){for(let i=0;i<n;i++)controls.update(1/60)}};
+</script></html>

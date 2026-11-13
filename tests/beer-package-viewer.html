@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Проверка формы упаковки — Киносреда</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#d4d3d0;color:#222;font:14px system-ui}header{padding:16px 24px;background:#f1f0ed;display:flex;gap:12px;align-items:center;flex-wrap:wrap}select{max-width:380px;padding:8px}button,a{padding:8px;color:#222}main{display:grid;grid-template-columns:1fr 1fr;max-width:1200px;margin:auto}.cell{position:relative;min-width:0;height:720px}h2{text-align:center;font-size:16px;font-weight:500}.reference{display:block;height:610px;width:100%;object-fit:contain}canvas{width:100%;height:640px;display:block;touch-action:none}.readout{max-width:1000px;margin:0 auto;padding:16px;font-variant-numeric:tabular-nums}.error{color:#b00020} @media(max-width:700px){.cell{height:480px}.reference{height:390px}canvas{height:420px}}
+</style></head><body><header><a href="../beer-room.html">← В бар</a><select id="catalog" aria-label="Напиток"></select><button id="front">Спереди</button><button id="side">Сбоку</button><button id="rear">Сзади</button><button id="left">Слева</button><button id="angle">45°</button><button id="rotate">Вращать</button><span id="name"></span></header>
+<main><section class="cell"><h2>Исходное изображение</h2><img class="reference" id="reference" alt="Оригинальная упаковка"></section><section class="cell"><h2>Модель по контуру изображения</h2><canvas id="stage"></canvas></section></main><p class="readout" id="readout">Загрузка…</p>
+<script type="module">
+import * as THREE from '../three.module.js';
+import {preparePackage,createPackageModel,disposePackageInstance,disposePackageAsset} from '../beer-package-model.mjs';
+const $=id=>document.getElementById(id), canvas=$('stage');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(1);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xd4d3d0);
+const camera=new THREE.OrthographicCamera(-.5,.5,.5,-.5,.01,20);camera.position.set(0,.4,3);
+scene.add(new THREE.HemisphereLight(0xffffff,0xb3aca3,2.2));const light=new THREE.DirectionalLight(0xffffff,2.5);light.position.set(-2,3,4);scene.add(light);
+let asset,model,rotation=0,spinning=false,requestId=0,entries=[],drag=null;
+const loaded=new Map();
+function fit(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);const half=.5,aspect=w/h;camera.left=-half*aspect;camera.right=half*aspect;camera.top=half;camera.bottom=-half;camera.updateProjectionMatrix();}
+addEventListener('resize',fit);fit();
+async function load(key){
+ const token=++requestId,beer=entries.find(([k])=>k===key)?.[1];if(!beer)return;
+ $('catalog').value=key;$('name').textContent=beer.name;$('readout').textContent='Анализ контура…';window.packageViewer.ready=false;
+ try{
+  const imageUrl=beer.imageUrl||beer.image||beer.img,proxy=/^data:/.test(imageUrl)?imageUrl:`${location.hostname==='127.0.0.1'||location.hostname==='localhost'?location.origin:'https://realtime.xn--80ahcljthqi.xn--p1ai'}/fetch-image?url=${encodeURIComponent(imageUrl)}`;
+  let image=loaded.get(proxy);if(!image){const response=await fetch(proxy);if(!response.ok)throw Error(`Изображение: ${response.status}`);const blob=await response.blob(),url=URL.createObjectURL(blob);try{image=new Image();image.src=url;await image.decode();loaded.set(proxy,image);}finally{URL.revokeObjectURL(url);}}
+  if(token!==requestId)return;
+  if(model){scene.remove(model);disposePackageInstance(model);disposePackageAsset(asset);}
+  asset=preparePackage(image,renderer.capabilities.getMaxAnisotropy());model=createPackageModel(asset);scene.add(model);rotation=0;spinning=false;
+  const p=asset.profile;camera.position.set(0,p.modelHeight/2,3);camera.lookAt(0,p.modelHeight/2,0);
+  const reference=document.createElement('canvas');reference.width=p.bounds.right-p.bounds.left+1;reference.height=p.bounds.bottom-p.bounds.top+1;
+  reference.getContext('2d').drawImage(asset.sourceCanvas,p.bounds.left,p.bounds.top,reference.width,reference.height,0,0,reference.width,reference.height);$('reference').src=reference.toDataURL();$('reference').style.height=canvas.clientHeight+'px';$('reference').style.paddingBlock=((1-p.modelHeight)*canvas.clientHeight/2)+'px';
+  $('readout').textContent=`${beer.name} · ${p.kind} · ${p.rows.length} сечений · ${p.modelWidth.toFixed(3)} × ${p.modelHeight.toFixed(3)} · исходник ${p.width}×${p.height}`;
+  Object.assign(window.packageViewer,{ready:true,asset,model,beer});
+ }catch(e){$('readout').textContent=e.message;$('readout').classList.add('error');throw e;}
+}
+window.packageViewer={ready:false,load,scene,camera,renderer,get rotation(){return rotation},set rotation(v){rotation=v},entries};
+$('catalog').onchange=e=>load(e.target.value);$('front').onclick=()=>{rotation=0;spinning=false};$('side').onclick=()=>{rotation=Math.PI/2;spinning=false};$('rear').onclick=()=>{rotation=Math.PI;spinning=false};$('left').onclick=()=>{rotation=-Math.PI/2;spinning=false};$('angle').onclick=()=>{rotation=Math.PI/4;spinning=false};$('rotate').onclick=()=>spinning=!spinning;
+canvas.onpointerdown=e=>{drag=e.clientX;spinning=false;canvas.setPointerCapture(e.pointerId)};canvas.onpointermove=e=>{if(drag===null)return;rotation+=(e.clientX-drag)*.01;drag=e.clientX};canvas.onpointerup=()=>drag=null;
+renderer.setAnimationLoop(()=>{if(model){if(spinning)rotation+=.008;model.rotation.y=rotation;}renderer.render(scene,camera)});
+const response=await fetch('https://kinosreda-ce8ef-default-rtdb.europe-west1.firebasedatabase.app/beerRating.json');const raw=await response.json();entries=Object.entries(raw||{}).filter(([,v])=>v);window.packageViewer.entries=entries;
+entries.forEach(([key,beer])=>{const option=document.createElement('option');option.value=key;option.textContent=beer.name;$('catalog').append(option)});
+const requested=new URLSearchParams(location.search).get('beer');$('catalog').value=entries.some(([k])=>k===requested)?requested:entries[0][0];await load($('catalog').value);
+</script></body></html>

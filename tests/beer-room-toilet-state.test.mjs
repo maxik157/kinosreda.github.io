@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createToiletState,claimToilet,releaseToilet,expireToilet,toiletPosition} from '../beer-room-toilet-state.mjs';
+import {toiletSite} from '../beer-room-site.mjs';
+const user=id=>({id,x:toiletSite.x,z:toiletSite.z+2});
+test('only one nearby player can use an open toilet',()=>{const s=createToiletState();assert.ok(claimToilet(s,user('a'),'pee',false));assert.ok(claimToilet(s,{...user('a'),x:100},'pee',true));assert.ok(claimToilet(s,user('a'),'bad',true));assert.equal(claimToilet(s,user('a'),'pee',true,100),null);assert.ok(claimToilet(s,user('b'),'poop',true,110));assert.equal(s.owner,'a');assert.equal(releaseToilet(s,'b'),false);assert.equal(releaseToilet(s,'a'),true);assert.equal(s.owner,null);});
+test('timed completion and disconnect both free the cabin',()=>{const s=createToiletState(),users=new Map([['a',user('a')]]);claimToilet(s,user('a'),'poop',true,1000);assert.equal(expireToilet(s,users,11999),false);assert.equal(expireToilet(s,users,12000),true);claimToilet(s,user('a'),'pee',true,13000);users.delete('a');assert.equal(expireToilet(s,users,13050),true);});
+test('standing and seated orientations face the pit and doorway respectively',()=>{const pee=toiletPosition('pee'),poop=toiletPosition('poop');assert.ok(Math.abs(pee.yaw-toiletSite.yaw)<1e-8);assert.ok(Math.abs(poop.yaw-pee.yaw-Math.PI)<1e-8);assert.ok(Math.hypot(pee.x-poop.x,pee.z-poop.z)>.7);});

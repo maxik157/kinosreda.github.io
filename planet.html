@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#050b13" />
+    <meta
+      name="description"
+      content="Маленькая планета Киносреды. Исследуйте мир и открывайте разделы сайта прямо с его поверхности."
+    />
+    <title>Планета — Киносреда</title>
+    <link rel="icon" href="assets/kinosreda-favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="kinosreda-shell.css?v=20261113barplanet" />
+    <link rel="stylesheet" href="planet/planet.css" />
+    <script src="kinosreda-shell.js?v=20261113barplanet" defer></script>
+    <link rel="modulepreload" href="three.module.js" />
+  </head>
+  <body>
+    <main id="world" aria-label="Интерактивная планета Киносреды">
+      <canvas
+        id="universe"
+        tabindex="0"
+        aria-label="3D-планета. Стрелки — вращение, плюс и минус — масштаб. Tab — выбор раздела, Enter — открыть."
+      ></canvas>
+      <div id="tooltip" role="status" hidden><strong></strong></div>
+      <nav
+        id="accessible-places"
+        class="accessible-places"
+        aria-label="Все места на планете"
+      ></nav>
+    </main>
+    <div id="loading" role="status" aria-label="Загрузка планеты">
+      <div class="loading-orbit"><i></i></div>
+    </div>
+    <section id="fallback" hidden>
+      <span class="eyebrow">КИНОСРЕДА / ПЛАНЕТА</span>
+      <h1>Мир всегда рядом.</h1>
+      <p id="fallback-message">
+        Для планеты нужно включить WebGL в браузере. Выберите раздел ниже или
+        перейдите к обычной навигации.
+      </p>
+      <div id="fallback-links"></div>
+      <button id="retry-world">Попробовать снова</button
+      ><a href="index.html">Обычная навигация ↗</a>
+    </section>
+    <dialog id="portal" aria-label="Раздел Киносреды">
+      <button id="portal-close" aria-label="Вернуться к планете">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 5 5 12l7 7M5 12h14" />
+        </svg>
+      </button>
+      <div class="portal-content">
+        <div id="portal-status" role="status">
+          <div class="loading-orbit"><i></i></div>
+        </div>
+        <div id="portal-special" hidden></div>
+        <iframe
+          id="section-frame"
+          title="Раздел Киносреды"
+          allow="autoplay; fullscreen; encrypted-media; picture-in-picture; camera; microphone; display-capture; clipboard-write; gamepad; cross-origin-isolated"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </dialog>
+    <noscript
+      ><style>
+        #loading {
+          display: none;
+        }
+      </style>
+      <div class="no-script">
+        Включите JavaScript для 3D-планеты.
+        <a href="index.html">Перейти на сайт</a>
+      </div></noscript
+    >
+    <script type="module" src="planet/main.js"></script>
+  </body>
+</html>
