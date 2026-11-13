@@ -9980,13 +9980,13 @@ const server = http.createServer((req, res) => {
         if (cleanedUp) return;
         cleanedUp = true;
         fetchImageCurlActive = Math.max(0, fetchImageCurlActive - 1);
-        req.off('close', stopProc);
+        req.off('aborted', stopProc);
         res.off('close', stopProc);
       };
       const stopProc = () => {
         try { if (!proc.killed) proc.kill('SIGTERM'); } catch (_) {}
       };
-      req.on('close', stopProc);
+      req.on('aborted', stopProc);
       res.on('close', stopProc);
       proc.stdout.on('data', (chunk) => {
         if (res.writableEnded || res.destroyed) return;
@@ -10051,20 +10051,12 @@ const server = http.createServer((req, res) => {
       });
       return true;
     };
-    if (YTM_USE_AMNEZIAWG) {
-      if (!tryCurlFallback()) {
-        safeRespond(502, 'fetch_failed');
-      }
-      return;
-    }
+    // Public artwork must not inherit the music-only tunnel: some image hosts
+    // stall after their first TLS record there. Keep the tunnel as a fallback.
     const client = target.startsWith('https://') ? https : http;
     const requestOptions = {
       headers: { 'User-Agent': 'Mozilla/5.0', Accept: 'image/*,*/*;q=0.8' }
     };
-    if (YTM_USE_AMNEZIAWG && YTM_AWG_SOURCE_IP) {
-      requestOptions.localAddress = YTM_AWG_SOURCE_IP;
-      requestOptions.family = 4;
-    }
     const upstream = client.get(target, requestOptions, (upres) => {
       if (!upres.statusCode || upres.statusCode >= 400) {
         if (YTM_USE_AMNEZIAWG && tryCurlFallback()) {
