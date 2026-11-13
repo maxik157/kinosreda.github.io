@@ -109,7 +109,10 @@
     items
       .map((item) => item[0])
       .filter(
-        (id) => id.startsWith("svc_") || ["calendar", "backlog"].includes(id),
+        // The bar owns its 3D scene and must open as a standalone document.
+        (id) =>
+          id !== "svc_beer_room" &&
+          (id.startsWith("svc_") || ["calendar", "backlog"].includes(id)),
       ),
   );
   let owner = null;
