@@ -28,13 +28,24 @@ export class BeerRoomOnline {
   connect() {
     if (this.ws || this.disposed) return;
     try { this.ws = new WebSocket(`${roomSocketBase()}?room=kinosreda-beer-room&id=${encodeURIComponent(this.id)}&name=${encodeURIComponent(this.name)}`); } catch { this.ws = null; this.retryLater(); return; }
-    this.ws.addEventListener('open', () => { this.connected = true; clearTimeout(this.retry); this.retry = 0; this.sendPresence(true); });
-    this.ws.addEventListener('message', event => { let data; try { data = JSON.parse(event.data); } catch { return; } this.receive(data); });
-    const closed = () => { this.connected = false; this.ws = null; this.retryLater(); };
+    const socket=this.ws;
+    this.ws.addEventListener('open', () => { if(this.ws!==socket)return;this.connected = true; clearTimeout(this.retry); this.retry = 0; this.sendPresence(true); });
+    this.ws.addEventListener('message', event => { if(this.ws!==socket)return;let data; try { data = JSON.parse(event.data); } catch { return; } this.receive(data); });
+    const closed = () => { if(this.ws!==socket)return;this.connected = false; this.ws = null; this.retryLater(); };
     this.ws.addEventListener('close', closed); this.ws.addEventListener('error', closed);
   }
   retryLater() { if (this.retry || this.disposed) return; this.retry = setTimeout(() => { this.retry = 0; this.connect(); }, 1500); }
-  send(data) { if (this.connected && this.ws?.readyState === WebSocket.OPEN) { try { this.ws.send(JSON.stringify(data)); } catch {} } }
+  send(data) {
+    if (!this.connected || this.ws?.readyState !== WebSocket.OPEN) return false;
+    try { this.ws.send(JSON.stringify(data)); return true; } catch { return false; }
+  }
+  reconnect() {
+    if (this.disposed) return;
+    const socket=this.ws;this.ws=null;this.connected=false;
+    clearTimeout(this.retry);this.retry=0;
+    try { socket?.close(); } catch {}
+    this.retryLater();
+  }
   sendPresence(force = false) {
     const s = this.getLocalState?.(); if (!s) return;
     const now = performance.now(); const actionKey = JSON.stringify(s.action || {});
