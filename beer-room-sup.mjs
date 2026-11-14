@@ -1,7 +1,7 @@
 import * as THREE from './three.module.js';
-import {SupPrediction} from './beer-room-motion.mjs';
+import {RemoteTimeline} from './beer-room-motion.mjs';
 import {mergeGeometries} from './BufferGeometryUtils.js';
-import {SUP_SCALE,WATER_Y,createSupStates,advanceSupBoard} from './beer-room-sup-physics.mjs';
+import {SUP_SCALE,WATER_Y,createSupStates,advanceSupBoard,separateSupBoards} from './beer-room-sup-physics.mjs';
 import {supProfile as spec} from './beer-room-sup-profile.mjs';
 
 // Every longitudinal section follows the two photographed outlines.
@@ -87,36 +87,49 @@ export function buildSupBoards(group){
  function requestMount(board){if(pending===board?.userData.id&&time-lastInput<1)return true;if(!network?.connected||!board||board.userData.owner&&board.userData.owner!==network.id)return false;pending=board.userData.id;lastInput=time;network.sendPresence(true);if(!network.send({type:'sup_claim',boardId:pending})){pending=null;return false;}return true;}
  function receive(snapshots){for(const snap of snapshots||[]){const b=boards.find(b=>b.userData.id===snap.id);if(!b)continue;const d=b.userData;
   if(snap.serverAt&&snap.serverAt<(d.serverAt||0))continue;d.serverAt=snap.serverAt||0;
+  const changed=d.owner!==snap.owner||d.state.controlEpoch!==snap.controlEpoch,local=snap.owner&&snap.owner===network?.id;
+  if(!changed&&snap.poseSeq&&(snap.poseSeq<(d.target?.poseSeq||0)))continue;
   b.visible=!snap.deleted;d.surface.disabled=!!snap.deleted;
-  const changed=d.owner!==snap.owner,local=snap.owner&&snap.owner===network?.id;
-  const repeated=!changed&&d.target&&['x','z','yaw','speed','phase','inputSeq','sx','sy','sz','deleted','brake','throttle','steer'].every(k=>d.target[k]===snap[k]);
+  const repeated=!changed&&d.target&&['x','z','yaw','speed','phase','inputSeq','poseSeq','sx','sy','sz','deleted','brake','throttle','steer'].every(k=>d.target[k]===snap[k]);
   if(repeated)continue;
   d.owner=snap.owner;d.target={...snap};d.receivedAt=time;
-  if(!d.received||changed){Object.assign(d.state,snap);d.predictor=new SupPrediction();d.error={x:0,z:0,yaw:0};d.received=true;}
-  else if(local){const correction=d.predictor.reconcile(d.state,snap);for(const k of ['x','z','yaw'])d.error[k]+=correction[k];if(Math.hypot(d.error.x,d.error.z)>3)d.error={x:0,z:0,yaw:0};}
+  if(!d.received||changed){Object.assign(d.state,snap);d.poseSeq=0;d.sentAt=-Infinity;d.received=true;d.timeline=null;}
+  // The current rider owns live movement. An acknowledgement is receipt of a
+  // pose, not an instruction to rewind and play old controls again.
   for(const a of ['sx','sy','sz','deleted','owner'])d.state[a]=snap[a];
+  if(!local){
+    const source=snap.owner&&snap.poseSeq?`${snap.owner}:${snap.controlEpoch}`:'server';
+    if(d.timelineSource!==source||!d.timeline){d.timeline=new RemoteTimeline();d.timelineSource=source;}
+    d.timeline.push({seq:source==='server'?snap.serverAt:snap.poseSeq,sentAt:source==='server'?snap.serverAt:snap.clientAt,x:snap.x,y:snap.phase,z:snap.z,yaw:snap.yaw,action:{kind:'swimming',speed:snap.speed,throttle:snap.throttle,steer:snap.steer,brake:snap.brake}},performance.now());
+  }
   if(pending===snap.id&&snap.owner===network?.id){pending=null;api.onMount?.(b);}if(api.current===b&&snap.owner!==network?.id)api.onLost?.(b);
  }}
  function drive(board,throttle,steer,brake){const d=board?.userData;if(!d||d.owner!==network?.id)return;Object.assign(d.state,{throttle,steer,brake});}
- function release(board){if(!board)return;network?.send({type:'sup_release',boardId:board.userData.id});Object.assign(board.userData.state,{throttle:0,steer:0,brake:true});api.current=null;}
+ function publish(board,force=false){
+  const d=board.userData,s=d.state,now=performance.now();
+  if(d.owner!==network?.id||(!force&&now-(d.sentAt??-Infinity)<33)||network.ws?.bufferedAmount>4096)return;
+  const pose={type:'sup_pose',boardId:d.id,controlEpoch:s.controlEpoch,seq:(d.poseSeq||0)+1,sentAt:now};
+  for(const k of ['x','z','yaw','speed','phase','throttle','steer','brake'])pose[k]=s[k];
+  if(network.send(pose)){d.poseSeq=pose.seq;d.sentAt=now;}
+ }
+ function release(board){if(!board)return;Object.assign(board.userData.state,{throttle:0,steer:0,brake:true,speed:0});publish(board,true);network?.send({type:'sup_release',boardId:board.userData.id});api.current=null;}
  function anchorAt(board,worldPosition,worldQuaternion){board.updateWorldMatrix(true,false);return{boardId:board.userData.id,local:board.worldToLocal(worldPosition.clone()).toArray(),rotation:board.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuaternion).toArray()};}
  function attach(object,anchor){if(!object)return;attachments.delete(object);object.userData.supAnchor=anchor||null;if(!anchor)object.userData.movingSurface=null;if(anchor)attachments.add(object);}
  function updateAttachments(){for(const object of attachments){if(object.userData.held||!object.parent){attachments.delete(object);continue;}const a=object.userData.supAnchor,b=boards.find(b=>b.userData.id===a?.boardId);if(!b){attachments.delete(object);continue;}object.position.copy(b.localToWorld(point.fromArray(a.local)));object.quaternion.copy(b.getWorldQuaternion(q)).multiply(new THREE.Quaternion().fromArray(a.rotation));object.userData.movingSurface=b.userData.velocity;}}
  function denied(){pending=null;}
- function update(dt){time+=dt;for(const b of boards){const d=b.userData,s=d.state,t=d.target,local=d.owner&&d.owner===network?.id,oldX=b.position.x,oldZ=b.position.z;
+ function update(dt){time+=dt;for(const b of boards){const d=b.userData,s=d.state,local=d.owner&&d.owner===network?.id,oldX=b.position.x,oldZ=b.position.z;
    if(local){
-    d.predictor??=new SupPrediction();d.error??={x:0,z:0,yaw:0};d.predictor.step(s,dt);
-    if(time-(d.sentAt||0)>=.033){d.sentAt=time;const inputs=d.predictor.take();if(inputs.length)network.send({type:'sup_input',boardId:d.id,inputs});}
-    // Reconciliation offsets belong to the rendered hull. Bound their velocity
-    // so a late acknowledgement cannot pull the rider backwards in one frame.
-    const length=Math.hypot(d.error.x,d.error.z),rate=.18+Math.abs(s.speed)*.18;
-    const correction=length?Math.min(1-Math.exp(-dt*3),dt*rate/length):0;
-    d.error.x*=1-correction;d.error.z*=1-correction;
-    d.error.yaw-=Math.sign(d.error.yaw)*Math.min(Math.abs(d.error.yaw)*(1-Math.exp(-dt*4)),dt*.4);
+    advanceSupBoard(s,dt);
+    // Resolve against the displayed hulls without modifying another rider's
+    // simulation. Only the rider publishes their own resulting position.
+    const neighbours=boards.filter(other=>other!==b).map(other=>({...other.userData.state,x:other.position.x,z:other.position.z,yaw:other.rotation.y}));
+    separateSupBoards([s,...neighbours]);publish(b);
+   }else if(d.timeline){
+    const pose=d.timeline.sample(performance.now());
+    if(pose){s.x=pose.x;s.z=pose.z;s.yaw=pose.yaw;s.phase=pose.y;Object.assign(s,{speed:pose.action.speed,throttle:pose.action.throttle,steer:pose.action.steer,brake:pose.action.brake});}
    }
-   if(t&&!local){const predicted={...t},age=Math.min(.18,time-(d.receivedAt??time));for(let left=age;left>0;left-=.025)advanceSupBoard(predicted,Math.min(.025,left));const blend=1-Math.exp(-dt*24);s.x+=(predicted.x-s.x)*blend;s.z+=(predicted.z-s.z)*blend;s.yaw+=Math.atan2(Math.sin(predicted.yaw-s.yaw),Math.cos(predicted.yaw-s.yaw))*blend;s.speed=predicted.speed;s.throttle=t.throttle||0;s.steer=t.steer||0;s.phase+=(predicted.phase-s.phase)*blend;}
 
-   b.scale.set(SUP_SCALE*(s.sx??1),SUP_SCALE*(s.sy??1),SUP_SCALE*(s.sz??1));b.position.set(s.x+(local?d.error.x:0),WATER_Y-.025+Math.sin(time*1.6+d.supIndex)*.012,s.z+(local?d.error.z:0));b.rotation.set(Math.sin(time*1.25+d.supIndex)*.005,s.yaw+(local?d.error.yaw:0),Math.sin(time*1.1+d.supIndex*2)*.006,'YXZ');b.updateWorldMatrix(true,true);
+   b.scale.set(SUP_SCALE*(s.sx??1),SUP_SCALE*(s.sy??1),SUP_SCALE*(s.sz??1));b.position.set(s.x,WATER_Y-.025+Math.sin(time*1.6+d.supIndex)*.012,s.z);b.rotation.set(Math.sin(time*1.25+d.supIndex)*.005,s.yaw,Math.sin(time*1.1+d.supIndex*2)*.006,'YXZ');b.updateWorldMatrix(true,true);
    if(dt>0&&d.initialized){d.velocity.x=(b.position.x-oldX)/dt;d.velocity.z=(b.position.z-oldZ)/dt;}d.initialized=true;
    const surface=d.surface;surface.bounds.copy(shapes.deck.boundingBox).applyMatrix4(b.matrixWorld);surface.topY=surface.heightAt(b.position.x,b.position.z);
    const paddle=d.paddle,active=!!d.owner;const stroke=s.phase*(s.throttle<0?-1:1),work=Math.abs(s.throttle||0)>.05||Math.abs(s.steer||0)>.05;

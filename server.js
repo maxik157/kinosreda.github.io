@@ -9596,16 +9596,18 @@ function applyBeerMessage(id, name, data, roomName) {
     if(room.boards)supPhysics.releaseSup(room.boards,id);room.users.set(id,user);return{kind:'toilet_state'};
   }
   if(data.type==='toilet_leave'){if(toiletProtocol.releaseToilet(room.toilet,id))return{kind:'toilet_state'};return null;}
-  if(data.type==='sup_claim'||data.type==='sup_input'||data.type==='sup_release'){
+  if(data.type==='sup_claim'||data.type==='sup_input'||data.type==='sup_pose'||data.type==='sup_release'){
     const board=room.boards?.find(b=>b.id===data.boardId);if(!board||board.deleted||!room.openSpace)return{kind:'sup_denied',boardId:data.boardId,reason:'Сапборд недоступен'};
     if(data.type==='sup_claim'){
       if(room.toilet?.owner===id)return{kind:'sup_denied',boardId:board.id,reason:'Сначала выйдите из туалета'};
       if(board.owner&&board.owner!==id)return{kind:'sup_denied',boardId:board.id,reason:'Этот сапборд уже занят'};
       if(!Number.isFinite(user.x)||supPhysics.supBoardDistance(user.x,user.z,board)>1.8)return{kind:'sup_denied',boardId:board.id,reason:'Подойдите ближе к сапборду'};
-      supPhysics.releaseSup(room.boards,id);board.owner=id;board.inputSeq=0;board.predictedInput=false;board.brake=false;board.lastInputAt=Date.now();return{kind:'sup_state'};
+      supPhysics.releaseSup(room.boards,id);board.owner=id;board.inputSeq=0;board.poseSeq=0;board.clientAt=null;board.controlEpoch=(board.controlEpoch||0)+1;board.poseDriven=false;board.predictedInput=false;board.brake=false;board.lastInputAt=Date.now();return{kind:'sup_state'};
     }
     if(board.owner!==id)return null;
     if(data.type==='sup_release'){supPhysics.releaseSup(room.boards,id);return{kind:'sup_state'};}
+    if(data.type==='sup_pose')return supPhysics.applySupPose(board,data)?{kind:'sup_state',boardId:board.id}:null;
+    if(board.poseDriven)return null;
     if(Array.isArray(data.inputs)){
       let budget=.3;
       for(const cmd of data.inputs.slice(0,20)){
@@ -9614,7 +9616,7 @@ function applyBeerMessage(id, name, data, roomName) {
         board.throttle=Math.max(-1,Math.min(1,Number(cmd.throttle)||0));board.steer=Math.max(-1,Math.min(1,Number(cmd.steer)||0));board.brake=!!cmd.brake;
         supPhysics.advanceSupBoard(board,dt);board.inputSeq=cmd.seq;
       }
-      board.predictedInput=true;board.lastInputAt=Date.now();supPhysics.separateSupBoards(room.boards);return{kind:'sup_state',boardId:board.id};
+      board.predictedInput=true;board.lastInputAt=Date.now();supPhysics.separateSupBoards(room.boards.filter(b=>!b.poseDriven));return{kind:'sup_state',boardId:board.id};
     }
     board.throttle=Math.max(-1,Math.min(1,Number(data.throttle)||0));board.steer=Math.max(-1,Math.min(1,Number(data.steer)||0));board.brake=!!data.brake;board.lastInputAt=Date.now();return null;
   }
@@ -10393,7 +10395,28 @@ firebaseRtdbProxyWss.on('connection', (clientWs, req) => {
   });
 });
 
-setInterval(()=>{if(!supPhysics)return;const now=Date.now();for(const [roomName,room]of state.beerRooms){if(room.toilet&&toiletProtocol.expireToilet(room.toilet,room.users,now))broadcast({type:'toilet_state',toilet:room.toilet},roomName);if(!room.openSpace||!room.boards||!room.users.size)continue;const moving=room.boards.some(b=>b.owner||Math.abs(b.speed)>.002);if(!moving)continue;for(const b of room.boards){if(b.owner&&!room.users.has(b.owner))supPhysics.releaseSup(room.boards,b.owner);if(now-(b.lastInputAt||0)>700){b.throttle=b.steer=0;}if(!b.owner||!b.predictedInput){const elapsed=Math.min(.1,Math.max(0,(now-(room.supTickAt||now-50))/1000));for(let left=elapsed;left>0;left-=.025)supPhysics.advanceSupBoard(b,Math.min(.025,left));}}room.supTickAt=now;supPhysics.separateSupBoards(room.boards);broadcast({type:'sup_state',boards:room.boards.map(supPhysics.publicSupState)},roomName);}},50).unref();
+setInterval(()=>{
+  if(!supPhysics)return;
+  const now=Date.now();
+  for(const [roomName,room]of state.beerRooms){
+    if(room.toilet&&toiletProtocol.expireToilet(room.toilet,room.users,now))broadcast({type:'toilet_state',toilet:room.toilet},roomName);
+    if(!room.openSpace||!room.boards||!room.users.size)continue;
+    if(!room.boards.some(b=>b.owner||Math.abs(b.speed)>.002))continue;
+    for(const b of room.boards){
+      if(b.owner&&!room.users.has(b.owner))supPhysics.releaseSup(room.boards,b.owner);
+      if(now-(b.lastInputAt||0)>700){b.throttle=b.steer=0;if(b.poseDriven)b.speed=0;}
+      // Current riders publish poses. Only free hulls and legacy clients need
+      // server integration; never execute a rider's old command a second time.
+      if(!b.poseDriven&&(!b.owner||!b.predictedInput)){
+        const elapsed=Math.min(.1,Math.max(0,(now-(room.supTickAt||now-50))/1000));
+        for(let left=elapsed;left>0;left-=.025)supPhysics.advanceSupBoard(b,Math.min(.025,left));
+      }
+    }
+    room.supTickAt=now;
+    supPhysics.separateSupBoards(room.boards.filter(b=>!b.poseDriven));
+    broadcast({type:'sup_state',boards:room.boards.map(supPhysics.publicSupState)},roomName);
+  }
+},50).unref();
 
 wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, 'http://localhost');

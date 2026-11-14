@@ -62,7 +62,11 @@ export function hydrateHumanAvatar(root, template) {
   // the actual face rather than a guessed height above the pelvis.
   const headBone=model.getObjectByName('Head');
   if(headBone){
-    model.updateWorldMatrix(true,true);const points=[];
+    // SkinnedMesh.updateMatrixWorld also refreshes bindMatrixInverse in
+    // attached mode. updateWorldMatrix alone leaves the new parent's world
+    // transform in getVertexPosition, moving the lip target away from the face
+    // whenever the avatar hydrates at a translated/rotated network position.
+    root.updateWorldMatrix(true,false);root.updateMatrixWorld(true);const points=[];
     model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;mesh.skeleton.update();
       const headIndices=new Set(mesh.skeleton.bones.map((bone,i)=>{for(let b=bone;b;b=b.parent)if(b===headBone)return i;return -1;}).filter(i=>i>=0));
       const indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;

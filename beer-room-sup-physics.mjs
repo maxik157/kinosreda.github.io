@@ -16,7 +16,11 @@ export function boardFitsWater(x,z,yaw,size={}){
 export function advanceSupBoard(b,dt){
  if(b.deleted)return b;
  dt=Math.max(0,Math.min(.05,dt));const throttle=Math.max(-1,Math.min(1,Number(b.throttle)||0)),steer=Math.max(-1,Math.min(1,Number(b.steer)||0));
- const target=b.brake?0:throttle*(throttle<0?1.05:2.75),blend=1-Math.exp(-dt*(b.brake?5:1.15));b.speed+=(target-b.speed)*blend;if(Math.abs(b.speed)<.002)b.speed=0;
+ const target=b.brake?0:throttle*(throttle<0?1.05:2.75);
+ // Short, perceptible easing without storing a player's old intention as
+ // seconds of momentum. Releasing/reversing a key must work immediately.
+ const response=b.brake?24:!throttle||b.speed*target<0?20:14;
+ const blend=1-Math.exp(-dt*response);b.speed+=(target-b.speed)*blend;if(Math.abs(b.speed)<.002)b.speed=0;
  const yaw=b.yaw-steer*dt*(.70+Math.min(1,Math.abs(b.speed)/2.75)*.55),x=b.x-Math.sin(yaw)*b.speed*dt,z=b.z-Math.cos(yaw)*b.speed*dt;
  if(boardFitsWater(x,z,yaw,b)||waterExtent(x,z,yaw,b)<waterExtent(b.x,b.z,b.yaw,b)-1e-8){b.x=x;b.z=z;b.yaw=yaw;}else{b.speed*=Math.exp(-dt*14);if(boardFitsWater(b.x,b.z,yaw,b)||waterExtent(b.x,b.z,yaw,b)<waterExtent(b.x,b.z,b.yaw,b)-1e-8)b.yaw=yaw;}
  b.phase+=((Math.abs(throttle)>.05||Math.abs(steer)>.05)?3.9:0)*dt;
@@ -37,5 +41,21 @@ export function separateSupBoards(boards){
   if(boardFitsWater(ax,az,a.yaw,a)){a.x=ax;a.z=az;}if(boardFitsWater(bx,bz,b.yaw,b)){b.x=bx;b.z=bz;}a.speed*=.85;b.speed*=.85;
  }
 }
-export function releaseSup(boards,id){for(const b of boards)if(b.owner===id){b.owner=null;b.throttle=b.steer=0;b.brake=true;}}
-export function publicSupState(b){return{id:b.id,deleted:!!b.deleted,sx:b.sx??1,sy:b.sy??1,sz:b.sz??1,x:b.x,z:b.z,yaw:b.yaw,speed:b.speed,owner:b.owner,phase:b.phase,inputSeq:b.inputSeq||0,serverAt:Date.now(),brake:!!b.brake,throttle:b.throttle,steer:b.steer};}
+// A rider publishes its current hull pose, never a backlog of control commands.
+// Sequence + claim epoch reject delayed packets from a previous ride. Bounds
+// allow ordinary packet jitter while rejecting teleports or invalid poses.
+export function applySupPose(b,pose,now=Date.now()){
+ if(pose.controlEpoch!==b.controlEpoch||!Number.isSafeInteger(pose.seq)||pose.seq<=(b.poseSeq||0))return false;
+ if(!['x','z','yaw','speed','phase','sentAt'].every(k=>Number.isFinite(pose[k])))return false;
+ if(Math.abs(pose.speed)>2.76||Math.abs(pose.x)>250||Math.abs(pose.z)>250||pose.phase<0||Math.abs(pose.yaw)>1e6)return false;
+ if(b.poseSeq&&pose.sentAt<=(b.clientAt||0))return false;
+ const elapsed=b.poseSeq?(pose.sentAt-b.clientAt)/1000:Math.max(0,(now-b.lastInputAt)/1000);
+ if(Math.hypot(pose.x-b.x,pose.z-b.z)>.35+3.2*Math.min(5,Math.max(0,elapsed)))return false;
+ if(waterExtent(pose.x,pose.z,pose.yaw,b)>Math.max(.995,waterExtent(b.x,b.z,b.yaw,b)+.002))return false;
+ for(const k of ['x','z','yaw','speed','phase'])b[k]=pose[k];
+ b.throttle=Math.max(-1,Math.min(1,Number(pose.throttle)||0));b.steer=Math.max(-1,Math.min(1,Number(pose.steer)||0));b.brake=!!pose.brake;
+ b.poseSeq=pose.seq;b.clientAt=pose.sentAt;b.lastInputAt=now;b.poseDriven=true;
+ return true;
+}
+export function releaseSup(boards,id){for(const b of boards)if(b.owner===id){if(b.poseDriven)b.speed=0;b.poseDriven=false;b.owner=null;b.throttle=b.steer=0;b.brake=true;}}
+export function publicSupState(b){return{id:b.id,deleted:!!b.deleted,sx:b.sx??1,sy:b.sy??1,sz:b.sz??1,x:b.x,z:b.z,yaw:b.yaw,speed:b.speed,owner:b.owner,phase:b.phase,inputSeq:b.inputSeq||0,controlEpoch:b.controlEpoch||0,poseSeq:b.poseSeq||0,clientAt:b.clientAt,serverAt:Date.now(),brake:!!b.brake,throttle:b.throttle,steer:b.steer};}

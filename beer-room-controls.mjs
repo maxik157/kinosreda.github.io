@@ -115,9 +115,7 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
     if(state.sup){
       const board=state.sup,consume=1-Math.exp(-dt/.065),wx=wheel.x*consume,wy=wheel.y*consume;wheel.x-=wx;wheel.y-=wy;
       api.world?.sup?.drive(board,state.movementLocked?0:Math.max(-1,Math.min(1,y+wy*6)),state.movementLocked?0:Math.max(-1,Math.min(1,x+wx*6)),state.movementLocked||actions.has('crouch'));
-      state.yaw+=Math.atan2(Math.sin(board.rotation.y-state.supYaw),Math.cos(board.rotation.y-state.supYaw));state.supYaw=board.rotation.y;
-      state.feetY=board.userData.surface.topY;state.velocity.x=board.userData.velocity.x;state.velocity.z=board.userData.velocity.z;state.distance+=Math.hypot(state.velocity.x,state.velocity.z)*dt;
-      camera.position.set(board.position.x-Math.sin(board.rotation.y)*.28,state.feetY+1.22,board.position.z-Math.cos(board.rotation.y)*.28);camera.rotation.set(state.pitch,state.yaw,0,'YXZ');return;
+      syncSupPose();state.distance+=Math.hypot(state.velocity.x,state.velocity.z)*dt;return;
     }
     if(state.seated){state.velocity.x=state.velocity.z=0;const blend=1-Math.exp(-dt*12);state.feetY=state.seated.topY;const lying=state.seated.kind==='hammock',aim=lying?state.seated.eyePosition:state.seated.seatPosition;camera.position.x+=(aim.x-camera.position.x)*blend;camera.position.z+=(aim.z-camera.position.z)*blend;const eye=lying?aim.y:state.seated.topY+.79;camera.position.y+=(eye-camera.position.y)*(1-Math.exp(-dt*12));camera.rotation.set(state.pitch,state.yaw,0,'YXZ');return;}
     state.crouched=actions.has('crouch')||(state.crouched&&colliders.some(b=>colliderBlocks(b,camera.position.x,camera.position.z,.22,state.feetY,1.64)));
@@ -168,5 +166,11 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
   }
   function enterToilet(pose){if(state.sup)stand();clear();state.seated=null;state.swimming=false;state.deckSupport=null;state.verticalVelocity=0;state.toilet=pose;state.yaw=pose.yaw;state.pitch=pose.pitch;}
   function leaveToilet(exit){state.toilet=null;clear();camera.position.x=exit.x;camera.position.z=exit.z;state.feetY=api.world?.ground(exit.x,exit.z)||0;state.verticalVelocity=0;state.grounded=true;camera.position.y=state.feetY+1.64;}
-  const api={enterToilet,leaveToilet,state,speeds,update,clear,jump,keys,touch,bindJoystick,pause,lock,sit,stand,mountSup,enable(){state.enabled=true;if(fps)canvas.style.cursor='none';canvas.focus();},setView(yaw,pitch=0){state.yaw=yaw;state.pitch=pitch;camera.rotation.set(pitch,yaw,0,'YXZ');}};return api;
+  function syncSupPose(){
+    const board=state.sup;if(!board)return;
+    state.yaw+=Math.atan2(Math.sin(board.rotation.y-state.supYaw),Math.cos(board.rotation.y-state.supYaw));state.supYaw=board.rotation.y;
+    state.feetY=board.userData.surface.topY;state.velocity.x=board.userData.velocity.x;state.velocity.z=board.userData.velocity.z;
+    camera.position.set(board.position.x-Math.sin(board.rotation.y)*.28,state.feetY+1.22,board.position.z-Math.cos(board.rotation.y)*.28);camera.rotation.set(state.pitch,state.yaw,0,'YXZ');
+  }
+  const api={enterToilet,leaveToilet,state,speeds,update,syncSupPose,clear,jump,keys,touch,bindJoystick,pause,lock,sit,stand,mountSup,enable(){state.enabled=true;if(fps)canvas.style.cursor='none';canvas.focus();},setView(yaw,pitch=0){state.yaw=yaw;state.pitch=pitch;camera.rotation.set(pitch,yaw,0,'YXZ');}};return api;
 }

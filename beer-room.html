@@ -909,22 +909,22 @@
     <script type="importmap">
 {
   "imports": {
-    "./beer-room-motion.mjs": "./beer-room-motion.mjs?v=20261114motionhotfix",
-    "./beer-room-camp.mjs": "./beer-room-camp.mjs?v=20261114motionhotfix",
-    "./beer-room-world-objects.mjs": "./beer-room-world-objects.mjs?v=20261114motionhotfix",
-    "./beer-room-editor-props.mjs": "./beer-room-editor-props.mjs?v=20261114motionhotfix",
-    "./beer-room-equipment-models.mjs": "./beer-room-equipment-models.mjs?v=20261114motionhotfix",
-    "./beer-room-prop-catalog.mjs": "./beer-room-prop-catalog.mjs?v=20261114motionhotfix",
-    "./beer-room-controls.mjs": "./beer-room-controls.mjs?v=20261114motionhotfix",
-    "./beer-room-hand.mjs": "./beer-room-hand.mjs?v=20261114motionhotfix",
-    "./beer-room-pouring.mjs": "./beer-room-pouring.mjs?v=20261114motionhotfix",
-    "./beer-room-online.mjs": "./beer-room-online.mjs?v=20261114motionhotfix",
-    "./beer-room-avatar.mjs": "./beer-room-avatar.mjs?v=20261114motionhotfix",
-    "./beer-room-avatar-grip.mjs": "./beer-room-avatar-grip.mjs?v=20261114motionhotfix",
-    "./beer-room-sup.mjs": "./beer-room-sup.mjs?v=20261114motionhotfix",
-    "./beer-room-sup-physics.mjs": "./beer-room-sup-physics.mjs?v=20261114motionhotfix",
-    "./beer-room-terrain.mjs": "./beer-room-terrain.mjs?v=20261114motionhotfix",
-    "./beer-room-terrain-height.mjs": "./beer-room-terrain-height.mjs?v=20261114motionhotfix"
+    "./beer-room-motion.mjs": "./beer-room-motion.mjs?v=20261114directmotion2",
+    "./beer-room-camp.mjs": "./beer-room-camp.mjs?v=20261114directmotion2",
+    "./beer-room-world-objects.mjs": "./beer-room-world-objects.mjs?v=20261114directmotion2",
+    "./beer-room-editor-props.mjs": "./beer-room-editor-props.mjs?v=20261114directmotion2",
+    "./beer-room-equipment-models.mjs": "./beer-room-equipment-models.mjs?v=20261114directmotion2",
+    "./beer-room-prop-catalog.mjs": "./beer-room-prop-catalog.mjs?v=20261114directmotion2",
+    "./beer-room-controls.mjs": "./beer-room-controls.mjs?v=20261114directmotion2",
+    "./beer-room-hand.mjs": "./beer-room-hand.mjs?v=20261114directmotion2",
+    "./beer-room-pouring.mjs": "./beer-room-pouring.mjs?v=20261114directmotion2",
+    "./beer-room-online.mjs": "./beer-room-online.mjs?v=20261114directmotion2",
+    "./beer-room-avatar.mjs": "./beer-room-avatar.mjs?v=20261114directmotion2",
+    "./beer-room-avatar-grip.mjs": "./beer-room-avatar-grip.mjs?v=20261114directmotion2",
+    "./beer-room-sup.mjs": "./beer-room-sup.mjs?v=20261114directmotion2",
+    "./beer-room-sup-physics.mjs": "./beer-room-sup-physics.mjs?v=20261114directmotion2",
+    "./beer-room-terrain.mjs": "./beer-room-terrain.mjs?v=20261114directmotion2",
+    "./beer-room-terrain-height.mjs": "./beer-room-terrain-height.mjs?v=20261114directmotion2"
   }
 }
     </script>
@@ -2172,9 +2172,10 @@
           "BEER_PLACING",
         ].includes(hand.state);
         if (player.sup && !online.connected) controls.stand();
-        environment.outdoors?.sup.update(dt);
         toiletFlow.update();
         controls.update(dt);
+        environment.outdoors?.sup.update(dt);
+        controls.syncSupPose();
         worldEditor.update(dt);
         updateLocalPaddler(dt);
         interior.update(dt);
