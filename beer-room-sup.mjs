@@ -107,7 +107,12 @@ export function buildSupBoards(group){
    if(local){
     d.predictor??=new SupPrediction();d.error??={x:0,z:0,yaw:0};d.predictor.step(s,dt);
     if(time-(d.sentAt||0)>=.033){d.sentAt=time;const inputs=d.predictor.take();if(inputs.length)network.send({type:'sup_input',boardId:d.id,inputs});}
-    const decay=Math.exp(-dt*14);for(const k of ['x','z','yaw'])d.error[k]*=decay;
+    // Reconciliation offsets belong to the rendered hull. Bound their velocity
+    // so a late acknowledgement cannot pull the rider backwards in one frame.
+    const length=Math.hypot(d.error.x,d.error.z),rate=.18+Math.abs(s.speed)*.18;
+    const correction=length?Math.min(1-Math.exp(-dt*3),dt*rate/length):0;
+    d.error.x*=1-correction;d.error.z*=1-correction;
+    d.error.yaw-=Math.sign(d.error.yaw)*Math.min(Math.abs(d.error.yaw)*(1-Math.exp(-dt*4)),dt*.4);
    }
    if(t&&!local){const predicted={...t},age=Math.min(.18,time-(d.receivedAt??time));for(let left=age;left>0;left-=.025)advanceSupBoard(predicted,Math.min(.025,left));const blend=1-Math.exp(-dt*24);s.x+=(predicted.x-s.x)*blend;s.z+=(predicted.z-s.z)*blend;s.yaw+=Math.atan2(Math.sin(predicted.yaw-s.yaw),Math.cos(predicted.yaw-s.yaw))*blend;s.speed=predicted.speed;s.throttle=t.throttle||0;s.steer=t.steer||0;s.phase+=(predicted.phase-s.phase)*blend;}
 

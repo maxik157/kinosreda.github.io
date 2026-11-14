@@ -73,28 +73,27 @@ export function createAvatarGrip(root,model,held){
   return {socket,hand,fingers,thumb,update(action={}){
     const item=socket.children[0];if(!item||!socket.visible){shapeKey='';return;}
     if(shapeKey!==item.uuid){configure(item);shapeKey=item.uuid;}
-    const height=root.userData.poseHeight||root.userData.height||1.84,drinking=action.kind==='drinking'||action.gesture==='drinking',pouring=action.kind==='pouring'||action.gesture==='pouring';
+    const drinking=action.kind==='drinking'||action.gesture==='drinking',pouring=action.kind==='pouring'||action.gesture==='pouring';
     const progress=THREE.MathUtils.clamp(action.drinkProgress??1,0,1),amount=progress*progress*(3-2*progress);
-    const localQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(pouring?1.8:0,Math.PI,0,'YXZ'));
-    const desiredQ=root.getWorldQuaternion(new THREE.Quaternion()).multiply(localQ);
-    let center=root.localToWorld(new THREE.Vector3(.30,height*.60,-.30));
-    if(drinking&&root.userData.mouthSocket){
-      const mouth=root.userData.mouthSocket,mouthQ=mouth.getWorldQuaternion(new THREE.Quaternion());
-      const tilt=item.userData.packageProfile?1.85:Math.atan2((item.userData.height||.23)-(.015+.19*(action.fill??.5)),item.userData.rTop-.004)+.10;
-      const drinkQ=mouthQ.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));
-      desiredQ.slerp(drinkQ,amount);
-      const rim=new THREE.Vector3(0,(item.userData.packageProfile?(item.userData.packageProfile.kind.includes('bottle')?.30:.205):item.userData.height)-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004);
-      const drinkCenter=worldPoint(mouth).sub(rim.applyQuaternion(drinkQ));center.lerp(drinkCenter,amount);
-    }else if(pouring)center=root.localToWorld(new THREE.Vector3(.34,height*.64,-.48));
     model.updateWorldMatrix(true,true);
-    // A cylindrical grip can roll around the container. Choose that freedom
-    // together with the elbow plane, rather than folding the wrist to a fixed roll.
-    const shoulder=worldPoint(upper),a=shoulder.distanceTo(worldPoint(fore)),b=worldPoint(fore).distanceTo(worldPoint(hand));
-    const baseQ=desiredQ.clone(),baseCenter=center.clone(),hint=new THREE.Vector3(.85,-.65,.12).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
-    const mouth=root.userData.mouthSocket,mouthPosition=mouth?worldPoint(mouth):null,drinkBase=mouth?mouth.getWorldQuaternion(new THREE.Quaternion()):null;
+    const bodyQ=model.getWorldQuaternion(new THREE.Quaternion()),shoulder=worldPoint(upper),rootQ=root.getWorldQuaternion(new THREE.Quaternion());
+    const bodyForward=new THREE.Vector3(0,0,1).applyQuaternion(bodyQ),bodyUp=new THREE.Vector3(0,1,0).applyQuaternion(bodyQ),bodyRight=new THREE.Vector3(-1,0,0).applyQuaternion(bodyQ);
+    const resting=shoulder.clone().add(new THREE.Vector3(-.12,-.26,.25).applyQuaternion(bodyQ)),neutralQ=rootQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(up,Math.PI));
+    const mouth=root.userData.mouthSocket,mouthPosition=mouth?worldPoint(mouth):null;
     const physicalHeight=item.userData.packageProfile?(item.userData.packageProfile.kind.includes('bottle')?.30:.205):item.userData.height;
-    const rim=new THREE.Vector3(0,physicalHeight-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004),resting=root.localToWorld(new THREE.Vector3(.30,height*.60,-.30));
-    if(drinkBase){const tilt=item.userData.packageProfile?1.85:Math.atan2((item.userData.height||.23)-(.015+.19*(action.fill??.5)),item.userData.rTop-.004)+.10;drinkBase.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));}
+    const rim=new THREE.Vector3(0,physicalHeight-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004);
+    let drinkBase=null;
+    if(mouth){
+      const tilt=item.userData.packageProfile?1.85:Math.atan2((item.userData.height||.23)-(.015+.19*(action.fill??.5)),item.userData.rTop-.004)+.10;
+      const tilted=mouth.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));
+      // Interpolate the container axis without an unrelated half-turn of yaw.
+      // Its free roll is solved below, together with the elbow and the wrist.
+      drinkBase=new THREE.Quaternion().setFromUnitVectors(up.clone().applyQuaternion(neutralQ),up.clone().applyQuaternion(tilted)).multiply(neutralQ);
+    }
+    const baseQ=neutralQ.clone(),baseCenter=resting.clone();
+    if(drinking&&drinkBase){baseQ.slerp(drinkBase,amount);baseCenter.lerp(mouthPosition.clone().sub(rim.clone().applyQuaternion(drinkBase)),amount);}
+    else if(pouring){baseQ.copy(rootQ).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(1.8,Math.PI,0,'YXZ')));baseCenter.copy(shoulder).add(new THREE.Vector3(-.16,-.22,.48).applyQuaternion(bodyQ));}
+    const a=shoulder.distanceTo(worldPoint(fore)),b=worldPoint(fore).distanceTo(worldPoint(hand)),hint=new THREE.Vector3(-.85,-.65,.45).applyQuaternion(bodyQ);
     const inverseBasis=basis.clone().invert(),offset=socket.position.clone().multiplyScalar(model.scale.x),preferredBend=hint.clone().normalize();
     let best;
     const evaluate=roll=>{
@@ -102,10 +101,20 @@ export function createAvatarGrip(root,model,held){
       const c=baseCenter.clone();
       if(drinking&&drinkBase)c.copy(resting).lerp(mouthPosition.clone().sub(rim.clone().applyQuaternion(drinkBase.clone().multiply(new THREE.Quaternion().setFromAxisAngle(up,roll)))),amount);
       const target=c.sub(offset.clone().applyQuaternion(hq)),delta=target.clone().sub(shoulder),distance=THREE.MathUtils.clamp(delta.length(),Math.abs(a-b)+.005,a+b-.005),axis=delta.normalize(),forward=long.clone().applyQuaternion(hq);
-      const bend=forward.clone().negate().addScaledVector(axis,forward.dot(axis));if(bend.lengthSq()<1e-6)bend.copy(hint).addScaledVector(axis,-hint.dot(axis));bend.normalize();
-      const along=(a*a-b*b+distance*distance)/(2*distance),rise=Math.sqrt(Math.max(0,a*a-along*along)),elbow=shoulder.clone().addScaledVector(axis,along).addScaledVector(bend,rise),foreDirection=target.clone().sub(elbow).normalize();
-      const flex=Math.acos(THREE.MathUtils.clamp(forward.dot(foreDirection),-1,1)),turn=Math.atan2(Math.sin(roll-lastRoll),Math.cos(roll-lastRoll));
-      const score=flex*flex+.025*(1-bend.dot(preferredBend))+.002*turn*turn;
+      const along=(a*a-b*b+distance*distance)/(2*distance),rise=Math.sqrt(Math.max(0,a*a-along*along));
+      const u=hint.clone().addScaledVector(axis,-hint.dot(axis)).normalize(),v=new THREE.Vector3().crossVectors(axis,u).normalize();
+      const candidates=[Math.atan2(-forward.dot(v),-forward.dot(u)),0];
+      const limits=[[bodyForward,-.005],[bodyUp.clone().negate(),-.09],[bodyRight,-.04]];
+      for(const [normal,minimum]of limits){const x=normal.dot(u),y=normal.dot(v),length=Math.hypot(x,y),k=rise>.0001?(minimum-along*normal.dot(axis))/rise:2;if(length>.0001&&Math.abs(k)<=length){const phi=Math.atan2(y,x),angle=Math.acos(THREE.MathUtils.clamp(k/length,-1,1));candidates.push(phi-angle,phi+angle);}}
+      let chosen;
+      for(const theta of candidates){
+        const bend=u.clone().multiplyScalar(Math.cos(theta)).addScaledVector(v,Math.sin(theta)),elbowOffset=axis.clone().multiplyScalar(along).addScaledVector(bend,rise),foreDirection=target.clone().sub(shoulder).sub(elbowOffset).normalize();
+        const flex=Math.acos(THREE.MathUtils.clamp(forward.dot(foreDirection),-1,1));
+        const violation=limits.reduce((sum,[normal,minimum])=>sum+Math.pow(Math.max(0,minimum-elbowOffset.dot(normal)),2),0);
+        const cost=flex*flex+.025*(1-bend.dot(preferredBend))+10000*violation;
+        if(!chosen||cost<chosen.cost)chosen={bend,flex,cost};
+      }
+      const {bend,flex}=chosen,turn=Math.atan2(Math.sin(roll-lastRoll),Math.cos(roll-lastRoll)),score=chosen.cost+.002*turn*turn;
       if(!best||score<best.score)best={score,roll,hq,target,bend,flex};
     };
     for(let i=0;i<24;i++)evaluate(i*Math.PI/12);
