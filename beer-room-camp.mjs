@@ -51,7 +51,7 @@ export function buildCamp(group){
  const rim=new THREE.Mesh(new THREE.TorusGeometry(.31,.014,6,28),iron);rim.rotation.x=Math.PI/2;rim.position.y=1.40;rack.add(rim);
  const handle=new THREE.Mesh(new THREE.TorusGeometry(.32,.012,6,28,Math.PI),iron);handle.position.y=1.40;rack.add(handle);
  group.updateMatrixWorld(true);for(const s of surfaces)if(s.kind==='seat'){const center=s.seatPosition,target=s.fireBenchIndex!==undefined?f.position:g.position;let dir=center.clone().sub(target).setY(0);if(dir.length()<.1)dir.set(0,0,1);dir.normalize();s.exitPosition.copy(center).addScaledVector(dir,1);s.exitPosition.y=groundHeight(s.exitPosition.x,s.exitPosition.z);s.yaw=Math.atan2(dir.x,dir.z);}
- for(const s of surfaces)if(s.gazeboSeat!==undefined){const side=s.gazeboSide,local=new THREE.Vector3((s.gazeboSeat===0?-1:1)*1.91,.13,side*.99);s.exitPosition.copy(g.localToWorld(local));s.exitPosition.y=groundHeight(s.exitPosition.x,s.exitPosition.z);}
+ for(const s of surfaces)if(s.gazeboSeat!==undefined){const side=s.gazeboSide; s.yaw=g.rotation.y+(side>0?0:Math.PI);const local=new THREE.Vector3((s.gazeboSeat===0?-1:1)*1.91,.13,side*.99);s.exitPosition.copy(g.localToWorld(local));s.exitPosition.y=groundHeight(s.exitPosition.x,s.exitPosition.z);}
  // The split-log seat has three independent interaction areas. All three
  // face the lake; stand-up positions lead back onto the plateau.
  const bench=new THREE.Group();bench.name='Three-seat split-log lake bench';bench.position.set(campLayout.bench.x,groundHeight(campLayout.bench.x,campLayout.bench.z),campLayout.bench.z);group.add(bench);

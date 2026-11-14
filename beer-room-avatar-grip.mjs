@@ -30,8 +30,10 @@ export function createAvatarGrip(root,model,held){
   const rest=new Map([...fingers.flat(),...thumb].filter(Boolean).map(bone=>[bone,bone.quaternion.clone()]));
   const socket=held;socket.position.set(0,0,0);socket.quaternion.copy(basis);hand.add(socket);
   root.userData.gripSocket=socket;root.userData.handBone=hand;
-  let radius=.03,gripHeight=.10,shapeKey='';
+  let radius=.03,gripHeight=.10,shapeKey='',lastRoll=0,fingerPose=null;
+  const neutralWrist=hand.quaternion.clone();
   function configure(item){
+    fingerPose=null;
     const profile=item.userData.packageProfile,scale=model.scale.x;
     if(profile){
       const height=profile.kind.includes('bottle')?.30:.205,unit=height/profile.modelHeight;
@@ -43,6 +45,7 @@ export function createAvatarGrip(root,model,held){
     item.position.set(0,-gripHeight/scale,0);item.quaternion.identity();
   }
   function curl(){
+    if(fingerPose){for(const [bone,q]of fingerPose)bone.quaternion.copy(q);hand.updateWorldMatrix(false,true);return;}
     for(const [bone,q]of rest)bone.quaternion.copy(q);
     hand.updateWorldMatrix(true,true);
     const center=socket.position,scale=model.scale.x;
@@ -65,6 +68,7 @@ export function createAvatarGrip(root,model,held){
       if(angle>.35)delta.slerpQuaternions(new THREE.Quaternion(),delta,.35/angle);
       const q=delta.multiply(bone.getWorldQuaternion(new THREE.Quaternion()));bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(q));bone.updateWorldMatrix(false,true);
     }
+    fingerPose=new Map([...rest.keys()].map(bone=>[bone,bone.quaternion.clone()]));
   }
   return {socket,hand,fingers,thumb,update(action={}){
     const item=socket.children[0];if(!item||!socket.visible){shapeKey='';return;}
@@ -82,11 +86,39 @@ export function createAvatarGrip(root,model,held){
       const rim=new THREE.Vector3(0,(item.userData.packageProfile?(item.userData.packageProfile.kind.includes('bottle')?.30:.205):item.userData.height)-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004);
       const drinkCenter=worldPoint(mouth).sub(rim.applyQuaternion(drinkQ));center.lerp(drinkCenter,amount);
     }else if(pouring)center=root.localToWorld(new THREE.Vector3(.34,height*.64,-.48));
-    const handQ=desiredQ.clone().multiply(basis.clone().invert());
-    const target=center.sub(socket.position.clone().multiplyScalar(model.scale.x).applyQuaternion(handQ));
-    const bend=new THREE.Vector3(.85,-.6,.10).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
-    model.updateWorldMatrix(true,true);solveArm(upper,fore,hand,target,bend);
+    model.updateWorldMatrix(true,true);
+    // A cylindrical grip can roll around the container. Choose that freedom
+    // together with the elbow plane, rather than folding the wrist to a fixed roll.
+    const shoulder=worldPoint(upper),a=shoulder.distanceTo(worldPoint(fore)),b=worldPoint(fore).distanceTo(worldPoint(hand));
+    const baseQ=desiredQ.clone(),baseCenter=center.clone(),hint=new THREE.Vector3(.85,-.65,.12).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
+    const mouth=root.userData.mouthSocket,mouthPosition=mouth?worldPoint(mouth):null,drinkBase=mouth?mouth.getWorldQuaternion(new THREE.Quaternion()):null;
+    const physicalHeight=item.userData.packageProfile?(item.userData.packageProfile.kind.includes('bottle')?.30:.205):item.userData.height;
+    const rim=new THREE.Vector3(0,physicalHeight-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004),resting=root.localToWorld(new THREE.Vector3(.30,height*.60,-.30));
+    if(drinkBase){const tilt=item.userData.packageProfile?1.85:Math.atan2((item.userData.height||.23)-(.015+.19*(action.fill??.5)),item.userData.rTop-.004)+.10;drinkBase.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));}
+    const inverseBasis=basis.clone().invert(),offset=socket.position.clone().multiplyScalar(model.scale.x),preferredBend=hint.clone().normalize();
+    let best;
+    const evaluate=roll=>{
+      const q=baseQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(up,roll)),hq=q.clone().multiply(inverseBasis);
+      const c=baseCenter.clone();
+      if(drinking&&drinkBase)c.copy(resting).lerp(mouthPosition.clone().sub(rim.clone().applyQuaternion(drinkBase.clone().multiply(new THREE.Quaternion().setFromAxisAngle(up,roll)))),amount);
+      const target=c.sub(offset.clone().applyQuaternion(hq)),delta=target.clone().sub(shoulder),distance=THREE.MathUtils.clamp(delta.length(),Math.abs(a-b)+.005,a+b-.005),axis=delta.normalize(),forward=long.clone().applyQuaternion(hq);
+      const bend=forward.clone().negate().addScaledVector(axis,forward.dot(axis));if(bend.lengthSq()<1e-6)bend.copy(hint).addScaledVector(axis,-hint.dot(axis));bend.normalize();
+      const along=(a*a-b*b+distance*distance)/(2*distance),rise=Math.sqrt(Math.max(0,a*a-along*along)),elbow=shoulder.clone().addScaledVector(axis,along).addScaledVector(bend,rise),foreDirection=target.clone().sub(elbow).normalize();
+      const flex=Math.acos(THREE.MathUtils.clamp(forward.dot(foreDirection),-1,1)),turn=Math.atan2(Math.sin(roll-lastRoll),Math.cos(roll-lastRoll));
+      const score=flex*flex+.025*(1-bend.dot(preferredBend))+.002*turn*turn;
+      if(!best||score<best.score)best={score,roll,hq,target,bend,flex};
+    };
+    for(let i=0;i<24;i++)evaluate(i*Math.PI/12);
+    for(let step=Math.PI/24;step>.001;step*=.5){const r=best.roll;evaluate(r-step);evaluate(r+step);}
+    lastRoll=best.roll;const handQ=best.hq;
+    solveArm(upper,fore,hand,best.target,best.bend);
+    // Put pronation into the forearm. The wrist then supplies only the small
+    // remaining flexion, instead of a 180-degree twist at the hand joint.
+    const axis=worldPoint(hand).sub(worldPoint(fore)).normalize(),neutral=fore.getWorldQuaternion(new THREE.Quaternion()).multiply(neutralWrist),delta=handQ.clone().multiply(neutral.invert()),projection=axis.x*delta.x+axis.y*delta.y+axis.z*delta.z;
+    const twist=new THREE.Quaternion(axis.x*projection,axis.y*projection,axis.z*projection,delta.w).normalize();
+    fore.quaternion.copy(fore.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(twist.multiply(fore.getWorldQuaternion(new THREE.Quaternion()))));fore.updateWorldMatrix(false,true);
     hand.quaternion.copy(hand.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(handQ));hand.updateWorldMatrix(false,true);curl();
+    root.userData.wristFlex=best.flex;root.userData.wristRotation=hand.quaternion.angleTo(neutralWrist);
     root.userData.gripRadius=radius;root.userData.gripHeight=gripHeight;
   }};
 }

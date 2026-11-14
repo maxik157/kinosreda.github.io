@@ -1,4 +1,5 @@
 import * as THREE from './three.module.js';
+import {SupPrediction} from './beer-room-motion.mjs';
 import {mergeGeometries} from './BufferGeometryUtils.js';
 import {SUP_SCALE,WATER_Y,createSupStates,advanceSupBoard} from './beer-room-sup-physics.mjs';
 import {supProfile as spec} from './beer-room-sup-profile.mjs';
@@ -84,17 +85,33 @@ export function buildSupBoards(group){
  }
  function setNetwork(value){network=value;}
  function requestMount(board){if(pending===board?.userData.id&&time-lastInput<1)return true;if(!network?.connected||!board||board.userData.owner&&board.userData.owner!==network.id)return false;pending=board.userData.id;lastInput=time;network.sendPresence(true);if(!network.send({type:'sup_claim',boardId:pending})){pending=null;return false;}return true;}
- function receive(snapshots){for(const snap of snapshots||[]){const b=boards.find(b=>b.userData.id===snap.id);if(!b)continue;const d=b.userData;b.visible=!snap.deleted;d.surface.disabled=!!snap.deleted;d.state.deleted=!!snap.deleted;d.owner=snap.owner;d.state.owner=snap.owner;for(const a of ['sx','sy','sz'])d.state[a]=snap[a]??1;d.target={...snap};d.receivedAt=time;if(!d.received){Object.assign(d.state,snap);d.received=true;}if(pending===snap.id&&snap.owner===network?.id){pending=null;api.onMount?.(b);}if(api.current===b&&snap.owner!==network?.id){api.onLost?.(b);}}}
- function drive(board,throttle,steer,brake){const d=board?.userData;if(!d||d.owner!==network?.id)return;Object.assign(d.state,{throttle,steer,brake});if(time-lastInput>.045){lastInput=time;network.send({type:'sup_input',boardId:d.id,throttle,steer,brake});}}
+ function receive(snapshots){for(const snap of snapshots||[]){const b=boards.find(b=>b.userData.id===snap.id);if(!b)continue;const d=b.userData;
+  if(snap.serverAt&&snap.serverAt<(d.serverAt||0))continue;d.serverAt=snap.serverAt||0;
+  b.visible=!snap.deleted;d.surface.disabled=!!snap.deleted;
+  const changed=d.owner!==snap.owner,local=snap.owner&&snap.owner===network?.id;
+  const repeated=!changed&&d.target&&['x','z','yaw','speed','phase','inputSeq','sx','sy','sz','deleted','brake','throttle','steer'].every(k=>d.target[k]===snap[k]);
+  if(repeated)continue;
+  d.owner=snap.owner;d.target={...snap};d.receivedAt=time;
+  if(!d.received||changed){Object.assign(d.state,snap);d.predictor=new SupPrediction();d.error={x:0,z:0,yaw:0};d.received=true;}
+  else if(local){const correction=d.predictor.reconcile(d.state,snap);for(const k of ['x','z','yaw'])d.error[k]+=correction[k];if(Math.hypot(d.error.x,d.error.z)>3)d.error={x:0,z:0,yaw:0};}
+  for(const a of ['sx','sy','sz','deleted','owner'])d.state[a]=snap[a];
+  if(pending===snap.id&&snap.owner===network?.id){pending=null;api.onMount?.(b);}if(api.current===b&&snap.owner!==network?.id)api.onLost?.(b);
+ }}
+ function drive(board,throttle,steer,brake){const d=board?.userData;if(!d||d.owner!==network?.id)return;Object.assign(d.state,{throttle,steer,brake});}
  function release(board){if(!board)return;network?.send({type:'sup_release',boardId:board.userData.id});Object.assign(board.userData.state,{throttle:0,steer:0,brake:true});api.current=null;}
  function anchorAt(board,worldPosition,worldQuaternion){board.updateWorldMatrix(true,false);return{boardId:board.userData.id,local:board.worldToLocal(worldPosition.clone()).toArray(),rotation:board.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(worldQuaternion).toArray()};}
  function attach(object,anchor){if(!object)return;attachments.delete(object);object.userData.supAnchor=anchor||null;if(!anchor)object.userData.movingSurface=null;if(anchor)attachments.add(object);}
  function updateAttachments(){for(const object of attachments){if(object.userData.held||!object.parent){attachments.delete(object);continue;}const a=object.userData.supAnchor,b=boards.find(b=>b.userData.id===a?.boardId);if(!b){attachments.delete(object);continue;}object.position.copy(b.localToWorld(point.fromArray(a.local)));object.quaternion.copy(b.getWorldQuaternion(q)).multiply(new THREE.Quaternion().fromArray(a.rotation));object.userData.movingSurface=b.userData.velocity;}}
  function denied(){pending=null;}
  function update(dt){time+=dt;for(const b of boards){const d=b.userData,s=d.state,t=d.target,local=d.owner&&d.owner===network?.id,oldX=b.position.x,oldZ=b.position.z;
-   if(local)advanceSupBoard(s,dt);
-   if(t){const blend=1-Math.exp(-dt*(local?3:16)),predicted={...t,phase:t.phase};if(local)advanceSupBoard(predicted,Math.min(.05,time-(d.receivedAt??time)));s.x+=(predicted.x-s.x)*blend;s.z+=(predicted.z-s.z)*blend;s.yaw+=(THREE.MathUtils.euclideanModulo(predicted.yaw-s.yaw+Math.PI,Math.PI*2)-Math.PI)*blend;if(!local)s.speed+=(t.speed-s.speed)*blend;if(!local){s.throttle=t.throttle||0;s.steer=t.steer||0;s.phase+=(Math.abs(s.throttle)>.05||Math.abs(s.steer)>.05?3.9:0)*dt;s.phase+=(t.phase-s.phase)*(1-Math.exp(-dt*5));}}
-   b.scale.set(SUP_SCALE*(s.sx??1),SUP_SCALE*(s.sy??1),SUP_SCALE*(s.sz??1));b.position.set(s.x,WATER_Y-.025+Math.sin(time*1.6+d.supIndex)*.012,s.z);b.rotation.set(Math.sin(time*1.25+d.supIndex)*.005,s.yaw,Math.sin(time*1.1+d.supIndex*2)*.006,'YXZ');b.updateWorldMatrix(true,true);
+   if(local){
+    d.predictor??=new SupPrediction();d.error??={x:0,z:0,yaw:0};d.predictor.step(s,dt);
+    if(time-(d.sentAt||0)>=.033){d.sentAt=time;const inputs=d.predictor.take();if(inputs.length)network.send({type:'sup_input',boardId:d.id,inputs});}
+    const decay=Math.exp(-dt*14);for(const k of ['x','z','yaw'])d.error[k]*=decay;
+   }
+   if(t&&!local){const predicted={...t},age=Math.min(.18,time-(d.receivedAt??time));for(let left=age;left>0;left-=.025)advanceSupBoard(predicted,Math.min(.025,left));const blend=1-Math.exp(-dt*24);s.x+=(predicted.x-s.x)*blend;s.z+=(predicted.z-s.z)*blend;s.yaw+=Math.atan2(Math.sin(predicted.yaw-s.yaw),Math.cos(predicted.yaw-s.yaw))*blend;s.speed=predicted.speed;s.throttle=t.throttle||0;s.steer=t.steer||0;s.phase+=(predicted.phase-s.phase)*blend;}
+
+   b.scale.set(SUP_SCALE*(s.sx??1),SUP_SCALE*(s.sy??1),SUP_SCALE*(s.sz??1));b.position.set(s.x+(local?d.error.x:0),WATER_Y-.025+Math.sin(time*1.6+d.supIndex)*.012,s.z+(local?d.error.z:0));b.rotation.set(Math.sin(time*1.25+d.supIndex)*.005,s.yaw+(local?d.error.yaw:0),Math.sin(time*1.1+d.supIndex*2)*.006,'YXZ');b.updateWorldMatrix(true,true);
    if(dt>0&&d.initialized){d.velocity.x=(b.position.x-oldX)/dt;d.velocity.z=(b.position.z-oldZ)/dt;}d.initialized=true;
    const surface=d.surface;surface.bounds.copy(shapes.deck.boundingBox).applyMatrix4(b.matrixWorld);surface.topY=surface.heightAt(b.position.x,b.position.z);
    const paddle=d.paddle,active=!!d.owner;const stroke=s.phase*(s.throttle<0?-1:1),work=Math.abs(s.throttle||0)>.05||Math.abs(s.steer||0)>.05;

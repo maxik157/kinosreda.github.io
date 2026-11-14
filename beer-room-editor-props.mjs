@@ -1,6 +1,7 @@
 import * as THREE from './three.module.js';
 import {mergeGeometries} from './BufferGeometryUtils.js';
 import {buildCampTent,buildHelinoxChair,buildHammock,buildYoungTree} from './beer-room-camping-models.mjs';
+import {buildEquipment} from './beer-room-equipment-models.mjs';
 import {propCatalog} from './beer-room-prop-catalog.mjs';
 let shared;
 function resources(){
@@ -23,7 +24,8 @@ export function buildEditorProp(kind){
  function log(a,b,r=.12,split=false,birch=false){const bark=birch?R.birch:R.bark,axis=b.clone().sub(a).normalize(),length=a.distanceTo(b),q=new THREE.Quaternion().setFromUnitVectors(v(0,1,0),axis),mid=a.clone().add(b).multiplyScalar(.5);const side=mesh(new THREE.CylinderGeometry(r*.92,r,length,split?5:12,1,true,0,split?Math.PI*1.35:Math.PI*2),bark);side.position.copy(mid);side.quaternion.copy(q);for(const [p,sign]of [[a,-1],[b,1]]){const cap=mesh(new THREE.CircleGeometry(r*(sign===1?.92:1),split?5:12,0,split?Math.PI*1.35:Math.PI*2),R.end);cap.quaternion.setFromUnitVectors(v(0,0,1),axis.clone().multiplyScalar(sign));cap.position.copy(p);}if(split){const cut=box(r*1.6,length,.015,mid.x,mid.y,mid.z,R.end);cut.quaternion.copy(q);}if(birch)for(let i=0;i<5;i++){const mark=box(r*.8,.018,.012,0,0,0,R.black);mark.position.copy(a).addScaledVector(axis,length*(i+.5)/5);mark.position.z+=r*.98;}}
  const api={root,mesh,box,beam,patch,solid,surface,R,colors,colliders};
  if(propCatalog[kind].retired)return{root,colliders,surfaces,lights,colors,wireUpdate,meta:propCatalog[kind]};
- if(kind.startsWith('tent-'))buildCampTent(kind,api);
+ if(['axe-splitting','axe-universal','kitchen-knife','cutting-board','cooler','shovel','doritos','lada-niva'].includes(kind))buildEquipment(kind,api);
+ else if(kind.startsWith('tent-'))buildCampTent(kind,api);
  else if(kind==='folding-chair')buildHelinoxChair(api);
  else if(kind.startsWith('young-'))buildYoungTree(kind,api);
  else if(kind==='hammock'){wireUpdate=buildHammock(api);wireUpdate(v(-2.2,1.65,0),v(2.2,1.65,0),.48);}
@@ -58,6 +60,6 @@ export function buildEditorProp(kind){
  }
  // Batch static parts by material; seats, transparent objects and the adjustable
  // garland keep their own meshes. Adding decor does not create one draw per rod.
- if(kind!=='garland'&&kind!=='hammock'){root.updateMatrixWorld(true);const batches=new Map();for(const m of [...root.children]){if(!m.isMesh||m.isInstancedMesh||m.userData.surface||Array.isArray(m.material)||m.material.transparent)continue;m.updateMatrix();let geo=m.geometry.clone().applyMatrix4(m.matrix);if(geo.index){const indexed=geo;geo=geo.toNonIndexed();indexed.dispose();}if(!batches.has(m.material))batches.set(m.material,[]);batches.get(m.material).push(geo);m.removeFromParent();m.geometry.dispose();}for(const [mat,geos]of batches){const m=mesh(mergeGeometries(geos),mat,root.name);geos.forEach(g=>g.dispose());}}
+ if(kind!=='garland'&&kind!=='hammock'&&kind!=='lada-niva'){root.updateMatrixWorld(true);const batches=new Map();for(const m of [...root.children]){if(!m.isMesh||m.isInstancedMesh||m.userData.surface||Array.isArray(m.material)||m.material.transparent)continue;m.updateMatrix();let geo=m.geometry.clone().applyMatrix4(m.matrix);if(geo.index){const indexed=geo;geo=geo.toNonIndexed();indexed.dispose();}if(!batches.has(m.material))batches.set(m.material,[]);batches.get(m.material).push(geo);m.removeFromParent();m.geometry.dispose();}for(const [mat,geos]of batches){const m=mesh(mergeGeometries(geos),mat,root.name);geos.forEach(g=>g.dispose());}}
  if(propCatalog[kind].noCollision)colliders.length=0;return{root,colliders,surfaces,lights,colors,wireUpdate,meta:propCatalog[kind]};
 }

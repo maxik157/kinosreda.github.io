@@ -1,5 +1,13 @@
 // Stable catalogue identifiers shared by the server and the renderer.
 export const propCatalog={
+ 'axe-splitting':{label:'Топор Fiskars X27',category:'camping',onSurface:true,noCollision:true},
+ 'axe-universal':{label:'Топор Fiskars X15',category:'camping',onSurface:true,noCollision:true},
+ 'kitchen-knife':{label:'Кухонный нож',category:'small',onSurface:true,noCollision:true},
+ 'cutting-board':{label:'Разделочная доска',category:'small',onSurface:true,noCollision:true},
+ 'cooler':{label:'Термоконтейнер',category:'camping',onSurface:true},
+ 'shovel':{label:'Лопата',category:'camping',onSurface:true,noCollision:true},
+ 'doritos':{label:'Чипсы Doritos',category:'small',onSurface:true,noCollision:true},
+ 'lada-niva':{label:'Лада Нива 4×4',category:'camping'},
  'tent-dome':{label:'Палатка купольная',category:'camping',tent:true},
  'tent-ridge':{label:'Палатка двускатная',category:'camping',tent:true},
  'tent-vestibule':{label:'Палатка с тамбуром',category:'camping',tent:true},

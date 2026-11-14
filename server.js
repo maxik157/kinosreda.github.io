@@ -9602,13 +9602,24 @@ function applyBeerMessage(id, name, data, roomName) {
       if(room.toilet?.owner===id)return{kind:'sup_denied',boardId:board.id,reason:'Сначала выйдите из туалета'};
       if(board.owner&&board.owner!==id)return{kind:'sup_denied',boardId:board.id,reason:'Этот сапборд уже занят'};
       if(!Number.isFinite(user.x)||supPhysics.supBoardDistance(user.x,user.z,board)>1.8)return{kind:'sup_denied',boardId:board.id,reason:'Подойдите ближе к сапборду'};
-      supPhysics.releaseSup(room.boards,id);board.owner=id;board.brake=false;board.lastInputAt=Date.now();return{kind:'sup_state'};
+      supPhysics.releaseSup(room.boards,id);board.owner=id;board.inputSeq=0;board.predictedInput=false;board.brake=false;board.lastInputAt=Date.now();return{kind:'sup_state'};
     }
     if(board.owner!==id)return null;
     if(data.type==='sup_release'){supPhysics.releaseSup(room.boards,id);return{kind:'sup_state'};}
+    if(Array.isArray(data.inputs)){
+      let budget=.3;
+      for(const cmd of data.inputs.slice(0,20)){
+        if(!Number.isSafeInteger(cmd.seq)||cmd.seq<=(board.inputSeq||0)||!Number.isFinite(cmd.dt)||cmd.dt<=0)continue;
+        const dt=Math.min(.05,cmd.dt,budget);if(dt<=0)break;budget-=dt;
+        board.throttle=Math.max(-1,Math.min(1,Number(cmd.throttle)||0));board.steer=Math.max(-1,Math.min(1,Number(cmd.steer)||0));board.brake=!!cmd.brake;
+        supPhysics.advanceSupBoard(board,dt);board.inputSeq=cmd.seq;
+      }
+      board.predictedInput=true;board.lastInputAt=Date.now();supPhysics.separateSupBoards(room.boards);return{kind:'sup_state',boardId:board.id};
+    }
     board.throttle=Math.max(-1,Math.min(1,Number(data.throttle)||0));board.steer=Math.max(-1,Math.min(1,Number(data.steer)||0));board.brake=!!data.brake;board.lastInputAt=Date.now();return null;
   }
   if (data.type === 'presence') {
+    if(Number.isFinite(data.sentAt))user.sentAt=data.sentAt;if(Number.isSafeInteger(data.seq))user.seq=data.seq;
     for (const key of ['x','y','z','yaw','pitch']) {
       const value = Number(data[key]);
       if (Number.isFinite(value)) user[key] = Math.max(-250, Math.min(250, value));
@@ -10382,7 +10393,7 @@ firebaseRtdbProxyWss.on('connection', (clientWs, req) => {
   });
 });
 
-setInterval(()=>{if(!supPhysics)return;const now=Date.now();for(const [roomName,room]of state.beerRooms){if(room.toilet&&toiletProtocol.expireToilet(room.toilet,room.users,now))broadcast({type:'toilet_state',toilet:room.toilet},roomName);if(!room.openSpace||!room.boards||!room.users.size)continue;const moving=room.boards.some(b=>b.owner||Math.abs(b.speed)>.002);if(!moving)continue;for(const b of room.boards){if(b.owner&&!room.users.has(b.owner))supPhysics.releaseSup(room.boards,b.owner);if(now-(b.lastInputAt||0)>700){b.throttle=b.steer=0;}supPhysics.advanceSupBoard(b,.05);}supPhysics.separateSupBoards(room.boards);broadcast({type:'sup_state',boards:room.boards.map(supPhysics.publicSupState)},roomName);}},50).unref();
+setInterval(()=>{if(!supPhysics)return;const now=Date.now();for(const [roomName,room]of state.beerRooms){if(room.toilet&&toiletProtocol.expireToilet(room.toilet,room.users,now))broadcast({type:'toilet_state',toilet:room.toilet},roomName);if(!room.openSpace||!room.boards||!room.users.size)continue;const moving=room.boards.some(b=>b.owner||Math.abs(b.speed)>.002);if(!moving)continue;for(const b of room.boards){if(b.owner&&!room.users.has(b.owner))supPhysics.releaseSup(room.boards,b.owner);if(now-(b.lastInputAt||0)>700){b.throttle=b.steer=0;}if(!b.owner||!b.predictedInput||now-(b.lastInputAt||0)>250){const elapsed=Math.min(.1,Math.max(0,(now-(room.supTickAt||now-50))/1000));for(let left=elapsed;left>0;left-=.025)supPhysics.advanceSupBoard(b,Math.min(.025,left));}}room.supTickAt=now;supPhysics.separateSupBoards(room.boards);broadcast({type:'sup_state',boards:room.boards.map(supPhysics.publicSupState)},roomName);}},50).unref();
 
 wss.on('connection', async (ws, req) => {
   const url = new URL(req.url, 'http://localhost');
@@ -10421,7 +10432,7 @@ wss.on('connection', async (ws, req) => {
       if(result.kind==='toilet_denied'){ws.send(JSON.stringify({type:'toilet_denied',reason:result.reason}));}
       else if(result.kind==='toilet_state'){const r=getBeerRoom(roomName);broadcast({type:'toilet_state',toilet:r.toilet},roomName);broadcast({type:'sup_state',boards:r.boards?.map(supPhysics.publicSupState)||[]},roomName);}
       else if(result.kind==='sup_denied'){ws.send(JSON.stringify({type:'sup_denied',boardId:result.boardId,reason:result.reason}));}
-      else if(result.kind==='sup_state'){broadcast({type:'sup_state',boards:getBeerRoom(roomName).boards.map(supPhysics.publicSupState)},roomName);}
+      else if(result.kind==='sup_state'){broadcast({type:'sup_state',boards:getBeerRoom(roomName).boards.filter(b=>!result.boardId||b.id===result.boardId).map(supPhysics.publicSupState)},roomName);}
       else if(result.kind==='world'){broadcast({type:'toilet_state',toilet:getBeerRoom(roomName).toilet},roomName);broadcast({type:'beer_world',open:result.open},roomName);broadcast({type:'sup_state',boards:getBeerRoom(roomName).boards?.map(supPhysics.publicSupState)||[]},roomName);}
       else if (result.kind === 'presence' || result.kind === 'beer_action') {
         broadcast({ type: result.kind === 'presence' ? 'beer_presence' : 'beer_action', user: result.user }, roomName, result.kind==='presence'?ws:null);

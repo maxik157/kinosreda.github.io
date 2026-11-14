@@ -38,4 +38,4 @@ export function separateSupBoards(boards){
  }
 }
 export function releaseSup(boards,id){for(const b of boards)if(b.owner===id){b.owner=null;b.throttle=b.steer=0;b.brake=true;}}
-export function publicSupState(b){return{id:b.id,deleted:!!b.deleted,sx:b.sx??1,sy:b.sy??1,sz:b.sz??1,x:b.x,z:b.z,yaw:b.yaw,speed:b.speed,owner:b.owner,phase:b.phase,throttle:b.throttle,steer:b.steer};}
+export function publicSupState(b){return{id:b.id,deleted:!!b.deleted,sx:b.sx??1,sy:b.sy??1,sz:b.sz??1,x:b.x,z:b.z,yaw:b.yaw,speed:b.speed,owner:b.owner,phase:b.phase,inputSeq:b.inputSeq||0,serverAt:Date.now(),brake:!!b.brake,throttle:b.throttle,steer:b.steer};}

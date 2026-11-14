@@ -1,4 +1,5 @@
 import * as THREE from './three.module.js';
+import {RemoteTimeline} from './beer-room-motion.mjs';
 import {roomSocketBase} from './beer-room-endpoints.mjs';
 import {createHumanAvatar, updateHumanAvatar, updateAvatarAppearance, disposeHumanAvatar} from './beer-room-avatar.mjs';
 import {createPackageModel, disposePackageInstance} from './beer-package-model.mjs';
@@ -51,7 +52,7 @@ export class BeerRoomOnline {
     const now=performance.now(),actionKey=JSON.stringify(s.action||{}),pose=[s.x,s.y,s.z,s.yaw,s.pitch].map(v=>Math.round((v||0)*1000)).join(':');
     if(!force&&(now-this.lastSent<30||pose===this.lastPose&&actionKey===this.lastAction&&now-this.lastSent<1000))return;
     if(this.ws?.bufferedAmount>16384&&!force)return;
-    if(this.send({type:'presence',id:this.id,name:this.name,x:s.x,y:s.y,z:s.z,yaw:s.yaw,pitch:s.pitch,avatar:this.avatar,action:s.action})){
+    if(this.send({type:'presence',sentAt:now,seq:(this.presenceSeq=(this.presenceSeq||0)+1),id:this.id,name:this.name,x:s.x,y:s.y,z:s.z,yaw:s.yaw,pitch:s.pitch,avatar:this.avatar,action:s.action})){
       this.lastSent=now;this.lastAction=actionKey;this.lastPose=pose;
     }
   }
@@ -110,29 +111,20 @@ export class BeerRoomOnline {
       const group = createHumanAvatar({...user.avatar, name:user.name}, key => this.getBeerModel?.(key));
       group.position.set(Number(user.x) || 0, Number(user.y) || 0, Number(user.z) || 0); this.scene.add(group);
       const label = labelSprite(user.name); group.add(label);
-      group.rotation.y=Number(user.yaw)||0; remote = {snapshots:[],group, target:new THREE.Vector3(group.position.x,group.position.y,group.position.z), yaw:Number(user.yaw)||0, action:{kind:'idle'}, distance:0, label}; remote.group.userData.onlineId=String(user.id);this.users.set(String(user.id), remote);
+      group.rotation.y=Number(user.yaw)||0; remote = {timeline:new RemoteTimeline(),group, target:new THREE.Vector3(group.position.x,group.position.y,group.position.z), yaw:Number(user.yaw)||0, action:{kind:'idle'}, distance:0, label}; remote.group.userData.onlineId=String(user.id);this.users.set(String(user.id), remote);
     }
     updateAvatarAppearance(remote.group,user.avatar||{});
     remote.target.set(Number(user.x)||0, Number(user.y)||0, Number(user.z)||0); remote.yaw=Number(user.yaw)||0; remote.action=user.action||{kind:'idle'}; remote.group.userData.name=user.name||'Гость';
-    const now=performance.now(); remote.snapshots.push({time:now,position:remote.target.clone(),yaw:remote.yaw,action:remote.action});
-    if(remote.snapshots.length>32)remote.snapshots.shift();
+    remote.timeline.push({sentAt:user.sentAt,seq:user.seq,x:remote.target.x,y:remote.target.y,z:remote.target.z,yaw:remote.yaw,action:remote.action},performance.now());
   }
   remove(id) { const remote=this.users.get(String(id)); if (!remote)return; this.scene.userData.shadowsDirty=true; disposeHumanAvatar(remote.group); this.users.delete(String(id)); }
   update(dt) {
     for (const remote of this.users.values()) {
-      const before=remote.group.position.clone(), frames=remote.snapshots, renderAt=performance.now()-55;
-      while(frames.length>2&&frames[1].time<=renderAt)frames.shift();
-      const a=frames[0],b=frames[1]||a;
-      if(a){
-        const t=b.time>a.time?THREE.MathUtils.clamp((renderAt-a.time)/(b.time-a.time),0,1):1;
-        remote.group.position.lerpVectors(a.position,b.position,t);
-        // Bound prediction to 80 ms. Small network jitter no longer makes the
-        // whole body pause between packets; seated/lying anchors stay fixed.
-        if(b!==a&&renderAt>b.time&&['walking','running','jump','crouch-walk','swimming'].includes(b.action.kind)){
-          const span=b.time-a.time;if(span>8&&span<250){const ahead=Math.min(80,renderAt-b.time)/span;const delta=b.position.clone().sub(a.position);if(delta.length()/span<.012)remote.group.position.addScaledVector(delta,ahead);}
-        }
-        const dy=THREE.MathUtils.euclideanModulo(b.yaw-a.yaw+Math.PI,Math.PI*2)-Math.PI;
-        remote.group.rotation.y=a.yaw+dy*t; remote.action=t<.5?a.action:b.action;
+      const before=remote.group.position.clone(),pose=remote.timeline.sample(performance.now());
+      if(pose){
+        const target=new THREE.Vector3(pose.x,pose.y,pose.z),snap=remote.group.position.distanceTo(target)>3;
+        remote.group.position.lerp(target,snap?1:1-Math.exp(-dt*30));
+        remote.group.rotation.y+=Math.atan2(Math.sin(pose.yaw-remote.group.rotation.y),Math.cos(pose.yaw-remote.group.rotation.y))*(snap?1:1-Math.exp(-dt*30));remote.action=pose.action;
       }
       const board=this.getSup?.()?.boards.find(b=>b.userData.owner===remote.group.userData.onlineId);
       if(board){remote.group.position.copy(board.position);remote.group.position.y=board.userData.surface.topY;remote.group.rotation.y=board.rotation.y;remote.action={...remote.action,kind:'paddling',stroke:board.userData.state.phase,paddle:board.userData.paddleHands};}
