@@ -1,3 +1,4 @@
+import {supBoardDistance} from './beer-room-sup-physics.mjs';
 // World-space movement follows the same YXZ convention as the camera.
 export function viewBasis(yaw) {
   return { forward: { x: -Math.sin(yaw), z: -Math.cos(yaw) }, right: { x: Math.cos(yaw), z: -Math.sin(yaw) } };
@@ -10,15 +11,34 @@ export function overlaps(x, z, radius, box) {
   const dz = z - Math.max(box.minZ, Math.min(box.maxZ, z));
   return dx * dx + dz * dz < radius * radius - 1e-9;
 }
+export function colliderBlocks(b,x,z,radius,feetY,height){
+ return !b.disabled&&x>=b.minX-radius&&x<=b.maxX+radius&&z>=b.minZ-radius&&z<=b.maxZ+radius&&(b.maxY===undefined||(feetY<b.maxY-.012&&feetY+height>(b.minY??0)+.02))&&(b.overlaps?b.overlaps(x,z,radius,feetY,height):overlaps(x,z,radius,b));
+}
 export function moveWithCollisions(position, dx, dz, colliders, radius = .24, feetY=0,bodyHeight=1.64,world=null) {
-  const steps = Math.max(1, Math.ceil(Math.hypot(dx, dz) / .045));
-  const bounds=world?.bounds||{minX:-9.64,maxX:9.64,minZ:-7.95,maxZ:7.95};
-  const blocked = (x, z) => x < bounds.minX || x > bounds.maxX || z < bounds.minZ || z > bounds.maxZ || (world?.canWalk&&!world.canWalk(x,z)) || colliders.some(b => !b.disabled&&x>=b.minX-radius&&x<=b.maxX+radius&&z>=b.minZ-radius&&z<=b.maxZ+radius&&(b.maxY===undefined||(feetY<b.maxY-.012&&feetY+bodyHeight>b.minY+.02))&&(b.overlaps?b.overlaps(x,z,radius,feetY,bodyHeight):overlaps(x, z, radius, b)));
-  for (let i = 0; i < steps; i++) {
-    // Resolve axes independently: the player keeps sliding along an obstacle.
-    if (!blocked(position.x + dx / steps, position.z)) position.x += dx / steps;
-    if (!blocked(position.x, position.z + dz / steps)) position.z += dz / steps;
+ const bounds=world?.bounds||{minX:-9.64,maxX:9.64,minZ:-7.95,maxZ:7.95};
+ const reach=Math.hypot(dx,dz)+2.5;colliders=colliders.filter(b=>!b.disabled&&position.x+reach>=b.minX&&position.x-reach<=b.maxX&&position.z+reach>=b.minZ&&position.z-reach<=b.maxZ);
+ const valid=(x,z)=>x>=bounds.minX&&x<=bounds.maxX&&z>=bounds.minZ&&z<=bounds.maxZ&&(!world?.canWalk||world.canWalk(x,z));
+ const blocked=(x,z)=>!valid(x,z)||colliders.some(b=>colliderBlocks(b,x,z,radius,feetY,bodyHeight));
+ // Landing beside a rotated/scaled object or a world edit can place the capsule
+ // inside a solid. Find the nearest free position, rather than blocking every
+ // subsequent input forever. Run the search only when penetration exists.
+ if(blocked(position.x,position.z)){
+  const candidates=[],x=position.x,z=position.z;
+  for(const b of colliders)if(colliderBlocks(b,x,z,radius,feetY,bodyHeight)){
+   for(const px of [b.minX-radius-.005,b.maxX+radius+.005])candidates.push({x:px,z});
+   for(const pz of [b.minZ-radius-.005,b.maxZ+radius+.005])candidates.push({x,z:pz});
   }
+  for(let r=.08;r<=2.01;r+=.08)for(let i=0;i<24;i++)candidates.push({x:x+Math.cos(i*Math.PI/12)*r,z:z+Math.sin(i*Math.PI/12)*r});
+  candidates.sort((a,b)=>(a.x-x)**2+(a.z-z)**2-((b.x-x)**2+(b.z-z)**2));
+  const free=candidates.find(p=>Math.hypot(p.x-x,p.z-z)<=2.1&&!blocked(p.x,p.z));
+  if(free){position.x=free.x;position.z=free.z;}
+ }
+ const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.045));
+ for(let i=0;i<steps;i++){
+  if(!blocked(position.x+dx/steps,position.z))position.x+=dx/steps;
+  if(!blocked(position.x,position.z+dz/steps))position.z+=dz/steps;
+ }
+ return !blocked(position.x,position.z);
 }
 const keyMap = { KeyW:'forward', ArrowUp:'forward', KeyS:'back', ArrowDown:'back', KeyA:'left', ArrowLeft:'left', KeyD:'right', ArrowRight:'right', ShiftLeft:'run', ShiftRight:'run', ControlLeft:'crouch', ControlRight:'crouch', KeyC:'crouch' };
 const deadzone = v => Math.abs(v) < .16 ? 0 : Math.sign(v) * (Math.abs(v) - .16) / .84;
@@ -34,7 +54,7 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
   function pause(){clear();state.enabled=false;canvas.style.cursor='';}
   async function lock(){try{state.enabled=true;canvas.style.cursor='none';canvas.focus();await canvas.requestPointerLock?.();return document.pointerLockElement===canvas;}catch{pause();return false;}}
   function stand(){if(state.toilet){api.onToiletExit?.();return true;}if(state.sup){const board=state.sup;api.world?.sup?.release(board);state.sup=null;state.deckSupport=null;camera.position.x=board.position.x+Math.cos(board.rotation.y)*.95;camera.position.z=board.position.z-Math.sin(board.rotation.y)*.95;state.feetY=board.position.y+.12;state.grounded=false;state.verticalVelocity=0;clear();return true;}if(!state.seated)return false;const exit=state.seated.exitPosition;camera.position.x=exit.x;camera.position.z=exit.z;state.seated=null;state.feetY=api.world?.ground(camera.position.x,camera.position.z)||0;state.grounded=false;state.verticalVelocity=0;clear();return true;}
-  function mountSup(board,confirmed=false){if(!board||!confirmed&&Math.hypot(camera.position.x-board.position.x,camera.position.z-board.position.z)>3.6)return false;if(!confirmed)return api.world?.sup?.requestMount(board)||false;if(state.sup&&state.sup!==board)stand();clear();state.seated=null;state.deckSupport=null;state.sup=board;state.swimming=false;state.verticalVelocity=0;state.grounded=true;state.yaw=board.rotation.y;state.supYaw=board.rotation.y;state.pitch=-.28;api.world.sup.current=board;return true;}
+  function mountSup(board,confirmed=false){if(!board||!confirmed&&supBoardDistance(camera.position.x,camera.position.z,board.userData.state)>1.8)return false;if(!confirmed)return api.world?.sup?.requestMount(board)||false;if(state.sup&&state.sup!==board)stand();clear();state.seated=null;state.deckSupport=null;state.sup=board;state.swimming=false;state.verticalVelocity=0;state.grounded=true;state.yaw=board.rotation.y;state.supYaw=board.rotation.y;state.pitch=-.28;api.world.sup.current=board;return true;}
   function sit(surface){if(surface?.disabled||!surface?.seatPosition||camera.position.distanceTo(surface.seatPosition)>2.4)return false;clear();state.seated=surface;state.crouched=false;state.seatYaw=surface.yaw??state.yaw;state.seatHeight=Math.max(.1,surface.topY-(api.world?.ground(surface.seatPosition.x,surface.seatPosition.z)??0));state.feetY=surface.topY;state.grounded=true;if(surface.yaw!==undefined)state.yaw=surface.yaw;state.pitch=surface.pitch??0;return true;}
   function jump(){if(state.toilet){stand();return;}if(state.sup){stand();state.verticalVelocity=3.5;return;}if(state.seated){stand();return;}if(state.enabled&&(state.grounded||state.swimming)&&!state.crouched){state.verticalVelocity=state.swimming?4.8:5.25;state.swimming=false;state.grounded=false;state.deckSupport=null;}}
   addEventListener('keydown', e=>{
@@ -100,7 +120,7 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
       const blend=1-Math.exp(-dt*18);camera.position.x+=(board.position.x-Math.sin(board.rotation.y)*.28-camera.position.x)*blend;camera.position.z+=(board.position.z-Math.cos(board.rotation.y)*.28-camera.position.z)*blend;camera.position.y+=(state.feetY+1.22-camera.position.y)*blend;camera.rotation.set(state.pitch,state.yaw,0,'YXZ');return;
     }
     if(state.seated){state.velocity.x=state.velocity.z=0;const blend=1-Math.exp(-dt*12);state.feetY=state.seated.topY;const lying=state.seated.kind==='hammock',aim=lying?state.seated.eyePosition:state.seated.seatPosition;camera.position.x+=(aim.x-camera.position.x)*blend;camera.position.z+=(aim.z-camera.position.z)*blend;const eye=lying?aim.y:state.seated.topY+.79;camera.position.y+=(eye-camera.position.y)*(1-Math.exp(-dt*12));camera.rotation.set(state.pitch,state.yaw,0,'YXZ');return;}
-    state.crouched=actions.has('crouch');
+    state.crouched=actions.has('crouch')||(state.crouched&&colliders.some(b=>colliderBlocks(b,camera.position.x,camera.position.z,.22,state.feetY,1.64)));
     const landSpeed=state.crouched?speeds.crouch:actions.has('run')?speeds.run:state.speed;
     const speed=(landSpeed+(2.15-landSpeed)*state.waterBlend)*(api.world?.speed(camera.position.x,camera.position.z)||1);
     const basis=viewBasis(state.yaw),factor=1-Math.exp(-dt*(x||y?14:20));
@@ -110,8 +130,17 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
     if(state.deckSupport&&state.grounded){const {board,local}=state.deckSupport;board.updateWorldMatrix(true,false);const moved=board.localToWorld(local.clone());camera.position.x=moved.x;camera.position.z=moved.z;state.feetY=moved.y;}
     const oldX=camera.position.x,oldZ=camera.position.z;
     const previousFeet=state.feetY;
-    if(!state.grounded&&!state.swimming){state.verticalVelocity-=11.5*dt;state.feetY+=state.verticalVelocity*dt;}
-    moveWithCollisions(camera.position,state.velocity.x*dt+basis.forward.x*wy+basis.right.x*wx,state.velocity.z*dt+basis.forward.z*wy+basis.right.z*wx,colliders,.22,state.feetY,state.crouched?1.08:1.64,api.world);
+    if(!state.grounded&&!state.swimming){state.verticalVelocity-=11.5*dt;state.feetY+=state.verticalVelocity*dt;
+      // Sweep vertically before horizontal resolution. Catch a tabletop on the
+      // descending frame and a ceiling on ascent; never step into their slab.
+      for(const b of colliders){if(b.disabled||b.maxY===undefined||camera.position.x<b.minX-.22||camera.position.x>b.maxX+.22||camera.position.z<b.minZ-.22||camera.position.z>b.maxZ+.22)continue;
+       const inside=b.containsXZ?b.containsXZ(camera.position.x,camera.position.z):camera.position.x>=b.minX&&camera.position.x<=b.maxX&&camera.position.z>=b.minZ&&camera.position.z<=b.maxZ;
+       if(state.verticalVelocity<=0&&inside){const top=b.supportHeightAt?b.supportHeightAt(camera.position.x,camera.position.z):b.maxY;if(top!==null&&previousFeet>=top-.02&&state.feetY<=top){state.feetY=top;state.verticalVelocity=0;state.grounded=true;}}
+       const height=state.crouched?1.08:1.64,bottom=b.minY??0;
+       if(state.verticalVelocity>0&&previousFeet+height<=bottom+.02&&state.feetY+height>bottom&&colliderBlocks(b,camera.position.x,camera.position.z,.22,state.feetY,height)){state.feetY=bottom-height-.025;state.verticalVelocity=0;}
+      }}
+    const free=moveWithCollisions(camera.position,state.velocity.x*dt+basis.forward.x*wy+basis.right.x*wx,state.velocity.z*dt+basis.forward.z*wy+basis.right.z*wx,colliders,.22,state.feetY,state.crouched?1.08:1.64,api.world);
+    if(!free&&state.lastSafe){const safe=state.lastSafe,bounds=api.world?.bounds||{minX:-9.64,maxX:9.64,minZ:-7.95,maxZ:7.95};if(safe.x>=bounds.minX&&safe.x<=bounds.maxX&&safe.z>=bounds.minZ&&safe.z<=bounds.maxZ&&!colliders.some(b=>colliderBlocks(b,safe.x,safe.z,.22,safe.y,state.crouched?1.08:1.64))){camera.position.x=safe.x;camera.position.z=safe.z;state.feetY=safe.y;state.verticalVelocity=0;state.grounded=true;}}
     state.distance+=Math.hypot(camera.position.x-oldX,camera.position.z-oldZ);
     let support=api.world?.ground(camera.position.x,camera.position.z)||0;
     for(const b of colliders)if(!b.disabled&&b.maxY!==undefined&&camera.position.x>b.minX-.10&&camera.position.x<b.maxX+.10&&camera.position.z>b.minZ-.10&&camera.position.z<b.maxZ+.10){const y=b.supportHeightAt?b.supportHeightAt(camera.position.x,camera.position.z):b.maxY;if(y!==null&&y<=Math.max(previousFeet,state.feetY)+.035)support=Math.max(support,y);}
@@ -124,6 +153,7 @@ export function createRoomControls({ camera, canvas, colliders, surfaces=[], onI
     else if(state.verticalVelocity<=0&&state.feetY<=support+.09){state.feetY=support;state.verticalVelocity=0;state.grounded=true;}
     else if(state.grounded&&state.feetY>support+.04){state.grounded=false;}
     if(state.grounded&&support-state.feetY<=.22&&support>=state.feetY-.22)state.feetY=support;
+    if(state.grounded&&!colliders.some(b=>colliderBlocks(b,camera.position.x,camera.position.z,.22,state.feetY,state.crouched?1.08:1.64)))state.lastSafe={x:camera.position.x,y:state.feetY,z:camera.position.z};
     state.deckSupport=deck&&state.grounded?{board:deck.board,local:deck.board.worldToLocal(camera.position.clone().setY(state.feetY))}:null;
     const eye=state.feetY+(state.crouched&&!state.swimming?1.08:1.64-.40*state.waterBlend);state.eyeY=eye;
     camera.position.y+=(eye-camera.position.y)*(1-Math.exp(-dt*18));

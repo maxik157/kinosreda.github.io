@@ -58,6 +58,24 @@ export function hydrateHumanAvatar(root, template) {
   model.scale.setScalar(template.height / Math.max(.01, size.y));model.rotation.y=Math.PI; model.position.y = -box.min.y * model.scale.y;
   model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true;if(o.isSkinnedMesh)o.frustumCulled=false; } });
   root.add(model);
+  // Attach the lips to the head bone, so all poses (including reclining) use
+  // the actual face rather than a guessed height above the pelvis.
+  const headBone=model.getObjectByName('Head');
+  if(headBone){
+    model.updateWorldMatrix(true,true);const points=[];
+    model.traverse(mesh=>{if(!mesh.isSkinnedMesh)return;mesh.skeleton.update();
+      const headIndices=new Set(mesh.skeleton.bones.map((bone,i)=>{for(let b=bone;b;b=b.parent)if(b===headBone)return i;return -1;}).filter(i=>i>=0));
+      const indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
+      if(!indices||!weights)return;
+      for(let i=0;i<indices.count;i++){let weight=0;for(const get of ['getX','getY','getZ','getW'])if(headIndices.has(indices[get](i)))weight+=weights[get](i);if(weight>.6)points.push(root.worldToLocal(mesh.localToWorld(mesh.getVertexPosition(i,new THREE.Vector3()))));}
+    });
+    if(!points.length)points.push(root.worldToLocal(headBone.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(-.08,0,-.10)),root.worldToLocal(headBone.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(.08,.20,.08)));
+    const faceBounds=new THREE.Box3().setFromPoints(points),size=faceBounds.getSize(new THREE.Vector3());
+    const lips=new THREE.Object3D();lips.name='Avatar mouth socket';
+    lips.position.copy(headBone.worldToLocal(root.localToWorld(new THREE.Vector3((faceBounds.min.x+faceBounds.max.x)/2,faceBounds.min.y+size.y*.37,faceBounds.min.z+.008))));
+    lips.quaternion.copy(headBone.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(root.getWorldQuaternion(new THREE.Quaternion())));
+    headBone.add(lips);root.userData.mouthSocket=lips;
+  }
   root.userData.height=template.height;root.userData.grip=createAvatarGrip(root,model,held);
   root.userData.transportRest=new Map();model.traverse(b=>{if(b.isBone)root.userData.transportRest.set(b.name,{q:b.quaternion.clone(),p:b.position.clone()});});
   root.userData.bodyPose=null;root.userData.modelBaseY=model.position.y;root.userData.paddleGrips={left:createPaddleGrip(root,model,'Left'),right:createPaddleGrip(root,model,'Right')};

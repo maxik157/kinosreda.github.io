@@ -20,13 +20,13 @@ export class BeerPouring {
   if(this.active){
    const glass=this.active,t=this.hand.time;
    if(this.hand.state==='POURING'&&t>=.85&&t<3.9){
-    const progress=(t-.85)/3.05;glass.userData.fill=progress;
+    const progress=(t-.85)/3.05;glass.userData.fill=progress*(this.hand.pourStartFill??1);
     const start=this.hand.mouthPosition(),end=glass.position.clone().add(new THREE.Vector3(0,.018+.19*progress,0));this.curveStream(this.stream,start,end,.0028);glass.userData.streamStart=start.toArray();glass.userData.streamEnd=end.toArray();
    }
-   if(this.hand.state==='POUR_COMPLETE'){glass.userData.fill=1;this.hand.served=true;glass.name='Filled serving glass';this.active=null;}
+   if(this.hand.state==='POUR_COMPLETE'){glass.userData.fill=this.hand.pourStartFill??1;this.hand.model.userData.fill=0;this.hand.served=true;glass.name='Filled serving glass';this.active=null;}
   }
   if(this.hand.drinkFlow&&this.hand.heldKind==='glass'){
-   const d=this.hand.model.userData,start=this.hand.rig.localToWorld(new THREE.Vector3(0,d.height,d.rTop-.004)),end=this.hand.camera.localToWorld(new THREE.Vector3(.015,-.085,-.048));this.spill.material.color.copy(d.liquid.material.color);this.spill.layers.set(1);this.curveStream(this.spill,start,end,.002);
+   const d=this.hand.model.userData,start=this.hand.rig.localToWorld(new THREE.Vector3(0,d.height,d.rTop-.004)),end=this.hand.getMouthPosition?.()||this.hand.camera.localToWorld(new THREE.Vector3(.015,-.085,-.048));this.spill.material.color.copy(d.liquid.material.color);this.spill.layers.set(1);this.curveStream(this.spill,start,end,.002);
   }
   for(const glass of this.glasses)updateGlass(glass,dt,glass.userData.held?player:{},this.hand.camera,this.elapsed);
  }

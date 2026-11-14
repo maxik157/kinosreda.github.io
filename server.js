@@ -10,7 +10,7 @@ const WebSocket = require('ws');
 const sharp = require('sharp');
 const worldEditorService=require('./services/beer_world_editor')(__dirname);
 const worldTerrainPromise=import('./beer-room-terrain.mjs');let worldTerrain;worldTerrainPromise.then(api=>{worldTerrain=api;});
-let worldProtocol,worldLayout;
+let worldProtocol,worldLayout,worldEditQueue=Promise.resolve();
 const worldProtocolReady=import('./beer-room-world-state.mjs').then(async api=>{worldProtocol=api;worldLayout=api.restoreWorld(worldEditorService.read());worldTerrain=await worldTerrainPromise;worldTerrain.syncTerrainHeights(worldLayout.entries);});
 const BeerFacts = require('./beer-facts');
 const beerBackground = require('./services/beer_background');
@@ -9601,7 +9601,7 @@ function applyBeerMessage(id, name, data, roomName) {
     if(data.type==='sup_claim'){
       if(room.toilet?.owner===id)return{kind:'sup_denied',boardId:board.id,reason:'Сначала выйдите из туалета'};
       if(board.owner&&board.owner!==id)return{kind:'sup_denied',boardId:board.id,reason:'Этот сапборд уже занят'};
-      if(!Number.isFinite(user.x)||Math.hypot(user.x-board.x,user.z-board.z)>3.6)return{kind:'sup_denied',boardId:board.id,reason:'Подойдите ближе к сапборду'};
+      if(!Number.isFinite(user.x)||supPhysics.supBoardDistance(user.x,user.z,board)>1.8)return{kind:'sup_denied',boardId:board.id,reason:'Подойдите ближе к сапборду'};
       supPhysics.releaseSup(room.boards,id);board.owner=id;board.brake=false;board.lastInputAt=Date.now();return{kind:'sup_state'};
     }
     if(board.owner!==id)return null;
@@ -9626,6 +9626,7 @@ function applyBeerMessage(id, name, data, roomName) {
       seatKind: ['seat','chair','stool','sofa','folding-chair','hammock'].includes(data.action.seatKind)?data.action.seatKind:null,
       seatHeight: Math.max(.1,Math.min(3,Number(data.action.seatHeight)||.5)),
       gesture: ['drinking','pouring'].includes(data.action.gesture)?data.action.gesture:null,
+      drinkProgress: Math.max(0,Math.min(1,Number(data.action.drinkProgress)||0)),
       held: data.action.held === 'beer' || data.action.held === 'glass' ? data.action.held : null,
       beerKey: data.action.beerKey == null ? null : String(data.action.beerKey).slice(0, 80),
       fill: Number.isFinite(Number(data.action.fill)) ? Math.max(0, Math.min(1, Number(data.action.fill))) : null,
@@ -10225,10 +10226,10 @@ const planningWss = new WebSocket.Server({ noServer: true });
 const planningClients = new Map();
 const firebaseRtdbProxyWss = new WebSocket.Server({ noServer: true });
 
-function broadcast(data, roomName = null) {
+function broadcast(data, roomName = null, exclude = null) {
   const payload = JSON.stringify(data);
   for (const [ws, meta] of clients.entries()) {
-    if (roomName && meta && meta.room !== roomName) continue;
+    if (ws===exclude || roomName && meta && meta.room !== roomName) continue;
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(payload);
     }
@@ -10399,19 +10400,21 @@ wss.on('connection', async (ws, req) => {
       let data = null;
       try { data = JSON.parse(raw.toString()); } catch (_) {}
       if(data?.type==='world_edit'){
+       worldEditQueue=worldEditQueue.then(async()=>{
         const requestId=String(data.requestId||'').slice(0,100);
-        const deny=reason=>ws.send(JSON.stringify({type:'world_edit_denied',requestId,reason,worldLayout}));
+        const deny=reason=>{if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'world_edit_denied',requestId,reason,worldLayout}));};
 
         const room=getBeerRoom(roomName);if(data.patch?.id==='utility:toilet'&&room.toilet?.owner){deny('Сначала освободите туалет');return;}
         const board=data.patch?.id?.startsWith('sup:')?room.boards?.find(b=>'sup:'+b.id===data.patch.id):null;
         if(board?.owner){deny('Сначала освободите сапборд');return;}
         if(board&&data.patch.deleted&&[...room.items.values()].some(item=>item.anchor?.boardId===board.id)){deny('Сначала уберите напитки с сапборда');return;}
-        const next=structuredClone(worldLayout),result=worldProtocol.applyWorldPatch(next,data.patch);
+        const next={...worldLayout,entries:{...worldLayout.entries}},result=worldProtocol.applyWorldPatch(next,data.patch);
         if(result.error){deny(result.error);return;}
         if(board){const pose={...board,...result.entry};if(!pose.deleted&&!supPhysics.boardFitsWater(pose.x,pose.z,pose.yaw,pose)){deny('Сапборд должен целиком находиться на воде');return;}}
-        try{worldEditorService.save(next);}catch{deny('Не удалось сохранить расстановку');return;}
+        try{await worldEditorService.save(next,result.entry);}catch{deny('Не удалось сохранить расстановку');return;}
         worldLayout=next;if(data.patch.id.startsWith('terrain:'))worldTerrain.syncTerrainHeights(worldLayout.entries);if(board){Object.assign(board,result.entry,{id:board.id,speed:0,throttle:0,steer:0,brake:true});broadcast({type:'sup_state',boards:room.boards.map(supPhysics.publicSupState)},roomName);}
-        broadcast({type:'world_patch',...result,requestId,author:id},roomName);return;
+        broadcast({type:'world_patch',...result,requestId,author:id},roomName);
+       }).catch(error=>{console.error('[world-edit]',error);if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify({type:'world_edit_denied',requestId:String(data.requestId||''),reason:'Не удалось сохранить изменение',worldLayout}));});return;
       }
       const result = applyBeerMessage(id, name, data, roomName);
       if (!result) return;
@@ -10421,7 +10424,7 @@ wss.on('connection', async (ws, req) => {
       else if(result.kind==='sup_state'){broadcast({type:'sup_state',boards:getBeerRoom(roomName).boards.map(supPhysics.publicSupState)},roomName);}
       else if(result.kind==='world'){broadcast({type:'toilet_state',toilet:getBeerRoom(roomName).toilet},roomName);broadcast({type:'beer_world',open:result.open},roomName);broadcast({type:'sup_state',boards:getBeerRoom(roomName).boards?.map(supPhysics.publicSupState)||[]},roomName);}
       else if (result.kind === 'presence' || result.kind === 'beer_action') {
-        broadcast({ type: result.kind === 'presence' ? 'beer_presence' : 'beer_action', user: result.user }, roomName);
+        broadcast({ type: result.kind === 'presence' ? 'beer_presence' : 'beer_action', user: result.user }, roomName, result.kind==='presence'?ws:null);
       } else if (result.kind === 'placed') {
         broadcast({ type: 'beer_placed', user: result.user, item: result.item }, roomName);
       } else if (result.kind === 'picked') {

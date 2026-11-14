@@ -906,6 +906,22 @@
     </dialog>
     <script src="./vendor/firebase-9.22.0/firebase-app-compat.js"></script>
     <script src="./vendor/firebase-9.22.0/firebase-database-compat.js"></script>
+    <script type="importmap">
+{
+  "imports": {
+    "./beer-room-controls.mjs": "./beer-room-controls.mjs?v=20261114gameplay",
+    "./beer-room-hand.mjs": "./beer-room-hand.mjs?v=20261114gameplay",
+    "./beer-room-pouring.mjs": "./beer-room-pouring.mjs?v=20261114gameplay",
+    "./beer-room-online.mjs": "./beer-room-online.mjs?v=20261114gameplay",
+    "./beer-room-avatar.mjs": "./beer-room-avatar.mjs?v=20261114gameplay",
+    "./beer-room-avatar-grip.mjs": "./beer-room-avatar-grip.mjs?v=20261114gameplay",
+    "./beer-room-sup.mjs": "./beer-room-sup.mjs?v=20261114gameplay",
+    "./beer-room-sup-physics.mjs": "./beer-room-sup-physics.mjs?v=20261114gameplay",
+    "./beer-room-terrain.mjs": "./beer-room-terrain.mjs?v=20261114gameplay",
+    "./beer-room-terrain-height.mjs": "./beer-room-terrain-height.mjs?v=20261114gameplay"
+  }
+}
+    </script>
     <script type="module">
       import * as THREE from "./three.module.js";
       import { barSite } from "./beer-room-site.mjs";
@@ -924,7 +940,7 @@
         updateAvatarAppearance,
         prepareFirstPersonBody,
       } from "./beer-room-avatar.mjs";
-      import { BeerRoomOnline } from "./beer-room-online.mjs?v=20261113editorfix";
+      import { BeerRoomOnline } from "./beer-room-online.mjs";
       import { createEnvironment } from "./beer-room-environment.mjs";
       import { createWorldEditor } from "./beer-room-world-editor.mjs?v=20261113editorfix";
       import { createCampSettings } from "./beer-room-camp-settings.mjs";
@@ -1082,7 +1098,7 @@
           sup.onLost = () => controls.stand();
           sup.receive(states);
         },
-        onSupDenied: (data) => showToast(data.reason),
+        onSupDenied: (data) => { environment.outdoors?.sup.denied(); showToast(data.reason); },
         onItem: (model, anchor) => {
           environment.outdoors?.sup.attach(model, anchor);
           if (
@@ -1146,6 +1162,7 @@
               held: h.heldKind || null,
               beerKey: h.model?.userData?.beerKey || null,
               fill: h.model?.userData?.fill ?? null,
+              drinkProgress: h.state === "DRINKING" ? Math.min(1,h.time/.65,Math.max(0,(2.2-h.time)/.65)) : 0,
             },
           };
         },
@@ -1186,10 +1203,13 @@
       });
       let placementFrame = 0,
         placementCachedFrame = -1,
+        placementViewKey = "",
         placementCached = null;
       function findPlacement() {
-        if (placementCachedFrame === placementFrame) return placementCached;
+        const key=[camera.position.x,camera.position.y,camera.position.z,...camera.quaternion.toArray(),hand.model?.uuid].join(":");
+        if (placementCachedFrame === placementFrame && placementViewKey===key) return placementCached;
         placementCachedFrame = placementFrame;
+        placementViewKey = key;
         return (placementCached = computePlacement());
       }
       function computePlacement() {
@@ -1314,6 +1334,8 @@
       paddler.name = "Local paddling body";
       paddler.visible = false;
       scene.add(paddler);
+      hand.getMouthPosition=()=>player.seated&&paddler.userData.mouthSocket?paddler.userData.mouthSocket.getWorldPosition(new THREE.Vector3()):camera.localToWorld(new THREE.Vector3(.015,-.085,-.055));
+      hand.getMouthQuaternion=()=>player.seated&&paddler.userData.mouthSocket?paddler.userData.mouthSocket.getWorldQuaternion(new THREE.Quaternion()):camera.getWorldQuaternion(new THREE.Quaternion());
       function updateLocalPaddler(dt) {
         if (paddler.userData.requestedModel !== online.avatar.model)
           updateAvatarAppearance(paddler, online.avatar);
@@ -1808,7 +1830,7 @@
         $("beerName").textContent = beer.name;
         details(beer);
         panel.classList.add("is-open");
-        $("touchInteract").textContent = "Поставить пиво";
+        $("touchInteract").textContent = "Глоток";
         $("focusBeer").textContent = "Осмотреть";
       }
       function returnSelected(immediate = false) {
@@ -2025,7 +2047,7 @@
                   kind: "picked",
                   itemId: object.userData.onlineItemId,
                 });
-              $("touchInteract").textContent = "Пить / поставить";
+              $("touchInteract").textContent = "Глоток";
               selected = null;
               panel.classList.remove("is-open");
             }
@@ -2073,7 +2095,7 @@
           activate(object);
           return;
         }
-        if (hand.heldKind === "glass") {
+        if (hand.canDrink() && !(hand.heldKind === "beer" && object?.userData.action === "glass")) {
           hand.beginDrink();
           return;
         }
@@ -2114,7 +2136,7 @@
           activate(object);
           return;
         }
-        if (hand.heldKind === "glass") {
+        if (hand.canDrink() && !(hand.heldKind === "beer" && object?.userData.action === "glass")) {
           hand.beginDrink();
           return;
         }
@@ -2179,7 +2201,7 @@
         const holdingGlass = hand.heldKind === "glass",
           holdingBeer = hand.heldKind === "beer";
         setHidden($("glassActions"), !(holdingGlass || holdingBeer));
-        setHidden($("sipGlass"), !holdingGlass);
+        setHidden($("sipGlass"), !(holdingGlass || holdingBeer));
         $("sipGlass").disabled = !hand.canDrink();
         const placeText = holdingBeer ? "Поставить пиво" : "Поставить";
         if ($("placeGlass").textContent !== placeText)

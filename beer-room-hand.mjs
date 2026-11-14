@@ -16,7 +16,7 @@ export class DrinkHand {
   source.children.forEach(o=>{if(o.userData.packageDisk)o.visible=true;});
   this.source=source;source.userData.homeAnchor=source.userData.supAnchor||null;this.onTake?.(source);this.heldKind='beer';this.served=false;
   this.source.userData.held=true;this.source.userData.homePosition=this.source.position.clone();this.source.userData.homeQuaternion=this.source.quaternion.clone();
-  this.model=source;this.model.name='Held beer';this.model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=false;}});this.rig.add(this.model);
+  this.model=source;this.model.userData.fill??=1;this.model.name='Held beer';this.model.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;o.frustumCulled=false;}});this.rig.add(this.model);
   const p=source.userData.packageProfile,bottle=p.kind.includes('bottle');this.height=bottle?.30:.205;this.scale=this.height/p.modelHeight;this.model.scale.setScalar(this.scale);this.model.position.set(0,0,0);this.model.rotation.set(0,0,0);
   this.gripHeight=this.height*(bottle?.34:.43);const row=p.rows.reduce((a,b)=>Math.abs(a.y*this.scale-this.gripHeight)<Math.abs(b.y*this.scale-this.gripHeight)?a:b);this.radius=row.radius*this.scale;
   this.setGrip(p.kind);this.state='HOLD_APPEARING';this.time=0;this.transition=0;this.examine=false;this.rig.visible=true;this.update(0);return true;
@@ -49,11 +49,11 @@ export class DrinkHand {
   else if(this.model){const d=this.model.userData;this.scene.add(this.model);if(d.homePosition)this.model.position.copy(d.homePosition);if(d.homeQuaternion)this.model.quaternion.copy(d.homeQuaternion);d.held=false;this.model.traverse(o=>o.layers.set(0));}
   this.model=null;this.source=null;this.heldKind=null;this.state='IDLE';this.rig.visible=false;this.transition=0;this.onReturned?.(source);
  }
- canPour(){return this.heldKind==='beer'&&holding.has(this.state);}
- canDrink(){return this.heldKind==='glass'&&this.state==='GLASS_HOLDING'&&this.model.userData.fill>.002;}
+ canPour(){return this.heldKind==='beer'&&holding.has(this.state)&&this.model.userData.fill>.002;}
+ canDrink(){return !!this.model&&this.model.userData.fill>.002&&(this.heldKind==='glass'&&this.state==='GLASS_HOLDING'||this.heldKind==='beer'&&holding.has(this.state));}
  beginPour(glass){
   if(!this.canPour()||this.served||glass.userData.held||glass.userData.fill>.03)return false;
-  this.state='POURING';this.time=0;this.glass=glass;this.pourStart=this.rig.position.clone();this.pourStartQ=this.rig.quaternion.clone();this.examine=false;
+  this.pourStartFill=this.model.userData.fill;this.state='POURING';this.time=0;this.glass=glass;this.pourStart=this.rig.position.clone();this.pourStartQ=this.rig.quaternion.clone();this.examine=false;
   // Pronate forward over the glass. A sideways half-turn exposes the finger
   // backs and turns the wrist upside down; this keeps the wrist below the
   // package and the four fingers on its far/underside throughout the pour.
@@ -61,7 +61,7 @@ export class DrinkHand {
   this.pourTarget=glass.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,glass.userData.height+.075,0)).sub(new THREE.Vector3(0,this.height,0).applyQuaternion(this.pourQ));
   return true;
  }
- beginDrink(){if(!this.canDrink())return false;this.state='DRINKING';this.time=0;this.sipStartFill=this.model.userData.fill;this.sipAmount=Math.min(.12,this.sipStartFill);this.sipProgress=0;this.drinkFlow=false;return true;}
+ beginDrink(){if(!this.canDrink())return false;this.state='DRINKING';this.time=0;this.sipStartFill=this.model.userData.fill;this.sipReturnState=this.heldKind==='glass'?'GLASS_HOLDING':'HOLDING';this.sipAmount=Math.min(.12,this.sipStartFill);this.sipProgress=0;this.drinkFlow=false;return true;}
  holdingPose(player={}){
   const narrow=this.camera.aspect<.9,speed=Math.hypot(player.velocity?.x||0,player.velocity?.z||0),bob=Math.sin((player.distance||0)*6)*Math.min(.003,speed*.0006);
   const v=new THREE.Vector3(narrow?.105:.21,-this.height*.76-.045+bob-(1-this.transition)*.5,narrow?-.52:-.48);this.camera.localToWorld(v);
@@ -93,9 +93,10 @@ export class DrinkHand {
    // constrained to the mouth throughout the sip.
    const amount=smooth(t/.65)*(1-smooth((t-1.55)/.65));
    const levelAfterSip=.015+.19*Math.max(0,this.sipStartFill-this.sipAmount);
-   const tilt=Math.atan2(this.height-levelAfterSip,this.model.userData.rTop-.004)+.10;
-   const q=this.camera.getWorldQuaternion(new THREE.Quaternion()).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));
-   const mouth=this.camera.localToWorld(new THREE.Vector3(.015,-.085,-.055)),localRim=new THREE.Vector3(0,this.height,this.model.userData.rTop-.004);
+   const rimRadius=this.heldKind==='glass'?this.model.userData.rTop-.004:this.radius*.36;
+   const tilt=this.heldKind==='glass'?Math.atan2(this.height-levelAfterSip,rimRadius)+.10:1.75+(1-this.sipStartFill)*.25;
+   const q=(this.getMouthQuaternion?.()||this.camera.getWorldQuaternion(new THREE.Quaternion())).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));
+   const mouth=this.getMouthPosition?.()||this.camera.localToWorld(new THREE.Vector3(.015,-.085,-.055)),localRim=new THREE.Vector3(0,this.height,rimRadius);
    // Move the rim along one continuous curve while rotating around it. A
    // second hard mouth constraint used to snap on at .85 s and kept the
    // glass pinned to the lips throughout the lowering phase.
@@ -103,7 +104,7 @@ export class DrinkHand {
    this.rig.quaternion.slerpQuaternions(normal.q,q,amount);
    this.rig.position.copy(rimTarget).sub(localRim.applyQuaternion(this.rig.quaternion));
    const sip=smooth((t-.8)/.65);this.model.userData.fill=this.sipStartFill-this.sipAmount*sip;this.sipProgress=sip;this.drinkFlow=t>.8&&t<1.45;
-   if(t>=2.2){this.state='GLASS_HOLDING';this.time=0;this.drinkFlow=false;}
+   if(t>=2.2){this.state=this.sipReturnState;this.time=0;this.drinkFlow=false;}
   }else if(this.state==='POURING'){
    if(this.glass?.userData.supAnchor)this.pourTarget.copy(this.glass.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(0,this.glass.userData.height+.075,0)).sub(new THREE.Vector3(0,this.height,0).applyQuaternion(this.pourQ));
    if(t<.85){const u=smooth(t/.85);this.rig.position.lerpVectors(this.pourStart,this.pourTarget,u);this.rig.quaternion.slerpQuaternions(this.pourStartQ,this.pourQ,u);}

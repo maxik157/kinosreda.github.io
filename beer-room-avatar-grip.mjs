@@ -70,12 +70,20 @@ export function createAvatarGrip(root,model,held){
     const item=socket.children[0];if(!item||!socket.visible){shapeKey='';return;}
     if(shapeKey!==item.uuid){configure(item);shapeKey=item.uuid;}
     const height=root.userData.poseHeight||root.userData.height||1.84,drinking=action.kind==='drinking'||action.gesture==='drinking',pouring=action.kind==='pouring'||action.gesture==='pouring';
-    const localQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(drinking?-1.1:pouring?1.8:0,Math.PI,0,'YXZ'));
+    const progress=THREE.MathUtils.clamp(action.drinkProgress??1,0,1),amount=progress*progress*(3-2*progress);
+    const localQ=new THREE.Quaternion().setFromEuler(new THREE.Euler(pouring?1.8:0,Math.PI,0,'YXZ'));
     const desiredQ=root.getWorldQuaternion(new THREE.Quaternion()).multiply(localQ);
+    let center=root.localToWorld(new THREE.Vector3(.30,height*.60,-.30));
+    if(drinking&&root.userData.mouthSocket){
+      const mouth=root.userData.mouthSocket,mouthQ=mouth.getWorldQuaternion(new THREE.Quaternion());
+      const tilt=item.userData.packageProfile?1.85:Math.atan2((item.userData.height||.23)-(.015+.19*(action.fill??.5)),item.userData.rTop-.004)+.10;
+      const drinkQ=mouthQ.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),tilt));
+      desiredQ.slerp(drinkQ,amount);
+      const rim=new THREE.Vector3(0,(item.userData.packageProfile?(item.userData.packageProfile.kind.includes('bottle')?.30:.205):item.userData.height)-gripHeight,item.userData.packageProfile?radius*.36:item.userData.rTop-.004);
+      const drinkCenter=worldPoint(mouth).sub(rim.applyQuaternion(drinkQ));center.lerp(drinkCenter,amount);
+    }else if(pouring)center=root.localToWorld(new THREE.Vector3(.34,height*.64,-.48));
     const handQ=desiredQ.clone().multiply(basis.clone().invert());
-    const center=drinking?new THREE.Vector3(.07,height-.22,-.12):pouring?new THREE.Vector3(.34,height*.64,-.48):new THREE.Vector3(.30,height*.60,-.30);
-    if(drinking){const aboveGrip=(item.userData.height||.23)-gripHeight;center.addScaledVector(up.clone().applyQuaternion(localQ),-aboveGrip);}
-    const target=root.localToWorld(center).sub(socket.position.clone().multiplyScalar(model.scale.x).applyQuaternion(handQ));
+    const target=center.sub(socket.position.clone().multiplyScalar(model.scale.x).applyQuaternion(handQ));
     const bend=new THREE.Vector3(.85,-.6,.10).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
     model.updateWorldMatrix(true,true);solveArm(upper,fore,hand,target,bend);
     hand.quaternion.copy(hand.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(handQ));hand.updateWorldMatrix(false,true);curl();

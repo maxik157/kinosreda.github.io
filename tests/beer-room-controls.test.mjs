@@ -16,3 +16,9 @@ test('diagonal collision cannot leave the room or enter a furniture corner',()=>
 });
 
 test('seated body stays at the seat anchor and heading while camera turns and settles',()=>{const state={feetY:.56,yaw:0,seatYaw:.7,seated:{seatPosition:{x:2,z:3},yaw:.7}},camera={x:1,z:4};const before=bodyPresence(state,camera);state.yaw=2.9;camera.x=2;camera.z=3;assert.deepEqual(bodyPresence(state,camera),before);state.seated=null;assert.equal(bodyPresence(state,camera).yaw,2.9);});
+
+// A descending capsule used to be trapped here: any X/Z input was rejected.
+test('penetrating furniture corners recovers to nearby free space and remains movable',()=>{
+ const boxes=[{minX:0,maxX:1,minZ:0,maxZ:1,minY:0,maxY:.8},{minX:1,maxX:2,minZ:0,maxZ:.4,minY:0,maxY:.6}];
+ for(const start of [{x:1.02,z:.45},{x:.5,z:.5},{x:-.1,z:.5}]){const p={...start};moveWithCollisions(p,0,0,boxes,.22,.3);assert.ok(boxes.every(b=>!overlaps(p.x,p.z,.22,b)),JSON.stringify(p));const before={...p};moveWithCollisions(p,-.5,.5,boxes,.22,.3);assert.ok(Math.hypot(p.x-before.x,p.z-before.z)>.05);}
+});

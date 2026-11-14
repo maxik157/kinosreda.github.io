@@ -1,7 +1,7 @@
 import {terrainHeights} from './beer-room-terrain-height.mjs';
 import {barSite,toiletSite,woodshedSite} from './beer-room-site.mjs';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),lerp=(a,b,t)=>a+(b-a)*t,smoothstep=(x,a,b)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
-export const campLayout={fire:{x:5,z:14},gazebo:{x:-9,z:13.5},bench:{x:7,z:22.2},lake:{x:15,z:79,rx:66,rz:44,y:-4.6},bounds:{minX:-67,maxX:82,minZ:-58,maxZ:132}};
+export const campLayout={fire:{x:5,z:14},gazebo:{x:-9,z:13.5},bench:{x:7,z:22.2},lake:{x:15,z:79,rx:66,rz:44,y:-4.6},bounds:{minX:-185,maxX:185,minZ:-155,maxZ:215}};
 export function randomSource(seed=7823){return()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
 export function lakeDistance(x,z){const l=campLayout.lake,dx=(x-l.x)/l.rx,dz=(z-l.z)/l.rz,a=Math.atan2(dz,dx);return Math.hypot(dx,dz)/(1+.045*Math.sin(a*5)+.025*Math.cos(a*9));}
 // Raised campsite, rounded shoulder, descending bank and low shore. The bar

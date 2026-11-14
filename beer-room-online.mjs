@@ -22,7 +22,7 @@ export class BeerRoomOnline {
   constructor({scene, getBeerModel, getLocalState,onWorld,onSup,onSupDenied,onItem,onItemRemoved,getSup,onToilet,onToiletDenied,getToilet,onWorldLayout,onWorldPatch,onWorldEditDenied,onStateReady}) {
     Object.assign(this, {scene, getBeerModel, getLocalState,onWorld,onSup,onSupDenied,onItem,onItemRemoved,getSup,onToilet,onToiletDenied,getToilet,onWorldLayout,onWorldPatch,onWorldEditDenied,onStateReady});
     this.avatar=readAvatarPrefs();this.id = localId(); this.name = name(); this.users = new Map(); this.ws = null; this.connected = false; this.retry = 0; this.lastSent = 0; this.lastAction = '';
-    this.disposed = false; this.items = new Map(); this.pendingItems = new Map(); this.presenceTimer = setInterval(() => this.sendPresence(), 50);
+    this.disposed = false; this.items = new Map(); this.pendingItems = new Map(); this.presenceTimer = setInterval(() => this.sendPresence(), 33);
     this.connect();
   }
   connect() {
@@ -48,10 +48,12 @@ export class BeerRoomOnline {
   }
   sendPresence(force = false) {
     const s = this.getLocalState?.(); if (!s) return;
-    const now = performance.now(); const actionKey = JSON.stringify(s.action || {});
-    if (!force && now - this.lastSent < 45 && actionKey === this.lastAction) return;
-    this.lastSent = now; this.lastAction = actionKey;
-    this.send({type:'presence', id:this.id, name:this.name, x:s.x, y:s.y, z:s.z, yaw:s.yaw, pitch:s.pitch, avatar:this.avatar, action:s.action});
+    const now=performance.now(),actionKey=JSON.stringify(s.action||{}),pose=[s.x,s.y,s.z,s.yaw,s.pitch].map(v=>Math.round((v||0)*1000)).join(':');
+    if(!force&&(now-this.lastSent<30||pose===this.lastPose&&actionKey===this.lastAction&&now-this.lastSent<1000))return;
+    if(this.ws?.bufferedAmount>16384&&!force)return;
+    if(this.send({type:'presence',id:this.id,name:this.name,x:s.x,y:s.y,z:s.z,yaw:s.yaw,pitch:s.pitch,avatar:this.avatar,action:s.action})){
+      this.lastSent=now;this.lastAction=actionKey;this.lastPose=pose;
+    }
   }
   setAvatar(prefs){this.avatar={...this.avatar,...prefs,model:avatarModel(prefs.model||this.avatar.model).id};try{localStorage.setItem('kinosreda-beer-avatar',JSON.stringify(this.avatar));}catch{}this.sendPresence(true);}
   sendWorld(open){this.send({type:'beer_world',open:!!open});}
@@ -92,7 +94,7 @@ export class BeerRoomOnline {
       group.userData.remoteItem=true;group.userData.beerKey=item.beerKey;group.userData.onlineItemId=id;
       group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});this.scene.add(group);this.items.set(id,group);
     }
-    if(group.userData.held)return;if(item.itemType==='glass'){group.userData.fill=Number(item.fill)||0;if(Number.isInteger(item.liquidColor))group.userData.liquid.material.color.setHex(item.liquidColor);}
+    if(group.userData.held)return;group.userData.fill=Number.isFinite(Number(item.fill))?Number(item.fill):item.itemType==='glass'?0:1;if(item.itemType==='glass'){if(Number.isInteger(item.liquidColor))group.userData.liquid.material.color.setHex(item.liquidColor);}
     group.position.set(Number(item.x)||0,Number(item.y)||0,Number(item.z)||0); group.quaternion.set(Number(item.qx)||0,Number(item.qy)||0,Number(item.qz)||0,Number.isFinite(Number(item.qw))?Number(item.qw):1).normalize();
     this.scene.userData.shadowsDirty=true; group.userData.placed=true; group.layers.set(0); this.pendingItems.delete(id);group.userData.supAnchor=item.anchor||null;this.onItem?.(group,item.anchor);
   }
@@ -118,12 +120,17 @@ export class BeerRoomOnline {
   remove(id) { const remote=this.users.get(String(id)); if (!remote)return; this.scene.userData.shadowsDirty=true; disposeHumanAvatar(remote.group); this.users.delete(String(id)); }
   update(dt) {
     for (const remote of this.users.values()) {
-      const before=remote.group.position.clone(), frames=remote.snapshots, renderAt=performance.now()-100;
+      const before=remote.group.position.clone(), frames=remote.snapshots, renderAt=performance.now()-55;
       while(frames.length>2&&frames[1].time<=renderAt)frames.shift();
       const a=frames[0],b=frames[1]||a;
       if(a){
         const t=b.time>a.time?THREE.MathUtils.clamp((renderAt-a.time)/(b.time-a.time),0,1):1;
         remote.group.position.lerpVectors(a.position,b.position,t);
+        // Bound prediction to 80 ms. Small network jitter no longer makes the
+        // whole body pause between packets; seated/lying anchors stay fixed.
+        if(b!==a&&renderAt>b.time&&['walking','running','jump','crouch-walk','swimming'].includes(b.action.kind)){
+          const span=b.time-a.time;if(span>8&&span<250){const ahead=Math.min(80,renderAt-b.time)/span;const delta=b.position.clone().sub(a.position);if(delta.length()/span<.012)remote.group.position.addScaledVector(delta,ahead);}
+        }
         const dy=THREE.MathUtils.euclideanModulo(b.yaw-a.yaw+Math.PI,Math.PI*2)-Math.PI;
         remote.group.rotation.y=a.yaw+dy*t; remote.action=t<.5?a.action:b.action;
       }
