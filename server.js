@@ -136,7 +136,9 @@ const IMAGE_PROXY_MAX_SOURCE_BYTES = Math.max(
 const SERPER_API_URL = 'https://google.serper.dev/images';
 const SERPER_API_KEY = String(process.env.SERPER_API_KEY || '').trim();
 const OPENROUTER_API_KEY = String(process.env.OPENROUTER_API_KEY || '').trim();
-const OPENROUTER_MODEL = String(process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free').trim();
+const OPENROUTER_MODEL = String(
+  process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free'
+).trim();
 const RECIPE_AI_MAX_PROMPT_CHARS = 2_000;
 const RECIPE_AI_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RECIPE_AI_RATE_LIMIT_MAX_REQUESTS = 20;
