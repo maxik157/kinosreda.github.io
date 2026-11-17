@@ -1585,10 +1585,8 @@
             measurementId: "G-MGW6GF67H3"
         };
 
-        const POSTIMAGES_API_KEY = 'oJrs5gqThbiY2Tl1p7m85Nb5dW2fwshD1eK';
         const POSTIMAGES_PROXY_ENDPOINT = 'https://realtime.киносреда.рф/upload-image';
-        const OPENROUTER_API_KEY = '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';
-        const OPENROUTER_MODEL = 'openai/gpt-oss-120b:free';
+        const RECIPE_AI_ENDPOINT = 'https://realtime.киносреда.рф/recipe-ai';
         const LOCAL_RECIPES_KEY = 'kinosredaRecipesLocal';
         const RECIPES_SNAPSHOT_KEY = 'kinosredaRecipesSnapshot.v1';
         const MAX_UPLOAD_DIMENSION = 1280;
@@ -1975,30 +1973,6 @@
             showToast.timer = setTimeout(() => els.toast.classList.remove('show'), 2600);
         }
 
-        function aiSystemPrompt() {
-            const categoryList = categories
-                .filter((cat) => cat.id !== 'all')
-                .map((cat) => cat.id)
-                .join(', ');
-            const difficultyList = difficulties.map((item) => item.id).join(', ');
-            return [
-                'Создай один рецепт на русском.',
-                'Ответ строго JSON, без markdown и текста вокруг.',
-                'JSON должен быть полностью валидным: только двойные кавычки, корректные запятые, без обрывков, без управляющих символов, без незакрытых строк.',
-                'В строках не используй фигурные или квадратные скобки как декоративный текст.',
-                '{"title":"...","category":"salads","time":30,"portions":4,"difficulty":"Просто","description":"...","ingredients":[{"name":"...","amount":"..."}],"steps":["...","..."]}',
-                `category только: ${categoryList}.`,
-                `difficulty только: ${difficultyList}.`,
-                'time и portions числа.',
-                'Не оставляй пустых строк и не выдумывай несъедобные детали.',
-                'ingredients: столько объектов, сколько реально нужно для блюда; только name и amount.',
-                'steps: делай много отдельных шагов. Каждый step = одно конкретное действие или короткая связка действий, не объединяй этапы в длинные абзацы.',
-                'Для простого блюда обычно 9-14 steps, для сложного 14-24 steps. Не делай 5-6 крупных шагов.',
-                'Каждый step подробный, но не раздутый: 1-2 предложения, конкретные действия, признаки готовности, температура/время где уместно.',
-                'description: коротко, до 160 символов. Если запрос неясен, сделай реалистичный полноценный рецепт.'
-            ].join('\n');
-        }
-
         function extractJsonObject(text) {
             const raw = String(text || '').trim();
             try { return JSON.parse(raw); } catch (_) {}
@@ -2272,16 +2246,24 @@
             }
         }
 
-        function readOpenRouterDelta(payload) {
+        function readAiContent(payload) {
             return payload?.choices?.[0]?.delta?.content
                 || payload?.choices?.[0]?.message?.content
+                || payload?.candidates?.[0]?.content?.parts?.map((part) => part?.text || '').join('')
                 || '';
         }
 
         async function readStreamedAiContent(response, onChunk) {
+            const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+            if (contentType.includes('application/json')) {
+                const payload = await response.json();
+                const content = readAiContent(payload);
+                onChunk?.(content);
+                return content;
+            }
             if (!response.body?.getReader) {
                 const payload = await response.json();
-                return payload?.choices?.[0]?.message?.content || '';
+                return readAiContent(payload);
             }
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
@@ -2302,7 +2284,7 @@
                     const data = trimmed.slice(5).trim();
                     if (!data || data === '[DONE]') continue;
                     try {
-                        const chunk = readOpenRouterDelta(JSON.parse(data));
+                        const chunk = readAiContent(JSON.parse(data));
                         if (!chunk) continue;
                         content += chunk;
                         onChunk?.(content);
@@ -2316,14 +2298,14 @@
                 const data = buffer.trim().slice(5).trim();
                 if (data && data !== '[DONE]') {
                     try {
-                        const chunk = readOpenRouterDelta(JSON.parse(data));
+                        const chunk = readAiContent(JSON.parse(data));
                         if (chunk) content += chunk;
                     } catch (_) {}
                 }
             }
             if (!content && rawText.trim()) {
                 try {
-                    return readOpenRouterDelta(JSON.parse(rawText)) || rawText;
+                    return readAiContent(JSON.parse(rawText)) || rawText;
                 } catch (_) {
                     return rawText;
                 }
@@ -2335,29 +2317,19 @@
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 120000);
             try {
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                const endpoint = typeof window !== 'undefined'
+                    && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname)
+                    ? `${window.location.origin}/recipe-ai`
+                    : RECIPE_AI_ENDPOINT;
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                        'HTTP-Referer': location.href
-                    },
-                    body: JSON.stringify({
-                        model: OPENROUTER_MODEL,
-                        messages: [
-                            { role: 'system', content: aiSystemPrompt() },
-                            { role: 'user', content: userText }
-                        ],
-                        temperature: 0.35,
-                        max_tokens: 16000,
-                        stream: true,
-                        response_format: { type: 'json_object' }
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: userText })
                 });
                 if (!response.ok) {
                     const errorText = await response.text().catch(() => '');
-                    const error = new Error(`openrouter_${response.status}`);
+                    const error = new Error(`recipe_ai_${response.status}`);
                     error.status = response.status;
                     error.details = errorText;
                     throw error;
@@ -3041,7 +3013,6 @@
         async function uploadToPostimages(file, fileName = 'recipe-photo.jpg') {
             if (!file) return '';
             const formData = new FormData();
-            formData.append('key', POSTIMAGES_API_KEY);
             formData.append('image', file, fileName);
             const response = await fetch(getPostimagesProxyEndpoint(), { method: 'POST', body: formData });
             if (!response.ok) throw new Error('postimages_failed');

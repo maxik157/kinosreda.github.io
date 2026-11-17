@@ -135,6 +135,27 @@ const IMAGE_PROXY_MAX_SOURCE_BYTES = Math.max(
 );
 const SERPER_API_URL = 'https://google.serper.dev/images';
 const SERPER_API_KEY = String(process.env.SERPER_API_KEY || '').trim();
+const GEMINI_API_KEY = String(
+  process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY || ''
+).trim();
+const GEMINI_MODEL = String(process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite').trim();
+const RECIPE_AI_MAX_PROMPT_CHARS = 2_000;
+const RECIPE_AI_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RECIPE_AI_RATE_LIMIT_MAX_REQUESTS = 20;
+const recipeAiRateLimit = new Map();
+const RECIPE_AI_SYSTEM_PROMPT = [
+  'Создай один рецепт на русском.',
+  'Ответ строго JSON, без markdown и текста вокруг.',
+  'JSON должен быть полностью валидным: только двойные кавычки, корректные запятые, без обрывков, без управляющих символов, без незакрытых строк.',
+  '{"title":"...","category":"salads","time":30,"portions":4,"difficulty":"Просто","description":"...","ingredients":[{"name":"...","amount":"..."}],"steps":["...","..."]}',
+  'category только: salads, soups, meat, fish, pasta, breakfast, snacks, baking, desserts, drinks, vegan, other.',
+  'difficulty только: Просто, Средне, Сложно, Очень сложно.',
+  'time и portions числа. Не оставляй пустых строк и не выдумывай несъедобные детали.',
+  'ingredients: столько объектов, сколько реально нужно для блюда; только name и amount.',
+  'steps: делай много отдельных шагов. Каждый step — одно конкретное действие или короткая связка действий.',
+  'Для простого блюда обычно 9–14 steps, для сложного 14–24 steps. Каждый step подробный, но не раздутый.',
+  'description: коротко, до 160 символов. Если запрос неясен, сделай реалистичный полноценный рецепт.'
+].join('\n');
 const MAX_BEER_IMAGE_SEARCH_RESULTS = 8;
 const MAX_BEER_IMAGE_SEARCH_QUERY_CHARS = 180;
 const BEER_DATA_SEARCH_URL = 'https://r.jina.ai/http://html.duckduckgo.com/html/';
@@ -1748,6 +1769,134 @@ async function handleImageUpload(req, res, corsHeaders) {
   upstream.on('timeout', () => upstream.destroy(new Error('postimages_timeout')));
   upstream.on('error', error => fallbackUpload(error.code || error.message));
   upstream.end(body);
+}
+
+function getRecipeAiClientKey(req) {
+  // Nginx overwrites X-Real-IP; ignore client-supplied forwarding headers.
+  const peer = String(req.socket?.remoteAddress || 'unknown');
+  const localProxy = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(peer);
+  return localProxy ? String(req.headers['x-real-ip'] || peer) : peer;
+}
+
+function consumeRecipeAiRateLimit(req) {
+  const now = Date.now();
+  const key = getRecipeAiClientKey(req);
+  for (const [client, row] of recipeAiRateLimit) {
+    if (now - row.startedAt >= RECIPE_AI_RATE_LIMIT_WINDOW_MS) recipeAiRateLimit.delete(client);
+  }
+  const previous = recipeAiRateLimit.get(key);
+  if (!previous || now - previous.startedAt >= RECIPE_AI_RATE_LIMIT_WINDOW_MS) {
+    recipeAiRateLimit.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  previous.count += 1;
+  return previous.count <= RECIPE_AI_RATE_LIMIT_MAX_REQUESTS;
+}
+
+function extractGeminiText(payload) {
+  const parts = payload?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts.map((part) => String(part?.text || '')).join('').trim();
+}
+
+async function handleRecipeAi(req, res, corsHeaders) {
+  if (req.method !== 'POST') {
+    writeJsonResponse(res, 405, corsHeaders, { error: 'method_not_allowed' });
+    return;
+  }
+  const origin = String(req.headers.origin || '');
+  if (origin && !/^https:\/\/(?:kinosreda\.github\.io|(?:www\.)?xn--80ahcljthqi\.xn--p1ai|(?:www\.)?kinosreda\.xn--p1ai)$/.test(origin)
+      && !/^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+    writeJsonResponse(res, 403, {}, { error: 'origin_not_allowed' });
+    return;
+  }
+  if (!GEMINI_API_KEY) {
+    writeJsonResponse(res, 503, corsHeaders, { error: 'ai_not_configured' });
+    return;
+  }
+  if (!consumeRecipeAiRateLimit(req)) {
+    writeJsonResponse(res, 429, corsHeaders, { error: 'ai_rate_limited' }, { 'Retry-After': '60' });
+    return;
+  }
+
+  let body;
+  try {
+    body = await readRequestBody(req, 32 * 1024);
+  } catch (error) {
+    writeJsonResponse(res, error?.code === 'request_too_large' ? 413 : 400, corsHeaders, {
+      error: error?.code === 'request_too_large' ? 'ai_request_too_large' : 'invalid_request'
+    });
+    return;
+  }
+
+  let input;
+  try {
+    input = JSON.parse(body.toString('utf8') || '{}');
+  } catch (_) {
+    writeJsonResponse(res, 400, corsHeaders, { error: 'invalid_json' });
+    return;
+  }
+  const prompt = typeof input?.prompt === 'string' ? input.prompt.trim() : '';
+  if (!prompt || prompt.length > RECIPE_AI_MAX_PROMPT_CHARS) {
+    writeJsonResponse(res, 400, corsHeaders, { error: 'invalid_prompt' });
+    return;
+  }
+
+  const endpoint = new URL(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`
+  );
+  const requestPayload = {
+    system_instruction: {
+      parts: [{ text: RECIPE_AI_SYSTEM_PROMPT }]
+    },
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.35,
+      maxOutputTokens: 16_000,
+      responseMimeType: 'application/json'
+    }
+  };
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120_000);
+  try {
+    let upstream;
+    try {
+      upstream = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+        body: JSON.stringify(requestPayload),
+        signal: controller.signal
+      });
+    } catch (error) {
+      console.error('[recipe-ai] upstream request failed');
+      writeJsonResponse(res, 502, corsHeaders, { error: 'ai_upstream_unavailable' });
+      return;
+    }
+
+    const raw = await upstream.text();
+    let payload = null;
+    try { payload = JSON.parse(raw || '{}'); } catch (_) {}
+    if (!upstream.ok) {
+      console.warn(`[recipe-ai] upstream status=${upstream.status}`);
+      writeJsonResponse(res, upstream.status === 429 ? 429 : 502, corsHeaders, { error: 'ai_upstream_failed', status: upstream.status });
+      return;
+    }
+    const content = extractGeminiText(payload);
+    if (!content) {
+      console.warn('[recipe-ai] upstream returned no text');
+      writeJsonResponse(res, 502, corsHeaders, { error: 'ai_empty_response' });
+      return;
+    }
+    writeJsonResponse(res, 200, corsHeaders, {
+      id: `recipe-${Date.now().toString(36)}`,
+      object: 'chat.completion',
+      model: GEMINI_MODEL,
+      choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }]
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function hasUploadedImageUrl(body) {
@@ -4831,6 +4980,8 @@ function resolveLocalStaticFilePath(pathname = '') {
   } catch (_) {
     return null;
   }
+  // Credentials must never be served even when this checkout is the web root.
+  if (decodedPath.split(/[/\\]/).some((segment) => segment.startsWith('.'))) return null;
   const normalizedPath = path.normalize(decodedPath).replace(/^(\.\.[/\\])+/, '');
   const rootDir = path.resolve(__dirname);
   const resolved = path.resolve(path.join(rootDir, normalizedPath));
@@ -9907,6 +10058,15 @@ const server = http.createServer((req, res) => {
   }
   if (urlObj.pathname === '/upload-image') {
     handleImageUpload(req, res, corsHeaders);
+    return;
+  }
+  if (urlObj.pathname === '/recipe-ai') {
+    handleRecipeAi(req, res, corsHeaders).catch((error) => {
+      console.error('[recipe-ai] handler failed:', String(error?.message || error));
+      if (!res.headersSent && !res.destroyed) {
+        writeJsonResponse(res, 500, corsHeaders, { error: 'ai_handler_failed' });
+      }
+    });
     return;
   }
   if (urlObj.pathname === '/remove-bg') {
