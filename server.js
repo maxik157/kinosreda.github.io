@@ -135,10 +135,8 @@ const IMAGE_PROXY_MAX_SOURCE_BYTES = Math.max(
 );
 const SERPER_API_URL = 'https://google.serper.dev/images';
 const SERPER_API_KEY = String(process.env.SERPER_API_KEY || '').trim();
-const GEMINI_API_KEY = String(
-  process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_STUDIO_API_KEY || ''
-).trim();
-const GEMINI_MODEL = String(process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite').trim();
+const OPENROUTER_API_KEY = String(process.env.OPENROUTER_API_KEY || '').trim();
+const OPENROUTER_MODEL = String(process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free').trim();
 const RECIPE_AI_MAX_PROMPT_CHARS = 2_000;
 const RECIPE_AI_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RECIPE_AI_RATE_LIMIT_MAX_REQUESTS = 20;
@@ -1793,10 +1791,8 @@ function consumeRecipeAiRateLimit(req) {
   return previous.count <= RECIPE_AI_RATE_LIMIT_MAX_REQUESTS;
 }
 
-function extractGeminiText(payload) {
-  const parts = payload?.candidates?.[0]?.content?.parts;
-  if (!Array.isArray(parts)) return '';
-  return parts.map((part) => String(part?.text || '')).join('').trim();
+function extractRecipeAiText(payload) {
+  return String(payload?.choices?.[0]?.message?.content || payload?.choices?.[0]?.delta?.content || '').trim();
 }
 
 async function handleRecipeAi(req, res, corsHeaders) {
@@ -1810,7 +1806,7 @@ async function handleRecipeAi(req, res, corsHeaders) {
     writeJsonResponse(res, 403, {}, { error: 'origin_not_allowed' });
     return;
   }
-  if (!GEMINI_API_KEY) {
+  if (!OPENROUTER_API_KEY) {
     writeJsonResponse(res, 503, corsHeaders, { error: 'ai_not_configured' });
     return;
   }
@@ -1843,18 +1839,17 @@ async function handleRecipeAi(req, res, corsHeaders) {
   }
 
   const endpoint = new URL(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`
+    'https://openrouter.ai/api/v1/chat/completions'
   );
   const requestPayload = {
-    system_instruction: {
-      parts: [{ text: RECIPE_AI_SYSTEM_PROMPT }]
-    },
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: {
-      temperature: 0.35,
-      maxOutputTokens: 16_000,
-      responseMimeType: 'application/json'
-    }
+    model: OPENROUTER_MODEL,
+    messages: [
+      { role: 'system', content: RECIPE_AI_SYSTEM_PROMPT },
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.35,
+    max_tokens: 16_000,
+    response_format: { type: 'json_object' }
   };
 
   const controller = new AbortController();
@@ -1864,7 +1859,12 @@ async function handleRecipeAi(req, res, corsHeaders) {
     try {
       upstream = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': 'https://xn--80ahcljthqi.xn--p1ai/recipes.html',
+          'X-Title': 'Kinosreda Recipes'
+        },
         body: JSON.stringify(requestPayload),
         signal: controller.signal
       });
@@ -1882,7 +1882,7 @@ async function handleRecipeAi(req, res, corsHeaders) {
       writeJsonResponse(res, upstream.status === 429 ? 429 : 502, corsHeaders, { error: 'ai_upstream_failed', status: upstream.status });
       return;
     }
-    const content = extractGeminiText(payload);
+    const content = extractRecipeAiText(payload);
     if (!content) {
       console.warn('[recipe-ai] upstream returned no text');
       writeJsonResponse(res, 502, corsHeaders, { error: 'ai_empty_response' });
@@ -1891,7 +1891,7 @@ async function handleRecipeAi(req, res, corsHeaders) {
     writeJsonResponse(res, 200, corsHeaders, {
       id: `recipe-${Date.now().toString(36)}`,
       object: 'chat.completion',
-      model: GEMINI_MODEL,
+      model: OPENROUTER_MODEL,
       choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }]
     });
   } finally {
