@@ -1200,6 +1200,205 @@ function fetchBeerSourcePage(query, item) {
   });
 }
 
+const equipmentWebSearchCache = new Map();
+const equipmentSearchHeaders = { 'User-Agent': 'Mozilla/5.0', Accept: 'text/html' };
+
+function isPublicEquipmentAddress(address) {
+  const [a, b, c] = address.split('.').map(Number);
+  return a > 0 && a < 224 && a !== 10 && a !== 127
+    && !(a === 100 && b >= 64 && b <= 127)
+    && !(a === 169 && b === 254)
+    && !(a === 172 && b >= 16 && b <= 31)
+    && !(a === 192 && (b === 0 || b === 168 || (b === 88 && c === 99)))
+    && !(a === 198 && (b === 18 || b === 19 || (b === 51 && c === 100)))
+    && !(a === 203 && b === 0 && c === 113);
+}
+
+function readEquipmentProductPage(rawUrl) {
+  return new Promise((resolve) => {
+    const url = new URL(rawUrl);
+    if (!['https:', 'http:'].includes(url.protocol) || url.port || url.username || url.password
+      || require('node:net').isIP(url.hostname.replace(/^\[|\]$/g, ''))) {
+      resolve('');
+      return;
+    }
+    const transport = url.protocol === 'https:' ? https : http;
+    const request = transport.get(url, {
+      headers: equipmentSearchHeaders,
+      family: 4,
+      signal: AbortSignal.timeout(3200),
+      lookup(hostname, options, callback) {
+        require('node:dns').lookup(hostname, { family: 4, all: true }, (error, addresses) => {
+          const publicAddress = addresses?.find(({ address }) => isPublicEquipmentAddress(address));
+          if (error || !publicAddress) callback(error || new Error('non_public_address'));
+          else if (options.all) callback(null, [publicAddress]);
+          else callback(null, publicAddress.address, 4);
+        });
+      }
+    }, (response) => {
+      if (response.statusCode !== 200 || !/html/i.test(response.headers['content-type'] || '')) {
+        response.destroy();
+        resolve('');
+        return;
+      }
+      const chunks = [];
+      let size = 0;
+      response.on('data', (chunk) => {
+        size += chunk.length;
+        if (size > 2_000_000) {
+          resolve(Buffer.concat(chunks).toString('utf8'));
+          response.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
+      response.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      response.on('error', () => resolve(''));
+    });
+    request.on('error', () => resolve(''));
+  });
+}
+
+function equipmentWeightInGrams(text) {
+  const units = { kg: 1000, кг: 1000, g: 1, г: 1, grm: 1, kgm: 1000, oz: 28.35, lb: 453.592 };
+  const match = String(text).match(/(?:\bweight\b|вес|масса)[^\d]{0,40}(\d+(?:[.,]\d+)?)\s*(kgm|grm|kg|кг|g|г|oz|lb)(?![\p{L}])/iu);
+  return match ? Math.round(Number(match[1].replace(',', '.')) * units[match[2].toLowerCase()]) : 0;
+}
+
+function equipmentOfferPrice(text) {
+  const amount = '(\\d+(?:[ \u00a0\u202f]\\d{3})*(?:[.,]\\d{1,2})?)';
+  const currency = '(₽|руб(?:лей|ля)?\\.?|RUB|USD|US\\$|\\$|EUR|€|GBP|£)';
+  const after = String(text).match(new RegExp(amount + '\\s*' + currency, 'iu'));
+  const before = !after && String(text).match(new RegExp(currency + '\\s*' + amount, 'iu'));
+  const code = (after?.[2] || before?.[1] || '').toUpperCase();
+  return {
+    originalPrice: Number((after?.[1] || before?.[2] || '').replace(/\s/g, '').replace(',', '.')) || 0,
+    originalCurrency: { '$': 'USD', 'US$': 'USD', '€': 'EUR', '£': 'GBP' }[code] || (/^РУБ|₽/.test(code) ? 'RUB' : code)
+  };
+}
+
+function equipmentProductMetadata(html, item) {
+  const meta = new Map();
+  for (const tag of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = Object.fromEntries(Array.from(tag[0].matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g), (part) => [part[1].toLowerCase(), part[2] ?? part[3]]));
+    if (attrs.content) meta.set(attrs.property || attrs.name || attrs.itemprop, attrs.content);
+  }
+  const products = [];
+  for (const script of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const nodes = [JSON.parse(script[1])].flat();
+      for (const node of nodes.flatMap((entry) => [entry, ...[].concat(entry?.['@graph'] || [])])) {
+        if ([].concat(node?.['@type'] || []).includes('Product')) products.push(node);
+      }
+    } catch (_) {}
+  }
+  const product = products.find((entry) => normalizeBeerSearchText(entry.name).includes(normalizeBeerSearchText(item.model))) || products[0];
+  const offer = [].concat(product?.offers || [])[0];
+  const image = [].concat(product?.image || meta.get('og:image') || item.imageUrl || [])[0];
+  let imageUrl = '';
+  try {
+    const url = new URL((typeof image === 'object' ? image.url || image.contentUrl : image) || '', item.url);
+    if (isHttpUrl(url.href) && image && !/logo|favicon|avatar/i.test(url.pathname)) imageUrl = url.href;
+  } catch (_) {}
+  const currency = String(offer?.priceCurrency || meta.get('product:price:currency') || '').toUpperCase();
+  const price = Number(offer?.price || offer?.lowPrice || meta.get('product:price:amount') || 0);
+  const snippet = [item.snippet, product?.description, meta.get('description')].filter(Boolean).join(' ');
+  const pageText = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ');
+  const productWeight = product?.weight;
+  const weightText = typeof productWeight === 'object'
+    ? [productWeight?.value, productWeight?.unitText || productWeight?.unitCode].join(' ')
+    : productWeight;
+  const amount = price > 0 && /^[A-Z]{3}$/.test(currency)
+    ? { originalPrice: price, originalCurrency: currency }
+    : item.originalPrice > 0 ? item : equipmentOfferPrice(decodeBeerSearchHtml(item.snippet || ''));
+  return {
+    imageUrl,
+    originalPrice: amount.originalPrice || 0,
+    originalCurrency: amount.originalCurrency || '',
+    packedWeight: equipmentWeightInGrams('weight ' + (weightText || '') + ' ' + snippet)
+      || item.packedWeight || (product ? equipmentWeightInGrams(decodeBeerSearchHtml(pageText)) : 0)
+  };
+}
+
+async function searchEquipmentWeb(query) {
+  const results = [];
+  const model = query.match(/\b[a-z]{1,8}[ -]?\d+[a-z0-9-]*\b/i)?.[0] || '';
+  const compactModel = model.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const terms = query;
+  if (SERPER_API_KEY) {
+    const search = async (type) => {
+      const response = await fetch('https://google.serper.dev/' + type, {
+        method: 'POST', signal: AbortSignal.timeout(4200),
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_API_KEY },
+        body: JSON.stringify({ q: terms, gl: 'ru', hl: 'ru', num: 20 })
+      });
+      if (!response.ok) throw new Error('equipment_search_failed');
+      return response.json();
+    };
+    const [shopping, web] = await Promise.allSettled([search('shopping'), search('search')]);
+    for (const item of shopping.value?.shopping || []) {
+      results.push({ name: item.title, url: item.link, imageUrl: item.imageUrl, seller: item.source, ...equipmentOfferPrice(item.price) });
+    }
+    for (const item of web.value?.organic || []) {
+      results.push({ name: item.title, url: item.link, snippet: item.snippet });
+    }
+  }
+  if (!results.some((item) => isHttpUrl(item.url))) {
+    const response = await fetch('https://lite.duckduckgo.com/lite/?q=' + encodeURIComponent(terms), {
+      headers: equipmentSearchHeaders, signal: AbortSignal.timeout(4500)
+    });
+    const html = await response.text();
+    if (!response.ok || /anomaly-modal|challenge-form/i.test(html)) throw new Error('equipment_search_unavailable');
+    for (const match of html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*class=['"]result-link['"][^>]*>([\s\S]*?)<\/a>([\s\S]*?)(?=class=['"]result-link|$)/gi)) {
+      try {
+        const link = new URL(match[1].replace(/&amp;/g, '&'), 'https://lite.duckduckgo.com');
+        const snippet = match[3].match(/<td[^>]+class=['"]result-snippet['"][^>]*>([\s\S]*?)<\/td>/i)?.[1] || '';
+        results.push({ name: decodeBeerSearchHtml(match[2]), url: link.searchParams.get('uddg') || link.href, snippet: decodeBeerSearchHtml(snippet) });
+      } catch (_) {}
+    }
+  }
+  const seen = new Set();
+  const candidates = results.filter((item) => {
+    if (!item.name || !isHttpUrl(item.url) || seen.has(item.url)) return false;
+    if (compactModel && !normalizeBeerSearchText(item.name + ' ' + item.url).replace(/\s/g, '').includes(compactModel)) return false;
+    seen.add(item.url);
+    return true;
+  }).slice(0, 12);
+  const items = await Promise.all(candidates.map(async (item, index) => {
+    const html = index < 8 && !(item.imageUrl && item.originalPrice) ? await readEquipmentProductPage(item.url).catch(() => '') : '';
+    const metadata = equipmentProductMetadata(html, { ...item, model: model || terms });
+    return {
+      _id: 'web-' + nodeCrypto.createHash('sha256').update(item.url).digest('hex').slice(0, 20),
+      name: String(item.name).slice(0, 260),
+      __source: 'web',
+      url: item.url,
+      seller: String(item.seller || new URL(item.url).hostname),
+      ...metadata
+    };
+  }));
+  return items;
+}
+
+async function handleEquipmentWebSearch(urlObj, req, res, corsHeaders) {
+  if (req.method !== 'GET') return writeJsonResponse(res, 405, corsHeaders, { error: 'method_not_allowed' });
+  const query = String(urlObj.searchParams.get('q') || '').normalize('NFKC').trim().replace(/\s+/g, ' ').slice(0, 160);
+  if (query.length < 2) return writeJsonResponse(res, 400, corsHeaders, { items: [] });
+  const key = query.toLowerCase();
+  let cached = equipmentWebSearchCache.get(key);
+  if (!cached || Date.now() - cached.at > 15 * 60 * 1000) {
+    cached = { at: Date.now(), pending: searchEquipmentWeb(query) };
+    equipmentWebSearchCache.set(key, cached);
+    if (equipmentWebSearchCache.size > 100) equipmentWebSearchCache.delete(equipmentWebSearchCache.keys().next().value);
+  }
+  try {
+    const items = await cached.pending;
+    return writeJsonResponse(res, 200, corsHeaders, { items });
+  } catch (_) {
+    if (equipmentWebSearchCache.get(key) === cached) equipmentWebSearchCache.delete(key);
+    return writeJsonResponse(res, 503, corsHeaders, { items: [], error: 'search_unavailable' });
+  }
+}
+
 function fetchBeerWebSearch(query) {
   if (SERPER_API_KEY) {
     return fetch('https://google.serper.dev/search', {
@@ -9876,6 +10075,10 @@ const server = http.createServer((req, res) => {
   }
   if (urlObj.pathname === '/gear-catalog-proxy') {
     proxyEquipmentCatalogRequest(urlObj, req, res, corsHeaders);
+    return;
+  }
+  if (urlObj.pathname === '/equipment-web-search') {
+    handleEquipmentWebSearch(urlObj, req, res, corsHeaders).catch(() => writeJsonResponse(res, 502, corsHeaders, { items: [] }));
     return;
   }
   if (req.url.startsWith('/puter-proxy') || (urlObj.pathname === '/' && urlObj.searchParams.get('url'))) {

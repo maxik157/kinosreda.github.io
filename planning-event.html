@@ -7689,7 +7689,10 @@
         .gear-detail-value span { display:block; color:#aab29c; font-size:11px; margin-bottom:6px; }
         .gear-detail-value:last-child { grid-column:1/-1; }
         .gear-detail-card input { box-sizing:border-box; width:100%; min-width:0; min-height:44px; padding:8px; border:1px solid #c9b37b40; border-radius:9px; background:#0f140d; color:#fff2d5; font:16px system-ui; }
-        .gear-detail-card > label { display:block; margin-bottom:14px; color:#aab29c; }
+        .gear-detail-edit { display:grid; gap:12px; }
+        .gear-detail-edit label { display:grid; gap:6px; color:#c5c9d1; }
+        .gear-detail-save { min-height:44px; padding:8px 14px; border:0; border-radius:10px; background:#fac56b; color:#251a07; font-weight:700; }
+        .gear-detail-error { margin:0; color:#f1b2a4; }
         .gear-detail-remove,.gear-detail-centre { width:100%; min-height:44px; margin-top:12px; padding:10px; border:1px solid #edb77640; border-radius:12px; background:#edb77610; color:#edcf9d; }
         .gear-detail-remove { border-color:#ef9b8b40; background:#ef9b8b10; color:#f1b2a4; }
         @keyframes gearDialogIn { from { opacity:0; transform:translateY(12px) scale(.97); } to { opacity:1; transform:none; } }
@@ -7714,6 +7717,131 @@
     </style>
     <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
     <script src="kinosreda-shell.js?v=20261113barnav" defer></script>
+
+<style id="equipment-studio-overrides">
+html:has(body.equipment-mode),
+body.equipment-mode { height:auto; min-height:100%; overflow-y:auto; }
+body.equipment-mode main.relative.z-10 { height:auto; min-height:100dvh; overflow:visible; }
+body.equipment-mode .equipment-experience {
+    --studio-ink:#f4efe4;
+    --studio-muted:#bab8ac;
+    flex:1 0 auto;
+    display:flex;
+    flex-direction:column;
+    overflow:visible;
+    border:0;
+    background:transparent;
+    box-shadow:none;
+}
+body.equipment-mode .equipment-experience.hidden { display:none; }
+.gear-studio { position:relative; display:flex; flex:1 0 auto; flex-direction:column; width:100%; }
+.gear-pack-focus {
+    position:absolute;
+    z-index:1;
+    top:clamp(42px,18dvh,220px);
+    left:50%;
+    width:min(70%,300px);
+    transform:translateX(-50%);
+    display:grid;
+    justify-items:center;
+    gap:8px;
+    transition:left .42s cubic-bezier(.22,1,.36,1),top .42s ease,width .42s ease;
+}
+.gear-studio.is-open .gear-pack-focus { top:clamp(38px,10dvh,110px); left:11%; width:20%; }
+.gear-pack-focus-photo {
+    display:grid;
+    place-items:center;
+    grid-template: minmax(0,1fr) / minmax(0,1fr);
+    overflow:hidden;
+    width:100%;
+    height:clamp(145px,34dvh,350px);
+    padding:0;
+    border:0;
+    background:none;
+    color:var(--studio-muted);
+}
+button.gear-pack-focus-photo { cursor:pointer; }
+.is-open .gear-pack-focus-photo { height:clamp(80px,24dvh,240px); }
+.gear-pack-focus-photo img {
+    width:100%;
+    height:100%;
+    min-width:0;
+    min-height:0;
+    object-fit:contain;
+    filter:drop-shadow(0 16px 16px #0008);
+    transition:transform .24s ease;
+}
+button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
+.gear-pack-focus-name { display:block; max-width:100%; padding:0; border:0; background:none; color:var(--studio-ink); font-size:14px; text-align:center; overflow-wrap:anywhere; }
+.gear-pack-focus-metrics { color:var(--studio-muted); font:13px/1.4 system-ui,sans-serif; text-align:center; }
+.gear-grid-panel {
+    min-width:0;
+    margin-left:22%;
+    display:flex;
+    flex:1 0 auto;
+    flex-direction:column;
+    opacity:1;
+    transition:opacity .25s ease,transform .32s ease;
+}
+.gear-grid-panel[inert] { position:absolute; inset:0 0 auto 22%; margin:0; opacity:0; visibility:hidden; transform:translateX(10px); }
+.gear-grid-head { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 16px; padding:0 10px 10px; }
+.gear-grid-head h2 { margin:0; color:var(--studio-ink); font-size:clamp(16px,2vw,22px); }
+.gear-grid {
+    --item-width:min(27vw,136px);
+    --item-height:106px;
+    position:relative;
+    isolation:isolate;
+    flex:1 0 auto;
+    min-height:max(420px,var(--grid-content-height));
+    background:
+        linear-gradient(#d1bc8820 1px,transparent 1px),
+        linear-gradient(90deg,#d1bc8820 1px,transparent 1px),
+        rgba(18,22,28,.62);
+    background-size:36px 36px;
+}
+.gear-grid-empty { position:absolute; inset:0; display:grid; place-items:center; margin:0; padding:16px; color:var(--studio-muted); text-align:center; }
+.gear-grid-item {
+    position:absolute;
+    left:calc((100% - var(--item-width)) * var(--grid-x));
+    top:calc((100% - var(--item-height)) * var(--grid-y));
+    width:var(--item-width);
+    height:var(--item-height);
+    display:grid;
+    align-content:center;
+    justify-items:center;
+    gap:5px;
+    padding:4px;
+    border:0;
+    background:none;
+    color:var(--studio-ink);
+    text-align:center;
+    user-select:none;
+    transition:filter .18s ease;
+}
+.gear-grid-item[data-editable] { touch-action:none; cursor:grab; }
+.gear-grid-item:hover,.gear-grid-item:focus-visible,.gear-grid-item.is-dragging { z-index:2; filter:brightness(1.16); }
+.gear-grid-item.is-dragging { z-index:3; cursor:grabbing; }
+.gear-grid-item-photo { width:62px; height:58px; display:grid; place-items:center; pointer-events:none; }
+.gear-grid-item-photo img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 5px 6px #0007); }
+.gear-grid-item-copy { min-width:0; max-width:100%; display:grid; gap:3px; text-shadow:0 1px 5px #000,0 1px 8px #000; }
+.gear-grid-item-copy strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+.gear-grid-item-copy span { color:var(--studio-muted); font:11px system-ui,sans-serif; }
+.gear-search-results .gear-result { border:0; grid-template-columns:48px minmax(0,1fr) auto; }
+.gear-search-results .gear-result-thumb { width:48px; height:48px; }
+.gear-result-name a:hover { text-decoration:underline; }
+@media (max-width:620px) {
+    .gear-studio.is-open .gear-pack-focus { top:42px; left:10%; width:19%; }
+    .is-open .gear-pack-focus-photo { height:92px; }
+    .is-open .gear-pack-focus-name,.is-open .gear-pack-focus-metrics { font-size:10px; overflow-wrap:anywhere; }
+    .gear-grid-panel { margin-left:21%; }
+    .gear-grid { --item-width:24vw; }
+    .gear-search-results .gear-result { grid-template-columns:40px minmax(0,1fr) auto; }
+    .gear-search-results .gear-result-thumb { width:40px; height:40px; }
+}
+@media (prefers-reduced-motion:reduce) {
+    .gear-grid-item,.gear-pack-focus-photo img,.gear-pack-focus,.gear-grid-panel { transition:none; }
+}
+</style>
 </head>
 <body class="bg-dark min-h-screen event-booting ks-ui ks-page-planning-event">
     <main class="relative z-10 w-full px-3 md:px-5 py-4 md:py-5">
@@ -8109,6 +8237,7 @@
         let eventDataPendingEchoSignature = '';
         let queuedRemoteEventDataSnapshot = null;
         let eventDataCommitQueue = Promise.resolve();
+        let equipmentSaveRevision = 0;
         let planningEventCacheWriteTimer = null;
         let pendingPlanningEventCachePayload = null;
         let planningViewStateSyncTimer = null;
@@ -8310,11 +8439,52 @@
                 catalogByKey: {}, loadedKeys: new Set(), pendingKeys: new Set(), requestTokensByKey: {}, loading: false, error: ''
             }
         ];
+        const equipmentWebSearchByKey = new Map();
+        let equipmentWebSearchRequest = null;
+
+        async function ensureEquipmentWebSearchLoaded(query) {
+            const key = normalizeEquipmentSearchKey(query);
+            if (equipmentWebSearchRequest?.key === key) return;
+            equipmentWebSearchRequest?.controller.abort();
+            equipmentWebSearchRequest = null;
+            if (!shouldRunRemoteEquipmentSearch(query) || equipmentWebSearchByKey.has(key)) return;
+
+            const controller = new AbortController();
+            equipmentWebSearchRequest = { key, controller };
+            const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+            const base = local ? location.origin : getEquipmentCatalogProxyBase();
+            const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]);
+            const fetchResults = async (origin) => {
+                const endpoint = new URL('/equipment-web-search', origin);
+                endpoint.searchParams.set('q', query);
+                const response = await fetch(endpoint, { signal });
+                if (!response.ok) throw new Error('equipment_web_search_unavailable');
+                const payload = await response.json();
+                if (!Array.isArray(payload.items)) throw new Error('invalid_equipment_search_response');
+                return payload.items;
+            };
+            try {
+                const items = await fetchResults(base).catch((error) => {
+                    if (!local || location.port === '8090' || signal.aborted) throw error;
+                    return fetchResults('http://127.0.0.1:8090');
+                });
+                equipmentWebSearchByKey.set(key, items);
+                if (equipmentWebSearchByKey.size > 40) equipmentWebSearchByKey.delete(equipmentWebSearchByKey.keys().next().value);
+            } catch (_) {
+                if (!controller.signal.aborted) equipmentWebSearchByKey.set(key, null);
+            } finally {
+                if (equipmentWebSearchRequest?.controller === controller) {
+                    equipmentWebSearchRequest = null;
+                    refreshEquipmentSearchResultsOnly();
+                }
+            }
+        }
+        let equipmentSearchOpen = false;
+        let equipmentGridOpen = false;
         let equipmentCatalogSearchDebounceTimer = null;
         let equipmentCatalogSearchRenderTimer = null;
         // Search changes only the search panel; the map remains mounted and never restarts its reveal animation.
         let equipmentSearchOnlyRefresh = false;
-        let equipmentEditOnlyRefresh = false;
         let equipmentSearchOnlyRefreshFrame = null;
         let equipmentRenderedSearchResults = [];
         let equipmentCatalogResultLimit = 48;
@@ -8325,11 +8495,6 @@
         // Prevent concurrent cleanup runs; each row itself remembers when its transparent image is ready.
         const equipmentBackgroundCleanupActiveForEvents = new Set();
         const equipmentBackgroundCleanupAttemptedRows = new Set();
-        let equipmentRectangleOrbitFrame = null;
-        // The field opens calm: the backpack is the entry point and reveals its equipment on demand.
-        let equipmentOrbitExpanded = false;
-        let equipmentRectangleOrbitStartedAt = performance.now();
-        let equipmentRectangleOrbitPausedAt = 0;
         let equipmentCurrencyRatesLoading = false;
         let equipmentCurrencyRatesUpdatedAt = 0;
         let equipmentCurrencyRatesPromise = null;
@@ -8436,6 +8601,7 @@
             nashvillepack: 'Nashville Pack',
             featheredfriends: 'Feathered Friends',
             cascadedesigns: 'Cascade Designs',
+            web: 'Веб-поиск',
             discovery: 'Мультибрендовый каталог'
         };
         const EQUIPMENT_SOURCE_PRIORITIES = {
@@ -8477,6 +8643,7 @@
             nashvillepack: 51,
             featheredfriends: 50,
             cascadedesigns: 48,
+            web: 60,
             discovery: 44
         };
         const TOBACCO_CATALOG_META = [
@@ -9672,39 +9839,7 @@
         function formatImportedWeightKg(value) {
             const grams = Number(value);
             if (!Number.isFinite(grams) || grams <= 0) return '';
-            return formatEquipmentNumber(grams / 1000);
-        }
-
-        function getEquipmentSearchInputState() {
-            const active = document.activeElement;
-            if (!(active instanceof HTMLInputElement) || active.id !== 'pwCatalogSearchInput') return null;
-            return {
-                value: active.value || '',
-                selectionStart: typeof active.selectionStart === 'number' ? active.selectionStart : null,
-                selectionEnd: typeof active.selectionEnd === 'number' ? active.selectionEnd : null
-            };
-        }
-
-        function restoreEquipmentSearchInputState(state) {
-            if (!state) return;
-            const input = document.getElementById('pwCatalogSearchInput');
-            if (!(input instanceof HTMLInputElement)) return;
-            try {
-                input.focus({ preventScroll: true });
-            } catch (_) {
-                input.focus();
-            }
-            if (input.value !== state.value) {
-                input.value = state.value;
-            }
-            if (typeof input.setSelectionRange === 'function') {
-                const start = Math.min(Number(state.selectionStart) || 0, input.value.length);
-                const end = Math.min(
-                    state.selectionEnd == null ? start : Number(state.selectionEnd) || start,
-                    input.value.length
-                );
-                input.setSelectionRange(start, end);
-            }
+            return String(Math.round(grams) / 1000);
         }
 
         function refreshEquipmentSearchResultsOnly() {
@@ -9727,18 +9862,6 @@
                 equipmentSearchOnlyRefresh = true;
                 renderEquipmentExperience();
                 equipmentSearchOnlyRefresh = false;
-                const queryText = getEquipmentQueryText();
-                if (!shouldRunRemoteEquipmentSearch(queryText)) return;
-                ensureDecathlonCatalogLoaded('global', queryText).catch(() => {});
-                ensureGggCatalogLoaded('global', queryText).catch(() => {});
-                ensureHyperliteCatalogLoaded('global', queryText).catch(() => {});
-                ensureZpacksCatalogLoaded('global', queryText).catch(() => {});
-                ensureGossamerCatalogLoaded('global', queryText).catch(() => {});
-                ensureOutdoorVitalsCatalogLoaded('global', queryText).catch(() => {});
-                ensureSixMoonCatalogLoaded('global', queryText).catch(() => {});
-                ensureGearxCatalogLoaded('global', queryText).catch(() => {});
-                ensureGeartradeCatalogLoaded('global', queryText).catch(() => {});
-                ensureEvoCatalogLoaded('global', queryText).catch(() => {});
             }, 120);
         }
 
@@ -10558,8 +10681,14 @@
                 if (pendingLocalEventDataEchoes.has(nextSig) || (eventDataPendingEchoSignature && nextSig === eventDataPendingEchoSignature)) {
                     pendingLocalEventDataEchoes.delete(nextSig);
                     eventDataPendingEchoSignature = '';
-                    eventDataDirty = false;
                     initialDataSnapshotReady = true;
+                    // A transaction callback publishes equipment data. Its echo can arrive
+                    // after another drag has already changed the local draft.
+                    if (isEquipmentEvent()) {
+                        if (!initialRenderCommitted) maybeCommitInitialRender();
+                        return;
+                    }
+                    eventDataDirty = false;
                     if (!eventData || eventDataSignature !== nextSig) {
                         eventData = nextData;
                         eventDataSignature = nextSig;
@@ -10707,6 +10836,8 @@
                             equipmentImagePrepared: !!(row && row.equipmentImagePrepared) || (!row?.equipmentBackgroundPending && !!String(row && row.equipmentImageUrl || '').trim()),
                             equipmentBackgroundPending: !!(row && row.equipmentBackgroundPending),
                             equipmentRole: String(row && row.equipmentRole || '').trim() === 'backpack' ? 'backpack' : '',
+                            ...(Number.isFinite(row.equipmentGridX) ? { equipmentGridX: row.equipmentGridX } : {}),
+                            ...(Number.isFinite(row.equipmentGridY) ? { equipmentGridY: row.equipmentGridY } : {}),
                             position: normalizeRowPositionValue(row.position ?? row.sortOrder ?? row.order, rowIndex),
                             closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
                                 normalizedBeerBacklog.status === 'done'
@@ -10851,7 +10982,7 @@
             };
         }
 
-        function runEventDataCommitTransaction(buildNextData) {
+        function runEventDataCommitTransaction(buildNextData, equipmentRevision = null) {
             if (!eventId || !db || typeof buildNextData !== 'function') {
                 return Promise.resolve({ committed: false, data: null, signature: '' });
             }
@@ -10871,9 +11002,12 @@
                     lastAppliedData = cloneEventDataSnapshot(nextData);
                     return JSON.parse(JSON.stringify(lastAppliedData));
                 }, (error, committed, snapshot) => {
+                    const superseded = equipmentRevision !== null && equipmentRevision !== equipmentSaveRevision;
                     if (error || !committed) {
-                        eventDataDirty = !!saveTimer;
-                        flushQueuedRemoteEventDataSnapshot();
+                        if (!superseded) {
+                            eventDataDirty = !!saveTimer;
+                            flushQueuedRemoteEventDataSnapshot();
+                        }
                         resolve({ committed: false, data: lastAppliedData, signature: '' });
                         return;
                     }
@@ -10882,10 +11016,14 @@
                         ? { sections: [], layoutRows: [] }
                         : normalizeEventData(rawValue);
                     const committedSignature = stableSerialize(committedData);
-                    eventData = committedData;
-                    eventDataSignature = committedSignature;
                     eventDataPendingEchoSignature = committedSignature;
                     pendingLocalEventDataEchoes.add(committedSignature);
+                    if (superseded) {
+                        resolve({ committed: true, data: committedData, signature: committedSignature });
+                        return;
+                    }
+                    eventData = committedData;
+                    eventDataSignature = committedSignature;
                     initialDataSnapshotReady = true;
                     markEventDataChanged();
                     writeCachedPlanningEventState({
@@ -10901,6 +11039,7 @@
                         data: eventData
                     });
                     eventDataDirty = !!saveTimer;
+                    if (equipmentRevision !== null) clearQueuedRemoteEventDataSnapshot();
                     flushQueuedRemoteEventDataSnapshot();
                     resolve({
                         committed: true,
@@ -10999,6 +11138,7 @@
                 saveTimer = null;
             }
             const localSnapshot = cloneEventDataSnapshot(eventData);
+            const equipmentRevision = isEquipmentEvent() ? equipmentSaveRevision : null;
             const dirtyKeysSnapshot = new Set(dirtyCellKeys);
             dirtyKeysSnapshot.forEach((key) => {
                 const parts = String(key || '').split('\u001f');
@@ -11013,8 +11153,8 @@
                     preferLocalCellKeys: dirtyKeysSnapshot
                 });
                 return payloadSource;
-            }).catch(() => {
-                eventDataDirty = false;
+            }, equipmentRevision).catch(() => {
+                if (equipmentRevision === null || equipmentRevision === equipmentSaveRevision) eventDataDirty = !!saveTimer;
             });
         }
 
@@ -11175,7 +11315,8 @@
             if (!eventId || !db || !eventData) return;
             if (isEquipmentEvent() && !canEditEquipmentEvent()) return;
             // Equipment is edited in the backpack, while the legacy table stays hidden.
-            if (!isEquipmentEvent()) commitRenderedInputValuesToEventData();
+            if (isEquipmentEvent()) equipmentSaveRevision += 1;
+            else commitRenderedInputValuesToEventData();
             clearTimeout(saveTimer);
             eventDataDirty = true;
             markEventDataChanged();
@@ -11645,7 +11786,7 @@
         }
 
         function parseMeasureCellValue(value) {
-            const sanitized = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
+            const sanitized = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 3, maxLength: 8 }).value;
             if (!sanitized) return 0;
             const parsed = Number.parseFloat(String(sanitized).replace(',', '.'));
             return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
@@ -11659,6 +11800,7 @@
         }
 
         function formatEquipmentMeasure(value, unit) {
+            if (unit === 'кг') return `${Math.round((Number(value) || 0) * 1000) / 1000} кг`;
             return `${formatEquipmentNumber(value)} ${unit}`;
         }
 
@@ -11691,7 +11833,9 @@
                         imagePrepared: !!row.equipmentImagePrepared || (!row.equipmentBackgroundPending && !!String(row.equipmentImageUrl || '').trim()),
                         backgroundPending: !!row.equipmentBackgroundPending,
                         role: String(row.equipmentRole || '').trim(),
-                        packed: !!row.packed
+                        packed: !!row.packed,
+                        gridX: Number.isFinite(Number(row.equipmentGridX)) ? Math.max(1, Math.min(8, Number(row.equipmentGridX))) : 0,
+                        gridY: Number.isFinite(Number(row.equipmentGridY)) ? Math.max(1, Math.min(6, Number(row.equipmentGridY))) : 0
                     });
                 });
             });
@@ -11816,42 +11960,32 @@
             return true;
         }
 
-        function updateEquipmentItem(rowId, field, value) {
-            if (!canEditEquipmentEvent()) return false;
-            if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
-            const activeSearchResults = document.querySelector('#equipmentTopSearch .gear-search-results');
-            if (activeSearchResults) equipmentCatalogScrollTop = activeSearchResults.scrollTop;
-            const fieldName = String(field || '').trim();
+        function updateEquipmentItem(rowId, values) {
+            if (!canEditEquipmentEvent() || !eventData || !rowId) return false;
+            const section = eventData.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
+            const row = section?.rows.find((entry) => entry.id === rowId);
+            if (!row) return false;
+
+            const itemColumn = section.columns.find((column) => column.id === 'item')
+                || section.columns.find((column) => column.type === 'text');
+            const fields = [
+                [itemColumn?.id, values.name],
+                ['weight', values.weight],
+                ['cost', values.cost]
+            ];
             let changed = false;
-            eventData.sections.forEach((section) => {
-                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
-                const itemCol = section.columns.find((col) => col && col.id === 'item')
-                    || section.columns.find((col) => col && col.type === 'text');
-                const weightCol = section.columns.find((col) => col && col.id === 'weight');
-                const costCol = section.columns.find((col) => col && col.type === 'cost');
-                const row = section.rows.find((entry) => entry && entry.id === rowId);
-                if (!row || !row.cells) return;
-                let column = null;
-                let nextValue = '';
-                if (fieldName === 'name' && itemCol) {
-                    column = itemCol;
-                    nextValue = String(value || '').trim();
-                } else if (fieldName === 'weight' && weightCol) {
-                    column = weightCol;
-                    nextValue = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: 8 }).value;
-                } else if (fieldName === 'cost' && costCol) {
-                    column = costCol;
-                    nextValue = sanitizeNumericInput(value, { allowDecimal: true, maxDecimals: 2, maxLength: COST_INPUT_MAX_CHARS }).value;
-                }
-                if (!column || String(row.cells[column.id] ?? '') === nextValue) return;
-                row.cells[column.id] = nextValue;
-                dirtyCellKeys.add(`${section.id}\u001f${rowId}\u001f${column.id}`);
+            fields.forEach(([columnId, value]) => {
+                if (value === undefined || !section.columns.some((column) => column.id === columnId)) return;
+                if (String(row.cells[columnId] ?? '') === value) return;
+                row.cells[columnId] = value;
+                const key = `${section.id}\u001f${rowId}\u001f${columnId}`;
+                dirtyCellKeys.add(key);
+                pendingCellValueLocks.set(key, { value });
                 changed = true;
             });
-            if (!changed) return false;
-            markEventDataChanged();
+            if (!changed) return true;
             saveEventData();
-            refreshEquipmentMetricsInPlace();
+            renderEquipmentExperience();
             emitCollabAction('Обновил параметры снаряжения');
             return true;
         }
@@ -11882,14 +12016,14 @@
 
         function addEquipmentItemFromCatalog(rawItem, options = {}) {
             if (!canEditEquipmentEvent() || !rawItem) return false;
-            const currentStage = document.querySelector('#equipmentExperience .gear-orbit-stage');
-            if (currentStage) equipmentOrbitExpanded = currentStage.classList.contains('is-expanded');
             const section = getEquipmentImportSection();
+            equipmentGridOpen = true;
             if (!section) return false;
             const row = createRow(section.columns, false);
             row.position = section.rows.length + 1;
             row.packed = options.packed !== false;
-            row.equipmentRole = options.role === 'backpack' ? 'backpack' : '';
+            const looksLikeBackpack = /\b(backpack|rucksack)\b|рюкзак/i.test(`${rawItem.category || ''} ${rawItem.name || ''}`);
+            row.equipmentRole = options.role === 'backpack' || (looksLikeBackpack && !getEquipmentBackpackItem()) ? 'backpack' : '';
             if (row.equipmentRole === 'backpack') {
                 eventData.sections.forEach((existingSection) => {
                     (existingSection && Array.isArray(existingSection.rows) ? existingSection.rows : []).forEach((existingRow) => {
@@ -11899,12 +12033,14 @@
             }
             row.equipmentImageUrl = String(rawItem.imageUrl || '').trim();
             row.equipmentImagePrepared = false;
-            row.equipmentBackgroundPending = true;
+            row.equipmentBackgroundPending = Boolean(row.equipmentImageUrl);
             row.cells.item = String(rawItem.formattedBrand || rawItem.brand || '').trim()
                 ? `${String(rawItem.formattedBrand || rawItem.brand).trim()} ${String(rawItem.name || '').trim()}`.trim()
                 : String(rawItem.name || '').trim();
             row.cells.weight = formatImportedWeightKg(rawItem.packedWeight || rawItem.weight || 0);
-            row.cells.cost = rawItem.lowestPrice || rawItem.price ? formatEquipmentNumber(Number(rawItem.lowestPrice || rawItem.price || 0)) : '';
+            const importedPrice = rawItem.lowestPrice || rawItem.price
+                || convertEquipmentPriceToRub(rawItem.originalPrice, rawItem.originalCurrency);
+            row.cells.cost = importedPrice > 0 ? formatEquipmentNumber(importedPrice) : '';
             section.rows.push(row);
             reindexSectionRows(section);
             saveEventData();
@@ -11913,96 +12049,6 @@
             updateQuickStats();
             emitCollabAction(`${options.role === 'backpack' ? 'Выбрал рюкзак' : 'Добавил'} из ${getEquipmentSourceLabel(rawItem.__source)}: ${row.cells.item || 'снаряжение'}`);
             return true;
-        }
-
-        function getEquipmentOrbitLayout(index, total) {
-            // Capacity follows the actual map perimeter, not the browser width. A tall phone field can
-            // comfortably carry many cards on one clean rectangular track.
-            const previousStage = document.querySelector('#equipmentExperience .gear-orbit-stage');
-            const host = document.getElementById('equipmentExperience');
-            const width = Math.max(1, previousStage?.clientWidth || host?.clientWidth || window.innerWidth || 1);
-            const height = Math.max(1, previousStage?.clientHeight || host?.clientHeight || window.innerHeight || 1);
-            const perimeter = 2 * (width + height);
-            const cardFootprint = width < 860 ? 104 : 146;
-            const capacityPerTrack = Math.max(10, Math.floor(perimeter / cardFootprint));
-            const trackCount = Math.min(2, Math.max(1, Math.ceil(Math.max(1, total) / capacityPerTrack)));
-            const lane = index % trackCount;
-            const itemIndexOnLane = Math.floor(index / trackCount);
-            const itemsOnLane = Math.max(1, Math.ceil((total - lane) / trackCount));
-            // A half-step offset prevents neighbouring tracks from sharing a ray when a second track is needed.
-            const phase = (itemIndexOnLane / itemsOnLane + (lane / trackCount) / itemsOnLane) % 1;
-            return { lane, phase, laneTotal: itemsOnLane };
-        }
-
-        function getEquipmentRectanglePoint(phase, width, height, lane = 0) {
-            // Compact cards can safely reach the full perimeter, including the previously empty top band.
-            const compact = width < 860;
-            const insetX = (compact ? Math.min(Math.max(38, width * .065), 58) : Math.min(Math.max(104, width * 0.08), 132)) + lane * (compact ? 24 : 42);
-            const insetTop = (compact ? Math.min(Math.max(26, height * .04), 44) : Math.min(Math.max(70, height * 0.08), 96)) + lane * (compact ? 22 : 38);
-            const insetBottom = (compact ? Math.min(Math.max(30, height * .05), 48) : Math.min(Math.max(70, height * 0.08), 96)) + lane * (compact ? 22 : 38);
-            const left = insetX, right = Math.max(left + 80, width - insetX);
-            const top = insetTop, bottom = Math.max(top + 80, height - insetBottom);
-            // Allocate evenly by side rather than by physical side length: short top/bottom bands
-            // always receive their share of equipment instead of leaving empty horizontal space.
-            const safePhase = ((phase % 1) + 1) % 1;
-            const sidePosition = safePhase * 4;
-            const side = Math.min(3, Math.floor(sidePosition));
-            const progress = sidePosition - Math.floor(sidePosition);
-            if (side === 0) return { x:left + (right - left) * progress, y:top };
-            if (side === 1) return { x:right, y:top + (bottom - top) * progress };
-            if (side === 2) return { x:right - (right - left) * progress, y:bottom };
-            return { x:left, y:bottom - (bottom - top) * progress };
-        }
-
-        function startEquipmentRectangleOrbit(shell) {
-            if (equipmentRectangleOrbitFrame) cancelAnimationFrame(equipmentRectangleOrbitFrame);
-            equipmentRectangleOrbitFrame = null;
-            const stage = shell?.querySelector('.gear-orbit-stage');
-            if (!stage) return;
-            const cards = Array.from(stage.querySelectorAll('.gear-orbit-item'));
-            const rays = Array.from(stage.querySelectorAll('.gear-orbit-ray'));
-            const rect = stage.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            const expanded = stage.classList.contains('is-expanded');
-            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const target = expanded ? 1 : 0;
-            const from = Number(stage.dataset.gearProgress || 0);
-            const duration = reduced ? 0 : 760 * Math.abs(target - from);
-            const started = performance.now();
-            const points = cards.map((card) => getEquipmentRectanglePoint(Number(card.dataset.gearPhase || 0), rect.width, rect.height, Number(card.dataset.gearLane || 0)));
-            // A single scalar controls the endpoint AND its ray, including reversals mid-flight.
-            const paint = (progress) => {
-                stage.dataset.gearProgress = String(progress);
-                cards.forEach((card, index) => {
-                    const point = points[index];
-                    const dx = (point.x - rect.width / 2) * progress;
-                    const dy = (point.y - rect.height / 2) * progress;
-                    const opacity = Math.min(1, progress * 5);
-                    card.style.left = '50%';
-                    card.style.top = '50%';
-                    card.style.transform = `translate(-50%,-50%) translate(${dx}px,${dy}px) scale(${.3 + .7 * progress})`;
-                    card.style.opacity = String(opacity);
-                    card.inert = !expanded;
-                    const ray = rays[index];
-                    if (ray) {
-                        ray.style.width = '1px';
-                        ray.style.transform = `rotate(${Math.atan2(dy, dx)}rad) scaleX(${Math.hypot(dx, dy)})`;
-                        ray.style.opacity = String(opacity);
-                    }
-                });
-            };
-            stage.classList.toggle('is-animating', duration > 0);
-            const tick = (now) => {
-                if (!stage.isConnected) { equipmentRectangleOrbitFrame = null; return; }
-                const time = duration ? Math.min(1, (now - started) / duration) : 1;
-                const eased = 1 - Math.pow(1 - time, 3);
-                paint(from + (target - from) * eased);
-                if (time < 1) equipmentRectangleOrbitFrame = requestAnimationFrame(tick);
-                else { stage.classList.remove('is-animating'); equipmentRectangleOrbitFrame = null; }
-            };
-            paint(from);
-            if (duration) equipmentRectangleOrbitFrame = requestAnimationFrame(tick);
-            else tick(started);
         }
 
         function getEquipmentItemByRowId(rowId) {
@@ -12767,24 +12813,84 @@
             modal.setAttribute('role', 'dialog');
             modal.setAttribute('aria-modal', 'true');
             modal.setAttribute('aria-label', item.label || 'Снаряжение');
-            modal.innerHTML = `<article class="gear-detail-card"><button type="button" class="gear-detail-close" data-gear-detail-close aria-label="Закрыть">×</button>${item.imageUrl ? `<img class="gear-detail-photo" src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.label)}" />` : ''}<h3 class="gear-detail-name">${escapeHtml(item.label || 'Без названия')}</h3><div class="gear-detail-values"><div class="gear-detail-value"><span>Вес</span>${escapeHtml(formatEquipmentMeasure(item.weight, 'кг'))}</div><div class="gear-detail-value"><span>Цена</span>${escapeHtml(formatMoneyValue(item.cost || 0))}</div><div class="gear-detail-value"><span>Раздел</span>${escapeHtml(item.sectionName || 'Снаряжение')}</div></div>${canEditEquipmentEvent() ? `<button type="button" class="gear-detail-remove" data-equipment-remove="${escapeHtml(item.rowId)}">Убрать из рюкзака</button>` : ''}</article>`;
+            const editable = canEditEquipmentEvent();
+            modal.innerHTML = `<article class="gear-detail-card">
+                <button type="button" class="gear-detail-close" data-gear-detail-close aria-label="Закрыть">×</button>
+                ${item.imageUrl ? `<img class="gear-detail-photo" src="${escapeHtml(item.imageUrl)}" alt="">` : ''}
+                <h3 class="gear-detail-name">${escapeHtml(item.label)}</h3>
+                ${editable ? `<form class="gear-detail-edit">
+                    <label>Название<input name="name" value="${escapeHtml(item.label)}" maxlength="260" required></label>
+                    <label>Вес, кг<input name="weight" inputmode="decimal" value="${item.weight || ''}"></label>
+                    <label>Стоимость, ₽<input name="cost" inputmode="decimal" value="${item.cost || ''}"></label>
+                    <p class="gear-detail-error" role="alert" hidden></p>
+                    <button type="submit" class="gear-detail-save">Сохранить</button>
+                </form>` : `<div class="gear-detail-values">
+                    <div class="gear-detail-value"><span>Вес</span>${escapeHtml(item.weight ? formatEquipmentMeasure(item.weight, 'кг') : 'Не указан')}</div>
+                    <div class="gear-detail-value"><span>Цена</span>${escapeHtml(item.cost ? formatMoneyValue(item.cost) : 'Не указана')}</div>
+                    <div class="gear-detail-value"><span>Раздел</span>${escapeHtml(item.sectionName)}</div>
+                </div>`}
+                ${editable && item.role !== 'backpack' ? `<button type="button" class="gear-detail-centre" data-equipment-set-backpack>Использовать как рюкзак</button>` : ''}
+                ${editable ? `<button type="button" class="gear-detail-remove" data-equipment-remove>Убрать из рюкзака</button>` : ''}
+            </article>`;
             modal.addEventListener('click', (event) => {
-                if (event.target === modal || event.target.closest('[data-gear-detail-close]')) { modal.remove(); return; }
-                const removeButton = event.target.closest('[data-equipment-remove]');
-                if (removeButton && removeEquipmentItem(removeButton.dataset.equipmentRemove)) modal.remove();
+                if (event.target === modal || event.target.closest('[data-gear-detail-close]')) modal.close();
+                if (event.target.closest('[data-equipment-set-backpack]') && setEquipmentBackpack(item.rowId)) modal.close();
+                if (event.target.closest('[data-equipment-remove]') && removeEquipmentItem(item.rowId)) modal.close();
+            });
+            modal.querySelector('form')?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const { name, weight, cost } = Object.fromEntries(new FormData(form));
+                const values = { name: name.trim(), weight: weight.trim().replace(',', '.'), cost: cost.trim().replace(',', '.') };
+                const error = form.querySelector('.gear-detail-error');
+                if (!values.name || (values.weight && !/^\d{1,4}(?:\.\d{1,3})?$/.test(values.weight))
+                    || (values.cost && (!/^\d+(?:\.\d{1,2})?$/.test(values.cost) || values.cost.length > COST_INPUT_MAX_CHARS))) {
+                    error.textContent = 'Введите название, вес в килограммах и стоимость в рублях. Вес и стоимость можно оставить пустыми.';
+                    error.hidden = false;
+                    return;
+                }
+                if (updateEquipmentItem(item.rowId, values)) {
+                    modal.close();
+                } else {
+                    error.textContent = 'Предмет больше недоступен для редактирования.';
+                    error.hidden = false;
+                }
             });
             document.body.appendChild(modal);
             modal.addEventListener('close', () => modal.remove(), { once:true });
             modal.showModal();
         }
 
+        function setEquipmentGridPosition(rowId, x, y) {
+            if (!canEditEquipmentEvent() || !eventData || !rowId) return false;
+            const nextX = Math.max(1, Math.min(8, Math.round(Number(x) * 1000) / 1000 || 1));
+            const nextY = Math.max(1, Math.min(6, Math.round(Number(y) * 1000) / 1000 || 1));
+            let changed = false;
+            eventData.sections.forEach((section) => {
+                (section && Array.isArray(section.rows) ? section.rows : []).forEach((row) => {
+                    if (!row || String(row.id) !== String(rowId)) return;
+                    if (Number(row.equipmentGridX) === nextX && Number(row.equipmentGridY) === nextY) return;
+                    row.equipmentGridX = nextX;
+                    row.equipmentGridY = nextY;
+                    changed = true;
+                });
+            });
+            if (!changed) return false;
+            markEventDataChanged();
+            saveEventData();
+            const card = document.querySelector(`#equipmentExperience [data-row-id="${CSS.escape(rowId)}"]`);
+            card?.style.setProperty('--grid-x', (nextX - 1) / 7);
+            card?.style.setProperty('--grid-y', (nextY - 1) / 5);
+            emitCollabAction('Переместил снаряжение по сетке');
+            return true;
+        }
+
         function renderEquipmentExperience() {
             const shell = document.getElementById('equipmentExperience');
             const topSearchHost = document.getElementById('equipmentTopSearch');
             if (!shell) return;
-            const searchInputState = getEquipmentSearchInputState();
-            const previousSearchResults = topSearchHost ? topSearchHost.querySelector('.gear-search-results') : null;
-            if (previousSearchResults) equipmentCatalogScrollTop = previousSearchResults.scrollTop;
+            
+
             const equipmentMode = isEquipmentEvent();
             document.body.classList.toggle('equipment-mode', equipmentMode);
             const backLink = document.getElementById('planningBackLink');
@@ -12795,163 +12901,111 @@
             if (!equipmentMode) {
                 shell.classList.add('hidden');
                 shell.innerHTML = '';
+                shell.equipmentMarkup = '';
                 if (topSearchHost) { topSearchHost.classList.add('hidden'); topSearchHost.innerHTML = ''; }
                 return;
             }
 
-            const keepOrbitMounted = (equipmentSearchOnlyRefresh || equipmentEditOnlyRefresh) && !!shell.querySelector('.gear-orbit-stage');
             const stats = getEquipmentStats();
             const canEditEquipment = canEditEquipmentEvent();
             const packItems = stats.items;
-            // Existing catalogue photos are upgraded in the background the first time this equipment set is opened.
-            const hasUnprocessedPhotos = packItems.some((item) => {
-                const url = String(item && item.imageUrl || '').trim();
-                return url && item.backgroundPending && !item.imagePrepared && !url.startsWith('data:image/svg+xml');
-            });
-            const cleanupKey = String(eventId || '__local__');
-            if (canEditEquipment && hasUnprocessedPhotos && !equipmentBackgroundCleanupActiveForEvents.has(cleanupKey)) {
-                equipmentBackgroundCleanupActiveForEvents.add(cleanupKey);
-                setTimeout(() => removeAllEquipmentImageBackgrounds().catch(() => 0).finally(() => equipmentBackgroundCleanupActiveForEvents.delete(cleanupKey)), 0);
-            }
+            const keepStudioMounted = (equipmentSearchOnlyRefresh || shell.querySelector('.gear-grid-item.is-dragging')) && !!shell.querySelector('.gear-studio');
             const queryText = getEquipmentQueryText();
             const query = normalizeEquipmentSearchKey(queryText);
-            const remoteSearchEnabled = shouldRunRemoteEquipmentSearch(queryText);
-            const remoteCacheKey = getEquipmentStorefrontCacheKey(queryText);
-            const totalPackwizardSources = PACKWIZARD_CATEGORY_META.length;
-            const remoteLoading = decathlonCatalogLoading
-                || gggCatalogLoading || hyperliteCatalogLoading || zpacksCatalogLoading
-                || gossamerCatalogLoading || outdoorVitalsCatalogLoading || sixMoonCatalogLoading
-                || gearxCatalogLoading || geartradeCatalogLoading || evoCatalogLoading
-                || equipmentExtraStorefrontSources.some((source) => source.loading);
-            const anyLoading = equipmentCatalogLoading || remoteLoading;
-
-            if (!equipmentEditOnlyRefresh && canEditEquipment && getPackwizardCatalogReadyCount() < totalPackwizardSources && !equipmentCatalogLoading && !equipmentCatalogError) {
-                ensureAllPackwizardCatalogLoaded().catch(() => {});
-            }
-            if (!equipmentEditOnlyRefresh && canEditEquipment && remoteSearchEnabled) {
-                const remoteLoaders = [
-                    [decathlonCatalogLoadedKeys, decathlonCatalogPendingKeys, decathlonCatalogError, () => ensureDecathlonCatalogLoaded('global', queryText)],
-                    [gggCatalogLoadedKeys, gggCatalogPendingKeys, gggCatalogError, () => ensureGggCatalogLoaded('global', queryText)],
-                    [hyperliteCatalogLoadedKeys, hyperliteCatalogPendingKeys, hyperliteCatalogError, () => ensureHyperliteCatalogLoaded('global', queryText)],
-                    [zpacksCatalogLoadedKeys, zpacksCatalogPendingKeys, zpacksCatalogError, () => ensureZpacksCatalogLoaded('global', queryText)],
-                    [gossamerCatalogLoadedKeys, gossamerCatalogPendingKeys, gossamerCatalogError, () => ensureGossamerCatalogLoaded('global', queryText)],
-                    [outdoorVitalsCatalogLoadedKeys, outdoorVitalsCatalogPendingKeys, outdoorVitalsCatalogError, () => ensureOutdoorVitalsCatalogLoaded('global', queryText)],
-                    [sixMoonCatalogLoadedKeys, sixMoonCatalogPendingKeys, sixMoonCatalogError, () => ensureSixMoonCatalogLoaded('global', queryText)],
-                    [gearxCatalogLoadedKeys, gearxCatalogPendingKeys, gearxCatalogError, () => ensureGearxCatalogLoaded('global', queryText)],
-                    [geartradeCatalogLoadedKeys, geartradeCatalogPendingKeys, geartradeCatalogError, () => ensureGeartradeCatalogLoaded('global', queryText)],
-                    [evoCatalogLoadedKeys, evoCatalogPendingKeys, evoCatalogError, () => ensureEvoCatalogLoaded('global', queryText)]
-                ];
-                remoteLoaders.forEach(([loaded, pending, error, load]) => {
-                    if (!loaded.has(remoteCacheKey) && !pending.has(remoteCacheKey) && !error) load().catch(() => {});
-                });
-                equipmentExtraStorefrontSources.forEach((source) => {
-                    if (!source.loadedKeys.has(remoteCacheKey) && !source.pendingKeys.has(remoteCacheKey) && !source.error) {
-                        ensureExtraStorefrontCatalogLoaded(source, queryText).catch(() => {});
-                    }
-                });
-            }
-
-            const matchedPackwizard = query ? getAllPackwizardCatalogItems()
-                .filter((item) => doesEquipmentItemMatchQuery(item, queryText))
-                .map((item) => ({ ...item, __source: 'packwizard' })) : [];
-            const catalogResults = query ? sortEquipmentSearchResults(mergeEquipmentSearchResults([
-                getTobaccoCatalogItems(queryText),
-                getEquipmentDiscoveryItems(queryText),
-                matchedPackwizard,
-                remoteSearchEnabled ? getGeartradeCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getGearxCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getEvoCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? equipmentExtraStorefrontSources.flatMap((source) => getExtraStorefrontCatalogItems(source, queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText))) : [],
-                remoteSearchEnabled ? getGossamerCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getHyperliteCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getZpacksCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getSixMoonCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getGggCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getOutdoorVitalsCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : [],
-                remoteSearchEnabled ? getDecathlonCatalogItems('global', queryText).filter((item) => doesEquipmentItemMatchQuery(item, queryText)) : []
-            ]), queryText) : [];
-            const visibleCatalog = catalogResults.slice(0, equipmentCatalogResultLimit);
-            equipmentCatalogHasMoreResults = catalogResults.length > visibleCatalog.length;
-            equipmentRenderedSearchResults = visibleCatalog.slice();
-            const combinedError = getEquipmentCombinedCatalogError();
-            const searchStatus = remoteLoading ? 'Ищу…' : `${catalogResults.length}`;
-
-            let libraryContent = '';
-            if (queryText && anyLoading && !visibleCatalog.length) {
-                libraryContent = '<div class="gear-empty">Ищу во всех каталогах…</div>';
-            } else if (queryText && !visibleCatalog.length && combinedError && !remoteLoading && !equipmentCatalogLoading) {
-                libraryContent = `<div class="gear-empty"><div>${escapeHtml(combinedError)}</div><button type="button" class="gear-action gear-action-primary" data-pw-refresh>Повторить</button></div>`;
-            } else if (queryText && !visibleCatalog.length) {
-                libraryContent = '<div class="gear-empty">Ничего не найдено.</div>';
-            } else if (queryText) {
-                libraryContent = visibleCatalog.map((item) => `
-                    <article class="gear-result ${item.imageUrl ? '' : 'is-without-image'}">
-                        ${item.imageUrl ? `<div class="gear-result-thumb" data-gear-preview-src="${escapeHtml(item.imageUrl)}" data-gear-preview-alt="${escapeHtml(item.name || 'Снаряжение')}"><img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" /></div>` : ''}
-                        <div>
-                            <div class="gear-result-source">${escapeHtml(getEquipmentSourceLabel(item.__source))}</div>
-                            <div class="gear-result-name">${escapeHtml(item.name || 'Без названия')}</div>
-                            <div class="gear-result-details"><span>${((item.packedWeight || item.weight) > 0) ? `${escapeHtml(formatImportedWeightKg(item.packedWeight || item.weight || 0))} кг` : 'вес не указан'}</span>${Number(item.lowestPrice || item.price || 0) > 0 ? `<span>${item.priceIsFrom ? 'от ' : ''}${escapeHtml(formatMoneyValue(Number(item.lowestPrice || item.price || 0)))}</span>` : ''}</div>
-                        </div>
-                        <div class="gear-result-actions"><button type="button" class="gear-action gear-action-primary gear-add-to-grid" data-pw-add-packed="${escapeHtml(item.__source || 'packwizard')}::${escapeHtml(String(item._id || ''))}" aria-label="Добавить в сетку снаряжения">＋ В сетку</button></div>
-                    </article>`).join('');
-            }
-
-            if (topSearchHost && !equipmentEditOnlyRefresh) {
-                topSearchHost.classList.toggle('hidden', !canEditEquipment);
+            if (canEditEquipment && topSearchHost) {
+                topSearchHost.classList.remove('hidden');
                 topSearchHost.classList.toggle('is-mobile-search-open', equipmentMobileSearchOpen);
-                topSearchHost.innerHTML = canEditEquipment ? `<div class="gear-top-search-row"><button type="button" class="gear-mobile-search-toggle" data-equipment-mobile-search aria-label="Открыть поиск" aria-expanded="${equipmentMobileSearchOpen ? 'true' : 'false'}">⌕</button><section class="gear-search-dock"><label><span class="gear-search-dock-glyph" aria-hidden="true">⌕</span><input type="search" id="pwCatalogSearchInput" value="${escapeHtml(equipmentCatalogSearch)}" placeholder="Найти снаряжение" autocomplete="off" /></label>${queryText ? `<div class="gear-search-state">${escapeHtml(searchStatus)}</div><div class="gear-search-results">${libraryContent}</div>` : ''}</section><div class="gear-top-metrics"><div class="gear-top-metric gear-top-metric-weight" title="Общий вес"><span>Вес</span><b title="${escapeHtml(formatEquipmentMeasure(stats.totalWeight, 'кг'))}">${escapeHtml(formatEquipmentMeasure(stats.totalWeight, 'кг'))}</b></div><div class="gear-top-metric gear-top-metric-count" title="Количество предметов"><span>Вещи</span><b title="${escapeHtml(`${stats.totalCount} шт.`)}">${escapeHtml(`${stats.totalCount} шт.`)}</b></div><div class="gear-top-metric gear-top-metric-cost" title="Общая стоимость"><span>Сумма</span><b title="${escapeHtml(formatMoneyValue(stats.totalCost || 0))}">${escapeHtml(formatMoneyValue(stats.totalCost || 0))}</b></div></div></div>` : '';
+                if (!topSearchHost.querySelector('#pwCatalogSearchInput')) {
+                    topSearchHost.innerHTML = `<div class="gear-top-search-row"><button type="button" class="gear-mobile-search-toggle" data-equipment-mobile-search aria-label="Открыть поиск" aria-expanded="false">⌕</button>
+                        <section class="gear-search-dock"><label><span class="gear-search-dock-glyph" aria-hidden="true">⌕</span><input type="search" id="pwCatalogSearchInput" aria-label="Поиск снаряжения в интернете" placeholder="Поиск снаряжения в интернете" autocomplete="off" maxlength="160"></label>
+                        <div class="gear-search-state" role="status" hidden></div><div class="gear-search-results" hidden></div></section>
+                        <div class="gear-top-metrics"><div class="gear-top-metric"><span>Вес</span><b></b></div><div class="gear-top-metric"><span>Предметы</span><b></b></div><div class="gear-top-metric"><span>Стоимость</span><b></b></div></div></div>`;
+                }
+                refreshEquipmentMetricsInPlace();
+                const input = topSearchHost.querySelector('#pwCatalogSearchInput');
+                const state = topSearchHost.querySelector('.gear-search-state');
+                const results = topSearchHost.querySelector('.gear-search-results');
+                if (!equipmentSearchOnlyRefresh && input.value !== equipmentCatalogSearch) input.value = equipmentCatalogSearch;
+                ensureEquipmentWebSearchLoaded(queryText);
+                const web = equipmentWebSearchByKey.get(query);
+                const searching = equipmentWebSearchRequest?.key === query;
+                const webItems = Array.isArray(web) ? web : [];
+                const catalogItems = query ? getAllPackwizardCatalogItems()
+                    .filter((item) => doesEquipmentItemMatchQuery(item, queryText))
+                    .map((item) => ({ ...item, __source: 'packwizard' })) : [];
+                if (shouldRunRemoteEquipmentSearch(queryText) && getPackwizardCatalogReadyCount() < PACKWIZARD_CATEGORY_META.length && !equipmentCatalogLoading && !equipmentCatalogError) {
+                    ensureAllPackwizardCatalogLoaded().catch(() => {});
+                }
+                const all = [...webItems, ...catalogItems];
+                equipmentRenderedSearchResults = all.slice(0, equipmentCatalogResultLimit);
+                equipmentCatalogHasMoreResults = all.length > equipmentRenderedSearchResults.length;
+                state.textContent = searching ? 'Поиск в интернете…' : all.length ? `${all.length}` : '';
+                state.hidden = !query || !state.textContent;
+                const resultMarkup = equipmentRenderedSearchResults.map((item) => {
+                    const price = Number(item.originalPrice) > 0 && /^[A-Z]{3}$/.test(item.originalCurrency)
+                        ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: item.originalCurrency }).format(item.originalPrice)
+                        : Number(item.lowestPrice || item.price) > 0 ? formatMoneyValue(item.lowestPrice || item.price) : 'цена не указана';
+                    const grams = Number(item.packedWeight || item.weight);
+                    const weight = grams > 0 ? `${grams >= 1000 ? formatImportedWeightKg(grams) + ' кг' : Math.round(grams) + ' г'}` : 'вес не указан';
+                    const name = escapeHtml(item.name || 'Без названия');
+                    const href = /^https?:\/\//i.test(item.url || '') ? escapeHtml(item.url) : '';
+                    return `<article class="gear-result">
+                        <div class="gear-result-thumb">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '◇'}</div>
+                        <div><div class="gear-result-source">${escapeHtml(item.seller || getEquipmentSourceLabel(item.__source))}</div>
+                        <div class="gear-result-name">${href ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${name}</a>` : name}</div>
+                        <div class="gear-result-details"><span>${escapeHtml(weight)}</span><span>${escapeHtml(price)}</span></div></div>
+                        <button type="button" class="gear-action gear-action-primary gear-add-to-grid" data-pw-add-packed="${escapeHtml(item.__source)}::${escapeHtml(item._id)}">Добавить</button>
+                    </article>`;
+                }).join('');
+                const statusMarkup = web === null ? '<div class="gear-empty">Веб-поиск временно недоступен <button type="button" class="gear-action gear-action-primary" data-pw-refresh>Повторить</button></div>'
+                    : !resultMarkup && shouldRunRemoteEquipmentSearch(queryText) ? `<div class="gear-empty">${searching ? 'Ищу товары и характеристики…' : 'По этому запросу ничего не найдено'}</div>` : '';
+                const markup = resultMarkup + statusMarkup;
+                if (results.equipmentMarkup !== markup) {
+                    const sameQuery = results.dataset.query === query;
+                    const scrollTop = sameQuery ? results.scrollTop : 0;
+                    results.dataset.query = query;
+                    results.equipmentMarkup = markup;
+                    results.innerHTML = markup;
+                    results.scrollTop = scrollTop;
+                }
+                results.hidden = !markup || (!equipmentSearchOpen && !equipmentMobileSearchOpen);
+            } else if (topSearchHost) {
+                topSearchHost.classList.add('hidden');
+                topSearchHost.innerHTML = '';
+                ensureEquipmentWebSearchLoaded('');
             }
 
-            const backpackItem = getEquipmentBackpackItem(packItems);
-            const backpackNameKey = normalizeEquipmentSearchKey(backpackItem && backpackItem.label || '');
-            const backpackImageKey = String(backpackItem && backpackItem.imageUrl || '').trim();
-            // Historical imports can leave a catalogue copy beside the item later assigned as a backpack.
-            // The centre is visual-only, so matching copies stay in data but never duplicate it on the rays.
-            const orbitItems = packItems.filter((item) => {
-                if (!item || item.role === 'backpack' || (backpackItem && item.rowId === backpackItem.rowId)) return false;
-                if (!backpackItem) return true;
-                const samePhoto = backpackImageKey && String(item.imageUrl || '').trim() === backpackImageKey;
-                const sameName = backpackNameKey && normalizeEquipmentSearchKey(item.label || '') === backpackNameKey;
-                return !samePhoto && !sameName;
-            });
-            const renderOrbitItem = (item, index) => {
-                const layout = getEquipmentOrbitLayout(index, orbitItems.length);
-                const hasImage = Boolean(item.imageUrl);
-                const editable = canEditEquipment;
-                return `<div class="gear-orbit-ray" data-gear-phase="${layout.phase}" data-gear-lane="${layout.lane}"></div>
-                    <article class="gear-orbit-item" data-gear-phase="${layout.phase}" data-gear-lane="${layout.lane}" data-equipment-card="${escapeHtml(item.rowId)}" draggable="${editable ? 'true' : 'false'}">
-                        <div class="gear-orbit-photo-wrap">
-                            ${hasImage ? `<img class="gear-orbit-photo" src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" data-gear-preview-src="${escapeHtml(item.imageUrl)}" data-gear-preview-alt="${escapeHtml(item.label)}" />` : '<span class="gear-orbit-photo-empty" aria-hidden="true">✦</span>'}
-                        </div>
-                        <div class="gear-orbit-copy">
-                            ${editable ? `<input class="gear-orbit-input gear-orbit-name" data-equipment-edit="name" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.label)}" aria-label="Название" />
-                                <div class="gear-orbit-editor"><label><input class="gear-orbit-input" type="text" inputmode="decimal" data-equipment-edit="weight" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.weight ? formatEquipmentNumber(item.weight) : '')}" aria-label="Вес" /><span>кг</span></label><label><input class="gear-orbit-input" type="text" inputmode="decimal" data-equipment-edit="cost" data-equipment-row="${escapeHtml(item.rowId)}" value="${escapeHtml(item.cost ? formatEquipmentNumber(item.cost) : '')}" aria-label="Стоимость" /><span>₽</span></label></div>` : `<div class="gear-orbit-name" title="${escapeHtml(item.label)}">${escapeHtml(item.label)}</div><div class="gear-orbit-meta">${escapeHtml(formatEquipmentMeasure(item.weight, 'кг'))} · ${escapeHtml(formatMoneyValue(item.cost || 0))}</div>`}
-                            ${editable ? `<div class="gear-orbit-actions"><button type="button" class="gear-orbit-centre" data-equipment-set-backpack="${escapeHtml(item.rowId)}">В центр</button><button type="button" class="gear-orbit-remove" data-equipment-remove="${escapeHtml(item.rowId)}">Убрать</button></div>` : ''}
-                        </div>
-                    </article>`;
-            };
-
-            if (!keepOrbitMounted) {
-                shell.classList.remove('hidden');
-                shell.innerHTML = `
-                <div class="gear-workbench ${canEditEquipment ? '' : 'gear-orbit-readonly'}">
-                    <section class="gear-orbit-stage ${equipmentOrbitExpanded ? 'is-expanded' : 'is-collected'}" aria-label="Рюкзак и снаряжение">
-                        ${orbitItems.map(renderOrbitItem).join('')}
-                        <button type="button" class="gear-orbit-backpack" data-equipment-toggle-orbit aria-expanded="${equipmentOrbitExpanded ? 'true' : 'false'}" aria-label="${equipmentOrbitExpanded ? 'Собрать снаряжение' : 'Показать снаряжение'}" ${backpackItem ? `data-equipment-card="${escapeHtml(backpackItem.rowId)}"` : ''}>
-                            ${backpackItem && backpackItem.imageUrl
-                                ? `<img class="gear-orbit-backpack-photo" src="${escapeHtml(backpackItem.imageUrl)}" alt="${escapeHtml(backpackItem.label)}" loading="lazy" /><div class="gear-orbit-backpack-name">${escapeHtml(backpackItem.label)}</div>`
-                                : `<div class="gear-orbit-backpack-placeholder">${canEditEquipment ? 'Добавьте предмет через поиск, затем выберите «В центр» на его луче' : 'Рюкзак пока не выбран'}</div>`}
-                            <div class="gear-orbit-weight">${escapeHtml(formatEquipmentMeasure(stats.totalWeight, 'кг'))}</div>
-                            <div class="gear-orbit-count">${escapeHtml(`${stats.totalCount} предметов`)}</div>
-                        </button>
-                        ${!orbitItems.length && backpackItem ? '<div class="gear-orbit-empty">Добавьте остальное снаряжение — оно появится на лучах вокруг рюкзака.</div>' : ''}
+            if (!keepStudioMounted) {
+                const backpack = getEquipmentBackpackItem(packItems);
+                const items = packItems.filter((item) => item.rowId !== backpack?.rowId);
+                const columns = window.innerWidth <= 620 ? 3 : 5;
+                const rows = Math.ceil(items.length / columns);
+                const tiles = items.map((item, index) => {
+                    const x = item.gridX ? (item.gridX - 1) / 7 : (index % columns) / (columns - 1);
+                    const y = item.gridY ? (item.gridY - 1) / 5 : Math.floor(index / columns) / Math.max(4, rows - 1);
+                    return `<button type="button" class="gear-grid-item" data-row-id="${escapeHtml(item.rowId)}" ${canEditEquipment ? 'data-editable' : ''} style="--grid-x:${x};--grid-y:${y}" aria-label="${escapeHtml(item.label)}">
+                        <span class="gear-grid-item-photo">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" draggable="false">` : '◇'}</span>
+                        <span class="gear-grid-item-copy"><strong>${escapeHtml(item.label)}</strong><span>${item.weight ? escapeHtml(formatEquipmentMeasure(item.weight, 'кг')) : '—'} · ${item.cost ? escapeHtml(formatMoneyValue(item.cost)) : '—'}</span></span>
+                    </button>`;
+                }).join('');
+                const image = backpack?.imageUrl ? `<img src="${escapeHtml(backpack.imageUrl)}" alt="" draggable="false">` : 'Фото рюкзака';
+                const markup = `<div class="gear-studio ${equipmentGridOpen ? 'is-open' : ''}">
+                    <section class="gear-pack-focus" aria-label="Рюкзак">
+                        ${backpack ? `<button type="button" class="gear-pack-focus-photo" data-equipment-toggle-grid aria-controls="equipmentGridPanel" aria-expanded="${equipmentGridOpen}" aria-label="Снаряжение в рюкзаке">${image}</button>
+                        <button type="button" class="gear-pack-focus-name" data-gear-grid-info="${escapeHtml(backpack.rowId)}">${escapeHtml(backpack.label)}</button>` : `<button type="button" class="gear-pack-focus-photo" data-equipment-toggle-grid aria-controls="equipmentGridPanel" aria-expanded="${equipmentGridOpen}">Открыть снаряжение</button>`}
+                        <span class="gear-pack-focus-metrics">${stats.totalCount} шт. · ${escapeHtml(formatEquipmentMeasure(stats.totalWeight, 'кг'))} · ${escapeHtml(formatMoneyValue(stats.totalCost))}</span>
+                    </section>
+                    <section class="gear-grid-panel" id="equipmentGridPanel" aria-labelledby="gear-grid-title" ${equipmentGridOpen ? '' : 'inert'}>
+                        <header class="gear-grid-head"><h2 id="gear-grid-title">Снаряжение</h2></header>
+                        <div class="gear-grid" style="--grid-content-height:${rows * 116}px">${tiles || '<p class="gear-grid-empty">Здесь появятся добавленные предметы</p>'}</div>
                     </section>
                 </div>`;
+                shell.classList.remove('hidden');
+                if (shell.equipmentMarkup !== markup) {
+                    shell.equipmentMarkup = markup;
+                    shell.innerHTML = markup;
+                }
             }
-            restoreEquipmentSearchInputState(searchInputState);
-            if (!keepOrbitMounted) startEquipmentRectangleOrbit(shell);
-            const nextSearchResults = topSearchHost ? topSearchHost.querySelector('.gear-search-results') : null;
-            if (nextSearchResults && equipmentCatalogScrollTop > 0) nextSearchResults.scrollTop = equipmentCatalogScrollTop;
         }
         function updateQuickStats(result) {
             const data = result || calculateExpenses();
@@ -21930,9 +21984,6 @@
             window.addEventListener('resize', () => {
                 const menu = document.getElementById('sectionMenu');
                 if (menu && !menu.classList.contains('hidden')) positionSectionMenu();
-                if (document.body.classList.contains('equipment-mode')) {
-                    startEquipmentRectangleOrbit(document.getElementById('equipmentExperience'));
-                }
             });
 
             document.getElementById('sectionMenu').addEventListener('click', (e) => {
@@ -22004,25 +22055,17 @@
                         e.target.closest('.gear-detail-modal')?.remove();
                         return;
                     }
-                    const orbitToggle = e.target.closest('[data-equipment-toggle-orbit]');
-                    if (orbitToggle) {
-                        equipmentOrbitExpanded = !equipmentOrbitExpanded;
-                        const stage = equipmentExperience.querySelector('.gear-orbit-stage');
-                        if (stage) {
-                            // Remove the outgoing cascade before collection so rays and cards start together.
-                            stage.querySelectorAll('.gear-orbit-item, .gear-orbit-ray').forEach((node) => { node.style.transitionDelay = '0ms'; });
-                            stage.classList.toggle('is-expanded', equipmentOrbitExpanded);
-                            stage.classList.toggle('is-collected', !equipmentOrbitExpanded);
-                            orbitToggle.setAttribute('aria-expanded', String(equipmentOrbitExpanded));
-                            orbitToggle.setAttribute('aria-label', equipmentOrbitExpanded ? 'Собрать снаряжение' : 'Показать снаряжение');
-                        }
-                        startEquipmentRectangleOrbit(equipmentExperience);
+                    const toggle = e.target.closest('[data-equipment-toggle-grid]');
+                    if (toggle) {
+                        equipmentGridOpen = !equipmentGridOpen;
+                        toggle.closest('.gear-studio').classList.toggle('is-open', equipmentGridOpen);
+                        toggle.setAttribute('aria-expanded', String(equipmentGridOpen));
+                        document.getElementById('equipmentGridPanel').inert = !equipmentGridOpen;
                         return;
                     }
-                    const mobileCard = e.target.closest('.gear-orbit-item[data-equipment-card]');
-                    if (mobileCard && window.matchMedia('(max-width: 760px)').matches) {
-                        const item = getEquipmentItemByRowId(mobileCard.dataset.equipmentCard);
-                        if (item) showEquipmentItemDetail(item);
+                    const detail = e.target.closest('[data-gear-grid-info], .gear-grid-item');
+                    if (detail) {
+                        if (!suppressEquipmentClick) showEquipmentItemDetail(getEquipmentItemByRowId(detail.dataset.gearGridInfo || detail.dataset.rowId));
                         return;
                     }
                     const addPackedBtn = e.target.closest('[data-pw-add-packed]');
@@ -22085,18 +22128,65 @@
                     const results = document.querySelector('#equipmentTopSearch .gear-search-results');
                     if (results) results.hidden = false;
                 });
-                equipmentExperience.addEventListener('change', (e) => {
-                    const input = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
-                    if (!input) return;
-                    e.stopPropagation();
-                    equipmentEditOnlyRefresh = true;
-                    try {
-                        updateEquipmentItem(input.dataset.equipmentRow, input.dataset.equipmentEdit, input.value);
-                    } finally {
-                        equipmentEditOnlyRefresh = false;
-                    }
+                let equipmentPointerDrag = null;
+                let suppressEquipmentClick = false;
+                equipmentExperience.addEventListener('pointerdown', (event) => {
+                    const card = event.target.closest('.gear-grid-item[data-editable]');
+                    if (!card || equipmentPointerDrag || event.button !== 0 || !canEditEquipmentEvent()) return;
+                    const rect = card.getBoundingClientRect();
+                    equipmentPointerDrag = {
+                        card, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY,
+                        offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top,
+                        x: Number(card.style.getPropertyValue('--grid-x')),
+                        y: Number(card.style.getPropertyValue('--grid-y')),
+                        moved: false
+                    };
+                    card.setPointerCapture(event.pointerId);
                 });
+                equipmentExperience.addEventListener('pointermove', (event) => {
+                    const drag = equipmentPointerDrag;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    if (!drag.moved && Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 5) return;
+                    const card = drag.card;
+                    const rect = card.parentElement.getBoundingClientRect();
+                    drag.moved = true;
+                    card.classList.add('is-dragging');
+                    drag.nextX = Math.min(1, Math.max(0, (event.clientX - rect.left - drag.offsetX) / Math.max(1, rect.width - card.offsetWidth)));
+                    drag.nextY = Math.min(1, Math.max(0, (event.clientY - rect.top - drag.offsetY) / Math.max(1, rect.height - card.offsetHeight)));
+                    card.style.setProperty('--grid-x', drag.nextX);
+                    card.style.setProperty('--grid-y', drag.nextY);
+                });
+                const finishEquipmentDrag = (event) => {
+                    const drag = equipmentPointerDrag;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    equipmentPointerDrag = null;
+                    drag.card.classList.remove('is-dragging');
+                    if (!drag.moved) return;
+                    suppressEquipmentClick = true;
+                    setTimeout(() => { suppressEquipmentClick = false; }, 0);
+                    if (event.type === 'pointerup') {
+                        setEquipmentGridPosition(drag.card.dataset.rowId, 1 + drag.nextX * 7, 1 + drag.nextY * 5);
+                    } else {
+                        drag.card.style.setProperty('--grid-x', drag.x);
+                        drag.card.style.setProperty('--grid-y', drag.y);
+                    }
+                };
+                equipmentExperience.addEventListener('pointerup', finishEquipmentDrag);
+                equipmentExperience.addEventListener('pointercancel', finishEquipmentDrag);
+                equipmentExperience.addEventListener('lostpointercapture', finishEquipmentDrag);
                 equipmentExperience.addEventListener('keydown', (e) => {
+                    const card = e.target.closest('.gear-grid-item[data-editable]');
+                    const direction = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+                    if (card && Array.isArray(direction)) {
+                        e.preventDefault();
+                        const [dx, dy] = direction;
+                        const x = Number(card.style.getPropertyValue('--grid-x')) + dx * .04;
+                        const y = Number(card.style.getPropertyValue('--grid-y')) + dy * .04;
+                        if (setEquipmentGridPosition(card.dataset.rowId, 1 + x * 7, 1 + y * 5)) {
+                            equipmentExperience.querySelector(`[data-row-id="${CSS.escape(card.dataset.rowId)}"]`)?.focus({ preventScroll: true });
+                        }
+                        return;
+                    }
                     const input = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
                     if (!input || e.key !== 'Enter') return;
                     e.preventDefault();
@@ -22143,6 +22233,7 @@
                 equipmentTopSearch.addEventListener('input', (e) => {
                     const input = e.target && e.target.closest ? e.target.closest('#pwCatalogSearchInput') : null;
                     if (!input) return;
+                    equipmentSearchOpen = true;
                     const nextSearch = input.value || '';
                     if (nextSearch !== equipmentCatalogSearch) { equipmentCatalogResultLimit = 30; equipmentCatalogScrollTop = 0; }
                     equipmentCatalogSearch = nextSearch;
@@ -22151,10 +22242,22 @@
                     if (equipmentCatalogSearchDebounceTimer) clearTimeout(equipmentCatalogSearchDebounceTimer);
                     equipmentCatalogSearchDebounceTimer = setTimeout(() => { equipmentCatalogSearchDebounceTimer = null; scheduleEquipmentSearchRefresh(); }, 90);
                 });
+                equipmentTopSearch.addEventListener('focusin', (event) => {
+                    if (event.target.id !== 'pwCatalogSearchInput') return;
+                    equipmentSearchOpen = true;
+                    refreshEquipmentSearchResultsOnly();
+                });
                 equipmentTopSearch.addEventListener('click', (e) => {
+                    if (e.target.closest('[data-pw-refresh]')) {
+                        equipmentWebSearchByKey.delete(normalizeEquipmentSearchKey(getEquipmentQueryText()));
+                        refreshEquipmentSearchResultsOnly();
+                        return;
+                    }
                     const mobileSearchToggle = e.target.closest('[data-equipment-mobile-search]');
                     if (mobileSearchToggle) {
                         equipmentMobileSearchOpen = !equipmentMobileSearchOpen;
+                        equipmentSearchOpen = equipmentMobileSearchOpen;
+                        refreshEquipmentSearchResultsOnly();
                         equipmentTopSearch.classList.toggle('is-mobile-search-open', equipmentMobileSearchOpen);
                         mobileSearchToggle.setAttribute('aria-expanded', String(equipmentMobileSearchOpen));
                         mobileSearchToggle.setAttribute('aria-label', equipmentMobileSearchOpen ? 'Закрыть поиск' : 'Открыть поиск');
@@ -22181,6 +22284,7 @@
 
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#equipmentTopSearch')) {
+                    equipmentSearchOpen = false;
                     equipmentMobileSearchOpen = false;
                     document.getElementById('equipmentTopSearch')?.classList.remove('is-mobile-search-open');
                     const results = document.querySelector('#equipmentTopSearch .gear-search-results');
