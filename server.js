@@ -10077,7 +10077,7 @@ const server = http.createServer((req, res) => {
     proxyEquipmentCatalogRequest(urlObj, req, res, corsHeaders);
     return;
   }
-  if (urlObj.pathname === '/equipment-web-search') {
+  if (/^\/(?:api\/)?equipment-web-search\/?$/.test(urlObj.pathname)) {
     handleEquipmentWebSearch(urlObj, req, res, corsHeaders).catch(() => writeJsonResponse(res, 502, corsHeaders, { items: [] }));
     return;
   }

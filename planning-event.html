@@ -7717,6 +7717,7 @@
     </style>
     <link rel="stylesheet" href="kinosreda-shell.css?v=20261010perf">
     <script src="kinosreda-shell.js?v=20261113barnav" defer></script>
+    <script src="beer-image-process.js?v=20261125"></script>
 
 <style id="equipment-studio-overrides">
 html:has(body.equipment-mode),
@@ -7784,8 +7785,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
     transition:opacity .25s ease,transform .32s ease;
 }
 .gear-grid-panel[inert] { position:absolute; inset:0 0 auto 22%; margin:0; opacity:0; visibility:hidden; transform:translateX(10px); }
-.gear-grid-head { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 16px; padding:0 10px 10px; }
-.gear-grid-head h2 { margin:0; color:var(--studio-ink); font-size:clamp(16px,2vw,22px); }
+.gear-back-to-pack { display:none; }
 .gear-grid {
     --item-width:min(27vw,136px);
     --item-height:106px;
@@ -7830,11 +7830,25 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 .gear-search-results .gear-result-thumb { width:48px; height:48px; }
 .gear-result-name a:hover { text-decoration:underline; }
 @media (max-width:620px) {
-    .gear-studio.is-open .gear-pack-focus { top:42px; left:10%; width:19%; }
-    .is-open .gear-pack-focus-photo { height:92px; }
-    .is-open .gear-pack-focus-name,.is-open .gear-pack-focus-metrics { font-size:10px; overflow-wrap:anywhere; }
-    .gear-grid-panel { margin-left:21%; }
-    .gear-grid { --item-width:24vw; }
+    .gear-studio.is-open .gear-pack-focus { display:none; }
+    .gear-grid-panel { margin:0; }
+    .gear-grid-panel[inert] { inset-inline:0; }
+    .gear-grid { --item-width:24vw; --item-height:90px; }
+    .gear-grid-item-copy strong { display:none; }
+    .is-open .gear-back-to-pack {
+        display:flex;
+        align-items:center;
+        align-self:flex-start;
+        gap:6px;
+        min-height:36px;
+        margin:0 0 6px;
+        padding:0 9px;
+        border:0;
+        border-radius:9px;
+        background:rgba(28,33,41,.84);
+        color:var(--studio-ink);
+        font-size:12px;
+    }
     .gear-search-results .gear-result { grid-template-columns:40px minmax(0,1fr) auto; }
     .gear-search-results .gear-result-thumb { width:40px; height:40px; }
 }
@@ -8441,6 +8455,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         ];
         const equipmentWebSearchByKey = new Map();
         let equipmentWebSearchRequest = null;
+        let equipmentWebSearchPath = '/api/equipment-web-search';
 
         async function ensureEquipmentWebSearchLoaded(query) {
             const key = normalizeEquipmentSearchKey(query);
@@ -8452,21 +8467,23 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             const controller = new AbortController();
             equipmentWebSearchRequest = { key, controller };
             const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
-            const base = local ? location.origin : getEquipmentCatalogProxyBase();
+            const base = local && location.port === '8090' ? location.origin : getEquipmentCatalogProxyBase();
             const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]);
-            const fetchResults = async (origin) => {
-                const endpoint = new URL('/equipment-web-search', origin);
+            const fetchResults = async (path) => {
+                const endpoint = new URL(path, base);
                 endpoint.searchParams.set('q', query);
                 const response = await fetch(endpoint, { signal });
-                if (!response.ok) throw new Error('equipment_web_search_unavailable');
+                if (!response.ok) throw Object.assign(new Error('equipment_web_search_unavailable'), { status: response.status });
                 const payload = await response.json();
                 if (!Array.isArray(payload.items)) throw new Error('invalid_equipment_search_response');
                 return payload.items;
             };
             try {
-                const items = await fetchResults(base).catch((error) => {
-                    if (!local || location.port === '8090' || signal.aborted) throw error;
-                    return fetchResults('http://127.0.0.1:8090');
+                const items = await fetchResults(equipmentWebSearchPath).catch(async (error) => {
+                    if (error.status !== 404 || signal.aborted || equipmentWebSearchPath === '/equipment-web-search') throw error;
+                    const legacyItems = await fetchResults('/equipment-web-search');
+                    equipmentWebSearchPath = '/equipment-web-search';
+                    return legacyItems;
                 });
                 equipmentWebSearchByKey.set(key, items);
                 if (equipmentWebSearchByKey.size > 40) equipmentWebSearchByKey.delete(equipmentWebSearchByKey.keys().next().value);
@@ -8482,19 +8499,18 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         let equipmentSearchOpen = false;
         let equipmentGridOpen = false;
         let equipmentCatalogSearchDebounceTimer = null;
-        let equipmentCatalogSearchRenderTimer = null;
+
         // Search changes only the search panel; the map remains mounted and never restarts its reveal animation.
         let equipmentSearchOnlyRefresh = false;
         let equipmentSearchOnlyRefreshFrame = null;
         let equipmentRenderedSearchResults = [];
-        let equipmentCatalogResultLimit = 48;
-        let equipmentCatalogLazyLoadRaf = null;
-        let equipmentCatalogScrollTop = 0;
-        let equipmentPackScrollTop = 0;
-        let equipmentCatalogHasMoreResults = false;
         // Prevent concurrent cleanup runs; each row itself remembers when its transparent image is ready.
-        const equipmentBackgroundCleanupActiveForEvents = new Set();
-        const equipmentBackgroundCleanupAttemptedRows = new Set();
+        let equipmentBackgroundCleanupRunning = false;
+        const equipmentBackgroundCleanupAttempts = new Map();
+        const equipmentPendingLayout = new Map();
+        let equipmentLayoutLoaded = false;
+        let equipmentLayoutSaving = false;
+        let equipmentLayoutTimer = null;
         let equipmentCurrencyRatesLoading = false;
         let equipmentCurrencyRatesUpdatedAt = 0;
         let equipmentCurrencyRatesPromise = null;
@@ -9278,6 +9294,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             const previousData = eventData;
             const nextData = snapshotData.data;
             const nextSig = snapshotData.signature;
+            if (isEquipmentEvent() && canEditEquipmentEvent()) {
+                loadPendingEquipmentLayout();
+                applyPendingEquipmentLayout(nextData);
+            }
             const shouldRenderNow = options.render !== false;
             eventData = nextData;
             eventDataSignature = nextSig;
@@ -9844,7 +9864,6 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 
         function refreshEquipmentSearchResultsOnly() {
             if (!isEquipmentEvent() || equipmentSearchOnlyRefreshFrame) return;
-            // Many providers settle together: one animation-frame refresh makes them feel like one search.
             equipmentSearchOnlyRefreshFrame = requestAnimationFrame(() => {
                 equipmentSearchOnlyRefreshFrame = null;
                 equipmentSearchOnlyRefresh = true;
@@ -9853,16 +9872,25 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             });
         }
 
-        function scheduleEquipmentSearchRefresh() {
-            if (equipmentCatalogSearchRenderTimer) {
-                clearTimeout(equipmentCatalogSearchRenderTimer);
+        function scheduleEquipmentSearchRefresh(immediate = false) {
+            clearTimeout(equipmentCatalogSearchDebounceTimer);
+            equipmentCatalogSearchDebounceTimer = null;
+            const query = getEquipmentQueryText();
+            const key = normalizeEquipmentSearchKey(query);
+            if (equipmentWebSearchRequest && equipmentWebSearchRequest.key !== key) {
+                equipmentWebSearchRequest.controller.abort();
+                equipmentWebSearchRequest = null;
             }
-            equipmentCatalogSearchRenderTimer = setTimeout(() => {
-                equipmentCatalogSearchRenderTimer = null;
-                equipmentSearchOnlyRefresh = true;
-                renderEquipmentExperience();
-                equipmentSearchOnlyRefresh = false;
-            }, 120);
+            const submit = () => {
+                equipmentCatalogSearchDebounceTimer = null;
+                ensureEquipmentWebSearchLoaded(query);
+                refreshEquipmentSearchResultsOnly();
+            };
+            if (immediate) submit();
+            else if (shouldRunRemoteEquipmentSearch(query) && !equipmentWebSearchByKey.has(key)) {
+                equipmentCatalogSearchDebounceTimer = setTimeout(submit, 420);
+            }
+            refreshEquipmentSearchResultsOnly();
         }
 
         function buildPackwizardSearchText(item) {
@@ -9880,7 +9908,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         }
 
         function normalizeEquipmentSearchKey(query = '') {
-            return String(query || '').trim().toLowerCase();
+            return String(query || '').normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
         }
 
         function shouldRunRemoteEquipmentSearch(queryText = '') {
@@ -10587,6 +10615,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 document.body.classList.toggle('equipment-mode', isEquipmentEvent());
                 if (isEquipmentEvent()) {
                     renderEquipmentExperience();
+                    if (initialDataSnapshotReady) scheduleEquipmentLayoutSave();
                 }
                 const title = eventNameValue || 'Мероприятие';
                 const titleEl = document.getElementById('eventTitle');
@@ -10676,6 +10705,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 reconcilePendingCellValueLocks(nextData);
                 applyPendingCellValueLocks(nextData);
                 const nextSig = stableSerialize(nextData);
+                if (isEquipmentEvent() && canEditEquipmentEvent()) {
+                    loadPendingEquipmentLayout();
+                    scheduleEquipmentLayoutSave();
+                }
                 const isEmptyRemote = !val || !val.sections;
 
                 if (pendingLocalEventDataEchoes.has(nextSig) || (eventDataPendingEchoSignature && nextSig === eventDataPendingEchoSignature)) {
@@ -10836,8 +10869,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                             equipmentImagePrepared: !!(row && row.equipmentImagePrepared) || (!row?.equipmentBackgroundPending && !!String(row && row.equipmentImageUrl || '').trim()),
                             equipmentBackgroundPending: !!(row && row.equipmentBackgroundPending),
                             equipmentRole: String(row && row.equipmentRole || '').trim() === 'backpack' ? 'backpack' : '',
-                            ...(Number.isFinite(row.equipmentGridX) ? { equipmentGridX: row.equipmentGridX } : {}),
-                            ...(Number.isFinite(row.equipmentGridY) ? { equipmentGridY: row.equipmentGridY } : {}),
+                            ...(Number(row.equipmentGridX) >= 1 && Number(row.equipmentGridX) <= 8 ? { equipmentGridX: Number(row.equipmentGridX) } : {}),
+                            ...(Number(row.equipmentGridY) >= 1 && Number(row.equipmentGridY) <= 6 ? { equipmentGridY: Number(row.equipmentGridY) } : {}),
                             position: normalizeRowPositionValue(row.position ?? row.sortOrder ?? row.order, rowIndex),
                             closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
                                 normalizedBeerBacklog.status === 'done'
@@ -10963,6 +10996,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                             const remoteRow = remoteRows.get(String(localRow && localRow.id || '')) || null;
                             return {
                                 ...localRow,
+                                ...(options.preserveEquipmentLayout && remoteRow ? {
+                                    equipmentGridX: remoteRow.equipmentGridX,
+                                    equipmentGridY: remoteRow.equipmentGridY
+                                } : {}),
                                 participants: Array.isArray(localRow && localRow.participants) ? localRow.participants.slice() : localRow && localRow.participants,
                                 participantCoefficients: localRow && localRow.participantCoefficients
                                     ? { ...localRow.participantCoefficients }
@@ -10982,14 +11019,14 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             };
         }
 
-        function runEventDataCommitTransaction(buildNextData, equipmentRevision = null) {
+        function runEventDataCommitTransaction(buildNextData, equipmentRevision = null, { layoutOnly = false } = {}) {
             if (!eventId || !db || typeof buildNextData !== 'function') {
                 return Promise.resolve({ committed: false, data: null, signature: '' });
             }
             const ref = db.ref(`planning/data/${eventId}`);
             const task = () => new Promise((resolve) => {
                 let lastAppliedData = null;
-                eventDataDirty = true;
+                if (!layoutOnly) eventDataDirty = true;
                 ref.transaction((current) => {
                     const currentData = (!current || !current.sections)
                         ? { sections: [], layoutRows: [] }
@@ -11004,7 +11041,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 }, (error, committed, snapshot) => {
                     const superseded = equipmentRevision !== null && equipmentRevision !== equipmentSaveRevision;
                     if (error || !committed) {
-                        if (!superseded) {
+                        if (!superseded && !layoutOnly) {
                             eventDataDirty = !!saveTimer;
                             flushQueuedRemoteEventDataSnapshot();
                         }
@@ -11016,12 +11053,17 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         ? { sections: [], layoutRows: [] }
                         : normalizeEventData(rawValue);
                     const committedSignature = stableSerialize(committedData);
+                    if (layoutOnly) {
+                        resolve({ committed: true, data: committedData, signature: committedSignature });
+                        return;
+                    }
                     eventDataPendingEchoSignature = committedSignature;
                     pendingLocalEventDataEchoes.add(committedSignature);
                     if (superseded) {
                         resolve({ committed: true, data: committedData, signature: committedSignature });
                         return;
                     }
+                    if (equipmentRevision !== null) applyPendingEquipmentLayout(committedData);
                     eventData = committedData;
                     eventDataSignature = committedSignature;
                     initialDataSnapshotReady = true;
@@ -11150,8 +11192,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             clearPendingCellValueSaves();
             runEventDataCommitTransaction((remoteData) => {
                 const payloadSource = mergeEventDataForCommit(remoteData, localSnapshot, {
-                    preferLocalCellKeys: dirtyKeysSnapshot
+                    preferLocalCellKeys: dirtyKeysSnapshot,
+                    preserveEquipmentLayout: equipmentRevision !== null
                 });
+                if (equipmentRevision !== null) applyPendingEquipmentLayout(payloadSource);
                 return payloadSource;
             }, equipmentRevision).catch(() => {
                 if (equipmentRevision === null || equipmentRevision === equipmentSaveRevision) eventDataDirty = !!saveTimer;
@@ -11938,23 +11982,9 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         function removeEquipmentItem(rowId) {
             if (!canEditEquipmentEvent()) return false;
             if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
-            let removed = false;
-            eventData.sections.forEach((section) => {
-                if (!section || !Array.isArray(section.rows) || !Array.isArray(section.columns)) return;
-                if (!section.columns.some((column) => column && column.id === 'weight')) return;
-                const nextRows = section.rows.filter((row) => {
-                    if (!row || row.id !== rowId) return true;
-                    removed = true;
-                    return false;
-                });
-                if (nextRows.length !== section.rows.length) {
-                    section.rows = nextRows;
-                    reindexSectionRows(section);
-                }
-            });
-            if (!removed) return false;
-            markEventDataChanged();
-            saveEventData();
+            const section = eventData.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
+            if (!section) return false;
+            recordEquipmentLayoutChange({ sectionId: section.id, rowId, remove: true });
             renderEquipmentExperience();
             updateQuickStats();
             return true;
@@ -12055,46 +12085,52 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             return collectEquipmentRows().find((item) => String(item.rowId || '') === String(rowId || '')) || null;
         }
 
-        async function removeAllEquipmentImageBackgrounds() {
-            if (!canEditEquipmentEvent()) return 0;
-            const rows = collectEquipmentRows().filter((item) => {
-                const url = String(item && item.imageUrl || '').trim();
-                return url && item.backgroundPending && !item.imagePrepared && !equipmentBackgroundCleanupAttemptedRows.has(String(item.rowId || '')) && !url.startsWith('data:image/svg+xml');
-            });
-            let completed = 0;
-            // Process serially to keep the shared remove-background service responsive.
-            for (const item of rows) {
-                if (await removeEquipmentItemImageBackground(item.rowId).catch(() => false)) completed += 1;
-            }
-            return completed;
+        function queueEquipmentImageCleanup() {
+            if (equipmentBackgroundCleanupRunning || !canEditEquipmentEvent() || !window.BeerImageProcess) return;
+            const item = collectEquipmentRows().find((row) => row.backgroundPending && !row.imagePrepared
+                && row.imageUrl && !row.imageUrl.startsWith('data:image/svg+xml')
+                && (equipmentBackgroundCleanupAttempts.get(row.rowId) || 0) < 2);
+            if (!item) return;
+            equipmentBackgroundCleanupRunning = true;
+            const run = async () => {
+                try {
+                    for (let attempt = 1; attempt <= 2; attempt += 1) {
+                        if (getEquipmentItemByRowId(item.rowId)?.imageUrl !== item.imageUrl) break;
+                        equipmentBackgroundCleanupAttempts.set(item.rowId, attempt);
+                        if (await removeEquipmentItemImageBackground(item.rowId, item.imageUrl)) break;
+                        if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 1300));
+                    }
+                } finally {
+                    equipmentBackgroundCleanupRunning = false;
+                    queueEquipmentImageCleanup();
+                }
+            };
+            setTimeout(() => run().catch(() => {}), 0);
         }
 
         async function fetchEquipmentImageAsDataUrl(sourceUrl) {
-            const url = String(sourceUrl || '').trim();
-            if (!url) throw new Error('missing_image_url');
-            if (url.startsWith('data:image/')) return url;
-            const serviceBase = 'https://realtime.xn--80ahcljthqi.xn--p1ai';
-            // This is the proven beer-shelf route: server fetches the remote image and returns its base64 payload.
-            try {
-                const response = await fetch(`${serviceBase}/fetch-image`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url })
+            if (sourceUrl.startsWith('data:image/')) return sourceUrl;
+            const url = new URL(sourceUrl, location.href);
+            if (url.origin === location.origin) {
+                const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
+                if (!response.ok) throw new Error('image_fetch_failed');
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) throw new Error('invalid_image');
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result || ''));
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
                 });
-                const payload = await response.json().catch(() => ({}));
-                const raw = String(payload && (payload.result_base64 || payload.image_base64 || payload.data) || '');
-                if (response.ok && raw) return raw.startsWith('data:image/') ? raw : `data:image/png;base64,${raw}`;
-            } catch (_) {}
-            // Older deployments expose the same proxy as GET; retain it as a compatibility fallback.
-            const proxyUrl = new URL(`${serviceBase}/fetch-image`);
-            proxyUrl.searchParams.set('url', url);
-            const response = await fetch(proxyUrl.toString());
-            if (!response.ok) throw new Error('image_fetch_failed');
-            const blob = await response.blob();
-            return await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result || ''));
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
+            }
+            const response = await fetch(new URL('/fetch-image', getEquipmentCatalogProxyBase()), {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: url.href }), signal: AbortSignal.timeout(20000)
             });
+            const payload = await response.json().catch(() => ({}));
+            const raw = payload.result_base64 || payload.image_base64 || payload.data;
+            if (!response.ok || typeof raw !== 'string' || !raw) throw new Error('image_fetch_failed');
+            return raw.startsWith('data:image/') ? raw : `data:image/png;base64,${raw}`;
         }
 
         async function uploadProcessedEquipmentImage(dataUrl) {
@@ -12105,7 +12141,9 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
             const body = new FormData();
             body.append('image', new Blob([bytes], { type: match[1] || 'image/png' }), 'equipment.png');
-            const response = await fetch('https://realtime.xn--80ahcljthqi.xn--p1ai/upload-image', { method:'POST', body });
+            const response = await fetch(new URL('/upload-image', getEquipmentCatalogProxyBase()), {
+                method: 'POST', body, signal: AbortSignal.timeout(20000)
+            });
             const raw = await response.text();
             let payload = {};
             try { payload = JSON.parse(raw); } catch (_) {}
@@ -12114,39 +12152,34 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             return url;
         }
 
-        async function removeEquipmentItemImageBackground(rowId, trigger = null) {
-            if (!canEditEquipmentEvent()) return false;
-            const item = getEquipmentItemByRowId(rowId);
-            const sourceUrl = String(item && item.imageUrl || '').trim();
-            if (!item || !sourceUrl || sourceUrl.startsWith('data:image/svg+xml')) return false;
-            equipmentBackgroundCleanupAttemptedRows.add(String(rowId || ''));
-            if (trigger) { trigger.disabled = true; trigger.textContent = '…'; }
+        async function removeEquipmentItemImageBackground(rowId, sourceUrl) {
             try {
-                const sourceDataUrl = await fetchEquipmentImageAsDataUrl(sourceUrl);
-                const imageBase64 = String(sourceDataUrl).split(',')[1] || '';
-                if (!imageBase64) throw new Error('image_base64_failed');
-                let processed = '';
-                for (const endpoint of ['https://realtime.xn--80ahcljthqi.xn--p1ai/remove-bg', 'https://max157-kinosreda.hf.space/remove-bg']) {
-                    try {
-                        const response = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ image_base64: imageBase64 }) });
-                        const payload = await response.json().catch(() => ({}));
-                        const raw = String(payload && (payload.result_base64 || payload.image_base64 || payload.data) || '');
-                        if (response.ok && raw) { processed = raw.startsWith('data:image/') ? raw : `data:image/png;base64,${raw}`; break; }
-                    } catch (_) {}
+                const source = await window.BeerImageProcess.prepare(await fetchEquipmentImageAsDataUrl(sourceUrl));
+                const alreadyTransparent = await window.BeerImageProcess.hasTransparency(source);
+                let imageUrl = sourceUrl;
+                if (!alreadyTransparent) {
+                    const response = await fetch(new URL('/remove-bg', getEquipmentCatalogProxyBase()), {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image_base64: source.split(',')[1] }), signal: AbortSignal.timeout(65000)
+                    });
+                    const payload = await response.json().catch(() => ({}));
+                    const raw = payload.result_base64 || payload.image_base64 || payload.data;
+                    if (!response.ok || typeof raw !== 'string' || !raw) return false;
+                    const result = raw.startsWith('data:image/') ? raw : `data:image/png;base64,${raw}`;
+                    if (!await window.BeerImageProcess.hasTransparency(result)) return false;
+                    if (getEquipmentItemByRowId(rowId)?.imageUrl !== sourceUrl) return true;
+                    imageUrl = await uploadProcessedEquipmentImage(result).catch(() => result);
                 }
-                if (!processed) throw new Error('remove_bg_failed');
-                // Persist a URL rather than a large base64 payload; this is the same durable route used by beer images.
-                const durableImageUrl = await uploadProcessedEquipmentImage(processed).catch(() => processed);
-                eventData.sections.forEach((section) => {
-                    const row = section && Array.isArray(section.rows) ? section.rows.find((entry) => entry && String(entry.id || '') === String(rowId || '')) : null;
-                    if (row) { row.equipmentImageUrl = durableImageUrl; row.equipmentImagePrepared = true; row.equipmentBackgroundPending = false; }
-                });
+                const section = eventData?.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
+                const row = section?.rows.find((entry) => entry.id === rowId);
+                if (!row || row.equipmentImageUrl !== sourceUrl || !canEditEquipmentEvent()) return true;
+                row.equipmentImageUrl = imageUrl;
+                row.equipmentImagePrepared = true;
+                row.equipmentBackgroundPending = false;
                 saveEventData();
                 renderEquipmentExperience();
-                emitCollabAction('Подготовил фото снаряжения без фона');
                 return true;
             } catch (_) {
-                if (trigger) { trigger.disabled = false; trigger.textContent = '✦'; trigger.title = 'Не удалось убрать фон'; }
                 return false;
             }
         }
@@ -12861,23 +12894,117 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             modal.showModal();
         }
 
+        function equipmentLayoutStorageKey() {
+            return `planningEquipmentLayout:${eventId}:${currentUserLogin.toLowerCase()}`;
+        }
+
+        function loadPendingEquipmentLayout() {
+            if (equipmentLayoutLoaded || !eventId || !isEquipmentEvent() || !canEditEquipmentEvent()) return;
+            equipmentLayoutLoaded = true;
+            try {
+                const stored = JSON.parse(localStorage.getItem(equipmentLayoutStorageKey()) || '[]');
+                for (const change of stored) {
+                    if (typeof change?.rowId === 'string' && typeof change.sectionId === 'string' &&
+                        (change.remove === true || (Number.isFinite(change.x) && Number.isFinite(change.y)))) {
+                        equipmentPendingLayout.set(change.rowId, change);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        function persistPendingEquipmentLayout() {
+            try {
+                if (equipmentPendingLayout.size) {
+                    localStorage.setItem(equipmentLayoutStorageKey(), JSON.stringify([...equipmentPendingLayout.values()]));
+                } else localStorage.removeItem(equipmentLayoutStorageKey());
+            } catch (_) {}
+        }
+
+        function applyPendingEquipmentLayout(data, changes = equipmentPendingLayout.values()) {
+            for (const change of changes) {
+                const section = data?.sections.find((entry) => entry.id === change.sectionId);
+                const index = section?.rows.findIndex((row) => row.id === change.rowId) ?? -1;
+                if (index < 0) continue;
+                if (change.remove) {
+                    section.rows.splice(index, 1);
+                    reindexSectionRows(section);
+                } else {
+                    section.rows[index].equipmentGridX = change.x;
+                    section.rows[index].equipmentGridY = change.y;
+                }
+            }
+        }
+
+        function scheduleEquipmentLayoutSave(delay = 45) {
+            if (!db || !eventId || !equipmentPendingLayout.size || !canEditEquipmentEvent()
+                || equipmentLayoutSaving || equipmentLayoutTimer !== null) return;
+            equipmentLayoutTimer = setTimeout(async () => {
+                equipmentLayoutTimer = null;
+                equipmentLayoutSaving = true;
+                const changes = [...equipmentPendingLayout.values()];
+                let acknowledged = false;
+                try {
+                    const result = await runEventDataCommitTransaction((remoteData) => {
+                        applyPendingEquipmentLayout(remoteData, changes);
+                        return remoteData;
+                    }, null, { layoutOnly: true });
+                    if (result.committed) {
+                        for (const change of changes) {
+                            if (equipmentPendingLayout.get(change.rowId) !== change) continue;
+                            const section = result.data.sections.find((entry) => entry.id === change.sectionId);
+                            const row = section?.rows.find((entry) => entry.id === change.rowId);
+                            if (change.remove || (row?.equipmentGridX === change.x && row?.equipmentGridY === change.y)
+                                || !eventData?.sections.some((entry) => entry.id === change.sectionId && entry.rows.some((item) => item.id === change.rowId))) {
+                                equipmentPendingLayout.delete(change.rowId);
+                                acknowledged = true;
+                            }
+                        }
+                        persistPendingEquipmentLayout();
+                        cacheEquipmentEventData();
+                    }
+                } catch (_) {
+                    // Keep pending changes so transient database errors can be retried.
+                } finally {
+                    equipmentLayoutSaving = false;
+                    scheduleEquipmentLayoutSave(acknowledged ? 45 : 2400);
+                }
+            }, delay);
+        }
+
+        function recordEquipmentLayoutChange(change) {
+            loadPendingEquipmentLayout();
+            equipmentPendingLayout.set(change.rowId, change);
+            persistPendingEquipmentLayout();
+            applyPendingEquipmentLayout(eventData, [change]);
+            markEventDataChanged();
+            cacheEquipmentEventData();
+            scheduleEquipmentLayoutSave();
+        }
+
+        function cacheEquipmentEventData() {
+            writeCachedPlanningEventState({
+                event: {
+                    name: eventNameValue,
+                    date: eventDateValue,
+                    type: eventTypeValue,
+                    createdByLogin: eventOwnerLogin,
+                    createdBy: eventOwnerName,
+                    participants: eventParticipants,
+                    participantsCustom: eventCustomParticipants
+                },
+                data: eventData
+            });
+            flushCachedPlanningEventState();
+        }
+
         function setEquipmentGridPosition(rowId, x, y) {
             if (!canEditEquipmentEvent() || !eventData || !rowId) return false;
             const nextX = Math.max(1, Math.min(8, Math.round(Number(x) * 1000) / 1000 || 1));
             const nextY = Math.max(1, Math.min(6, Math.round(Number(y) * 1000) / 1000 || 1));
-            let changed = false;
-            eventData.sections.forEach((section) => {
-                (section && Array.isArray(section.rows) ? section.rows : []).forEach((row) => {
-                    if (!row || String(row.id) !== String(rowId)) return;
-                    if (Number(row.equipmentGridX) === nextX && Number(row.equipmentGridY) === nextY) return;
-                    row.equipmentGridX = nextX;
-                    row.equipmentGridY = nextY;
-                    changed = true;
-                });
-            });
-            if (!changed) return false;
-            markEventDataChanged();
-            saveEventData();
+            const section = eventData.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
+            const row = section?.rows.find((entry) => entry.id === rowId);
+            if (!row || (row.equipmentGridX === nextX && row.equipmentGridY === nextY)) return false;
+            recordEquipmentLayoutChange({ sectionId: section.id, rowId, x: nextX, y: nextY });
             const card = document.querySelector(`#equipmentExperience [data-row-id="${CSS.escape(rowId)}"]`);
             card?.style.setProperty('--grid-x', (nextX - 1) / 7);
             card?.style.setProperty('--grid-y', (nextY - 1) / 5);
@@ -12889,7 +13016,6 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             const shell = document.getElementById('equipmentExperience');
             const topSearchHost = document.getElementById('equipmentTopSearch');
             if (!shell) return;
-            
 
             const equipmentMode = isEquipmentEvent();
             document.body.classList.toggle('equipment-mode', equipmentMode);
@@ -12906,8 +13032,16 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 return;
             }
 
-            const stats = getEquipmentStats();
             const canEditEquipment = canEditEquipmentEvent();
+            if (canEditEquipment) {
+                loadPendingEquipmentLayout();
+                applyPendingEquipmentLayout(eventData);
+                if (!equipmentSearchOnlyRefresh) {
+                    if (initialDataSnapshotReady) scheduleEquipmentLayoutSave();
+                    queueEquipmentImageCleanup();
+                }
+            }
+            const stats = getEquipmentStats();
             const packItems = stats.items;
             const keepStudioMounted = (equipmentSearchOnlyRefresh || shell.querySelector('.gear-grid-item.is-dragging')) && !!shell.querySelector('.gear-studio');
             const queryText = getEquipmentQueryText();
@@ -12926,19 +13060,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 const state = topSearchHost.querySelector('.gear-search-state');
                 const results = topSearchHost.querySelector('.gear-search-results');
                 if (!equipmentSearchOnlyRefresh && input.value !== equipmentCatalogSearch) input.value = equipmentCatalogSearch;
-                ensureEquipmentWebSearchLoaded(queryText);
                 const web = equipmentWebSearchByKey.get(query);
-                const searching = equipmentWebSearchRequest?.key === query;
-                const webItems = Array.isArray(web) ? web : [];
-                const catalogItems = query ? getAllPackwizardCatalogItems()
-                    .filter((item) => doesEquipmentItemMatchQuery(item, queryText))
-                    .map((item) => ({ ...item, __source: 'packwizard' })) : [];
-                if (shouldRunRemoteEquipmentSearch(queryText) && getPackwizardCatalogReadyCount() < PACKWIZARD_CATEGORY_META.length && !equipmentCatalogLoading && !equipmentCatalogError) {
-                    ensureAllPackwizardCatalogLoaded().catch(() => {});
-                }
-                const all = [...webItems, ...catalogItems];
-                equipmentRenderedSearchResults = all.slice(0, equipmentCatalogResultLimit);
-                equipmentCatalogHasMoreResults = all.length > equipmentRenderedSearchResults.length;
+                const searching = equipmentWebSearchRequest?.key === query || equipmentCatalogSearchDebounceTimer !== null;
+                const all = Array.isArray(web) ? web : [];
+                equipmentRenderedSearchResults = all;
                 state.textContent = searching ? 'Поиск в интернете…' : all.length ? `${all.length}` : '';
                 state.hidden = !query || !state.textContent;
                 const resultMarkup = equipmentRenderedSearchResults.map((item) => {
@@ -12957,7 +13082,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         <button type="button" class="gear-action gear-action-primary gear-add-to-grid" data-pw-add-packed="${escapeHtml(item.__source)}::${escapeHtml(item._id)}">Добавить</button>
                     </article>`;
                 }).join('');
-                const statusMarkup = web === null ? '<div class="gear-empty">Веб-поиск временно недоступен <button type="button" class="gear-action gear-action-primary" data-pw-refresh>Повторить</button></div>'
+                const statusMarkup = web === null ? `<div class="gear-empty">Веб-поиск временно недоступен <button type="button" class="gear-action gear-action-primary" data-pw-refresh>Повторить</button> <a href="https://www.google.com/search?q=${encodeURIComponent(queryText)}" target="_blank" rel="noopener noreferrer">Открыть поиск в браузере</a></div>`
                     : !resultMarkup && shouldRunRemoteEquipmentSearch(queryText) ? `<div class="gear-empty">${searching ? 'Ищу товары и характеристики…' : 'По этому запросу ничего не найдено'}</div>` : '';
                 const markup = resultMarkup + statusMarkup;
                 if (results.equipmentMarkup !== markup) {
@@ -12972,7 +13097,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             } else if (topSearchHost) {
                 topSearchHost.classList.add('hidden');
                 topSearchHost.innerHTML = '';
-                ensureEquipmentWebSearchLoaded('');
+                clearTimeout(equipmentCatalogSearchDebounceTimer);
+                equipmentCatalogSearchDebounceTimer = null;
+                equipmentWebSearchRequest?.controller.abort();
+                equipmentWebSearchRequest = null;
             }
 
             if (!keepStudioMounted) {
@@ -12995,8 +13123,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         <button type="button" class="gear-pack-focus-name" data-gear-grid-info="${escapeHtml(backpack.rowId)}">${escapeHtml(backpack.label)}</button>` : `<button type="button" class="gear-pack-focus-photo" data-equipment-toggle-grid aria-controls="equipmentGridPanel" aria-expanded="${equipmentGridOpen}">Открыть снаряжение</button>`}
                         <span class="gear-pack-focus-metrics">${stats.totalCount} шт. · ${escapeHtml(formatEquipmentMeasure(stats.totalWeight, 'кг'))} · ${escapeHtml(formatMoneyValue(stats.totalCost))}</span>
                     </section>
-                    <section class="gear-grid-panel" id="equipmentGridPanel" aria-labelledby="gear-grid-title" ${equipmentGridOpen ? '' : 'inert'}>
-                        <header class="gear-grid-head"><h2 id="gear-grid-title">Снаряжение</h2></header>
+                    <section class="gear-grid-panel" id="equipmentGridPanel" aria-label="Снаряжение" ${equipmentGridOpen ? '' : 'inert'}>
+                        <button type="button" class="gear-back-to-pack" data-equipment-back-to-pack><span aria-hidden="true">‹</span> Рюкзак</button>
                         <div class="gear-grid" style="--grid-content-height:${rows * 116}px">${tiles || '<p class="gear-grid-empty">Здесь появятся добавленные предметы</p>'}</div>
                     </section>
                 </div>`;
@@ -22001,66 +22129,24 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 
             const equipmentExperience = document.getElementById('equipmentExperience');
             if (equipmentExperience) {
-                let gearImagePreview = null;
-                const hideGearImagePreview = () => {
-                    if (!gearImagePreview) return;
-                    gearImagePreview.remove();
-                    gearImagePreview = null;
-                };
-                const showGearImagePreview = (thumb) => {
-                    const src = String(thumb && thumb.dataset.gearPreviewSrc || '').trim();
-                    if (!src || thumb.closest('.gear-orbit-backpack') || window.matchMedia('(max-width: 680px)').matches) return;
-                    hideGearImagePreview();
-                    const preview = document.createElement('div');
-                    preview.className = 'gear-image-floating-preview';
-                    const image = document.createElement('img');
-                    image.src = src;
-                    image.alt = String(thumb.dataset.gearPreviewAlt || 'Снаряжение');
-                    preview.appendChild(image);
-                    document.body.appendChild(preview);
-                    const rect = thumb.getBoundingClientRect();
-                    const width = Math.min(300, Math.max(180, Math.floor(window.innerWidth * 0.42)));
-                    let left = rect.right + 12;
-                    if (left + width > window.innerWidth - 12) left = Math.max(12, rect.left - width - 12);
-                    const previewHeight = Math.min(330, Math.max(160, Math.round(window.innerHeight * .46)));
-                    preview.style.left = `${Math.round(left)}px`;
-                    preview.style.top = `${Math.max(12, Math.min(window.innerHeight - previewHeight - 12, rect.top - 26))}px`;
-                    gearImagePreview = preview;
-                };
-                const handleEquipmentSearchFieldInput = (target) => {
-                    const searchInput = target && typeof target.closest === 'function'
-                        ? target.closest('#pwCatalogSearchInput')
-                        : null;
-                    if (!searchInput) return;
-                    const nextSearch = searchInput.value || '';
-                    if (nextSearch !== equipmentCatalogSearch) {
-                        equipmentCatalogResultLimit = 30;
-                        equipmentCatalogScrollTop = 0;
-                        const currentCatalogList = document.querySelector('#equipmentTopSearch .gear-search-results');
-                        if (currentCatalogList) currentCatalogList.scrollTop = 0;
-                    }
-                    equipmentCatalogSearch = nextSearch;
-                    if (equipmentCatalogSearchDebounceTimer) {
-                        clearTimeout(equipmentCatalogSearchDebounceTimer);
-                        equipmentCatalogSearchDebounceTimer = null;
-                    }
-                    equipmentCatalogSearchDebounceTimer = setTimeout(() => {
-                        equipmentCatalogSearchDebounceTimer = null;
-                        scheduleEquipmentSearchRefresh();
-                    }, 90);
-                };
                 equipmentExperience.addEventListener('click', (e) => {
                     const detailClose = e.target.closest('[data-gear-detail-close]');
                     if (detailClose || e.target.classList.contains('gear-detail-modal')) {
                         e.target.closest('.gear-detail-modal')?.remove();
                         return;
                     }
-                    const toggle = e.target.closest('[data-equipment-toggle-grid]');
+                    const toggle = e.target.closest('[data-equipment-toggle-grid], [data-equipment-back-to-pack]');
                     if (toggle) {
                         equipmentGridOpen = !equipmentGridOpen;
-                        toggle.closest('.gear-studio').classList.toggle('is-open', equipmentGridOpen);
-                        toggle.setAttribute('aria-expanded', String(equipmentGridOpen));
+                        const studio = toggle.closest('.gear-studio');
+                        studio.classList.toggle('is-open', equipmentGridOpen);
+                        const photo = studio.querySelector('[data-equipment-toggle-grid]');
+                        photo.setAttribute('aria-expanded', String(equipmentGridOpen));
                         document.getElementById('equipmentGridPanel').inert = !equipmentGridOpen;
+                        if (window.matchMedia('(max-width:620px)').matches) {
+                            const focus = equipmentGridOpen ? studio.querySelector('[data-equipment-back-to-pack]') : photo;
+                            focus.focus({ preventScroll: true });
+                        }
                         return;
                     }
                     const detail = e.target.closest('[data-gear-grid-info], .gear-grid-item');
@@ -22068,65 +22154,6 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         if (!suppressEquipmentClick) showEquipmentItemDetail(getEquipmentItemByRowId(detail.dataset.gearGridInfo || detail.dataset.rowId));
                         return;
                     }
-                    const addPackedBtn = e.target.closest('[data-pw-add-packed]');
-                    const addBtn = addPackedBtn || e.target.closest('[data-pw-add-item]');
-                    if (addBtn) {
-                        const itemKey = addPackedBtn ? addPackedBtn.dataset.pwAddPacked : addBtn.dataset.pwAddItem;
-                        const [sourceKey, itemId] = String(itemKey || '').split('::');
-                        const item = equipmentRenderedSearchResults.find((entry) => (
-                            String(entry && entry._id || '') === String(itemId || '')
-                            && String(entry && entry.__source || '') === String(sourceKey || '')
-                        ));
-                        if (item && addEquipmentItemFromCatalog(item, { packed: true })) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }
-                        return;
-                    }
-                    const setBackpackBtn = e.target.closest('[data-equipment-set-backpack]');
-                    if (setBackpackBtn) {
-                        setEquipmentBackpack(setBackpackBtn.dataset.equipmentSetBackpack);
-                        return;
-                    }
-                    const removeBtn = e.target.closest('[data-equipment-remove]');
-                    if (removeBtn) {
-                        removeEquipmentItem(removeBtn.dataset.equipmentRemove);
-                        return;
-                    }
-                    const refreshBtn = e.target.closest('[data-pw-refresh]');
-                    if (refreshBtn) {
-                        ensureAllPackwizardCatalogLoaded({ force: true }).catch(() => {});
-                        if (shouldRunRemoteEquipmentSearch(getEquipmentQueryText())) {
-                            ensureDecathlonCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureGggCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureHyperliteCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureZpacksCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureGossamerCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureOutdoorVitalsCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureSixMoonCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureGearxCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureGeartradeCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            ensureEvoCatalogLoaded('global', equipmentCatalogSearch, { force: true }).catch(() => {});
-                            equipmentExtraStorefrontSources.forEach((source) => {
-                                ensureExtraStorefrontCatalogLoaded(source, equipmentCatalogSearch, { force: true }).catch(() => {});
-                            });
-                        }
-                        return;
-                    }
-                    const toggleBtn = e.target.closest('[data-equipment-toggle]');
-                    if (!toggleBtn) return;
-                    setEquipmentPackedState(toggleBtn.dataset.equipmentToggle, toggleBtn.dataset.packed === '1');
-                });
-                equipmentExperience.addEventListener('input', (e) => {
-                    const editInput = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
-                    if (editInput) {
-                        e.stopPropagation();
-                        return;
-                    }
-                    if (!(e.target instanceof HTMLInputElement) || e.target.id !== 'pwCatalogSearchInput') return;
-                    handleEquipmentSearchFieldInput(e.target);
-                    const results = document.querySelector('#equipmentTopSearch .gear-search-results');
-                    if (results) results.hidden = false;
                 });
                 let equipmentPointerDrag = null;
                 let suppressEquipmentClick = false;
@@ -22187,45 +22214,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         }
                         return;
                     }
-                    const input = e.target && e.target.closest ? e.target.closest('[data-equipment-edit]') : null;
-                    if (!input || e.key !== 'Enter') return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    input.blur();
+
                 });
-                equipmentExperience.addEventListener('search', (e) => {
-                    if (!(e.target instanceof HTMLInputElement) || e.target.id !== 'pwCatalogSearchInput') return;
-                    handleEquipmentSearchFieldInput(e.target);
-                });
-                equipmentExperience.addEventListener('pointerover', (e) => {
-                    const thumb = e.target && e.target.closest ? e.target.closest('[data-gear-preview-src]') : null;
-                    if (thumb) showGearImagePreview(thumb);
-                });
-                equipmentExperience.addEventListener('pointerout', (e) => {
-                    const thumb = e.target && e.target.closest ? e.target.closest('[data-gear-preview-src]') : null;
-                    if (!thumb || (e.relatedTarget && thumb.contains(e.relatedTarget))) return;
-                    hideGearImagePreview();
-                });
-                equipmentExperience.addEventListener('scroll', (e) => {
-                    const packList = e.target && e.target.closest ? e.target.closest('.gear-pack-list') : null;
-                    if (packList) {
-                        equipmentPackScrollTop = packList.scrollTop;
-                        return;
-                    }
-                    const list = e.target && e.target.closest ? e.target.closest('.gear-search-results') : null;
-                    if (!list || !equipmentCatalogHasMoreResults || equipmentCatalogLazyLoadRaf) return;
-                    hideGearImagePreview();
-                    if (list.scrollTop + list.clientHeight < list.scrollHeight - 100) return;
-                    equipmentCatalogScrollTop = list.scrollTop;
-                    equipmentCatalogLazyLoadRaf = requestAnimationFrame(() => {
-                        equipmentCatalogLazyLoadRaf = null;
-                        if (!equipmentCatalogHasMoreResults) return;
-                        equipmentCatalogResultLimit += 30;
-                        equipmentSearchOnlyRefresh = true;
-                        renderEquipmentExperience();
-                        equipmentSearchOnlyRefresh = false;
-                    });
-                }, true);
             }
 
             const equipmentTopSearch = document.getElementById('equipmentTopSearch');
@@ -22235,12 +22225,15 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     if (!input) return;
                     equipmentSearchOpen = true;
                     const nextSearch = input.value || '';
-                    if (nextSearch !== equipmentCatalogSearch) { equipmentCatalogResultLimit = 30; equipmentCatalogScrollTop = 0; }
                     equipmentCatalogSearch = nextSearch;
                     const results = equipmentTopSearch.querySelector('.gear-search-results');
                     if (results) results.hidden = false;
-                    if (equipmentCatalogSearchDebounceTimer) clearTimeout(equipmentCatalogSearchDebounceTimer);
-                    equipmentCatalogSearchDebounceTimer = setTimeout(() => { equipmentCatalogSearchDebounceTimer = null; scheduleEquipmentSearchRefresh(); }, 90);
+                    scheduleEquipmentSearchRefresh();
+                });
+                equipmentTopSearch.addEventListener('keydown', (event) => {
+                    if (event.target.id !== 'pwCatalogSearchInput' || event.key !== 'Enter' || event.isComposing) return;
+                    event.preventDefault();
+                    scheduleEquipmentSearchRefresh(true);
                 });
                 equipmentTopSearch.addEventListener('focusin', (event) => {
                     if (event.target.id !== 'pwCatalogSearchInput') return;
@@ -22250,7 +22243,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 equipmentTopSearch.addEventListener('click', (e) => {
                     if (e.target.closest('[data-pw-refresh]')) {
                         equipmentWebSearchByKey.delete(normalizeEquipmentSearchKey(getEquipmentQueryText()));
-                        refreshEquipmentSearchResultsOnly();
+                        scheduleEquipmentSearchRefresh(true);
                         return;
                     }
                     const mobileSearchToggle = e.target.closest('[data-equipment-mobile-search]');
@@ -22273,13 +22266,6 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         e.stopPropagation();
                     }
                 });
-                equipmentTopSearch.addEventListener('scroll', (e) => {
-                    const list = e.target && e.target.closest ? e.target.closest('.gear-search-results') : null;
-                    if (!list || !equipmentCatalogHasMoreResults || equipmentCatalogLazyLoadRaf) return;
-                    equipmentCatalogScrollTop = list.scrollTop;
-                    if (list.scrollTop + list.clientHeight < list.scrollHeight - 90) return;
-                    equipmentCatalogLazyLoadRaf = requestAnimationFrame(() => { equipmentCatalogLazyLoadRaf = null; equipmentCatalogResultLimit += 30; equipmentSearchOnlyRefresh = true; renderEquipmentExperience(); equipmentSearchOnlyRefresh = false; });
-                }, true);
             }
 
             document.addEventListener('click', (e) => {
