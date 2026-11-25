@@ -1214,19 +1214,19 @@ function isPublicEquipmentAddress(address) {
     && !(a === 203 && b === 0 && c === 113);
 }
 
-function readEquipmentProductPage(rawUrl) {
+function readEquipmentProductPage(rawUrl, signal = AbortSignal.timeout(1700), redirects = 2) {
   return new Promise((resolve) => {
     const url = new URL(rawUrl);
     if (!['https:', 'http:'].includes(url.protocol) || url.port || url.username || url.password
       || require('node:net').isIP(url.hostname.replace(/^\[|\]$/g, ''))) {
-      resolve('');
+      resolve(null);
       return;
     }
     const transport = url.protocol === 'https:' ? https : http;
     const request = transport.get(url, {
       headers: equipmentSearchHeaders,
       family: 4,
-      signal: AbortSignal.timeout(3200),
+      signal,
       lookup(hostname, options, callback) {
         require('node:dns').lookup(hostname, { family: 4, all: true }, (error, addresses) => {
           const publicAddress = addresses?.find(({ address }) => isPublicEquipmentAddress(address));
@@ -1236,26 +1236,35 @@ function readEquipmentProductPage(rawUrl) {
         });
       }
     }, (response) => {
+      if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location && redirects > 0) {
+        response.destroy();
+        try {
+          const target = new URL(response.headers.location, url);
+          readEquipmentProductPage(target.href, signal, redirects - 1).then(resolve, () => resolve(null));
+        } catch (_) { resolve(null); }
+        return;
+      }
       if (response.statusCode !== 200 || !/html/i.test(response.headers['content-type'] || '')) {
         response.destroy();
-        resolve('');
+        resolve(null);
         return;
       }
       const chunks = [];
       let size = 0;
+      const finish = () => resolve({ html: Buffer.concat(chunks).toString('utf8'), url: url.href });
       response.on('data', (chunk) => {
         size += chunk.length;
-        if (size > 2_000_000) {
-          resolve(Buffer.concat(chunks).toString('utf8'));
+        if (size > 1_000_000) {
+          finish();
           response.destroy();
           return;
         }
         chunks.push(chunk);
       });
-      response.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-      response.on('error', () => resolve(''));
+      response.on('end', finish);
+      response.on('error', () => resolve(null));
     });
-    request.on('error', () => resolve(''));
+    request.on('error', () => resolve(null));
   });
 }
 
@@ -1277,29 +1286,78 @@ function equipmentOfferPrice(text) {
   };
 }
 
-function equipmentProductMetadata(html, item) {
-  const meta = new Map();
-  for (const tag of html.matchAll(/<meta\b[^>]*>/gi)) {
-    const attrs = Object.fromEntries(Array.from(tag[0].matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g), (part) => [part[1].toLowerCase(), part[2] ?? part[3]]));
-    if (attrs.content) meta.set(attrs.property || attrs.name || attrs.itemprop, attrs.content);
-  }
-  const products = [];
-  for (const script of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+function equipmentHtmlAttributes(tag) {
+  return Object.fromEntries(Array.from(tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'<>]+))/g),
+    (part) => [part[1].toLowerCase(), decodeBeerSearchHtml(part[2] ?? part[3] ?? part[4])]));
+}
+
+function equipmentProductImages(html, product, meta, item) {
+  const images = new Set();
+  function addImage(image) {
+    const value = image && typeof image === 'object' ? image.contentUrl || image.url : image;
+    if (typeof value !== 'string' || !value.trim()) return;
     try {
-      const nodes = [JSON.parse(script[1])].flat();
-      for (const node of nodes.flatMap((entry) => [entry, ...[].concat(entry?.['@graph'] || [])])) {
-        if ([].concat(node?.['@type'] || []).includes('Product')) products.push(node);
-      }
+      const url = new URL(decodeBeerSearchHtml(value), item.url);
+      if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password
+        || /(?:logo|favicon|avatar|placeholder|no[-_]?image|sprite|loading|spacer|\.svg$)/i.test(url.pathname)) return;
+      images.add(url.href);
     } catch (_) {}
   }
-  const product = products.find((entry) => normalizeBeerSearchText(entry.name).includes(normalizeBeerSearchText(item.model))) || products[0];
+  function addSrcset(srcset) {
+    if (!srcset) return;
+    const options = srcset.split(',').map((entry) => entry.trim().split(/\s+/));
+    options.sort((a, b) => (parseFloat(b[1]) || 0) - (parseFloat(a[1]) || 0));
+    for (const [url] of options.slice(0, 2)) addImage(url);
+  }
+
+  for (const image of [].concat(product?.image || [])) addImage(image);
+  for (const key of ['og:image:secure_url', 'og:image', 'og:image:url', 'twitter:image', 'twitter:image:src', 'image']) addImage(meta.get(key));
+  for (const match of html.matchAll(/<link\b[^>]*>/gi)) {
+    const attrs = equipmentHtmlAttributes(match[0]);
+    if (attrs.rel === 'image_src') addImage(attrs.href);
+  }
+  addImage(item.imageUrl);
+
+  const nameTokens = normalizeBeerSearchText(item.model || item.name).split(' ').filter((token) => token.length >= 3);
+  const productImages = [];
+  for (const match of html.matchAll(/<(?:img|source)\b[^>]*>/gi)) {
+    const attrs = equipmentHtmlAttributes(match[0]);
+    const label = normalizeBeerSearchText([attrs.alt, attrs.title, attrs['data-src'], attrs.src].filter(Boolean).join(' '));
+    const nameScore = nameTokens.filter((token) => label.includes(token)).length;
+    const tagged = /\bimage\b/i.test(attrs.itemprop || '')
+      || /product[-_ ]?(?:image|photo|gallery|media)|gallery[-_ ]?(?:image|photo)|pdp[-_ ]?image/i.test([attrs.id, attrs.class].join(' '));
+    if (tagged || nameScore > 0) productImages.push({ attrs, score: nameScore * 2 + Number(tagged) });
+  }
+  productImages.sort((a, b) => b.score - a.score);
+  for (const { attrs } of productImages.slice(0, 4)) {
+    addImage(attrs['data-zoom-image'] || attrs['data-large-image']);
+    addSrcset(attrs['data-srcset'] || attrs.srcset);
+    addImage(attrs['data-src'] || attrs['data-lazy-src'] || attrs['data-original'] || attrs.src);
+  }
+  return [...images].slice(0, 5);
+}
+
+function equipmentProductMetadata(html = '', item) {
+  const meta = new Map();
+  for (const tag of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const attrs = equipmentHtmlAttributes(tag[0]);
+    if (attrs.content) meta.set(String(attrs.property || attrs.name || attrs.itemprop || '').toLowerCase(), attrs.content);
+  }
+  const products = [];
+  const visit = (node) => {
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+    } else if (node && typeof node === 'object') {
+      if ([].concat(node['@type'] || []).some((type) => /(?:^|\/)Product(?:Group)?$/i.test(type))) products.push(node);
+      for (const key of ['@graph', 'mainEntity', 'hasVariant']) visit(node[key]);
+    }
+  };
+  for (const script of html.matchAll(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try { visit(JSON.parse(script[1].trim())); } catch (_) {}
+  }
+  const product = products.find((entry) => item.model && normalizeBeerSearchText(entry.name).includes(normalizeBeerSearchText(item.model))) || products[0];
   const offer = [].concat(product?.offers || [])[0];
-  const image = [].concat(product?.image || meta.get('og:image') || item.imageUrl || [])[0];
-  let imageUrl = '';
-  try {
-    const url = new URL((typeof image === 'object' ? image.url || image.contentUrl : image) || '', item.url);
-    if (isHttpUrl(url.href) && image && !/logo|favicon|avatar/i.test(url.pathname)) imageUrl = url.href;
-  } catch (_) {}
+  const images = equipmentProductImages(html, product, meta, item);
   const currency = String(offer?.priceCurrency || meta.get('product:price:currency') || '').toUpperCase();
   const price = Number(offer?.price || offer?.lowPrice || meta.get('product:price:amount') || 0);
   const snippet = [item.snippet, product?.description, meta.get('description')].filter(Boolean).join(' ');
@@ -1312,7 +1370,8 @@ function equipmentProductMetadata(html, item) {
     ? { originalPrice: price, originalCurrency: currency }
     : item.originalPrice > 0 ? item : equipmentOfferPrice(decodeBeerSearchHtml(item.snippet || ''));
   return {
-    imageUrl,
+    imageUrl: images[0] || '',
+    imageAlternates: images.slice(1),
     originalPrice: amount.originalPrice || 0,
     originalCurrency: amount.originalCurrency || '',
     packedWeight: equipmentWeightInGrams('weight ' + (weightText || '') + ' ' + snippet)
@@ -1328,7 +1387,7 @@ async function searchEquipmentWeb(query) {
   if (SERPER_API_KEY) {
     const search = async (type) => {
       const response = await fetch('https://google.serper.dev/' + type, {
-        method: 'POST', signal: AbortSignal.timeout(4200),
+        method: 'POST', signal: AbortSignal.timeout(2600),
         headers: { 'Content-Type': 'application/json', 'X-API-KEY': SERPER_API_KEY },
         body: JSON.stringify({ q: terms, gl: 'ru', hl: 'ru', num: 20 })
       });
@@ -1340,7 +1399,7 @@ async function searchEquipmentWeb(query) {
       results.push({ name: item.title, url: item.link, imageUrl: item.imageUrl, seller: item.source, ...equipmentOfferPrice(item.price) });
     }
     for (const item of web.value?.organic || []) {
-      results.push({ name: item.title, url: item.link, snippet: item.snippet });
+      results.push({ name: item.title, url: item.link, snippet: item.snippet, imageUrl: item.imageUrl || item.thumbnailUrl });
     }
   }
   if (!results.some((item) => isHttpUrl(item.url))) {
@@ -1360,23 +1419,25 @@ async function searchEquipmentWeb(query) {
   const seen = new Set();
   const candidates = results.filter((item) => {
     if (!item.name || !isHttpUrl(item.url) || seen.has(item.url)) return false;
-    if (compactModel && !normalizeBeerSearchText(item.name + ' ' + item.url).replace(/\s/g, '').includes(compactModel)) return false;
+    const url = new URL(item.url);
+    if (compactModel && !normalizeBeerSearchText(item.name + ' ' + url.pathname).replace(/\s/g, '').includes(compactModel)) return false;
     seen.add(item.url);
     return true;
-  }).slice(0, 12);
+  }).slice(0, 18);
+  const photoDeadline = AbortSignal.timeout(1700);
   const items = await Promise.all(candidates.map(async (item, index) => {
-    const html = index < 8 && !(item.imageUrl && item.originalPrice) ? await readEquipmentProductPage(item.url).catch(() => '') : '';
-    const metadata = equipmentProductMetadata(html, { ...item, model: model || terms });
+    const page = index < 12 && !item.imageUrl ? await readEquipmentProductPage(item.url, photoDeadline).catch(() => null) : null;
+    const metadata = equipmentProductMetadata(page?.html, { ...item, url: page?.url || item.url, model: model || terms });
     return {
       _id: 'web-' + nodeCrypto.createHash('sha256').update(item.url).digest('hex').slice(0, 20),
       name: String(item.name).slice(0, 260),
       __source: 'web',
-      url: item.url,
+      url: page?.url || item.url,
       seller: String(item.seller || new URL(item.url).hostname),
       ...metadata
     };
   }));
-  return items;
+  return items.filter((item) => item.imageUrl).slice(0, 12);
 }
 
 async function handleEquipmentWebSearch(urlObj, req, res, corsHeaders) {

@@ -7791,8 +7791,9 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
     --item-height:106px;
     position:relative;
     isolation:isolate;
-    flex:1 0 auto;
-    min-height:max(420px,var(--grid-content-height));
+    --grid-base-height:max(420px,calc(100dvh - 50px));
+    flex:0 0 auto;
+    height:calc(var(--item-height) + (var(--grid-base-height) - var(--item-height)) * var(--grid-depth,1));
     background:
         linear-gradient(#d1bc8820 1px,transparent 1px),
         linear-gradient(90deg,#d1bc8820 1px,transparent 1px),
@@ -7803,7 +7804,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 .gear-grid-item {
     position:absolute;
     left:calc((100% - var(--item-width)) * var(--grid-x));
-    top:calc((100% - var(--item-height)) * var(--grid-y));
+    top:calc((var(--grid-base-height) - var(--item-height)) * var(--grid-y));
     width:var(--item-width);
     height:var(--item-height);
     display:grid;
@@ -7828,12 +7829,13 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 .gear-grid-item-copy span { color:var(--studio-muted); font:11px system-ui,sans-serif; }
 .gear-search-results .gear-result { border:0; grid-template-columns:48px minmax(0,1fr) auto; }
 .gear-search-results .gear-result-thumb { width:48px; height:48px; }
+.gear-search-results .gear-result[hidden] { display:none; }
 .gear-result-name a:hover { text-decoration:underline; }
 @media (max-width:620px) {
     .gear-studio.is-open .gear-pack-focus { display:none; }
     .gear-grid-panel { margin:0; }
     .gear-grid-panel[inert] { inset-inline:0; }
-    .gear-grid { --item-width:24vw; --item-height:90px; }
+    .gear-grid { --item-width:24vw; --item-height:90px; --grid-base-height:max(420px,calc(100dvh - 122px)); }
     .gear-grid-item-copy strong { display:none; }
     .is-open .gear-back-to-pack {
         display:flex;
@@ -8506,6 +8508,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         let equipmentRenderedSearchResults = [];
         // Prevent concurrent cleanup runs; each row itself remembers when its transparent image is ready.
         let equipmentBackgroundCleanupRunning = false;
+        const equipmentManualBackground = new Map();
         const equipmentBackgroundCleanupAttempts = new Map();
         const equipmentPendingLayout = new Map();
         let equipmentLayoutLoaded = false;
@@ -9152,6 +9155,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     value: String(activeField.value || '')
                 } : null,
                 notesOpen: !!notesModalOpen,
+                equipmentGridOpen,
                 ts: Date.now()
             };
             try {
@@ -9888,7 +9892,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             };
             if (immediate) submit();
             else if (shouldRunRemoteEquipmentSearch(query) && !equipmentWebSearchByKey.has(key)) {
-                equipmentCatalogSearchDebounceTimer = setTimeout(submit, 420);
+                equipmentCatalogSearchDebounceTimer = setTimeout(submit, 350);
             }
             refreshEquipmentSearchResultsOnly();
         }
@@ -10870,7 +10874,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                             equipmentBackgroundPending: !!(row && row.equipmentBackgroundPending),
                             equipmentRole: String(row && row.equipmentRole || '').trim() === 'backpack' ? 'backpack' : '',
                             ...(Number(row.equipmentGridX) >= 1 && Number(row.equipmentGridX) <= 8 ? { equipmentGridX: Number(row.equipmentGridX) } : {}),
-                            ...(Number(row.equipmentGridY) >= 1 && Number(row.equipmentGridY) <= 6 ? { equipmentGridY: Number(row.equipmentGridY) } : {}),
+                            ...(Number.isFinite(Number(row.equipmentGridY)) && Number(row.equipmentGridY) >= 1 ? { equipmentGridY: Number(row.equipmentGridY) } : {}),
                             position: normalizeRowPositionValue(row.position ?? row.sortOrder ?? row.order, rowIndex),
                             closed: !!row.closed || !!(isBeerSectionName(sec.name) && normalizedBeerBacklog && (
                                 normalizedBeerBacklog.status === 'done'
@@ -11869,6 +11873,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         sectionId: section.id,
                         sectionName: section.name || 'Снаряжение',
                         rowId: row.id,
+                        position: row.position,
                         label: label || 'Без названия',
                         weight,
                         volume,
@@ -11879,7 +11884,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         role: String(row.equipmentRole || '').trim(),
                         packed: !!row.packed,
                         gridX: Number.isFinite(Number(row.equipmentGridX)) ? Math.max(1, Math.min(8, Number(row.equipmentGridX))) : 0,
-                        gridY: Number.isFinite(Number(row.equipmentGridY)) ? Math.max(1, Math.min(6, Number(row.equipmentGridY))) : 0
+                        gridY: Number.isFinite(Number(row.equipmentGridY)) ? Math.max(1, Number(row.equipmentGridY)) : 0
                     });
                 });
             });
@@ -11961,20 +11966,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 
         function setEquipmentBackpack(rowId) {
             if (!canEditEquipmentEvent() || !eventData || !Array.isArray(eventData.sections) || !rowId) return false;
-            let changed = false;
-            eventData.sections.forEach((section) => {
-                if (!section || !Array.isArray(section.rows)) return;
-                section.rows.forEach((row) => {
-                    if (!row) return;
-                    const nextRole = String(row.id || '') === String(rowId) ? 'backpack' : '';
-                    if (String(row.equipmentRole || '') === nextRole) return;
-                    row.equipmentRole = nextRole;
-                    changed = true;
-                });
-            });
-            if (!changed) return false;
-            markEventDataChanged();
-            saveEventData();
+            const item = getEquipmentItemByRowId(rowId);
+            if (!item || item.role === 'backpack') return false;
+            stabilizeEquipmentTilePositions(collectEquipmentRows());
+            recordEquipmentLayoutChange({ sectionId: item.sectionId, rowId, backpack: true });
             renderEquipmentExperience();
             return true;
         }
@@ -11984,7 +11979,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             if (!eventData || !Array.isArray(eventData.sections) || !rowId) return false;
             const section = eventData.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
             if (!section) return false;
+            stabilizeEquipmentTilePositions(collectEquipmentRows().filter((item) => item.role !== 'backpack'));
             recordEquipmentLayoutChange({ sectionId: section.id, rowId, remove: true });
+            equipmentManualBackground.get(rowId)?.(false);
+            equipmentManualBackground.delete(rowId);
             renderEquipmentExperience();
             updateQuickStats();
             return true;
@@ -12003,18 +12001,11 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 ['weight', values.weight],
                 ['cost', values.cost]
             ];
-            let changed = false;
-            fields.forEach(([columnId, value]) => {
-                if (value === undefined || !section.columns.some((column) => column.id === columnId)) return;
-                if (String(row.cells[columnId] ?? '') === value) return;
-                row.cells[columnId] = value;
-                const key = `${section.id}\u001f${rowId}\u001f${columnId}`;
-                dirtyCellKeys.add(key);
-                pendingCellValueLocks.set(key, { value });
-                changed = true;
-            });
-            if (!changed) return true;
-            saveEventData();
+            const cells = Object.fromEntries(fields.filter(([columnId, value]) =>
+                value !== undefined && section.columns.some((column) => column.id === columnId)
+                    && String(row.cells[columnId] ?? '') !== value));
+            if (!Object.keys(cells).length) return true;
+            recordEquipmentLayoutChange({ sectionId: section.id, rowId, cells });
             renderEquipmentExperience();
             emitCollabAction('Обновил параметры снаряжения');
             return true;
@@ -12044,6 +12035,43 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             return section;
         }
 
+        function nextEquipmentTilePosition(points, mobile = window.innerWidth <= 620) {
+            const columns = mobile ? 3 : 5;
+            const verticalStep = .24;
+            for (let slot = 0; ; slot += 1) {
+                const x = (slot % columns) / (columns - 1);
+                const y = Math.floor(slot / columns) * verticalStep;
+                if (!points.some((point) => Math.abs(point.x - x) < 1 / columns && Math.abs(point.y - y) < verticalStep - .01)) {
+                    return { x, y };
+                }
+            }
+        }
+
+        function getEquipmentTilePositions(items) {
+            const positions = new Map();
+            for (const item of items) {
+                if (item.gridX && item.gridY) {
+                    positions.set(item.rowId, { x: (item.gridX - 1) / 7, y: (item.gridY - 1) / 5 });
+                }
+            }
+            // Older equipment has no coordinates. Its original row order is stable across renames.
+            for (const item of items.slice().sort((a, b) => a.position - b.position || a.rowId.localeCompare(b.rowId))) {
+                if (!positions.has(item.rowId)) {
+                    positions.set(item.rowId, nextEquipmentTilePosition([...positions.values()]));
+                }
+            }
+            return positions;
+        }
+
+        function stabilizeEquipmentTilePositions(items) {
+            const positions = getEquipmentTilePositions(items);
+            const changes = items.filter((item) => !item.gridX || !item.gridY).map((item) => {
+                const { x, y } = positions.get(item.rowId);
+                return { sectionId: item.sectionId, rowId: item.rowId, x: 1 + x * 7, y: 1 + y * 5 };
+            });
+            if (changes.length) recordEquipmentLayoutChanges(changes);
+        }
+
         function addEquipmentItemFromCatalog(rawItem, options = {}) {
             if (!canEditEquipmentEvent() || !rawItem) return false;
             const section = getEquipmentImportSection();
@@ -12054,30 +12082,33 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             row.packed = options.packed !== false;
             const looksLikeBackpack = /\b(backpack|rucksack)\b|рюкзак/i.test(`${rawItem.category || ''} ${rawItem.name || ''}`);
             row.equipmentRole = options.role === 'backpack' || (looksLikeBackpack && !getEquipmentBackpackItem()) ? 'backpack' : '';
-            if (row.equipmentRole === 'backpack') {
-                eventData.sections.forEach((existingSection) => {
-                    (existingSection && Array.isArray(existingSection.rows) ? existingSection.rows : []).forEach((existingRow) => {
-                        if (existingRow && existingRow !== row) existingRow.equipmentRole = '';
-                    });
-                });
-            }
             row.equipmentImageUrl = String(rawItem.imageUrl || '').trim();
             row.equipmentImagePrepared = false;
             row.equipmentBackgroundPending = Boolean(row.equipmentImageUrl);
-            row.cells.item = String(rawItem.formattedBrand || rawItem.brand || '').trim()
+            const itemColumn = section.columns.find((column) => column.id === 'item')
+                || section.columns.find((column) => column.type === 'text');
+            if (!itemColumn) return false;
+            row.cells[itemColumn.id] = String(rawItem.formattedBrand || rawItem.brand || '').trim()
                 ? `${String(rawItem.formattedBrand || rawItem.brand).trim()} ${String(rawItem.name || '').trim()}`.trim()
                 : String(rawItem.name || '').trim();
             row.cells.weight = formatImportedWeightKg(rawItem.packedWeight || rawItem.weight || 0);
             const importedPrice = rawItem.lowestPrice || rawItem.price
                 || convertEquipmentPriceToRub(rawItem.originalPrice, rawItem.originalCurrency);
             row.cells.cost = importedPrice > 0 ? formatEquipmentNumber(importedPrice) : '';
-            section.rows.push(row);
-            reindexSectionRows(section);
-            saveEventData();
-            // Re-render only the equipment surface; the page and sections board stay mounted.
+            const items = collectEquipmentRows().filter((item) => item.role !== 'backpack');
+            stabilizeEquipmentTilePositions(items);
+            const positions = getEquipmentTilePositions(collectEquipmentRows().filter((item) => item.role !== 'backpack'));
+            const position = nextEquipmentTilePosition([...positions.values()]);
+            recordEquipmentLayoutChange({
+                sectionId: section.id, rowId: row.id,
+                addition: { row, section: { id: section.id, name: section.name, columns: section.columns } },
+                x: 1 + position.x * 7, y: 1 + position.y * 5,
+                ...(row.equipmentRole === 'backpack' ? { backpack: true } : {})
+            });
+            syncPlanningViewState({ immediate: true });
             renderEquipmentExperience();
             updateQuickStats();
-            emitCollabAction(`${options.role === 'backpack' ? 'Выбрал рюкзак' : 'Добавил'} из ${getEquipmentSourceLabel(rawItem.__source)}: ${row.cells.item || 'снаряжение'}`);
+            emitCollabAction(`${options.role === 'backpack' ? 'Выбрал рюкзак' : 'Добавил'} из ${getEquipmentSourceLabel(rawItem.__source)}: ${row.cells[itemColumn.id] || 'снаряжение'}`);
             return true;
         }
 
@@ -12087,25 +12118,29 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 
         function queueEquipmentImageCleanup() {
             if (equipmentBackgroundCleanupRunning || !canEditEquipmentEvent() || !window.BeerImageProcess) return;
-            const item = collectEquipmentRows().find((row) => row.backgroundPending && !row.imagePrepared
-                && row.imageUrl && !row.imageUrl.startsWith('data:image/svg+xml')
-                && (equipmentBackgroundCleanupAttempts.get(row.rowId) || 0) < 2);
+            const items = collectEquipmentRows();
+            const item = items.find((row) => equipmentManualBackground.has(row.rowId))
+                || items.find((row) => row.backgroundPending && !row.imagePrepared && row.imageUrl
+                    && !row.imageUrl.startsWith('data:image/svg+xml') && !equipmentBackgroundCleanupAttempts.has(row.rowId));
             if (!item) return;
             equipmentBackgroundCleanupRunning = true;
-            const run = async () => {
+            equipmentBackgroundCleanupAttempts.set(item.rowId, true);
+            setTimeout(async () => {
+                let success = false;
                 try {
-                    for (let attempt = 1; attempt <= 2; attempt += 1) {
+                    for (let attempt = 0; attempt < 2; attempt += 1) {
                         if (getEquipmentItemByRowId(item.rowId)?.imageUrl !== item.imageUrl) break;
-                        equipmentBackgroundCleanupAttempts.set(item.rowId, attempt);
-                        if (await removeEquipmentItemImageBackground(item.rowId, item.imageUrl)) break;
-                        if (attempt === 1) await new Promise((resolve) => setTimeout(resolve, 1300));
+                        success = await removeEquipmentItemImageBackground(item.rowId, item.imageUrl);
+                        if (success) break;
+                        if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 1300));
                     }
                 } finally {
+                    equipmentManualBackground.get(item.rowId)?.(success);
+                    equipmentManualBackground.delete(item.rowId);
                     equipmentBackgroundCleanupRunning = false;
                     queueEquipmentImageCleanup();
                 }
-            };
-            setTimeout(() => run().catch(() => {}), 0);
+            }, 0);
         }
 
         async function fetchEquipmentImageAsDataUrl(sourceUrl) {
@@ -12173,10 +12208,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 const section = eventData?.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
                 const row = section?.rows.find((entry) => entry.id === rowId);
                 if (!row || row.equipmentImageUrl !== sourceUrl || !canEditEquipmentEvent()) return true;
-                row.equipmentImageUrl = imageUrl;
-                row.equipmentImagePrepared = true;
-                row.equipmentBackgroundPending = false;
-                saveEventData();
+                recordEquipmentLayoutChange({ sectionId: section.id, rowId, photo: { sourceUrl, imageUrl } });
                 renderEquipmentExperience();
                 return true;
             } catch (_) {
@@ -12862,6 +12894,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     <div class="gear-detail-value"><span>Цена</span>${escapeHtml(item.cost ? formatMoneyValue(item.cost) : 'Не указана')}</div>
                     <div class="gear-detail-value"><span>Раздел</span>${escapeHtml(item.sectionName)}</div>
                 </div>`}
+                ${editable && item.imageUrl && !item.imageUrl.startsWith('data:image/svg+xml') ? `<button type="button" class="gear-detail-centre" data-equipment-remove-bg>Убрать фон у фото</button><p class="gear-detail-photo-status" role="status" hidden></p>` : ''}
                 ${editable && item.role !== 'backpack' ? `<button type="button" class="gear-detail-centre" data-equipment-set-backpack>Использовать как рюкзак</button>` : ''}
                 ${editable ? `<button type="button" class="gear-detail-remove" data-equipment-remove>Убрать из рюкзака</button>` : ''}
             </article>`;
@@ -12869,6 +12902,30 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 if (event.target === modal || event.target.closest('[data-gear-detail-close]')) modal.close();
                 if (event.target.closest('[data-equipment-set-backpack]') && setEquipmentBackpack(item.rowId)) modal.close();
                 if (event.target.closest('[data-equipment-remove]') && removeEquipmentItem(item.rowId)) modal.close();
+            });
+            const backgroundButton = modal.querySelector('[data-equipment-remove-bg]');
+            backgroundButton?.addEventListener('click', () => {
+                const status = modal.querySelector('.gear-detail-photo-status');
+                const current = getEquipmentItemByRowId(item.rowId);
+                if (!current?.imageUrl || !window.BeerImageProcess) {
+                    status.hidden = false;
+                    status.textContent = 'Фото недоступно для обработки.';
+                    return;
+                }
+                backgroundButton.disabled = true;
+                status.hidden = false;
+                status.textContent = 'Обрабатываю фото…';
+                equipmentManualBackground.set(item.rowId, (success) => {
+                    backgroundButton.disabled = false;
+                    const updated = getEquipmentItemByRowId(item.rowId);
+                    if (success && updated?.imageUrl) {
+                        modal.querySelector('.gear-detail-photo').src = updated.imageUrl;
+                        status.textContent = 'Фото без фона сохранено.';
+                    } else {
+                        status.textContent = 'Не удалось убрать фон. Можно повторить.';
+                    }
+                });
+                queueEquipmentImageCleanup();
             });
             modal.querySelector('form')?.addEventListener('submit', (event) => {
                 event.preventDefault();
@@ -12905,7 +12962,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 const stored = JSON.parse(localStorage.getItem(equipmentLayoutStorageKey()) || '[]');
                 for (const change of stored) {
                     if (typeof change?.rowId === 'string' && typeof change.sectionId === 'string' &&
-                        (change.remove === true || (Number.isFinite(change.x) && Number.isFinite(change.y)))) {
+                        (change.remove === true || change.addition?.row?.id === change.rowId ||
+                            (Number.isFinite(change.x) && Number.isFinite(change.y)) || change.cells || change.photo || change.backpack)) {
                         equipmentPendingLayout.set(change.rowId, change);
                     }
                 }
@@ -12921,16 +12979,43 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         }
 
         function applyPendingEquipmentLayout(data, changes = equipmentPendingLayout.values()) {
+            if (!data) return;
             for (const change of changes) {
-                const section = data?.sections.find((entry) => entry.id === change.sectionId);
-                const index = section?.rows.findIndex((row) => row.id === change.rowId) ?? -1;
-                if (index < 0) continue;
+                let section = data.sections.find((entry) => entry.id === change.sectionId);
+                if (change.addition && !change.remove && !section) {
+                    section = { ...change.addition.section, rows: [] };
+                    data.sections.push(section);
+                    data.layoutRows = sanitizeSectionLayoutRows(data.layoutRows, data.sections.map((entry) => entry.id));
+                }
+                if (!section) continue;
+                const index = section.rows.findIndex((row) => row.id === change.rowId);
                 if (change.remove) {
-                    section.rows.splice(index, 1);
-                    reindexSectionRows(section);
-                } else {
-                    section.rows[index].equipmentGridX = change.x;
-                    section.rows[index].equipmentGridY = change.y;
+                    if (index >= 0) {
+                        section.rows.splice(index, 1);
+                        reindexSectionRows(section);
+                    }
+                    continue;
+                }
+                let row = section.rows[index];
+                if (!row && change.addition) {
+                    row = { ...change.addition.row, cells: { ...change.addition.row.cells }, position: section.rows.length + 1 };
+                    section.rows.push(row);
+                }
+                if (!row) continue;
+                if (Number.isFinite(change.x) && Number.isFinite(change.y)) {
+                    row.equipmentGridX = change.x;
+                    row.equipmentGridY = change.y;
+                }
+                if (change.cells) Object.assign(row.cells, change.cells);
+                if (change.photo && row.equipmentImageUrl === change.photo.sourceUrl) {
+                    row.equipmentImageUrl = change.photo.imageUrl;
+                    row.equipmentImagePrepared = true;
+                    row.equipmentBackgroundPending = false;
+                }
+                if (change.backpack) {
+                    for (const entry of data.sections) {
+                        for (const item of entry.rows) item.equipmentRole = item === row ? 'backpack' : '';
+                    }
                 }
             }
         }
@@ -12951,13 +13036,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     if (result.committed) {
                         for (const change of changes) {
                             if (equipmentPendingLayout.get(change.rowId) !== change) continue;
-                            const section = result.data.sections.find((entry) => entry.id === change.sectionId);
-                            const row = section?.rows.find((entry) => entry.id === change.rowId);
-                            if (change.remove || (row?.equipmentGridX === change.x && row?.equipmentGridY === change.y)
-                                || !eventData?.sections.some((entry) => entry.id === change.sectionId && entry.rows.some((item) => item.id === change.rowId))) {
-                                equipmentPendingLayout.delete(change.rowId);
-                                acknowledged = true;
-                            }
+                            equipmentPendingLayout.delete(change.rowId);
+                            acknowledged = true;
                         }
                         persistPendingEquipmentLayout();
                         cacheEquipmentEventData();
@@ -12972,10 +13052,25 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         }
 
         function recordEquipmentLayoutChange(change) {
+            recordEquipmentLayoutChanges([change]);
+        }
+
+        function recordEquipmentLayoutChanges(changes) {
             loadPendingEquipmentLayout();
-            equipmentPendingLayout.set(change.rowId, change);
+            for (const change of changes) {
+                const previous = equipmentPendingLayout.get(change.rowId);
+                const next = change.remove ? change : { ...previous, ...change };
+                if (previous?.cells && change.cells) next.cells = { ...previous.cells, ...change.cells };
+                if (change.backpack) {
+                    for (const [rowId, pending] of equipmentPendingLayout) {
+                        if (pending.backpack) equipmentPendingLayout.set(rowId, { ...pending, backpack: false });
+                    }
+                    equipmentPendingLayout.delete(change.rowId);
+                }
+                equipmentPendingLayout.set(change.rowId, next);
+                applyPendingEquipmentLayout(eventData, [next]);
+            }
             persistPendingEquipmentLayout();
-            applyPendingEquipmentLayout(eventData, [change]);
             markEventDataChanged();
             cacheEquipmentEventData();
             scheduleEquipmentLayoutSave();
@@ -13000,16 +13095,77 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
         function setEquipmentGridPosition(rowId, x, y) {
             if (!canEditEquipmentEvent() || !eventData || !rowId) return false;
             const nextX = Math.max(1, Math.min(8, Math.round(Number(x) * 1000) / 1000 || 1));
-            const nextY = Math.max(1, Math.min(6, Math.round(Number(y) * 1000) / 1000 || 1));
+            const nextY = Math.max(1, Math.round(Number(y) * 1000) / 1000 || 1);
             const section = eventData.sections.find((entry) => entry.rows.some((row) => row.id === rowId));
             const row = section?.rows.find((entry) => entry.id === rowId);
             if (!row || (row.equipmentGridX === nextX && row.equipmentGridY === nextY)) return false;
+            stabilizeEquipmentTilePositions(collectEquipmentRows().filter((item) => item.role !== 'backpack'));
             recordEquipmentLayoutChange({ sectionId: section.id, rowId, x: nextX, y: nextY });
             const card = document.querySelector(`#equipmentExperience [data-row-id="${CSS.escape(rowId)}"]`);
             card?.style.setProperty('--grid-x', (nextX - 1) / 7);
             card?.style.setProperty('--grid-y', (nextY - 1) / 5);
             emitCollabAction('Переместил снаряжение по сетке');
             return true;
+        }
+
+        function updateEquipmentStudio(shell, markup) {
+            if (shell.equipmentMarkup === markup) return;
+            shell.equipmentMarkup = markup;
+            const studio = shell.querySelector('.gear-studio');
+            if (!studio) {
+                shell.innerHTML = markup;
+                return;
+            }
+
+            const template = document.createElement('template');
+            template.innerHTML = markup;
+            const nextStudio = template.content.firstElementChild;
+            studio.classList.toggle('is-open', equipmentGridOpen);
+            const pack = studio.querySelector('.gear-pack-focus');
+            const nextPack = nextStudio.querySelector('.gear-pack-focus');
+            const photo = pack.querySelector('.gear-pack-focus-photo');
+            const nextPhoto = nextPack.querySelector('.gear-pack-focus-photo');
+            if (photo.innerHTML !== nextPhoto.innerHTML) photo.innerHTML = nextPhoto.innerHTML;
+            photo.setAttribute('aria-expanded', String(equipmentGridOpen));
+            const photoLabel = nextPhoto.getAttribute('aria-label');
+            if (photoLabel) photo.setAttribute('aria-label', photoLabel);
+            else photo.removeAttribute('aria-label');
+            const name = pack.querySelector('.gear-pack-focus-name');
+            const nextName = nextPack.querySelector('.gear-pack-focus-name');
+            if (name && nextName) {
+                name.dataset.gearGridInfo = nextName.dataset.gearGridInfo;
+                name.textContent = nextName.textContent;
+            } else if (name) name.remove();
+            else if (nextName) photo.after(nextName);
+            pack.querySelector('.gear-pack-focus-metrics').textContent = nextPack.querySelector('.gear-pack-focus-metrics').textContent;
+
+            studio.querySelector('.gear-grid-panel').inert = !equipmentGridOpen;
+            const grid = studio.querySelector('.gear-grid');
+            const nextGrid = nextStudio.querySelector('.gear-grid');
+            grid.style.setProperty('--grid-depth', nextGrid.style.getPropertyValue('--grid-depth'));
+            const cards = new Map([...grid.querySelectorAll('.gear-grid-item')].map((card) => [card.dataset.rowId, card]));
+            for (const nextCard of nextGrid.querySelectorAll('.gear-grid-item')) {
+                const rowId = nextCard.dataset.rowId;
+                const card = cards.get(rowId);
+                if (!card) {
+                    grid.append(nextCard);
+                    continue;
+                }
+                cards.delete(rowId);
+                card.style.cssText = nextCard.style.cssText;
+                card.setAttribute('aria-label', nextCard.getAttribute('aria-label'));
+                card.toggleAttribute('data-editable', nextCard.hasAttribute('data-editable'));
+                for (const selector of ['.gear-grid-item-photo', '.gear-grid-item-copy']) {
+                    const element = card.querySelector(selector);
+                    const next = nextCard.querySelector(selector);
+                    if (element.innerHTML !== next.innerHTML) element.innerHTML = next.innerHTML;
+                }
+            }
+            for (const card of cards.values()) card.remove();
+            const empty = grid.querySelector('.gear-grid-empty');
+            const nextEmpty = nextGrid.querySelector('.gear-grid-empty');
+            if (empty && !nextEmpty) empty.remove();
+            if (!empty && nextEmpty) grid.append(nextEmpty);
         }
 
         function renderEquipmentExperience() {
@@ -13043,7 +13199,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             }
             const stats = getEquipmentStats();
             const packItems = stats.items;
-            const keepStudioMounted = (equipmentSearchOnlyRefresh || shell.querySelector('.gear-grid-item.is-dragging')) && !!shell.querySelector('.gear-studio');
+            const keepStudioMounted = (equipmentSearchOnlyRefresh || shell.querySelector('.gear-grid-item.is-pointer-held')) && !!shell.querySelector('.gear-studio');
             const queryText = getEquipmentQueryText();
             const query = normalizeEquipmentSearchKey(queryText);
             if (canEditEquipment && topSearchHost) {
@@ -13062,7 +13218,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                 if (!equipmentSearchOnlyRefresh && input.value !== equipmentCatalogSearch) input.value = equipmentCatalogSearch;
                 const web = equipmentWebSearchByKey.get(query);
                 const searching = equipmentWebSearchRequest?.key === query || equipmentCatalogSearchDebounceTimer !== null;
-                const all = Array.isArray(web) ? web : [];
+                const all = Array.isArray(web) ? web.filter((item) => /^https?:\/\//i.test(item.imageUrl || '')) : [];
                 equipmentRenderedSearchResults = all;
                 state.textContent = searching ? 'Поиск в интернете…' : all.length ? `${all.length}` : '';
                 state.hidden = !query || !state.textContent;
@@ -13075,7 +13231,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     const name = escapeHtml(item.name || 'Без названия');
                     const href = /^https?:\/\//i.test(item.url || '') ? escapeHtml(item.url) : '';
                     return `<article class="gear-result">
-                        <div class="gear-result-thumb">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '◇'}</div>
+                        <div class="gear-result-thumb">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" data-equipment-photo-alternates="${escapeHtml(JSON.stringify((item.imageAlternates || []).filter((url) => /^https?:\/\//i.test(url))))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '◇'}</div>
                         <div><div class="gear-result-source">${escapeHtml(item.seller || getEquipmentSourceLabel(item.__source))}</div>
                         <div class="gear-result-name">${href ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${name}</a>` : name}</div>
                         <div class="gear-result-details"><span>${escapeHtml(weight)}</span><span>${escapeHtml(price)}</span></div></div>
@@ -13106,11 +13262,10 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             if (!keepStudioMounted) {
                 const backpack = getEquipmentBackpackItem(packItems);
                 const items = packItems.filter((item) => item.rowId !== backpack?.rowId);
-                const columns = window.innerWidth <= 620 ? 3 : 5;
-                const rows = Math.ceil(items.length / columns);
-                const tiles = items.map((item, index) => {
-                    const x = item.gridX ? (item.gridX - 1) / 7 : (index % columns) / (columns - 1);
-                    const y = item.gridY ? (item.gridY - 1) / 5 : Math.floor(index / columns) / Math.max(4, rows - 1);
+                const positions = getEquipmentTilePositions(items);
+                const depth = Math.max(1, ...[...positions.values()].map((position) => position.y));
+                const tiles = items.map((item) => {
+                    const { x, y } = positions.get(item.rowId);
                     return `<button type="button" class="gear-grid-item" data-row-id="${escapeHtml(item.rowId)}" ${canEditEquipment ? 'data-editable' : ''} style="--grid-x:${x};--grid-y:${y}" aria-label="${escapeHtml(item.label)}">
                         <span class="gear-grid-item-photo">${item.imageUrl ? `<img src="${escapeHtml(item.imageUrl)}" alt="" loading="lazy" draggable="false">` : '◇'}</span>
                         <span class="gear-grid-item-copy"><strong>${escapeHtml(item.label)}</strong><span>${item.weight ? escapeHtml(formatEquipmentMeasure(item.weight, 'кг')) : '—'} · ${item.cost ? escapeHtml(formatMoneyValue(item.cost)) : '—'}</span></span>
@@ -13125,14 +13280,11 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     </section>
                     <section class="gear-grid-panel" id="equipmentGridPanel" aria-label="Снаряжение" ${equipmentGridOpen ? '' : 'inert'}>
                         <button type="button" class="gear-back-to-pack" data-equipment-back-to-pack><span aria-hidden="true">‹</span> Рюкзак</button>
-                        <div class="gear-grid" style="--grid-content-height:${rows * 116}px">${tiles || '<p class="gear-grid-empty">Здесь появятся добавленные предметы</p>'}</div>
+                        <div class="gear-grid" style="--grid-depth:${depth}">${tiles || '<p class="gear-grid-empty">Здесь появятся добавленные предметы</p>'}</div>
                     </section>
                 </div>`;
                 shell.classList.remove('hidden');
-                if (shell.equipmentMarkup !== markup) {
-                    shell.equipmentMarkup = markup;
-                    shell.innerHTML = markup;
-                }
+                updateEquipmentStudio(shell, markup);
             }
         }
         function updateQuickStats(result) {
@@ -21924,6 +22076,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
             }
             const cachedPlanningState = readCachedPlanningEventState();
             pendingPlanningViewRestoreState = readPlanningViewState();
+            equipmentGridOpen = pendingPlanningViewRestoreState?.equipmentGridOpen === true;
             if (cachedPlanningState && cachedPlanningState.data && cachedPlanningState.data.sections) {
                 eventData = normalizeEventData(cachedPlanningState.data);
                 eventDataSignature = stableSerialize(eventData);
@@ -22143,6 +22296,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         const photo = studio.querySelector('[data-equipment-toggle-grid]');
                         photo.setAttribute('aria-expanded', String(equipmentGridOpen));
                         document.getElementById('equipmentGridPanel').inert = !equipmentGridOpen;
+                        syncPlanningViewState({ immediate: true });
                         if (window.matchMedia('(max-width:620px)').matches) {
                             const focus = equipmentGridOpen ? studio.querySelector('[data-equipment-back-to-pack]') : photo;
                             focus.focus({ preventScroll: true });
@@ -22168,6 +22322,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         y: Number(card.style.getPropertyValue('--grid-y')),
                         moved: false
                     };
+                    card.classList.add('is-pointer-held');
                     card.setPointerCapture(event.pointerId);
                 });
                 equipmentExperience.addEventListener('pointermove', (event) => {
@@ -22179,7 +22334,9 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     drag.moved = true;
                     card.classList.add('is-dragging');
                     drag.nextX = Math.min(1, Math.max(0, (event.clientX - rect.left - drag.offsetX) / Math.max(1, rect.width - card.offsetWidth)));
-                    drag.nextY = Math.min(1, Math.max(0, (event.clientY - rect.top - drag.offsetY) / Math.max(1, rect.height - card.offsetHeight)));
+                    const depth = Number(card.parentElement.style.getPropertyValue('--grid-depth')) || 1;
+                    const baseHeight = Math.max(1, (rect.height - card.offsetHeight) / depth);
+                    drag.nextY = Math.min(depth, Math.max(0, (event.clientY - rect.top - drag.offsetY) / baseHeight));
                     card.style.setProperty('--grid-x', drag.nextX);
                     card.style.setProperty('--grid-y', drag.nextY);
                 });
@@ -22187,7 +22344,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     const drag = equipmentPointerDrag;
                     if (!drag || drag.pointerId !== event.pointerId) return;
                     equipmentPointerDrag = null;
-                    drag.card.classList.remove('is-dragging');
+                    drag.card.classList.remove('is-dragging', 'is-pointer-held');
                     if (!drag.moved) return;
                     suppressEquipmentClick = true;
                     setTimeout(() => { suppressEquipmentClick = false; }, 0);
@@ -22197,6 +22354,7 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         drag.card.style.setProperty('--grid-x', drag.x);
                         drag.card.style.setProperty('--grid-y', drag.y);
                     }
+                    renderEquipmentExperience();
                 };
                 equipmentExperience.addEventListener('pointerup', finishEquipmentDrag);
                 equipmentExperience.addEventListener('pointercancel', finishEquipmentDrag);
@@ -22208,7 +22366,8 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                         e.preventDefault();
                         const [dx, dy] = direction;
                         const x = Number(card.style.getPropertyValue('--grid-x')) + dx * .04;
-                        const y = Number(card.style.getPropertyValue('--grid-y')) + dy * .04;
+                        const depth = Number(card.parentElement.style.getPropertyValue('--grid-depth')) || 1;
+                        const y = Math.min(depth, Number(card.style.getPropertyValue('--grid-y')) + dy * .04);
                         if (setEquipmentGridPosition(card.dataset.rowId, 1 + x * 7, 1 + y * 5)) {
                             equipmentExperience.querySelector(`[data-row-id="${CSS.escape(card.dataset.rowId)}"]`)?.focus({ preventScroll: true });
                         }
@@ -22220,6 +22379,21 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
 
             const equipmentTopSearch = document.getElementById('equipmentTopSearch');
             if (equipmentTopSearch) {
+                equipmentTopSearch.addEventListener('error', (event) => {
+                    const img = event.target;
+                    if (!(img instanceof HTMLImageElement) || !img.hasAttribute('data-equipment-photo-alternates')) return;
+                    const remaining = JSON.parse(img.dataset.equipmentPhotoAlternates);
+                    if (remaining.length) {
+                        img.src = remaining.shift();
+                        img.dataset.equipmentPhotoAlternates = JSON.stringify(remaining);
+                        return;
+                    }
+                    img.closest('.gear-result').hidden = true;
+                    const results = img.closest('.gear-search-results');
+                    if (!results.querySelector('.gear-result:not([hidden])')) {
+                        results.innerHTML = '<div class="gear-empty">Не удалось загрузить фото найденных товаров.</div>';
+                    }
+                }, true);
                 equipmentTopSearch.addEventListener('input', (e) => {
                     const input = e.target && e.target.closest ? e.target.closest('#pwCatalogSearchInput') : null;
                     if (!input) return;
@@ -22261,7 +22435,9 @@ button.gear-pack-focus-photo:hover img { transform:translateY(-4px); }
                     if (!addPacked) return;
                     const [sourceKey, itemId] = String(addPacked.dataset.pwAddPacked || '').split('::');
                     const item = equipmentRenderedSearchResults.find((entry) => String(entry && entry._id || '') === String(itemId || '') && String(entry && entry.__source || '') === String(sourceKey || ''));
-                    if (item && addEquipmentItemFromCatalog(item, { packed:true })) {
+                    const image = addPacked.closest('.gear-result')?.querySelector('.gear-result-thumb img');
+                    const product = item && image?.naturalWidth ? { ...item, imageUrl: image.currentSrc || image.src } : item;
+                    if (product && addEquipmentItemFromCatalog(product, { packed:true })) {
                         e.preventDefault();
                         e.stopPropagation();
                     }
